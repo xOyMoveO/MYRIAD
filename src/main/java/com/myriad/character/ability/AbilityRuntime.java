@@ -65,7 +65,7 @@ public final class AbilityRuntime {
                 var attr=debuff.target.getAttribute(Attributes.MOVEMENT_SPEED);if(attr!=null)attr.removeModifier(debuff.id);DEBUFFS.remove(debuff);
             }
             if(old.motionUntil>p.level().getGameTime())p.setDeltaMovement(Vec3.ZERO);
-            com.myriad.character.skills.sulan.FengQiangSkill.clearFor(p.getUUID());
+            com.myriad.combat.WindWallSystem.clearFor(p.getUUID());
             PacketDistributor.sendToPlayer(p,new NetworkSetup.DashPayload(0,0,0,-1));}
         var d=PlayerDataProvider.get(p);
         for(String key:new ArrayList<>(d.getBuffs().keySet()))if((key.startsWith("g1_")&&!key.startsWith("g1_attribute_"))||key.startsWith("g2_"))d.setBuff(key,0);
@@ -91,7 +91,7 @@ public final class AbilityRuntime {
         if(!valid(p)||!skill.role().equals(d.getCharacterId())||skill.isPassive())return;
         var selected=FirstGroupSkills.resolve(CharacterType.byId(d.getCharacterId()),skill.slot(),d.getSkillLevels());
         if(selected!=skill)return;
-        if(!skill.canCastWhileControlled()&&(d.getBuff("g1_stun")>0||com.myriad.character.skills.yunsheng.YunShengSkills.isSilenced(p)))return;
+        if(!skill.canCastWhileControlled()&&(d.getBuff("g1_stun")>0||com.myriad.combat.SilenceSystem.isSilenced(p)))return;
         if(!TrainingMode.isEnabled()&&d.skillLevel(skill.getId())<=0){message(p,"message.myriad.skill_not_learned");return;}
         Cast c=context(p,skill);Owner o=c.owner;
         if(com.myriad.character.skills.shuo.ShuoCombat.blocked(p))return;
@@ -112,7 +112,7 @@ public final class AbilityRuntime {
         var d=PlayerDataProvider.get(p);if(!valid(p)||!skill.role().equals(d.getCharacterId())){cancel(p);return;}
         if(FirstGroupSkills.resolve(CharacterType.byId(d.getCharacterId()),skill.slot(),d.getSkillLevels())!=skill){cancel(p);return;}
         if(!TrainingMode.isEnabled()&&d.skillLevel(skill.getId())<=0){cancel(p);return;}
-        if(d.getBuff("g1_stun")>0||com.myriad.character.skills.yunsheng.YunShengSkills.isSilenced(p)
+        if(d.getBuff("g1_stun")>0||com.myriad.combat.SilenceSystem.isSilenced(p)
                 ||moving(p)||o.channelUntil>p.level().getGameTime()||p.level().getGameTime()-o.lastCast<3)return;
         boolean noCd=TrainingMode.isEnabled()&&TrainingMode.isNoCooldown(),noMana=TrainingMode.isEnabled()&&TrainingMode.isNoMana();
         if(!noCd&&d.getCooldown(skill.getId())>0||!noMana&&d.getMana()<skill.getManaCost())return;
@@ -137,7 +137,7 @@ public final class AbilityRuntime {
         if(!valid(p)||!FirstGroupSkills.active(PlayerDataProvider.get(p).getCharacterId())){if(OWNERS.containsKey(p.getUUID()))clear(p);return;}
         Owner o=owner(p);long now=p.level().getGameTime();var d=PlayerDataProvider.get(p);
         if(o.channelUntil>=now&&o.channelUntil>0&&(d.getBuff("g1_stun")>0
-                ||com.myriad.character.skills.yunsheng.YunShengSkills.isSilenced(p)
+                ||com.myriad.combat.SilenceSystem.isSilenced(p)
                 ||o.channelOrigin!=null&&p.position().subtract(o.channelOrigin).multiply(1,0,1).lengthSqr()>.64
                 ||KnockbackBuffer.recentlyForced(p)&&KnockbackBuffer.impulseToken(p)!=o.channelImpulse)){
             o.channelToken++;o.channelUntil=0;d.setBuff("g1_channel",0);
@@ -162,7 +162,7 @@ public final class AbilityRuntime {
     public static boolean controlled(ServerPlayer p){
         var d=PlayerDataProvider.get(p);
         if(d.getBuff("g1_stun")>0||d.getBuff("g1_root")>0
-                ||com.myriad.character.skills.yunsheng.YunShengSkills.isSilenced(p)
+                ||com.myriad.combat.SilenceSystem.isSilenced(p)
                 ||KnockbackBuffer.recentlyForced(p))return true;
         for(var effect:List.of(MobEffects.SLOWNESS,MobEffects.LEVITATION,MobEffects.BLINDNESS,MobEffects.DARKNESS,MobEffects.MINING_FATIGUE))
             if(p.hasEffect(effect))return true;
@@ -179,8 +179,8 @@ public final class AbilityRuntime {
             var modifier=speed.getModifier(down.id);
             if(modifier!=null&&modifier.amount()<0){speed.removeModifier(down.id);DEBUFFS.remove(down);}
         }
-        com.myriad.character.skills.yunsheng.YunShengSkills.cleanseSilence(p);
-        com.myriad.character.skills.hanze.HanzeSkills.cleanseFrozen(p.getUUID());
+        com.myriad.combat.SilenceSystem.cleanse(p);
+        com.myriad.combat.FrozenControlSystem.cleanse(p.getUUID());
         if(stop){
             var o=OWNERS.get(p.getUUID());if(o!=null){o.motionToken++;o.motionUntil=0;}
             // Stop a currently forced trajectory on both sides, while retaining downward gravity.
@@ -338,7 +338,7 @@ public final class AbilityRuntime {
                 boolean finish(boolean dissipate){if(!ended){ended=true;AbilityVisuals.finishFlight(Cast.this,visual);if(dissipate)AbilityVisuals.dissipate(Cast.this,pos);}return false;}
                 public boolean tick(long now){if(++age>160)return finish(true);if(back){Vec3 toward=player.getEyePosition().subtract(pos);if(toward.length()<speed)return finish(true);direction=toward.normalize();}
                     Vec3 end=pos.add(direction.scale(back?speed:Math.min(speed,range-traveled)));
-                    Vec3 wallHit=com.myriad.character.skills.sulan.FengQiangSkill.firstEnemyHit(player,pos,end);
+                    Vec3 wallHit=com.myriad.combat.WindWallSystem.firstEnemyHit(player,pos,end);
                     if(wallHit!=null){AbilityVisuals.flight(Cast.this,pos,wallHit,age,back,visual);pos=wallHit;return finish(true);}
                     var clip=player.level().clip(new ClipContext(pos,end,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,player));boolean blocked=clip.getType()!=HitResult.Type.MISS;
                     if(blocked)end=clip.getLocation();final Vec3 dest=end;

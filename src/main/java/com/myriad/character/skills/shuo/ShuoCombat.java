@@ -92,7 +92,7 @@ public final class ShuoCombat {
     public static void follow(AbilityRuntime.Cast c,int ticks,Runnable fire){
         var s=state(c.player);s.busyUntil=Math.max(s.busyUntil,c.now()+ticks);
         c.whileActive(ticks,age->{
-            if(c.data.getBuff("g1_stun")>0||c.data.getBuff("g1_root")>0||com.myriad.character.skills.yunsheng.YunShengSkills.isSilenced(c.player)){
+            if(c.data.getBuff("g1_stun")>0||c.data.getBuff("g1_root")>0||com.myriad.combat.SilenceSystem.isSilenced(c.player)){
                 s.busyUntil=0;cue(c.player,CANCEL,0);return false;
             }
             if(age<ticks)return true;s.busyUntil=0;fire.run();return false;

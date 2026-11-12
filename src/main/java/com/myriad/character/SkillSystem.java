@@ -54,7 +54,7 @@ public final class SkillSystem {
             return;
         }
         if (data.getBuff("g1_stun") > 0) return;
-        if (com.myriad.character.skills.yunsheng.YunShengSkills.isSilenced(player)) {
+        if (com.myriad.combat.SilenceSystem.isSilenced(player)) {
             player.sendSystemMessage(Component.translatable("message.myriad.silenced"));
             return;
         }

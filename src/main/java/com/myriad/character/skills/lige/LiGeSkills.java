@@ -13,7 +13,7 @@ import com.myriad.character.CharacterType;
 import com.myriad.character.Skill;
 import com.myriad.combat.DamageCalc;
 import com.myriad.combat.DamageCalc.Kind;
-import com.myriad.character.skills.sulan.FengQiangSkill;
+import com.myriad.combat.WindWallSystem;
 import com.myriad.game.Faction;
 import com.myriad.game.GameManager;
 import com.myriad.network.NetworkSetup.DashPayload;
@@ -205,7 +205,7 @@ public final class LiGeSkills extends Skill {
             HitResult blockHit = level.clip(new ClipContext(arrow.pos, intended,
                     ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, owner));
             Vec3 end = blockHit.getType() == HitResult.Type.MISS ? intended : blockHit.getLocation();
-            if (FengQiangSkill.blocksProjectile(level, arrow.pos, end)
+            if (WindWallSystem.blocksProjectile(level, arrow.pos, end)
                     || com.myriad.character.skills.feiyu.FeiYuSkills.blocksProjectile(level, owner, arrow.pos, end)) {
                 return true;
             }
@@ -291,7 +291,7 @@ public final class LiGeSkills extends Skill {
             Vec3 aim = target.getBoundingBox().getCenter();
             Vec3 delta = aim.subtract(arrow.pos);
             if (delta.length() <= .75) {
-                if (FengQiangSkill.blocksProjectile(level, arrow.pos, aim)
+                if (WindWallSystem.blocksProjectile(level, arrow.pos, aim)
                         || com.myriad.character.skills.feiyu.FeiYuSkills.blocksProjectile(level, owner, arrow.pos, aim)) return true;
                 float damage = arrow.damage;
                 if (arrow.kind == ArrowKind.BASIC) {
@@ -317,7 +317,7 @@ public final class LiGeSkills extends Skill {
             Vec3 side = new Vec3(-forward.z, 0, forward.x);
             arrow.phase += .5;
             Vec3 next = arrow.pos.add(forward.scale(1.05)).add(side.scale(Math.sin(arrow.phase) * .055));
-            if (FengQiangSkill.blocksProjectile(level, arrow.pos, next)
+            if (WindWallSystem.blocksProjectile(level, arrow.pos, next)
                     || com.myriad.character.skills.feiyu.FeiYuSkills.blocksProjectile(level, owner, arrow.pos, next)) return true;
             arrow.pos = next;
             level.sendParticles(CYAN_ARROW, arrow.pos.x, arrow.pos.y, arrow.pos.z, 2, .035, .035, .035, .004);

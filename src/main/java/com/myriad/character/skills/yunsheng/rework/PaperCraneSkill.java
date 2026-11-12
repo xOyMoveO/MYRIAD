@@ -21,7 +21,7 @@ public final class PaperCraneSkill extends AbilitySkill {
         Vec3 end=target.position().add(0,target.getBbHeight()*.6,0),f=end.subtract(start).normalize(),side=AbilityMeshBuilder.side(f);
         Vec3 at=start.lerp(end,u).add(side.scale(bend*Math.sin(Math.PI*u)*1.5)).add(0,Math.sin(Math.PI*u)*1.1,0);
         var block=c.player.level().clip(new net.minecraft.world.level.ClipContext(last[0],at,net.minecraft.world.level.ClipContext.Block.COLLIDER,net.minecraft.world.level.ClipContext.Fluid.NONE,c.player));
-        if(block.getType()!=net.minecraft.world.phys.HitResult.Type.MISS||com.myriad.character.skills.sulan.FengQiangSkill.firstEnemyHit(c.player,last[0],at)!=null){
+        if(block.getType()!=net.minecraft.world.phys.HitResult.Type.MISS||com.myriad.combat.WindWallSystem.firstEnemyHit(c.player,last[0],at)!=null){
             AbilityVisuals.finishFlight(c,visual);AbilityVisuals.dissipate(c,at);return false;
         }
         AbilityVisuals.flight(c,last[0],at,age,false,visual);last[0]=at;if(u<1)return true;

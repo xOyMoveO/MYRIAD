@@ -13,16 +13,7 @@ import net.minecraft.world.phys.Vec3;
 
 final class MingZhuRegressionChecks {
     static void verify(GameTestHelper h) throws ReflectiveOperationException {
-        h.assertTrue(FullGameReset.stale("new", "old") && FullGameReset.stale("new", "")
-                && !FullGameReset.stale("new", "new") && !FullGameReset.stale("", "old"),
-                "Reset generation invalidates old and offline data exactly once");
-        h.assertTrue(com.myriad.network.EnemyHealthPayload.inRange(400)
-                && !com.myriad.network.EnemyHealthPayload.inRange(400.01),"Health display cutoff is exactly twenty blocks");
-        h.assertTrue(MatchBalance.towerScale(0,0)==1.0 && Math.abs(MatchBalance.towerScale(24000,4)-4.4)<.000001,
-                "Tower pressure has bounded time and focus scaling");
-        h.assertTrue(MatchBalance.killReward(true,0,0,0,0)<MatchBalance.killReward(true,9600,0,0,0)
-                && MatchBalance.killReward(false,9600,0,0,2)>MatchBalance.killReward(false,9600,0,0,0),
-                "Kill reward ramps to eight minutes and compensates a two-level underdog");
+        SharedControlChecks.verifyCombatContracts(h);
         ServerPlayer p = (ServerPlayer)h.makeMockServerPlayer(GameType.SURVIVAL);
         p.connection = new net.minecraft.server.network.ServerGamePacketListenerImpl(h.getLevel().getServer(),
                 new net.minecraft.network.Connection(net.minecraft.network.protocol.PacketFlow.SERVERBOUND), p,
@@ -50,17 +41,7 @@ final class MingZhuRegressionChecks {
         MingZhuSkills.handleCast(p,d,3,r,false,false);
         h.assertTrue(!MingZhuSkills.channeling(p)&&d.getMingzhuEnergy()==120&&d.getCooldown(r.getId())>0,"Manual cancellation preserves energy and starts cooldown");
         h.assertTrue(Math.abs(p.getAttributeValue(Attributes.MOVEMENT_SPEED)-speed)<.0001,"Cancellation restores movement");
-        Vec3 forward=new Vec3(0,0,1);
-        Vec3 turn=MingZhuSkills.turnToward(forward,new Vec3(0,0,-1),Math.PI/60);
-        h.assertTrue(Math.abs(Math.acos(forward.dot(turn))-Math.PI/60)<.00001,"Beam cannot snap behind its caster");
-        var target=net.minecraft.world.entity.EntityTypes.COW.create(h.getLevel(),net.minecraft.world.entity.EntitySpawnReason.MOB_SUMMONED);
-        target.getAttribute(Attributes.MAX_HEALTH).setBaseValue(1000);target.setHealth(1000);
-        float before=target.getHealth();
-        for(int i=0;i<16;i++) {
-            var roll=DamageCalc.dealUncriticalSkillDamage(p,target,1,DamageCalc.Kind.MAGIC,3);
-            h.assertTrue(!roll.crit(),"Beam damage must never crit");
-        }
-        h.assertTrue(before-target.getHealth()>15.9F,"All sixteen beam pulses must survive vanilla hurt cooldown");
+        SharedControlChecks.verifyGeometry(h);
         verifyRework(h,p,d);
         MingZhuSkills.clearFor(p,true);
         h.assertTrue(d.getMingzhuEnergy()==0&&!MingZhuSkills.channeling(p),"Death/reset clears energy and channel");
@@ -73,7 +54,7 @@ final class MingZhuRegressionChecks {
                 && clean.getMingzhuEnergy()==0 && clean.getBuff("reset_probe")==0
                 && p.getInventory().getItem(0).isEmpty(),
                 "Full player reset clears role, faction, progression, resources, buffs, runes and match inventory");
-        target.discard();p.discard();
+        p.discard();
     }
 
     private static Object state(ServerPlayer p) throws ReflectiveOperationException {
@@ -105,8 +86,6 @@ final class MingZhuRegressionChecks {
             h.assertTrue(d.getMingzhuEnergyEighths()==energy&&!MingZhuSkills.channeling(p),
                     "Energy above thirty must persist out of combat without an explicit R input");
         }
-        for(var type : CharacterType.values()) h.assertTrue(
-                com.myriad.character.SkillPresentation.impactSound(type)!=null,"Every hero has an impact sound");
         d.setMingzhuEnergyEighths(775);var saved=new PlayerData();saved.copyStateFrom(d);
         h.assertTrue(saved.getMingzhuEnergyEighths()==775,"Half-cost energy preserves eighth-unit remainder on reconnect");
         Object s=state(p);put(s,"mirror",p.position().add(0,0,2));put(s,"mirrorDir",new Vec3(0,0,1));put(s,"mirrorUntil",h.getLevel().getGameTime()+80);put(s,"wLevel",1);

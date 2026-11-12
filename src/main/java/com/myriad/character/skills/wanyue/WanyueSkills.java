@@ -3,7 +3,7 @@ package com.myriad.character.skills.wanyue;
 import com.mojang.math.Transformation;
 import com.myriad.character.CharacterType;
 import com.myriad.character.Skill;
-import com.myriad.character.skills.sulan.FengQiangSkill;
+import com.myriad.combat.WindWallSystem;
 import com.myriad.combat.DamageCalc;
 import com.myriad.game.Faction;
 import com.myriad.game.GameManager;
@@ -326,7 +326,7 @@ public final class WanyueSkills extends Skill {
                 Vec3 desired = w.orbitCenter.add(5, 0, 0);
                 Vec3 step = desired.subtract(w.pos).scale(1.0 / w.orbitEntryTicks);
                 Vec3 next = w.pos.add(step);
-                if (FengQiangSkill.blocksProjectile(p.level(), w.pos, next)) {
+                if (WindWallSystem.blocksProjectile(p.level(), w.pos, next)) {
                     w.velocity = Vec3.ZERO; w.windWallWait = 4;
                 } else {
                     if (!blocked(p.level(), p, w.pos, next)) w.pos = next;
@@ -335,7 +335,7 @@ public final class WanyueSkills extends Skill {
                 if (w.orbitEntryTicks == 0) w.angle = 0;
             } else if (w.detachedTicks > 0) {
                 Vec3 next = w.pos.add(horizontal(w.velocity));
-                if (FengQiangSkill.blocksProjectile(p.level(), w.pos, next)) {
+                if (WindWallSystem.blocksProjectile(p.level(), w.pos, next)) {
                     w.velocity = Vec3.ZERO; w.windWallWait = 4;
                 } else {
                     if (!blocked(p.level(), p, w.pos, next)) w.pos = next;
@@ -349,7 +349,7 @@ public final class WanyueSkills extends Skill {
                 Vec3 desired = w.orbitCenter.add(Math.cos(w.angle) * w.radius, 0,
                         Math.sin(w.angle) * w.radius);
                 w.velocity = desired.subtract(w.pos);
-                if (FengQiangSkill.blocksProjectile(p.level(), w.pos, desired)) {
+                if (WindWallSystem.blocksProjectile(p.level(), w.pos, desired)) {
                     w.velocity = Vec3.ZERO; w.windWallWait = 4;
                 } else if (!blocked(p.level(), p, w.pos, desired)) w.pos = desired;
                 hitR(p, w, now, from, w.pos);
@@ -361,7 +361,7 @@ public final class WanyueSkills extends Skill {
             Vec3 steered = horizontal(w.velocity).scale(.35).add(desired.normalize().scale(.65));
             w.velocity = steered.normalize().scale(1.25);
             Vec3 next = w.pos.add(w.velocity);
-            if (FengQiangSkill.blocksProjectile(p.level(), w.pos, next)) {
+            if (WindWallSystem.blocksProjectile(p.level(), w.pos, next)) {
                 w.retryWait = 10; w.velocity = Vec3.ZERO;
             } else if (blocked(p.level(), p, w.pos, next)) {
                 w.returnFailures++;
@@ -378,7 +378,7 @@ public final class WanyueSkills extends Skill {
                 double speed = w.boostTicks-- > 0 ? 1.25 : Math.max(.25, w.velocity.length());
                 w.velocity = w.velocity.normalize().scale(Math.min(speed, w.travelLeft));
                 Vec3 next = w.pos.add(w.velocity);
-                if (FengQiangSkill.blocksProjectile(p.level(), w.pos, next)) {
+                if (WindWallSystem.blocksProjectile(p.level(), w.pos, next)) {
                     w.velocity = Vec3.ZERO; w.travelLeft = 0; w.hoverTicks = 60;
                 } else if (!MapSystem.contains(next.x, next.z) || blocked(p.level(), p, w.pos, next)) {
                     w.velocity = Vec3.ZERO; w.travelLeft = 0; w.hoverTicks = 60;
@@ -545,7 +545,7 @@ public final class WanyueSkills extends Skill {
         s.moonwaves.removeIf(wave -> {
             Vec3 from = wave.pos;
             Vec3 to = from.add(wave.velocity);
-            if (FengQiangSkill.blocksProjectile(p.level(), from, to)) {
+            if (WindWallSystem.blocksProjectile(p.level(), from, to)) {
                 renderMoonwaveBurst(p.level(), from, wave.golden);
                 return true;
             }

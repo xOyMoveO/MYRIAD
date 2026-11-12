@@ -15,5 +15,5 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 public final class WindBarrierSkill extends AbilitySkill {
     public WindBarrierSkill(Definition definition){super(definition);}
     @Override public void present(Cast c){com.myriad.character.ability.AbilityVisuals.arc(c,c.player.position(),2,100);}
-    @Override public void release(Cast c){com.myriad.character.skills.sulan.FengQiangSkill.createWall(c.player,c.data,50+4*(c.rank-1),false);}
+    @Override public void release(Cast c){com.myriad.combat.WindWallSystem.createWall(c.player,c.data,50+4*(c.rank-1),false);}
 }
