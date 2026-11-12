@@ -292,7 +292,7 @@ public final class MingZhuSkills extends Skill {
         if(p.connection!=null)PlayerDataProvider.syncToClient(p);
     }
     public static void onHeroDamage(ServerPlayer victim,LivingEntity attacker){if(attacker instanceof ServerPlayer&&role(PlayerDataProvider.get(victim)))PlayerDataProvider.get(victim).setMingzhuHeroCombatAt(victim.level().getGameTime());}
-    private static boolean controlled(ServerPlayer p){return com.myriad.character.skills.yunsheng.YunShengSkills.isSilenced(p)||p.hasEffect(MobEffects.LEVITATION)||(p.hasEffect(MobEffects.SLOWNESS)&&p.getEffect(MobEffects.SLOWNESS).getAmplifier()>=200);}
+    private static boolean controlled(ServerPlayer p){return com.myriad.combat.SilenceSystem.isSilenced(p)||p.hasEffect(MobEffects.LEVITATION)||(p.hasEffect(MobEffects.SLOWNESS)&&p.getEffect(MobEffects.SLOWNESS).getAmplifier()>=200);}
     private static float sp(ServerPlayer p){return (float)p.getAttributeValue(ModAttributes.SPELL_POWER);}
     private static float health(LivingEntity t){
         if(MonsterManager.isMonster(t))return MonsterManager.modHealth(t);
@@ -303,16 +303,17 @@ public final class MingZhuSkills extends Skill {
     private static int cooldown(ServerPlayer p,Skill skill,PlayerData d){return Math.max(1,(int)Math.ceil(skill.getCooldownTicks(Math.max(1,d.skillLevel(skill.getId())))*(1-Math.clamp(p.getAttributeValue(ModAttributes.COOLDOWN_REDUCTION),0,60)/100)));}
     private static void message(ServerPlayer p,String key,Object...args){p.sendSystemMessage(Component.translatable(key,args));}
     private static Vec3 flat(Vec3 v){Vec3 h=v.multiply(1,0,1);return h.lengthSqr()<1e-6?new Vec3(0,0,1):h.normalize();}
-    public static Vec3 turnToward(Vec3 from,Vec3 to,double radians){double dot=Math.clamp(from.dot(to),-1,1),angle=Math.acos(dot);if(angle<=radians)return to;Vec3 axis=to.subtract(from.scale(dot));if(axis.lengthSqr()<1e-8)axis=from.cross(Math.abs(from.y)<.9?new Vec3(0,1,0):new Vec3(1,0,0));return from.scale(Math.cos(radians)).add(axis.normalize().scale(Math.sin(radians))).normalize();}
+    public static Vec3 turnToward(Vec3 from,Vec3 to,double radians) {
+        return com.myriad.character.ability.AbilityGeometry.turnToward(from,to,radians);
+    }
     private static Vec3 ground(ServerPlayer p){
         Vec3 a=p.getEyePosition(),b=a.add(p.getLookAngle().scale(8));BlockHitResult hit=p.level().clip(new ClipContext(a,b,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,p));
         if(hit.getType()!=HitResult.Type.BLOCK||hit.getDirection()!=net.minecraft.core.Direction.UP)return null;
         Vec3 point=hit.getLocation().add(0,.025,0);if(!MapSystem.contains(point.x,point.z)||a.distanceTo(point)>8.05)return null;
         return p.level().noCollision(new AABB(point.add(-.3,.02,-.3),point.add(.3,2.4,.3)))?point:null;
     }
-    public static Vec3 clip(ServerPlayer p,Vec3 a,Vec3 b){
-        BlockHitResult hit=p.level().clip(new ClipContext(a,b,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,p));Vec3 end=hit.getType()==HitResult.Type.BLOCK?hit.getLocation():b;
-        Vec3 wall=com.myriad.character.skills.sulan.FengQiangSkill.firstEnemyHit(p,a,end);return wall==null?end:wall;
+    public static Vec3 clip(ServerPlayer p,Vec3 a,Vec3 b) {
+        return com.myriad.character.ability.AbilityGeometry.clip(p,a,b);
     }
     private static List<LivingEntity> targets(ServerPlayer p,Vec3 a,Vec3 b,double radius,boolean buildings){
         Faction own=LaneSystem.factionOf(p);

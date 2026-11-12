@@ -7,7 +7,7 @@ import com.myriad.player.PlayerData;
 import com.myriad.player.PlayerDataProvider;
 import com.myriad.registry.ModAttributes;
 import com.myriad.character.CharacterType;
-import com.myriad.character.skills.sulan.FengQiangSkill;
+import com.myriad.combat.WindWallSystem;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -109,7 +109,7 @@ public final class BasicAttackSystem {
         AttackWindow window = attackWindow(now, current);
         if (!window.allowed()) return;
         ATTACK_COOLDOWNS.put(attacker.getUUID(), new AttackCooldown(now + cooldownTicks, cooldownTicks));
-        if (ranged && FengQiangSkill.blocksProjectile(level, origin,
+        if (ranged && WindWallSystem.blocksProjectile(level, origin,
                 target.getBoundingBox().getCenter())) {
             PlayerDataProvider.syncToClient(attacker);
             level.playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(),

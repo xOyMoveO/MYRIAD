@@ -40,6 +40,7 @@ final class FirstGroupRegressionChecks {
             FlameStepAudioChecks.verify(h);
             NightBasicNeedleChecks.verify(h);
             NightShieldChecks.verify(h);
+            SharedControlChecks.start(h);
             LevelUpPresentationChecks.verify(h);
             RuneRemovalChecks.run(h, p);
             CombatImpactChecks.verify(h,p);

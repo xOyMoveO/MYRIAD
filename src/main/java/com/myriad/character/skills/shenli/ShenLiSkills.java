@@ -2,7 +2,7 @@ package com.myriad.character.skills.shenli;
 
 import com.myriad.character.CharacterType;
 import com.myriad.character.Skill;
-import com.myriad.character.skills.sulan.FengQiangSkill;
+import com.myriad.combat.WindWallSystem;
 import com.myriad.combat.DamageCalc;
 import com.myriad.game.Faction;
 import com.myriad.game.GameManager;
@@ -281,7 +281,7 @@ public final class ShenLiSkills extends Skill {
     private static void fillAmmo(State s,Color start,int count){s.ammo.clear();Color c=start;for(int i=0;i<count;i++){s.ammo.addLast(c);c=c.next();}}
     private static boolean canShoot(State s,long now){return s.forcedUntil<=now&&s.wStarted<=0&&s.wFinishAt<=now;}
     private static void spawnBullet(ServerPlayer p,State s,Bullet b){s.bullets.add(b);}
-    private static boolean blocked(ServerLevel level,ServerPlayer p,Vec3 from,Vec3 to){return FengQiangSkill.blocksProjectile(level,from,to)||com.myriad.character.skills.feiyu.FeiYuSkills.blocksProjectile(level,p,from,to)||level.clip(new ClipContext(from,to,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,p)).getType()!=HitResult.Type.MISS;}
+    private static boolean blocked(ServerLevel level,ServerPlayer p,Vec3 from,Vec3 to){return WindWallSystem.blocksProjectile(level,from,to)||com.myriad.character.skills.feiyu.FeiYuSkills.blocksProjectile(level,p,from,to)||level.clip(new ClipContext(from,to,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,p)).getType()!=HitResult.Type.MISS;}
     private static LivingEntity firstTarget(ServerPlayer p,Vec3 from,Vec3 to,double width){double heroPadding=.35;AABB box=new AABB(Math.min(from.x,to.x),Math.min(from.y,to.y),Math.min(from.z,to.z),Math.max(from.x,to.x),Math.max(from.y,to.y),Math.max(from.z,to.z)).inflate(width+heroPadding);LivingEntity best=null;double d=Double.MAX_VALUE;for(LivingEntity e:p.level().getEntitiesOfClass(LivingEntity.class,box,e->e!=p&&e.isAlive()&&!ally(p,e))){double padding=width+(e instanceof ServerPlayer?heroPadding:0);if(e.getBoundingBox().inflate(padding).clip(from,to).isEmpty())continue;double x=e.distanceToSqr(from);if(x<d){d=x;best=e;}}return best;}
     private static boolean ally(ServerPlayer p,LivingEntity e){if(com.myriad.game.JiarenManager.isFriendlyDummy(p,e))return true;if(!(e instanceof ServerPlayer other)){Faction a=GameManager.get()==null?null:GameManager.get().factionOf(p),b=com.myriad.game.LaneSystem.factionOf(e);return a!=null&&a==b;}GameManager gm=GameManager.get();return gm!=null&&gm.factionOf(p)!=null&&gm.factionOf(p)==gm.factionOf(other);}
 

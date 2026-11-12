@@ -772,7 +772,9 @@ public final class PlayerDataProvider {
             com.myriad.character.skills.sulan.SuLanPassiveSkill.clearFor(player.getUUID());
             com.myriad.character.skills.sulan.JiFengTuCiSkill.clearFor(player.getUUID());
             com.myriad.character.skills.sulan.LingFengBiaoJiSkill.clearFor(player.getUUID());
-            com.myriad.character.skills.sulan.FengQiangSkill.clearFor(player.getUUID());
+            com.myriad.combat.WindWallSystem.clearFor(player.getUUID());
+            com.myriad.combat.SilenceSystem.clearFor(player.getUUID());
+            com.myriad.combat.FrozenControlSystem.clearFor(player.getUUID());
             com.myriad.character.skills.sulan.YuFengQianLiSkill.clearFor(player.getUUID());
             com.myriad.character.skills.hanze.HanzeSkills.clearFor(player.getUUID());
             com.myriad.character.skills.qingluo.QingLuoSkills.clearFor(player.getUUID());
@@ -822,7 +824,9 @@ public final class PlayerDataProvider {
             com.myriad.character.skills.sulan.SuLanPassiveSkill.clearFor(id);
             com.myriad.character.skills.sulan.JiFengTuCiSkill.clearFor(id);
             com.myriad.character.skills.sulan.LingFengBiaoJiSkill.clearFor(id);
-            com.myriad.character.skills.sulan.FengQiangSkill.clearFor(id);
+            com.myriad.combat.WindWallSystem.clearFor(id);
+            com.myriad.combat.SilenceSystem.clearFor(id);
+            com.myriad.combat.FrozenControlSystem.clearFor(id);
             com.myriad.character.skills.sulan.YuFengQianLiSkill.clearFor(id);
             com.myriad.character.skills.hanze.HanzeSkills.clearFor(id);
             com.myriad.character.skills.lingyuan.LingYuanSkills.clearFor(id);
@@ -1274,7 +1278,9 @@ public final class PlayerDataProvider {
         // 装备特殊机制（疾风靴脱战移速）
         com.myriad.player.EquipmentEffects.tick(player);
         com.myriad.character.ability.AbilityRuntime.tick(player);
-        com.myriad.character.skills.sulan.FengQiangSkill.tick(player, data);
+        com.myriad.combat.WindWallSystem.tick(player, data);
+        com.myriad.combat.SilenceSystem.tick(player.level().getGameTime());
+        com.myriad.combat.FrozenControlSystem.tick(player, player.level());
         if (!com.myriad.character.rework.FirstGroupSkills.active(data.getCharacterId())) {
         // 影袭冲刺推进
         com.myriad.character.skills.yingxiao.YingXiSkill.tickDash(player, data);

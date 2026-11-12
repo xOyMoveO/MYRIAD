@@ -168,7 +168,7 @@ public final class MagicBullet {
     /** 推进单颗魔法弹；返回 true 表示已消耗（命中、撞墙或射程耗尽） */
     private static boolean tickOne(ServerLevel level, ServerPlayer caster, Bullet b) {
         Vec3 next = b.pos.add(b.dir.scale(SPEED));
-        if (com.myriad.character.skills.sulan.FengQiangSkill.firstEnemyHit(caster, b.pos, next) != null) {
+        if (com.myriad.combat.WindWallSystem.firstEnemyHit(caster, b.pos, next) != null) {
             return true;
         }
         LivingEntity target = findFirstEnemy(level, caster, b.pos, next);
