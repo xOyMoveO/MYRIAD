@@ -1,0 +1,487 @@
+{
+  "meta": {
+    "name": "siege_minion_red",
+    "description": "24px wide, 32px high armored sect siege construct with articulated hammer arms"
+  },
+  "target": "entity",
+  "atlas": {
+    "width": 256,
+    "height": 64,
+    "regions": [
+      {
+        "id": "stone",
+        "rect": [
+          0,
+          0,
+          64,
+          64
+        ],
+        "fill": "#475363",
+        "palette": [
+          "#435060",
+          "#596574"
+        ],
+        "noise": 0.16
+      },
+      {
+        "id": "armor",
+        "rect": [
+          64,
+          0,
+          64,
+          64
+        ],
+        "fill": "#893b43"
+      },
+      {
+        "id": "trim",
+        "rect": [
+          128,
+          0,
+          64,
+          64
+        ],
+        "fill": "#c6a668"
+      },
+      {
+        "id": "energy",
+        "rect": [
+          192,
+          0,
+          64,
+          64
+        ],
+        "fill": "#ffcba0"
+      }
+    ]
+  },
+  "parts": [
+    {
+      "id": "body",
+      "size": [
+        14,
+        12,
+        10
+      ],
+      "pos": [
+        -7,
+        12,
+        -5
+      ],
+      "uv_origin": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "waist",
+      "parent": "body",
+      "size": [
+        12,
+        3,
+        8
+      ],
+      "pos": [
+        -6,
+        9,
+        -4
+      ],
+      "uv_origin": [
+        64,
+        0
+      ]
+    },
+    {
+      "id": "head",
+      "parent": "body",
+      "size": [
+        8,
+        6,
+        8
+      ],
+      "pos": [
+        -4,
+        24,
+        -4
+      ],
+      "uv_origin": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "crown",
+      "parent": "head",
+      "size": [
+        10,
+        2,
+        9
+      ],
+      "pos": [
+        -5,
+        30,
+        -4.5
+      ],
+      "uv_origin": [
+        128,
+        0
+      ]
+    },
+    {
+      "id": "chest",
+      "parent": "body",
+      "size": [
+        12,
+        8,
+        2
+      ],
+      "pos": [
+        -6,
+        15,
+        -7
+      ],
+      "uv_origin": [
+        64,
+        0
+      ]
+    },
+    {
+      "id": "core",
+      "parent": "chest",
+      "size": [
+        4,
+        4,
+        1
+      ],
+      "pos": [
+        -2,
+        17,
+        -8
+      ],
+      "uv_origin": [
+        192,
+        0
+      ]
+    },
+    {
+      "id": "eye_L",
+      "parent": "head",
+      "size": [
+        2,
+        1,
+        1
+      ],
+      "pos": [
+        -3,
+        27,
+        -5
+      ],
+      "uv_origin": [
+        192,
+        0
+      ]
+    },
+    {
+      "id": "eye_R",
+      "parent": "head",
+      "size": [
+        2,
+        1,
+        1
+      ],
+      "pos": [
+        1,
+        27,
+        -5
+      ],
+      "uv_origin": [
+        192,
+        0
+      ]
+    },
+    {
+      "id": "leg_L",
+      "size": [
+        6,
+        9,
+        7
+      ],
+      "pos": [
+        -7,
+        0,
+        -3.5
+      ],
+      "uv_origin": [
+        0,
+        0
+      ],
+      "pivot": [
+        -4,
+        9,
+        0
+      ]
+    },
+    {
+      "id": "leg_R",
+      "size": [
+        6,
+        9,
+        7
+      ],
+      "pos": [
+        1,
+        0,
+        -3.5
+      ],
+      "uv_origin": [
+        0,
+        0
+      ],
+      "pivot": [
+        4,
+        9,
+        0
+      ]
+    },
+    {
+      "id": "foot_L",
+      "parent": "leg_L",
+      "size": [
+        7,
+        3,
+        10
+      ],
+      "pos": [
+        -7.5,
+        0,
+        -6
+      ],
+      "uv_origin": [
+        64,
+        0
+      ],
+      "pivot": [
+        -4,
+        9,
+        0
+      ]
+    },
+    {
+      "id": "foot_R",
+      "parent": "leg_R",
+      "size": [
+        7,
+        3,
+        10
+      ],
+      "pos": [
+        0.5,
+        0,
+        -6
+      ],
+      "uv_origin": [
+        64,
+        0
+      ],
+      "pivot": [
+        4,
+        9,
+        0
+      ]
+    },
+    {
+      "id": "arm_L",
+      "size": [
+        5,
+        9,
+        6
+      ],
+      "pos": [
+        -12,
+        13,
+        -3
+      ],
+      "uv_origin": [
+        0,
+        0
+      ],
+      "pivot": [
+        -9.5,
+        23,
+        0
+      ]
+    },
+    {
+      "id": "arm_R",
+      "size": [
+        5,
+        9,
+        6
+      ],
+      "pos": [
+        7,
+        13,
+        -3
+      ],
+      "uv_origin": [
+        0,
+        0
+      ],
+      "pivot": [
+        9.5,
+        23,
+        0
+      ]
+    },
+    {
+      "id": "hammer_L",
+      "parent": "arm_L",
+      "size": [
+        7,
+        8,
+        10
+      ],
+      "pos": [
+        -12,
+        6,
+        -6
+      ],
+      "uv_origin": [
+        64,
+        0
+      ],
+      "pivot": [
+        -9.5,
+        23,
+        0
+      ]
+    },
+    {
+      "id": "hammer_R",
+      "parent": "arm_R",
+      "size": [
+        7,
+        8,
+        10
+      ],
+      "pos": [
+        5,
+        6,
+        -6
+      ],
+      "uv_origin": [
+        64,
+        0
+      ],
+      "pivot": [
+        9.5,
+        23,
+        0
+      ]
+    },
+    {
+      "id": "shoulder_L",
+      "parent": "arm_L",
+      "size": [
+        7,
+        4,
+        10
+      ],
+      "pos": [
+        -12,
+        23,
+        -5
+      ],
+      "uv_origin": [
+        128,
+        0
+      ],
+      "pivot": [
+        -9.5,
+        23,
+        0
+      ]
+    },
+    {
+      "id": "shoulder_R",
+      "parent": "arm_R",
+      "size": [
+        7,
+        4,
+        10
+      ],
+      "pos": [
+        5,
+        23,
+        -5
+      ],
+      "uv_origin": [
+        128,
+        0
+      ],
+      "pivot": [
+        9.5,
+        23,
+        0
+      ]
+    },
+    {
+      "id": "seal_L",
+      "parent": "arm_L",
+      "size": [
+        4,
+        3,
+        1
+      ],
+      "pos": [
+        -10.5,
+        9,
+        -7
+      ],
+      "uv_origin": [
+        192,
+        0
+      ],
+      "pivot": [
+        -9.5,
+        23,
+        0
+      ]
+    },
+    {
+      "id": "seal_R",
+      "parent": "arm_R",
+      "size": [
+        4,
+        3,
+        1
+      ],
+      "pos": [
+        6.5,
+        9,
+        -7
+      ],
+      "uv_origin": [
+        192,
+        0
+      ],
+      "pivot": [
+        9.5,
+        23,
+        0
+      ]
+    }
+  ],
+  "face_details": [
+    {
+      "id": "core_detail",
+      "part": "core",
+      "kind": "geometry"
+    },
+    {
+      "id": "hammers",
+      "part": "hammer_R",
+      "kind": "geometry"
+    }
+  ]
+}

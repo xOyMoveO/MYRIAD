@@ -1,0 +1,30 @@
+Myriad combat contact sounds (2026-11-05)
+
+Source recordings by Kenney / Kenney Vleugels:
+1. Impact Sounds (1.0), creation date 19-12-2019
+   https://kenney.nl/assets/impact-sounds
+2. RPG Audio (1.0)
+   https://kenney.nl/assets/rpg-audio
+
+Both original packs: Creative Commons Zero (CC0)
+https://creativecommons.org/publicdomain/zero/1.0/
+The supplied pack licenses allow use in personal and commercial projects.
+Credit is appreciated but not mandatory. Original license files are retained
+with the downloaded source packs in the project audio art-source directory.
+
+Derived assets: assets/myriad/sounds/combat_impact/*.ogg
+Changes: mono 48kHz conversion, start-silence trimming, low-frequency cleanup,
+short tails/fades, level balancing, and layering existing Foley recordings.
+No music, voice, franchise sounds, or synthesized electronic tones are used.
+
+Blade/critical/swing: knifeSlice, knifeSlice2, cloth1..3 (RPG Audio).
+Blade/blunt/arcane/critical: impactPunch_medium/heavy_000..002.
+Projectile: impactSoft_heavy_000..002, impactWood_light_000..002.
+Shield/arcane: impactGlass_light/medium_000..002.
+Blade/critical/structure/shield: impactMetal_light/medium/heavy_000..002.
+Blunt/structure: impactWood_heavy_000..002; structure: impactMining_000..002.
+Shield: impactSoft_medium_000..002.
+
+Only the derived 24 short sound effects, not the full original packs or their
+branding, are included in the game JAR. The rest of this mod retains its own
+license; this notice identifies the independently CC0 audio source material.

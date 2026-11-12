@@ -1,0 +1,24 @@
+Fenjue Flame Cross Slash: user-selected recordings, edited 2026-11-09.
+
+1. Sword Slash and Swing - DavidDumaisAudio
+https://pixabay.com/sound-effects/film-special-effects-sword-slash-and-swing-185432/
+User-supplied file: 斩击.mp3
+SHA256: 2e4742e14585772e8f0c2ea0834150df95f0c973f97b540a88370e109b0135e5
+Derived game asset: assets/myriad/sounds/skill/fenjue/slash_double.ogg
+Edits: excerpt 0.10-0.74s, tempo 1.6 (pitch preserved), band filtering,
+short fades, two strokes 0.180s apart, peak attenuation, mono Vorbis 48kHz.
+
+2. SFX - Collection of Flame Sword Swoosh Sound Design Elements - Fronbondi_Skegs
+https://pixabay.com/sound-effects/film-special-effects-sfx-collection-of-flame-sword-swoosh-sound-design-elements-275902/
+User-supplied file: 火焰.mp3
+SHA256: c14838525b180a13b0c0fc9f6113bc4a11ddc34e9f167b5cbcab744311ab7d6b
+Derived game asset: assets/myriad/sounds/skill/fenjue/slash_flame_layer.ogg
+Edits: excerpt 0.19-0.72s, tempo 1.35 (pitch preserved), band filtering,
+short fades, two strokes 0.180s apart, lower peak, mono Vorbis 48kHz.
+
+Both source pages list the Pixabay Content License:
+https://pixabay.com/service/license-summary/
+https://pixabay.com/service/terms/
+Used as adapted, synchronized in-game feedback; not sold or offered as a
+standalone sound library. These recordings are third-party material and are
+not relicensed as original Myriad audio. Original downloads are not in JAR.

@@ -1,0 +1,16 @@
+gradle.projectsEvaluated {
+    def checkOutput=rootProject.layout.buildDirectory.dir('gun-ballistics-check')
+    def compileCheck=rootProject.tasks.register('compileGunCheck',JavaCompile) {
+        dependsOn rootProject.tasks.named('classes')
+        source=rootProject.fileTree('tools/gun-check'){include '*.java'}
+        classpath=rootProject.sourceSets.main.compileClasspath+rootProject.sourceSets.main.output
+        destinationDirectory=checkOutput
+        javaCompiler=rootProject.javaToolchains.compilerFor{languageVersion=JavaLanguageVersion.of(25)}
+    }
+    rootProject.tasks.register('verifyGunBallistics',JavaExec) {
+        dependsOn compileCheck
+        classpath=rootProject.files(checkOutput)+rootProject.sourceSets.main.runtimeClasspath
+        mainClass='com.myriad.check.GunBallisticsCheck'
+        javaLauncher=rootProject.javaToolchains.launcherFor{languageVersion=JavaLanguageVersion.of(25)}
+    }
+}

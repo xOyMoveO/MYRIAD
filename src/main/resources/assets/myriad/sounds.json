@@ -1,0 +1,457 @@
+{
+  "mingzhu_orb_cast": {
+    "sounds": [
+      {
+        "name": "myriad:mingzhu/orb_cast_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "myriad:mingzhu/orb_cast_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "mingzhu_orb_hit": {
+    "sounds": [
+      {
+        "name": "myriad:mingzhu/orb_hit_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "myriad:mingzhu/orb_hit_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "mingzhu_mirror_place": {
+    "sounds": [
+      {
+        "name": "myriad:mingzhu/mirror_place_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "myriad:mingzhu/mirror_place_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "mingzhu_mirror_turn": {
+    "sounds": [
+      {
+        "name": "myriad:mingzhu/mirror_turn_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "myriad:mingzhu/mirror_turn_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "mingzhu_dash": {
+    "sounds": [
+      {
+        "name": "myriad:mingzhu/dash_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "myriad:mingzhu/dash_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "mingzhu_beam_start": {
+    "sounds": [
+      {
+        "name": "myriad:mingzhu/beam_start_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "myriad:mingzhu/beam_start_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "mingzhu_beam_body": {
+    "sounds": [
+      {
+        "name": "myriad:mingzhu/beam_body_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "myriad:mingzhu/beam_body_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "mingzhu_beam_end": {
+    "sounds": [
+      {
+        "name": "myriad:mingzhu/beam_end_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "myriad:mingzhu/beam_end_2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "ui_level_up": {
+    "sounds": [
+      "myriad:foley/ice_1",
+      "myriad:foley/ice_2"
+    ]
+  },
+  "ui_purchase": {
+    "sounds": [
+      "myriad:foley/stone_1",
+      "myriad:foley/stone_2"
+    ]
+  },
+  "announcement_kill_single": {
+    "sounds": [
+      "myriad:announcement/kill_single_1",
+      "myriad:announcement/kill_single_2",
+      "myriad:announcement/kill_single_3"
+    ]
+  },
+  "announcement_kill_double": {
+    "sounds": [
+      "myriad:announcement/kill_double_1",
+      "myriad:announcement/kill_double_2",
+      "myriad:announcement/kill_double_3"
+    ]
+  },
+  "announcement_kill_triple": {
+    "sounds": [
+      "myriad:announcement/kill_triple_1",
+      "myriad:announcement/kill_triple_2"
+    ]
+  },
+  "announcement_kill_quadra": {
+    "sounds": [
+      "myriad:announcement/kill_quadra_1",
+      "myriad:announcement/kill_quadra_2"
+    ]
+  },
+  "announcement_kill_penta": {
+    "sounds": [
+      "myriad:announcement/kill_penta_1",
+      "myriad:announcement/kill_penta_2"
+    ]
+  },
+  "hanze_passive_proc": {
+    "sounds": [
+      {
+        "name": "myriad:foley/ice_1"
+      },
+      {
+        "name": "myriad:foley/ice_2"
+      }
+    ]
+  },
+  "hanze_ice_spike_cast": {
+    "sounds": [
+      {
+        "name": "myriad:foley/ice_1"
+      },
+      {
+        "name": "myriad:foley/ice_2"
+      }
+    ]
+  },
+  "hanze_frost_shield_cast": {
+    "sounds": [
+      {
+        "name": "myriad:foley/ice_1"
+      },
+      {
+        "name": "myriad:foley/ice_2"
+      }
+    ]
+  },
+  "hanze_absolute_zero_charge": {
+    "sounds": [
+      {
+        "name": "myriad:foley/ice_1"
+      },
+      {
+        "name": "myriad:foley/ice_2"
+      }
+    ]
+  },
+  "hanze_absolute_zero_burst": {
+    "sounds": [
+      {
+        "name": "myriad:foley/ice_1"
+      },
+      {
+        "name": "myriad:foley/ice_2"
+      }
+    ]
+  },
+  "hanze_frozen_expanse_cast": {
+    "sounds": [
+      {
+        "name": "myriad:foley/ice_1"
+      },
+      {
+        "name": "myriad:foley/ice_2"
+      }
+    ]
+  },
+  "zhechuan_throw": {
+    "sounds": [
+      {
+        "name": "myriad:foley/blade_1"
+      },
+      {
+        "name": "myriad:foley/blade_2"
+      }
+    ]
+  },
+  "zhechuan_outbound": {
+    "sounds": [
+      {
+        "name": "myriad:foley/wind_1"
+      },
+      {
+        "name": "myriad:foley/wind_2"
+      }
+    ]
+  },
+  "zhechuan_return": {
+    "sounds": [
+      {
+        "name": "myriad:foley/wind_1"
+      },
+      {
+        "name": "myriad:foley/wind_2"
+      }
+    ]
+  },
+  "zhechuan_palindrome": {
+    "sounds": [
+      {
+        "name": "myriad:foley/blade_1"
+      },
+      {
+        "name": "myriad:foley/blade_2"
+      }
+    ]
+  },
+  "zhechuan_corridor": {
+    "sounds": [
+      {
+        "name": "myriad:foley/blade_1"
+      },
+      {
+        "name": "myriad:foley/blade_2"
+      }
+    ]
+  },
+  "zhechuan_finisher": {
+    "sounds": [
+      {
+        "name": "myriad:foley/blade_1"
+      },
+      {
+        "name": "myriad:foley/blade_2"
+      }
+    ]
+  },
+  "foley_blade": {
+    "sounds": [
+      {
+        "name": "myriad:foley/blade_1"
+      },
+      {
+        "name": "myriad:foley/blade_2"
+      }
+    ]
+  },
+  "foley_wind": {
+    "sounds": [
+      {
+        "name": "myriad:foley/wind_1"
+      },
+      {
+        "name": "myriad:foley/wind_2"
+      }
+    ]
+  },
+  "foley_fire": {
+    "sounds": [
+      {
+        "name": "myriad:foley/fire_1"
+      },
+      {
+        "name": "myriad:foley/fire_2"
+      }
+    ]
+  },
+  "foley_ice": {
+    "sounds": [
+      {
+        "name": "myriad:foley/ice_1"
+      },
+      {
+        "name": "myriad:foley/ice_2"
+      }
+    ]
+  },
+  "foley_water": {
+    "sounds": [
+      {
+        "name": "myriad:foley/water_1"
+      },
+      {
+        "name": "myriad:foley/water_2"
+      }
+    ]
+  },
+  "foley_wood": {
+    "sounds": [
+      {
+        "name": "myriad:foley/wood_1"
+      },
+      {
+        "name": "myriad:foley/wood_2"
+      }
+    ]
+  },
+  "foley_stone": {
+    "sounds": [
+      {
+        "name": "myriad:foley/stone_1"
+      },
+      {
+        "name": "myriad:foley/stone_2"
+      }
+    ]
+  },
+  "foley_shot": {
+    "sounds": [
+      {
+        "name": "myriad:foley/shot_1"
+      },
+      {
+        "name": "myriad:foley/shot_2"
+      }
+    ]
+  },
+  "combat_impact_blade": {
+    "sounds": ["myriad:combat_impact/blade_1", "myriad:combat_impact/blade_2", "myriad:combat_impact/blade_3"]
+  },
+  "combat_impact_blunt": {
+    "sounds": ["myriad:combat_impact/blunt_1", "myriad:combat_impact/blunt_2", "myriad:combat_impact/blunt_3"]
+  },
+  "combat_impact_projectile": {
+    "sounds": ["myriad:combat_impact/projectile_1", "myriad:combat_impact/projectile_2", "myriad:combat_impact/projectile_3"]
+  },
+  "combat_impact_arcane": {
+    "sounds": ["myriad:combat_impact/arcane_1", "myriad:combat_impact/arcane_2", "myriad:combat_impact/arcane_3"]
+  },
+  "combat_impact_critical": {
+    "sounds": ["myriad:combat_impact/critical_1", "myriad:combat_impact/critical_2", "myriad:combat_impact/critical_3"]
+  },
+  "combat_impact_structure": {
+    "sounds": ["myriad:combat_impact/structure_1", "myriad:combat_impact/structure_2", "myriad:combat_impact/structure_3"]
+  },
+  "combat_impact_shield": {
+    "sounds": ["myriad:combat_impact/shield_1", "myriad:combat_impact/shield_2", "myriad:combat_impact/shield_3"]
+  },
+  "combat_swing": {
+    "sounds": ["myriad:combat_impact/swing_1", "myriad:combat_impact/swing_2", "myriad:combat_impact/swing_3"]
+  },
+  "lingyuan_heaven_sweep": {
+    "sounds": [
+      {"name": "myriad:skill/lingyuan/heaven_sweep_1", "attenuation_distance": 40},
+      {"name": "myriad:skill/lingyuan/heaven_sweep_2", "attenuation_distance": 40},
+      {"name": "myriad:skill/lingyuan/heaven_sweep_3", "attenuation_distance": 40}
+    ]
+  },
+  "skill_tianxing_charge": {
+    "sounds": [
+      {"name":"myriad:skill/tianxing/charge_1","attenuation_distance":20},
+      {"name":"myriad:skill/tianxing/charge_2","attenuation_distance":20}
+    ]
+  },
+  "skill_tianxing_cast": {
+    "sounds": [
+      {"name":"myriad:skill/tianxing/cast_1","attenuation_distance":28},
+      {"name":"myriad:skill/tianxing/cast_2","attenuation_distance":28}
+    ]
+  },
+  "skill_tianxing_hit": {
+    "sounds": [
+      {"name":"myriad:skill/tianxing/hit_1","attenuation_distance":24},
+      {"name":"myriad:skill/tianxing/hit_2","attenuation_distance":24}
+    ]
+  },
+  "skill_tianxing_guard": {
+    "sounds": [
+      {"name":"myriad:skill/tianxing/guard_1","attenuation_distance":24},
+      {"name":"myriad:skill/tianxing/guard_2","attenuation_distance":24}
+    ]
+  },
+  "skill_tianxing_pulse": {
+    "sounds": [
+      {"name":"myriad:skill/tianxing/pulse_1","attenuation_distance":24},
+      {"name":"myriad:skill/tianxing/pulse_2","attenuation_distance":24}
+    ]
+  },
+  "skill_tianxing_judgment": {
+    "sounds": [
+      {"name":"myriad:skill/tianxing/judgment_1","attenuation_distance":36},
+      {"name":"myriad:skill/tianxing/judgment_2","attenuation_distance":36}
+    ]
+  },
+  "skill_fenjue_slash_blade": {
+    "sounds": [{"name":"myriad:skill/fenjue/slash_double","attenuation_distance":24}]
+  },
+  "skill_fenjue_slash_fire": {
+    "sounds": [{"name":"myriad:skill/fenjue/slash_flame_layer","attenuation_distance":24}]
+  },
+  "skill_fenjue_step_wind": {
+    "sounds": [{"name":"myriad:skill/fenjue/step_wind","attenuation_distance":24}]
+  },
+  "skill_fenjue_step_slash": {
+    "sounds": [{"name":"myriad:skill/fenjue/step_slash","attenuation_distance":24}]
+  },
+  "skill_fenjue_cage_cast": {
+    "sounds": [{"name":"myriad:skill/fenjue/cage_cast","attenuation_distance":24}]
+  },
+  "skill_fenjue_cage_open": {
+    "sounds": [{"name":"myriad:skill/fenjue/cage_open","attenuation_distance":24}]
+  },
+  "skill_fenjue_burst_charge": {
+    "sounds": [{"name":"myriad:skill/fenjue/burst_charge","attenuation_distance":24}]
+  },
+  "skill_fenjue_burst_release": {
+    "sounds": [{"name":"myriad:skill/fenjue/burst_release","attenuation_distance":24}]
+  },
+  "skill_fenjue_sea_jump": {
+    "sounds": [{"name":"myriad:skill/fenjue/sea_jump","attenuation_distance":24}]
+  },
+  "skill_fenjue_sea_impact": {
+    "sounds": [{"name":"myriad:skill/fenjue/sea_impact","attenuation_distance":24}]
+  },
+  "skill_fenjue_armor_ignite": {
+    "sounds": [{"name":"myriad:skill/fenjue/armor_ignite","attenuation_distance":24}]
+  },
+  "shuo_draw": {"sounds":[{"name":"myriad:skill/shuo/draw","attenuation_distance":20}]},
+  "shuo_sheathe": {"sounds":[{"name":"myriad:skill/shuo/sheathe","attenuation_distance":20}]},
+  "shuo_slash": {"sounds":[{"name":"myriad:skill/shuo/slash","attenuation_distance":20}]},
+  "shuo_parry": {"sounds":[{"name":"myriad:skill/shuo/parry","attenuation_distance":20}]},
+  "shuo_charge": {"sounds":[{"name":"myriad:skill/shuo/charge","attenuation_distance":20}]},
+  "foley_thunder": {
+    "sounds": [
+      {
+        "name": "myriad:foley/thunder_1"
+      },
+      {
+        "name": "myriad:foley/thunder_2"
+      }
+    ]
+  }
+}

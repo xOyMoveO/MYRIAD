@@ -1,0 +1,565 @@
+{
+  "version": 1,
+  "skills": [
+    {
+      "id": "g2_lingyuan_pa",
+      "role": "lingyuan",
+      "index": 0,
+      "category": "P-A",
+      "name": "剑心通明",
+      "maxRank": 5,
+      "mana": 0,
+      "cooldowns": [
+        0
+      ],
+      "description": "普攻命中获得10点剑罡，满100凝成1柄飞剑，最多4柄。飞剑每2秒协同攻击最近命中的10格内可见目标，每柄造成10＋3(r－1)＋12%S魔法伤害；不会穿透或再次触发被动。",
+      "iconAlias": "lingyuan_passive"
+    },
+    {
+      "id": "g2_lingyuan_pb",
+      "role": "lingyuan",
+      "index": 1,
+      "category": "P-B",
+      "name": "藏锋养势",
+      "maxRank": 5,
+      "mana": 0,
+      "cooldowns": [
+        0
+      ],
+      "description": "每成功施放3次主动技能，下一次普攻额外造成35＋12(r－1)＋35%S魔法伤害，并获得45＋15(r－1)＋25%S护盾3秒。强化不放大普攻本体，命中后消耗。",
+      "iconAlias": "lingyuan_passive"
+    },
+    {
+      "id": "g2_lingyuan_n1",
+      "role": "lingyuan",
+      "index": 2,
+      "category": "N1",
+      "name": "破云式",
+      "maxRank": 5,
+      "mana": 65,
+      "cooldowns": [
+        180
+      ],
+      "description": "沿水平方向突进6格，沿途敌人各受65＋18(r－1)＋55%S物理伤害，每人仅一次。身体遇墙停止；突进期间不能重复施放。",
+      "iconAlias": "poyunshi"
+    },
+    {
+      "id": "g2_lingyuan_n2",
+      "role": "lingyuan",
+      "index": 3,
+      "category": "N2",
+      "name": "化形为剑",
+      "maxRank": 5,
+      "mana": 80,
+      "cooldowns": [
+        300
+      ],
+      "description": "获得100＋30(r－1)＋55%S护盾4秒，前2秒受到的非真实伤害减少15%。是剑气护体，不再完全免伤或强制变形。",
+      "iconAlias": "huaxingweijian"
+    },
+    {
+      "id": "g2_lingyuan_ma",
+      "role": "lingyuan",
+      "index": 4,
+      "category": "M-A",
+      "name": "万剑诀",
+      "maxRank": 7,
+      "mana": 100,
+      "cooldowns": [
+        240
+      ],
+      "description": "按每0.2秒一柄连续射出3柄飞剑，每柄飞行18格、速度30格/秒，造成35＋10(r－1)＋25%S魔法伤害。每柄独立瞄准当前朝向，命中首敌或墙停止，可被风墙挡。",
+      "iconAlias": "wanjianjue"
+    },
+    {
+      "id": "g2_lingyuan_mb",
+      "role": "lingyuan",
+      "index": 5,
+      "category": "M-B",
+      "name": "定岳剑阵",
+      "maxRank": 7,
+      "mana": 110,
+      "cooldowns": [
+        320
+      ],
+      "description": "14格内选点，展开半径4格剑阵4秒，每秒造成35＋10(r－1)＋25%S魔法伤害并减速25%持续1秒。伤害共4次；站出剑阵即可规避。",
+      "iconAlias": "wanjianjue"
+    },
+    {
+      "id": "g2_lingyuan_ua",
+      "role": "lingyuan",
+      "index": 6,
+      "category": "U-A",
+      "name": "三千归宗",
+      "maxRank": 3,
+      "mana": 180,
+      "cooldowns": [
+        1300
+      ],
+      "description": "14格内选点，剑域半径10格、持续6秒；每秒一轮剑雨，造成55＋30(r－1)＋25%S魔法伤害，共6轮。范围大但不是瞬间爆发，离开领域即可躲避后续伤害。",
+      "iconAlias": "sanqianguizong"
+    },
+    {
+      "id": "g2_lingyuan_ub",
+      "role": "lingyuan",
+      "index": 7,
+      "category": "U-B",
+      "name": "一剑开天",
+      "maxRank": 3,
+      "mana": 170,
+      "cooldowns": [
+        1100
+      ],
+      "description": "站桩蓄力1.2秒，从背后召唤巨剑虚影，再用0.3秒向前奋力劈落，对起手朝向前方长15格、宽3格区域的敌人造成300＋100(r－1)＋120%S魔法伤害，每个目标仅结算一次。蓄力和落剑期间无法主动移动，受控制或被迫离开起手位置会打断；方向在起手时锁定，不随转头改变。地面预警与伤害区域一致；不是飞行弹体，不被风墙挡，但不穿实体墙命中，也不伤害友军或建筑。",
+      "iconAlias": "sanqianguizong"
+    },
+    {
+      "id": "g2_hanze_pa",
+      "role": "hanze",
+      "index": 0,
+      "category": "P-A",
+      "name": "霜寒领域",
+      "maxRank": 5,
+      "mana": 0,
+      "cooldowns": [
+        0
+      ],
+      "description": "直接普攻或技能命中叠1层寒霜，同一施法对同目标最多1层；4层造成25＋10(r－1)＋20%S魔法伤害并定身1秒。层数6秒失效，同目标触发后6秒免疫叠层；取消旧最大生命真伤。",
+      "iconAlias": "hanze_passive"
+    },
+    {
+      "id": "g2_hanze_pb",
+      "role": "hanze",
+      "index": 1,
+      "category": "P-B",
+      "name": "凝霜甲",
+      "maxRank": 5,
+      "mana": 0,
+      "cooldowns": [
+        0
+      ],
+      "description": "直接命中敌方单位后，获得65＋20(r－1)＋35%S护盾3秒，并将3格内敌人减速20%持续1秒。该效果每12秒最多触发一次。",
+      "iconAlias": "hanze_passive"
+    },
+    {
+      "id": "g2_hanze_n1",
+      "role": "hanze",
+      "index": 2,
+      "category": "N1",
+      "name": "冰锥术",
+      "maxRank": 5,
+      "mana": 70,
+      "cooldowns": [
+        200
+      ],
+      "description": "每0.25秒射出一枚冰锥，共3枚；每枚飞行15格、速度30格/秒，首敌受25＋8(r－1)＋20%S魔法伤害并减速20%持续1秒。每枚按发射时朝向瞄准，可被风墙挡。",
+      "iconAlias": "bingzhuishu"
+    },
+    {
+      "id": "g2_hanze_n2",
+      "role": "hanze",
+      "index": 3,
+      "category": "N2",
+      "name": "霜盾",
+      "maxRank": 5,
+      "mana": 85,
+      "cooldowns": [
+        320
+      ],
+      "description": "获得150＋40(r－1)＋65%S的模组护盾，持续4秒，并立即将周围3格敌人减速25%持续1.5秒。护盾不使用原版吸收生命，同源不无限叠加。",
+      "iconAlias": "shuangdun"
+    },
+    {
+      "id": "g2_hanze_ma",
+      "role": "hanze",
+      "index": 4,
+      "category": "M-A",
+      "name": "绝对零度",
+      "maxRank": 7,
+      "mana": 120,
+      "cooldowns": [
+        440
+      ],
+      "description": "14格内选点，站桩蓄力1秒后在半径4.5格冰爆，造成115＋25(r－1)＋70%S魔法伤害并定身1.2秒。读条期间无法主动移动，控制可打断。",
+      "iconAlias": "jueduilingdu"
+    },
+    {
+      "id": "g2_hanze_mb",
+      "role": "hanze",
+      "index": 5,
+      "category": "M-B",
+      "name": "裂冰长棱",
+      "maxRank": 7,
+      "mana": 100,
+      "cooldowns": [
+        300
+      ],
+      "description": "射出18格贯穿冰棱，速度24格/秒、判定半径1格；造成85＋22(r－1)＋55%S魔法伤害，减速40%持续2秒。用于远程封走位，可被风墙挡。",
+      "iconAlias": "jueduilingdu"
+    },
+    {
+      "id": "g2_hanze_ua",
+      "role": "hanze",
+      "index": 6,
+      "category": "U-A",
+      "name": "千里冰封",
+      "maxRank": 3,
+      "mana": 190,
+      "cooldowns": [
+        1400
+      ],
+      "description": "14格内选点，半径7格冰域持续6秒，每秒造成45＋25(r－1)＋22%S魔法伤害并减速35%持续1秒，共6次。领域不会让寒泽自己定在原地。",
+      "iconAlias": "qianlibingfeng"
+    },
+    {
+      "id": "g2_hanze_ub",
+      "role": "hanze",
+      "index": 7,
+      "category": "U-B",
+      "name": "玄冬壁垒",
+      "maxRank": 3,
+      "mana": 170,
+      "cooldowns": [
+        1250
+      ],
+      "description": "为自身及6格内可见友军提供230＋70(r－1)＋70%S护盾5秒，同时周围5格敌人受到90＋30(r－1)＋40%S魔法伤害并定身1秒。保护与反开分支，不生成实体堵路墙。",
+      "iconAlias": "qianlibingfeng"
+    },
+    {
+      "id": "g2_qingluo_pa",
+      "role": "qingluo",
+      "index": 0,
+      "category": "P-A",
+      "name": "仁心",
+      "maxRank": 5,
+      "mana": 0,
+      "cooldowns": [
+        0
+      ],
+      "description": "技能实际治疗或增加护盾后，若友军生命低于60%，额外治疗20＋8(r－1)＋18%S，并加速10%持续2秒。同目标4秒冷却；被动治疗不会再次触发自身。",
+      "iconAlias": "qingluo_passive"
+    },
+    {
+      "id": "g2_qingluo_pb",
+      "role": "qingluo",
+      "index": 1,
+      "category": "P-B",
+      "name": "采灵化露",
+      "maxRank": 5,
+      "mana": 0,
+      "cooldowns": [
+        0
+      ],
+      "description": "直接命中敌方单位积攒1枚药露，最多3枚，每次施法最多1枚。下次技能实际治疗或增加护盾时消耗全部药露，每枚额外治疗12＋5(r－1)＋10%S。",
+      "iconAlias": "qingluo_passive"
+    },
+    {
+      "id": "g2_qingluo_n1",
+      "role": "qingluo",
+      "index": 2,
+      "category": "N1",
+      "name": "青藤玉露",
+      "maxRank": 5,
+      "mana": 70,
+      "cooldowns": [
+        180
+      ],
+      "description": "为准星指向12格内可见友军治疗70＋22(r－1)＋50%S，并加速15%持续1.5秒；没有指向友军时治疗自身。不能治疗敌人、建筑或死亡单位。",
+      "iconAlias": "qingtengyu"
+    },
+    {
+      "id": "g2_qingluo_n2",
+      "role": "qingluo",
+      "index": 3,
+      "category": "N2",
+      "name": "缚生藤",
+      "maxRank": 5,
+      "mana": 65,
+      "cooldowns": [
+        220
+      ],
+      "description": "发射15格藤种，速度24格/秒、判定半径0.8格；首个敌人受到50＋16(r－1)＋45%S魔法伤害并定身0.7秒，命中点3格内友军治疗35＋12(r－1)＋25%S。可被风墙挡。",
+      "iconAlias": "qingtengyu"
+    },
+    {
+      "id": "g2_qingluo_ma",
+      "role": "qingluo",
+      "index": 4,
+      "category": "M-A",
+      "name": "护心丹阵",
+      "maxRank": 7,
+      "mana": 110,
+      "cooldowns": [
+        360
+      ],
+      "description": "14格内选点，半径4格丹阵持续4秒，每秒为阵中友军提供80＋22(r－1)＋35%S护盾，护盾保留1.25秒。同一施法者同源只取较高盾值，不会每秒叠加。",
+      "iconAlias": "huxindanzhen"
+    },
+    {
+      "id": "g2_qingluo_mb",
+      "role": "qingluo",
+      "index": 5,
+      "category": "M-B",
+      "name": "千丝渡厄",
+      "maxRank": 7,
+      "mana": 100,
+      "cooldowns": [
+        340
+      ],
+      "description": "为指向的12格内友军施加150＋35(r－1)＋70%S护盾4秒，并维系灵丝；每秒治疗20＋7(r－1)＋15%S，最多4次。未指向友军则保护自己；目标超过14格、隔墙或死亡立即断丝。",
+      "iconAlias": "qiansiduoe"
+    },
+    {
+      "id": "g2_qingluo_ua",
+      "role": "qingluo",
+      "index": 6,
+      "category": "U-A",
+      "name": "万木春晖",
+      "maxRank": 3,
+      "mana": 190,
+      "cooldowns": [
+        1400
+      ],
+      "description": "14格内选点，半径7格春林持续6秒，每秒治疗45＋20(r－1)＋22%S，共6次；不回复法力、不提供无敌。友军需留在区域且可被施法者看见。",
+      "iconAlias": "wanmuchunhui"
+    },
+    {
+      "id": "g2_qingluo_ub",
+      "role": "qingluo",
+      "index": 7,
+      "category": "U-B",
+      "name": "悬壶天幕",
+      "maxRank": 3,
+      "mana": 180,
+      "cooldowns": [
+        1300
+      ],
+      "description": "为自身及8格内可见友军治疗100＋35(r－1)＋40%S，并获得200＋65(r－1)＋65%S护盾5秒、20%加速3秒。即时救场分支，不复活、不无敌。",
+      "iconAlias": "wanmuchunhui"
+    },
+    {
+      "id": "g2_chixiao_pa",
+      "role": "chixiao",
+      "index": 0,
+      "category": "P-A",
+      "name": "破阵战意",
+      "maxRank": 5,
+      "mana": 0,
+      "cooldowns": [
+        0
+      ],
+      "description": "对同一敌方英雄造成3次直接伤害后，下一次直接技能伤害附加25＋10(r－1)＋25%S真实伤害并消耗战意。每次施法最多积1层；换目标或6秒未命中清空，不再附带全能吸血。",
+      "iconAlias": "chixiao_passive"
+    },
+    {
+      "id": "g2_chixiao_pb",
+      "role": "chixiao",
+      "index": 1,
+      "category": "P-B",
+      "name": "不屈锋骨",
+      "maxRank": 5,
+      "mana": 0,
+      "cooldowns": [
+        0
+      ],
+      "description": "自身生命不高于40%时，直接命中敌人获得80＋22(r－1)＋40%S护盾3秒，并加速15%持续2秒。每12秒最多触发一次，不增加生命上限或吸血。",
+      "iconAlias": "chixiao_passive"
+    },
+    {
+      "id": "g2_chixiao_n1",
+      "role": "chixiao",
+      "index": 2,
+      "category": "N1",
+      "name": "断岳斩",
+      "maxRank": 5,
+      "mana": 70,
+      "cooldowns": [
+        180
+      ],
+      "description": "向施放时前方6格、100°扇形挥出重斩，造成75＋22(r－1)＋60%S物理伤害。以水平朝向和真实距离判定，不隔墙、不依赖准星点中某个敌人。",
+      "iconAlias": "duanyuezhan"
+    },
+    {
+      "id": "g2_chixiao_n2",
+      "role": "chixiao",
+      "index": 3,
+      "category": "N2",
+      "name": "追魂踏",
+      "maxRank": 5,
+      "mana": 80,
+      "cooldowns": [
+        300
+      ],
+      "description": "水平突进7格，沿途敌人受50＋15(r－1)＋40%S物理伤害并减速30%持续1.5秒。3秒内可再次释放，沿无障碍直线路径以motion返回起点；二段不扣蓝、不刷新CD。",
+      "iconAlias": "zhuihunta"
+    },
+    {
+      "id": "g2_chixiao_ma",
+      "role": "chixiao",
+      "index": 4,
+      "category": "M-A",
+      "name": "赤霄反锋",
+      "maxRank": 7,
+      "mana": 110,
+      "cooldowns": [
+        400
+      ],
+      "description": "架刃1秒，期间非真实伤害减少35%；若期间受到伤害，结束后向前5格、100°反击，造成110＋25(r－1)＋75%S物理伤害并眩晕0.6秒。没有成功招架则不反击，真实伤害不触发。",
+      "iconAlias": "chixiaofanfeng"
+    },
+    {
+      "id": "g2_chixiao_mb",
+      "role": "chixiao",
+      "index": 5,
+      "category": "M-B",
+      "name": "裂阵刀罡",
+      "maxRank": 7,
+      "mana": 95,
+      "cooldowns": [
+        280
+      ],
+      "description": "射出14格贯穿刀罡，速度24格/秒、判定半径1.1格；造成85＋22(r－1)＋55%S物理伤害并减速30%持续2秒。适合中距离开战，可被风墙挡。",
+      "iconAlias": "duanyuezhan"
+    },
+    {
+      "id": "g2_chixiao_ua",
+      "role": "chixiao",
+      "index": 6,
+      "category": "U-A",
+      "name": "破军无回",
+      "maxRank": 3,
+      "mana": 180,
+      "cooldowns": [
+        1300
+      ],
+      "description": "12格内选取可站立落点，跃进落地后对半径4.5格敌人造成170＋65(r－1)＋85%S物理伤害并减速40%持续2秒。沿途需净空，只在实际落地时出伤。",
+      "iconAlias": "pojunwuhui"
+    },
+    {
+      "id": "g2_chixiao_ub",
+      "role": "chixiao",
+      "index": 7,
+      "category": "U-B",
+      "name": "横刀镇岳",
+      "maxRank": 3,
+      "mana": 170,
+      "cooldowns": [
+        1250
+      ],
+      "description": "获得230＋70(r－1)＋70%S护盾6秒；6秒内前3次普攻命中额外造成45＋20(r－1)＋30%S物理伤害，每次出手最多触发一次。不放大普攻本体，不附带额外吸血。",
+      "iconAlias": "pojunwuhui"
+    },
+    {
+      "id": "g2_yunsheng_pa",
+      "role": "yunsheng",
+      "index": 0,
+      "category": "P-A",
+      "name": "同心回响",
+      "maxRank": 5,
+      "mana": 0,
+      "cooldowns": [
+        0
+      ],
+      "description": "同一友军在6秒内两次实际受到你的技能治疗或新增护盾后，获得45＋15(r－1)＋25%S护盾3秒。同目标8秒冷却；被动自身不再累计层数。",
+      "iconAlias": "yunsheng_passive"
+    },
+    {
+      "id": "g2_yunsheng_pb",
+      "role": "yunsheng",
+      "index": 1,
+      "category": "P-B",
+      "name": "灵铃共鸣",
+      "maxRank": 5,
+      "mana": 0,
+      "cooldowns": [
+        0
+      ],
+      "description": "直接命中敌方英雄后，为自身及6格内可见友军治疗18＋7(r－1)＋15%S并加速10%持续1秒。每6秒最多触发一次，持续与派生伤害不会触发。",
+      "iconAlias": "yunsheng_passive"
+    },
+    {
+      "id": "g2_yunsheng_n1",
+      "role": "yunsheng",
+      "index": 2,
+      "category": "N1",
+      "name": "纸鹤传音",
+      "maxRank": 5,
+      "mana": 75,
+      "cooldowns": [
+        200
+      ],
+      "description": "向指向的14格内单位送出弧线纸鹤，优先选中准星下的敌人，其次友军，无目标则作用自身。敌人受到55＋18(r－1)＋45%S魔法伤害并减速25%持续1秒；友军治疗40＋14(r－1)＋30%S并回复20法力。纸鹤遇墙或敌方风墙消散。",
+      "iconAlias": "zhihechuanyin"
+    },
+    {
+      "id": "g2_yunsheng_n2",
+      "role": "yunsheng",
+      "index": 3,
+      "category": "N2",
+      "name": "定契索",
+      "maxRank": 5,
+      "mana": 80,
+      "cooldowns": [
+        280
+      ],
+      "description": "锁定12格内准星下的可见敌人，造成35＋12(r－1)＋30%S魔法伤害并定身0.6秒。两秒后若仍在12格且未隔墙，再造成同额伤害并减速30%持续1.5秒；超距或隔墙断索后不会重新连接。",
+      "iconAlias": "dingqisuo"
+    },
+    {
+      "id": "g2_yunsheng_ma",
+      "role": "yunsheng",
+      "index": 4,
+      "category": "M-A",
+      "name": "回音界标",
+      "maxRank": 7,
+      "mana": 110,
+      "cooldowns": [
+        380
+      ],
+      "description": "14格内选点，半径4格界标持续8秒。每秒为阵内友军刷新65＋18(r－1)＋30%S护盾1.25秒；每名敌人首次入阵受到65＋20(r－1)＋45%S魔法伤害并减速30%持续1秒，之后不重复出伤。",
+      "iconAlias": "huiyinjiebiao"
+    },
+    {
+      "id": "g2_yunsheng_mb",
+      "role": "yunsheng",
+      "index": 5,
+      "category": "M-B",
+      "name": "云梭护行",
+      "maxRank": 7,
+      "mana": 95,
+      "cooldowns": [
+        340
+      ],
+      "description": "8格内选择可站立落点，以motion快速前往；停稳后为3格内可见友军提供110＋25(r－1)＋50%S护盾3秒并加速20%持续1.5秒。路径受阻时在实际停止位置结算，不穿墙。",
+      "iconAlias": "huiyinjiebiao"
+    },
+    {
+      "id": "g2_yunsheng_ua",
+      "role": "yunsheng",
+      "index": 6,
+      "category": "U-A",
+      "name": "众生归宗",
+      "maxRank": 3,
+      "mana": 185,
+      "cooldowns": [
+        1400
+      ],
+      "description": "14格内选点，站桩引导1秒后展开半径6格回响域4秒。每秒治疗友军45＋18(r－1)＋25%S，敌人受到45＋20(r－1)＋25%S魔法伤害，共4轮；引导可被控制打断。",
+      "iconAlias": "zhongshengguizong"
+    },
+    {
+      "id": "g2_yunsheng_ub",
+      "role": "yunsheng",
+      "index": 7,
+      "category": "U-B",
+      "name": "灵契同舟",
+      "maxRank": 3,
+      "mana": 180,
+      "cooldowns": [
+        1350
+      ],
+      "description": "为自身及8格内可见友军提供210＋65(r－1)＋65%S护盾5秒，移速提高25%持续3秒。护盾存续时不附加无敌或隐藏减伤；适合带队进退。",
+      "iconAlias": "zhongshengguizong"
+    }
+  ]
+}

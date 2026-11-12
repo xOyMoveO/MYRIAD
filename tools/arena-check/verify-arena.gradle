@@ -1,0 +1,20 @@
+gradle.projectsEvaluated {
+    def checkOutput = rootProject.layout.buildDirectory.dir('arena-check')
+    def compileCheck = rootProject.tasks.register('compileArenaCheck', JavaCompile) {
+        dependsOn rootProject.tasks.named('classes')
+        source = rootProject.fileTree('tools/arena-check') { include '*.java' }
+        classpath = rootProject.sourceSets.main.compileClasspath + rootProject.sourceSets.main.output
+        destinationDirectory = checkOutput
+        javaCompiler = rootProject.javaToolchains.compilerFor { languageVersion = JavaLanguageVersion.of(25) }
+    }
+    rootProject.tasks.register('verifyArenaModes', JavaExec) {
+        dependsOn compileCheck
+        // Bootstrap requires an FML launcher for patched Minecraft. Use the matching vanilla
+        // 26.2 jar first for isolated codecs/route checks; mod classes and NeoForge types follow.
+        classpath = rootProject.files('D:/Minecraft/.minecraft/versions/myriad/myriad.jar', checkOutput) + rootProject.sourceSets.main.runtimeClasspath
+        mainClass = 'com.myriad.check.ArenaModesCheck'
+        javaLauncher = rootProject.javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
+        args rootProject.findProperty('arenaCheckWorld') ?: 'E:/mod/maps/combined-reference-3v3-campgrounds-20261004-v4/Sect_Rift_25x25_Ready'
+        jvmArgs '-Xmx1G'
+    }
+}

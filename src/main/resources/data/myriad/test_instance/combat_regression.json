@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "myriad:combat_regression",
+  "environment": {"type": "minecraft:difficulty", "difficulty": "peaceful"},
+  "structure": "myriad:combat_test_empty",
+  "max_ticks": 200
+}

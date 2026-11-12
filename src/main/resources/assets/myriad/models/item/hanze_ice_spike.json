@@ -1,0 +1,88 @@
+{
+  "format_version": "1.21.11",
+  "credit": "Generated from hanze_ice_spike.spec.json with minecraft-ai-generate-bbmodel",
+  "ambientocclusion": false,
+  "textures": {
+    "layer0": "myriad:item/hanze_ice_spike"
+  },
+  "elements": [
+    {
+      "name": "core",
+      "from": [6, 1, 6],
+      "to": [10, 9, 10],
+      "faces": {
+        "north": {"uv": [0, 0, 8, 8], "texture": "#layer0"},
+        "south": {"uv": [0, 0, 8, 8], "texture": "#layer0"},
+        "east": {"uv": [0, 0, 8, 8], "texture": "#layer0"},
+        "west": {"uv": [0, 0, 8, 8], "texture": "#layer0"},
+        "up": {"uv": [8, 0, 16, 8], "texture": "#layer0"},
+        "down": {"uv": [8, 0, 16, 8], "texture": "#layer0"}
+      }
+    },
+    {
+      "name": "upper_crystal",
+      "from": [6.5, 9, 6.5],
+      "to": [9.5, 13, 9.5],
+      "faces": {
+        "north": {"uv": [0, 8, 6, 14], "texture": "#layer0"},
+        "south": {"uv": [0, 8, 6, 14], "texture": "#layer0"},
+        "east": {"uv": [0, 8, 6, 14], "texture": "#layer0"},
+        "west": {"uv": [0, 8, 6, 14], "texture": "#layer0"},
+        "up": {"uv": [8, 8, 14, 14], "texture": "#layer0"},
+        "down": {"uv": [8, 8, 14, 14], "texture": "#layer0"}
+      }
+    },
+    {
+      "name": "tip",
+      "from": [7.25, 13, 7.25],
+      "to": [8.75, 16, 8.75],
+      "faces": {
+        "north": {"uv": [0, 0, 4, 12], "texture": "#layer0"},
+        "south": {"uv": [0, 0, 4, 12], "texture": "#layer0"},
+        "east": {"uv": [0, 0, 4, 12], "texture": "#layer0"},
+        "west": {"uv": [0, 0, 4, 12], "texture": "#layer0"},
+        "up": {"uv": [12, 0, 16, 4], "texture": "#layer0"}
+      }
+    },
+    {
+      "name": "fin_left",
+      "from": [4.75, 3, 7.5],
+      "to": [5.75, 8, 8.5],
+      "rotation": {"origin": [6, 3, 8], "axis": "z", "angle": -20},
+      "faces": {
+        "north": {"uv": [0, 0, 4, 12], "texture": "#layer0"},
+        "south": {"uv": [0, 0, 4, 12], "texture": "#layer0"},
+        "east": {"uv": [0, 0, 4, 12], "texture": "#layer0"},
+        "west": {"uv": [0, 0, 4, 12], "texture": "#layer0"}
+      }
+    },
+    {
+      "name": "fin_right",
+      "from": [10.25, 3, 7.5],
+      "to": [11.25, 8, 8.5],
+      "rotation": {"origin": [10, 3, 8], "axis": "z", "angle": 20},
+      "faces": {
+        "north": {"uv": [0, 0, 4, 12], "texture": "#layer0"},
+        "south": {"uv": [0, 0, 4, 12], "texture": "#layer0"},
+        "east": {"uv": [0, 0, 4, 12], "texture": "#layer0"},
+        "west": {"uv": [0, 0, 4, 12], "texture": "#layer0"}
+      }
+    },
+    {
+      "name": "fin_front",
+      "from": [7.5, 4, 4.75],
+      "to": [8.5, 8, 5.75],
+      "rotation": {"origin": [8, 4, 6], "axis": "x", "angle": 20},
+      "faces": {
+        "north": {"uv": [0, 0, 4, 12], "texture": "#layer0"},
+        "south": {"uv": [0, 0, 4, 12], "texture": "#layer0"},
+        "east": {"uv": [0, 0, 4, 12], "texture": "#layer0"},
+        "west": {"uv": [0, 0, 4, 12], "texture": "#layer0"}
+      }
+    }
+  ],
+  "display": {
+    "fixed": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [1, 1, 1]},
+    "gui": {"rotation": [30, 45, 0], "translation": [0, 0, 0], "scale": [1, 1, 1]}
+  }
+}

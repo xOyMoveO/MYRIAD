@@ -1,0 +1,15 @@
+Lingyuan Heaven Sword / heavy recorded sword-swing cue
+
+Source: Swishes Sound Pack
+Author: artisticdude
+Original submission: https://opengameart.org/content/swishes-sound-pack
+Original download: https://opengameart.org/sites/default/files/swishes.zip
+License shown on the author's submission: CC0
+CC0 1.0 Universal: https://creativecommons.org/publicdomain/zero/1.0/
+
+Files used: swishes/swish-7.wav, swishes/swish-8.wav, swishes/swish-9.wav
+The author describes recording real objects (wooden sticks and a clothes hanger) for weapon swishes.
+Edits for Myriad: mono downmix, 48kHz resampling, high-pass, lower-pitched playback,
+trim/timing adjustment, fades and safe normalization, then OGG Vorbis encoding.
+No synthesized electronic sound or audio taken from another game is used.
+Attribution is voluntarily retained even though CC0 does not require it.

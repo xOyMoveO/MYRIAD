@@ -1,0 +1,12 @@
+Shuo recorded Foley sources, edited 2026-11-11 for MYRIAD.
+Author: Kenney / Kenney Vleugels (Kenney.nl).
+Packs: RPG Audio (https://kenney.nl/assets/rpg-audio),
+       Impact Sounds (https://kenney.nl/assets/impact-sounds).
+License: Creative Commons Zero / CC0 1.0,
+https://creativecommons.org/publicdomain/zero/1.0/
+draw: drawKnife1; sheathe: metalLatch + drawKnife3;
+slash: knifeSlice + cloth1; parry: impactMetal_light_001 + metalClick;
+charge: drawKnife2 + cloth2.
+Short trims, mono conversion, relative layering, fades and normalization only.
+No oscillators, voice, musical samples or synthetic electric tones.
+Original pack license files and checksums retained in the development asset archive.

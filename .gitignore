@@ -1,0 +1,62 @@
+### Gradle ###
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/**/build/
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/**/out/
+
+.run/
+
+### Eclipse ###
+.apt_generated
+.classpath
+.eclipse/
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/**/bin/
+
+### VS Code ###
+.vscode/
+
+### Mac OS ###
+.DS_Store
+
+### Minecraft Modding ###
+run/
+!**/src/**/run/
+**/src/generated/**/.cache/
+repo/
+!**/src/**/repo/
+
+### Local caches, test worlds and diagnostics ###
+/.gradle-user/
+/.gradle-user-home/
+/run-*/
+/logs/
+/tmp/
+/outputs/
+/_target_rg.txt
+__pycache__/
+*.pyc
+*.class
+*.log
+*.bak
+
+### Local credentials (never commit) ###
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12

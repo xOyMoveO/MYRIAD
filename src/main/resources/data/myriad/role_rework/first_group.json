@@ -1,0 +1,585 @@
+{
+  "version": 1,
+  "skills": [
+    {
+      "id": "g1_yingxiao_pa",
+      "role": "yingxiao",
+      "category": "P-A",
+      "index": 0,
+      "name": "暗影猎手",
+      "maxRank": 5,
+      "mana": 0,
+      "cooldowns": [
+        0
+      ],
+      "description": "从目标背后造成的直接普攻与技能伤害提高10＋5(r－1)%，最高30%。背后为目标水平朝向反面的120°；不放大持续、派生与真实伤害。",
+      "iconAlias": "yingxiao_passive"
+    },
+    {
+      "id": "g1_yingxiao_pb",
+      "role": "yingxiao",
+      "category": "P-B",
+      "index": 1,
+      "name": "孤影伏击",
+      "maxRank": 5,
+      "mana": 0,
+      "cooldowns": [
+        0
+      ],
+      "description": "敌方英雄4格内没有其他敌方英雄时，首次直接伤害追加30＋12(r－1)＋25%S物理伤害；适合正面抓落单，不要求背刺。",
+      "iconAlias": "yingxiao_passive"
+    },
+    {
+      "id": "g1_yingxiao_n1",
+      "role": "yingxiao",
+      "category": "N1",
+      "index": 2,
+      "name": "影杀",
+      "maxRank": 5,
+      "mana": 70,
+      "cooldowns": [
+        180
+      ],
+      "description": "甩出15格飞匕，速度30格/秒、判定半径0.8格；首个敌人受45＋15(r－1)＋55%S物理伤害，减速25%持续1.5秒。不再定身3秒，可被风墙挡。",
+      "iconAlias": "yingsha"
+    },
+    {
+      "id": "g1_yingxiao_n2",
+      "role": "yingxiao",
+      "category": "N2",
+      "index": 3,
+      "name": "化影",
+      "maxRank": 5,
+      "mana": 90,
+      "cooldowns": [
+        360
+      ],
+      "description": "收匕掩身，隐身2＋0.25(r－1)秒，移速提高15%；攻击或成功释放其他主动技能结束隐身。起手受伤不会取消，但隐身不等于无敌；发光／侦查仍按视野规则处理。",
+      "iconAlias": "huaying"
+    },
+    {
+      "id": "g1_yingxiao_ma",
+      "role": "yingxiao",
+      "category": "M-A",
+      "index": 4,
+      "name": "影袭",
+      "maxRank": 7,
+      "mana": 85,
+      "cooldowns": [
+        200
+      ],
+      "description": "向前水平motion突进9格，约0.25秒完成，路径半宽1.2格；每个敌人一次70＋20(r－1)＋80%S物理伤害。首个目标背后命中减速40%持续1秒，不额外翻倍；遇实体墙停止。",
+      "iconAlias": "yingxi"
+    },
+    {
+      "id": "g1_yingxiao_mb",
+      "role": "yingxiao",
+      "category": "M-B",
+      "index": 5,
+      "name": "回影",
+      "maxRank": 7,
+      "mana": 85,
+      "cooldowns": [
+        240
+      ],
+      "description": "向7格内选点motion突进，首段约0.2秒，在起点留3秒影痕；首次突进路径一次55＋18(r－1)＋65%S物理伤害。3秒内可二段瞬移回影痕，无返程伤害；被定身／禁用位移时不能回返。不新增充能。第一人称正握匕首朝前，刀刃附带流光。",
+      "iconAlias": "yingxi"
+    },
+    {
+      "id": "g1_yingxiao_ua",
+      "role": "yingxiao",
+      "category": "U-A",
+      "index": 6,
+      "name": "绝影追击",
+      "maxRank": 3,
+      "mana": 160,
+      "cooldowns": [
+        1700,
+        1500,
+        1300
+      ],
+      "description": "锁定8格内可见敌方英雄，0.8秒起手后化作碎影，瞬间闪到其身后的安全落点并前刺，造成一次180＋70(r－1)＋130%S物理伤害。起手时将影刺由反握转为正握；读条期间不能移动、跳跃或疾跑，可转向，眩晕、沉默可中断。目标失效、离开8格、被遮挡或身后没有安全落点时不闪现、不伤害；不会无限追踪，也不附赠无敌。",
+      "iconAlias": "yingxi"
+    },
+    {
+      "id": "g1_yingxiao_ub",
+      "role": "yingxiao",
+      "category": "U-B",
+      "index": 7,
+      "name": "灵盾",
+      "maxRank": 3,
+      "mana": 150,
+      "cooldowns": [
+        1600,
+        1400,
+        1200
+      ],
+      "description": "受控时也可立即释放，解除当前的眩晕、定身、减速、沉默、致盲与击飞等控制，但不免疫之后新施加的控制。获得306＋119(r－1)＋153%S护盾，持续4秒；前2秒移速提高20%。仍需满足已选分支、蓝量和冷却要求，不刷新其他技能。",
+      "iconAlias": "lingdun"
+    },
+    {
+      "id": "g1_tianxing_pa",
+      "role": "tianxing",
+      "category": "P-A",
+      "index": 0,
+      "name": "雷灵三叠",
+      "maxRank": 5,
+      "mana": 0,
+      "cooldowns": [
+        0
+      ],
+      "description": "同一目标第三次成功普攻追加[24＋8(r－1)]%S真实伤害，并向目标3格内最多2名其他敌人溅射20＋8(r－1)＋20%S魔法伤害。漏击不计数，4秒未命中清零；溅射不再次计层。",
+      "iconAlias": "tianxing_passive"
+    },
+    {
+      "id": "g1_tianxing_pb",
+      "role": "tianxing",
+      "category": "P-B",
+      "index": 1,
+      "name": "雷刃共鸣",
+      "maxRank": 5,
+      "mana": 0,
+      "cooldowns": [
+        120
+      ],
+      "description": "主动技能直接命中英雄后，4秒内下一次普攻追加35＋12(r－1)＋30%S魔法伤害，并对目标3格内最多2名其他敌人造成其50%的溅射；不能由溅射触发自身。",
+      "iconAlias": "tianxing_passive"
+    },
+    {
+      "id": "g1_tianxing_n1",
+      "role": "tianxing",
+      "category": "N1",
+      "index": 2,
+      "name": "闪雷",
+      "maxRank": 5,
+      "mana": 80,
+      "cooldowns": [
+        260
+      ],
+      "description": "真正闪烁到视线6格合法落点，落点半径2.5格一次40＋12(r－1)＋45%S物理伤害。不能穿越地图外界或落入实心方块；不附赠永久攻速。",
+      "iconAlias": "shanlei"
+    },
+    {
+      "id": "g1_tianxing_n2",
+      "role": "tianxing",
+      "category": "N2",
+      "index": 3,
+      "name": "雷电劫",
+      "maxRank": 5,
+      "mana": 75,
+      "cooldowns": [
+        200
+      ],
+      "description": "0.3秒起手后向前掷出电弧，射程18格、速度50格/秒、判定半径0.9格；命中首个敌人后停止，造成60＋18(r－1)＋65%S物理伤害，并减速25%持续1.5秒。电弧同时连锁击中该目标周围4格内所有可见且与其无遮挡的其他敌人，各造成21＋6.3(r－1)＋22.75%S物理伤害（主伤害35%）；每目标一次，不再连锁、不重复暴击，连锁不附加减速。墙体和风墙可挡住主电弧。蓄力有读条，不能行走、跳跃或疾跑，可转向；眩晕、沉默可中断。",
+      "iconAlias": "leijiezhan"
+    },
+    {
+      "id": "g1_tianxing_ma",
+      "role": "tianxing",
+      "category": "M-A",
+      "index": 4,
+      "name": "天雷护体",
+      "maxRank": 7,
+      "mana": 110,
+      "cooldowns": [
+        400
+      ],
+      "description": "雷环持续4秒，提供15%非真实伤害减免；每秒对4格内敌人造成20＋8(r－1)＋15%S魔法伤害，共4次。贴身战斗路线，不叠加自身多个雷环。",
+      "iconAlias": "tianleihuti"
+    },
+    {
+      "id": "g1_tianxing_mb",
+      "role": "tianxing",
+      "category": "M-B",
+      "index": 5,
+      "name": "斩雷",
+      "maxRank": 7,
+      "mana": 105,
+      "cooldowns": [
+        360
+      ],
+      "description": "举剑至左上方蓄雷0.5秒，奋力斩出一道剑气；沿释放时视线飞行，射程20格、速度80格/秒、判定半径1格，可穿透敌人。每个目标仅承受一次95＋24(r－1)＋95%S魔法伤害；首个英雄被定身0.6秒，其余目标不定身。墙体与风墙可挡住剑气。蓄力有读条，期间不能行走、跳跃或疾跑，可转向；眩晕、沉默可中断，不重复暴击。",
+      "iconAlias": "leijiezhan"
+    },
+    {
+      "id": "g1_tianxing_ua",
+      "role": "tianxing",
+      "category": "U-A",
+      "index": 6,
+      "name": "九天神雷",
+      "maxRank": 3,
+      "mana": 170,
+      "cooldowns": [
+        2000,
+        1800,
+        1600
+      ],
+      "description": "指定12格内半径5格区域，落下6次预警雷击、间隔0.5秒；同目标每次45＋18(r－1)＋25%S魔法伤害，最多6次，最后一次定身0.8秒。预警0.4秒，可走出。",
+      "iconAlias": "jiutianshenlei"
+    },
+    {
+      "id": "g1_tianxing_ub",
+      "role": "tianxing",
+      "category": "U-B",
+      "index": 7,
+      "name": "雷霆裁决",
+      "maxRank": 3,
+      "mana": 170,
+      "cooldowns": [
+        1900,
+        1700,
+        1500
+      ],
+      "description": "左手沿剑身由下至上拂过并蓄雷0.6秒，随后按当前朝向激发雷霆，对前方120°、半径8格扇形内无遮挡的敌人一次造成200＋80(r－1)＋150%S物理伤害，并使所有命中目标眩晕0.8秒。不会命中身后、范围外、墙后的敌人或建筑。蓄力有读条，期间不能行走、跳跃或疾跑，可转向；眩晕、沉默可中断。",
+      "iconAlias": "jiutianshenlei"
+    },
+    {
+      "id": "g1_fenjue_pa",
+      "role": "fenjue",
+      "category": "P-A",
+      "index": 0,
+      "name": "焚心余烬",
+      "maxRank": 5,
+      "mana": 0,
+      "cooldowns": [
+        0
+      ],
+      "description": "主动直接命中附加3秒灼烧，每秒造成(5＋r)%S真实伤害，即1级6%、5级10%，共3次；后续命中只刷新持续时间，不增加层数。灼烧不暴击、不循环触发自身。",
+      "iconAlias": "fenjue_passive"
+    },
+    {
+      "id": "g1_fenjue_pb",
+      "role": "fenjue",
+      "category": "P-B",
+      "index": 1,
+      "name": "焚天战意",
+      "maxRank": 5,
+      "mana": 0,
+      "cooldowns": [
+        160
+      ],
+      "description": "生命不高于20%时，下一次主动技能的直接非真实伤害提高10＋4(r－1)%，消耗该次机会；之后8秒不可再次触发。不增加物攻属性、不回蓝，也不放大灼烧或追加伤害。",
+      "iconAlias": "fenjue_passive"
+    },
+    {
+      "id": "g1_fenjue_n1",
+      "role": "fenjue",
+      "category": "N1",
+      "index": 2,
+      "name": "烈焰斩",
+      "maxRank": 5,
+      "mana": 75,
+      "cooldowns": [
+        160
+      ],
+      "description": "向视线前方交叉斩出两道烈焰，按各自刀光扫过的区域判定，最远约7格。两段相隔0.2秒，每段造成32.5＋9(r－1)＋35%S物理伤害；两段全中总伤害不变。释放后转身不会改变本次斩击方向，无法穿墙命中；选择焚心余烬后才附带灼烧。",
+      "iconAlias": "lieyanzhan"
+    },
+    {
+      "id": "g1_fenjue_n2",
+      "role": "fenjue",
+      "category": "N2",
+      "index": 3,
+      "name": "炎步",
+      "maxRank": 5,
+      "mana": 80,
+      "cooldowns": [
+        260
+      ],
+      "description": "向面朝的水平方向motion突进8格，途中每目标一次35＋12(r－1)＋40%S物理伤害；不穿实墙，无击退，路径有流焰尾迹。用于跟进或撤离。",
+      "iconAlias": "lieyanzhan"
+    },
+    {
+      "id": "g1_fenjue_ma",
+      "role": "fenjue",
+      "category": "M-A",
+      "index": 4,
+      "name": "熔岩牢笼",
+      "maxRank": 7,
+      "mana": 120,
+      "cooldowns": [
+        440
+      ],
+      "description": "指定12格内半径3.5格区域，0.6秒预警后持续4秒；区域内减速25%，每秒25＋9(r－1)＋20%S物理伤害，最多4次。火墙不封死走路、不弹开敌人，敌人可离开。",
+      "iconAlias": "rongyanlaolong"
+    },
+    {
+      "id": "g1_fenjue_mb",
+      "role": "fenjue",
+      "category": "M-B",
+      "index": 5,
+      "name": "焚诀爆发",
+      "maxRank": 7,
+      "mana": 115,
+      "cooldowns": [
+        400
+      ],
+      "description": "0.65秒起手后半径6格一次110＋25(r－1)＋110%S物理伤害；自身每损失10%生命，该次非真实直接伤害提高2%，最多16%。起手期间可以被打断，无无限低血叠层。蓄力显示读条，期间不能行走、跳跃或疾跑，可转向；眩晕、沉默仍会中断。",
+      "iconAlias": "fenjuebaofa"
+    },
+    {
+      "id": "g1_fenjue_ua",
+      "role": "fenjue",
+      "category": "U-A",
+      "index": 6,
+      "name": "焚天火海",
+      "maxRank": 3,
+      "mana": 180,
+      "cooldowns": [
+        2000,
+        1800,
+        1600
+      ],
+      "description": "选择8格内合法落点，motion跃进落地，半径5格一次140＋60(r－1)＋100%S物理伤害；火海持续4秒，每秒30＋12(r－1)＋20%S物理伤害。灼烧仅按所选被动施加一层。",
+      "iconAlias": "fentianhuohai"
+    },
+    {
+      "id": "g1_fenjue_ub",
+      "role": "fenjue",
+      "category": "U-B",
+      "index": 7,
+      "name": "赤焰战甲",
+      "maxRank": 3,
+      "mana": 170,
+      "cooldowns": [
+        1900,
+        1700,
+        1500
+      ],
+      "description": "获得180＋70(r－1)＋80%S护盾5秒；每秒对3格内敌人造成30＋12(r－1)＋20%S物理伤害，共5次。护盾破碎则火环立即结束，不附赠攻击属性或免伤。",
+      "iconAlias": "fenjuebaofa"
+    },
+    {
+      "id": "g1_xuanchen_pa",
+      "role": "xuanchen",
+      "category": "P-A",
+      "index": 0,
+      "name": "灵枢守护",
+      "maxRank": 5,
+      "mana": 0,
+      "cooldowns": [
+        240
+      ],
+      "description": "成功施放主动技能后，为8格内生命比例最低的一名存活队友提供40＋15(r－1)＋25%S护盾2秒；有队友优先队友，无队友则自身。一次施法只触发一次，不回蓝、不缩冷却。",
+      "iconAlias": "xuanchen_passive"
+    },
+    {
+      "id": "g1_xuanchen_pb",
+      "role": "xuanchen",
+      "category": "P-B",
+      "index": 1,
+      "name": "符印共鸣",
+      "maxRank": 5,
+      "mana": 0,
+      "cooldowns": [
+        0
+      ],
+      "description": "首次主动伤害给英雄留下4秒符印，另一次独立主动直接伤害触发35＋12(r－1)＋30%S魔法伤害；单次持续法阵不自触发。走输出路线，队友不负责触发。",
+      "iconAlias": "xuanchen_passive"
+    },
+    {
+      "id": "g1_xuanchen_n1",
+      "role": "xuanchen",
+      "category": "N1",
+      "index": 2,
+      "name": "灵缚",
+      "maxRank": 5,
+      "mana": 80,
+      "cooldowns": [
+        220
+      ],
+      "description": "射出16格锁链，速度25格/秒、半径0.9格；首个目标受45＋15(r－1)＋55%S魔法伤害并定身0.6＋0.1(r－1)秒。可被风墙挡。",
+      "iconAlias": "lingfu"
+    },
+    {
+      "id": "g1_xuanchen_n2",
+      "role": "xuanchen",
+      "category": "N2",
+      "index": 3,
+      "name": "墨灵护符",
+      "maxRank": 5,
+      "mana": 95,
+      "cooldowns": [
+        280
+      ],
+      "description": "指定10格内可见队友或自身，提供90＋25(r－1)＋60%S护盾3秒；不免伤、不回蓝，护盾未消耗前重复施加同源只取较高值。",
+      "iconAlias": "moyanghuzhen"
+    },
+    {
+      "id": "g1_xuanchen_ma",
+      "role": "xuanchen",
+      "category": "M-A",
+      "index": 4,
+      "name": "传送阵",
+      "maxRank": 7,
+      "mana": 130,
+      "cooldowns": [
+        640
+      ],
+      "description": "一次选点在自身与最远14＋r格处布置互通阵点，持续4＋0.3(r－1)秒，仅一组。队友主动交互，传送公共冷却2秒；两点须为合法站立点，无伤害、无回蓝。",
+      "iconAlias": "chuansongzhen"
+    },
+    {
+      "id": "g1_xuanchen_mb",
+      "role": "xuanchen",
+      "category": "M-B",
+      "index": 5,
+      "name": "墨灵护阵",
+      "maxRank": 7,
+      "mana": 125,
+      "cooldowns": [
+        480
+      ],
+      "description": "指定12格内半径4格区域，0.6秒后持续4秒：友军获得12%非真实伤害减免，敌军减速25%；生效时为区域内每个友军施加一次60＋18(r－1)＋35%S护盾2秒。不能每tick续盾。",
+      "iconAlias": "moyanghuzhen"
+    },
+    {
+      "id": "g1_xuanchen_ua",
+      "role": "xuanchen",
+      "category": "U-A",
+      "index": 6,
+      "name": "周天覆阵",
+      "maxRank": 3,
+      "mana": 190,
+      "cooldowns": [
+        2200,
+        2000,
+        1800
+      ],
+      "description": "0.8秒引导后展开自身周围半径6格法阵，持续4秒；友军获得15%非真实伤害减免，敌军减速30%，每秒受45＋20(r－1)＋30%S魔法伤害，共4次。不回蓝，不层叠免伤。蓄力显示读条，期间不能行走、跳跃或疾跑，可转向；眩晕、沉默仍会中断。",
+      "iconAlias": "zhoutianfuzhen"
+    },
+    {
+      "id": "g1_xuanchen_ub",
+      "role": "xuanchen",
+      "category": "U-B",
+      "index": 7,
+      "name": "封界符牢",
+      "maxRank": 3,
+      "mana": 180,
+      "cooldowns": [
+        2100,
+        1900,
+        1700
+      ],
+      "description": "指定12格内半径4格区域，0.7秒预警后一次170＋65(r－1)＋110%S魔法伤害并定身1秒；地面符纹持续3秒，区域敌军减速20%，无额外伤害。定身仍允许非位移技能，不等于沉默。",
+      "iconAlias": "zhoutianfuzhen"
+    },
+    {
+      "id": "g1_sulan_pa",
+      "role": "sulan",
+      "category": "P-A",
+      "index": 0,
+      "name": "风行蓄刃",
+      "maxRank": 5,
+      "mana": 0,
+      "cooldowns": [
+        0
+      ],
+      "description": "累计水平自然移动30格，下一次普攻追加35＋12(r－1)＋35%S物理伤害。motion冲刺、传送、击退不计距离，仅储存一次；就绪图标常亮，命中敌人才消耗。",
+      "iconAlias": "sulan_passive"
+    },
+    {
+      "id": "g1_sulan_pb",
+      "role": "sulan",
+      "category": "P-B",
+      "index": 1,
+      "name": "掠风连刃",
+      "maxRank": 5,
+      "mana": 0,
+      "cooldowns": [
+        120
+      ],
+      "description": "主动直接命中英雄后3秒内，下一次普攻追加25＋10(r－1)＋30%S物理伤害并减速15%持续1秒。更偏连招，不增加攻速或跳跃。",
+      "iconAlias": "sulan_passive"
+    },
+    {
+      "id": "g1_sulan_n1",
+      "role": "sulan",
+      "category": "N1",
+      "index": 2,
+      "name": "疾风突刺",
+      "maxRank": 5,
+      "mana": 80,
+      "cooldowns": [
+        200
+      ],
+      "description": "向视线motion冲刺6格，路径半宽1.2格；每目标一次50＋15(r－1)＋60%S物理伤害。不无视实心墙，不解除定身。",
+      "iconAlias": "jifengtuci"
+    },
+    {
+      "id": "g1_sulan_n2",
+      "role": "sulan",
+      "category": "N2",
+      "index": 3,
+      "name": "灵风标记",
+      "maxRank": 5,
+      "mana": 75,
+      "cooldowns": [
+        260
+      ],
+      "description": "选中14格内可见敌人，标记4秒；命中造成25＋10(r－1)＋25%S物理伤害，减速20%持续1.5秒。自己下一次直接非真实伤害提高5＋r%后消耗标记，不让全队无限增伤；不跨墙透视名字。",
+      "iconAlias": "lingfengbiaoji"
+    },
+    {
+      "id": "g1_sulan_ma",
+      "role": "sulan",
+      "category": "M-A",
+      "index": 4,
+      "name": "风墙",
+      "maxRank": 7,
+      "mana": 110,
+      "cooldowns": [
+        480
+      ],
+      "description": "身前2格生成长6、高4的风墙，持续2.5＋0.2(r－1)秒；拦截敌方可格挡投射物，不阻挡自身／队友。飞轮类武器停在碰撞点，不删除角色武器，不挡非投射物范围技能。",
+      "iconAlias": "fengqiang"
+    },
+    {
+      "id": "g1_sulan_mb",
+      "role": "sulan",
+      "category": "M-B",
+      "index": 5,
+      "name": "回旋风刃",
+      "maxRank": 7,
+      "mana": 105,
+      "cooldowns": [
+        360
+      ],
+      "description": "甩出12格风刃、速度20格/秒、半径1格；到达末端后返回施放者的实时合法位置，去程与回程各最多一次45＋15(r－1)＋45%S物理伤害。可被风墙挡，返回不提供额外免费施法或刷新。",
+      "iconAlias": "jifengtuci"
+    },
+    {
+      "id": "g1_sulan_ua",
+      "role": "sulan",
+      "category": "U-A",
+      "index": 6,
+      "name": "御风千里",
+      "maxRank": 3,
+      "mana": 170,
+      "cooldowns": [
+        1800,
+        1600,
+        1400
+      ],
+      "description": "0.5秒蓄势后沿当前视线motion冲刺最多12格，有限转向、不穿墙；撞到首个英雄或结束时半径2.5格一次160＋65(r－1)＋120%S物理伤害，减速30%持续1.5秒。相同目标不额外沿途重复伤害。蓄力显示读条，期间不能行走、跳跃或疾跑，可转向；眩晕、沉默仍会中断。",
+      "iconAlias": "yufengqianli"
+    },
+    {
+      "id": "g1_sulan_ub",
+      "role": "sulan",
+      "category": "U-B",
+      "index": 7,
+      "name": "风域归阵",
+      "maxRank": 3,
+      "mana": 170,
+      "cooldowns": [
+        1900,
+        1700,
+        1500
+      ],
+      "description": "自身周围半径5格风域持续4秒，友军移速提高15%、敌军移速降低25%；展开时一次90＋35(r－1)＋65%S物理伤害。无击飞、无反复伤害、无韧性属性加成。",
+      "iconAlias": "fengqiang"
+    }
+  ]
+}

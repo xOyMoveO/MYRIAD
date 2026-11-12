@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "name": "hanze_ice_spike",
+    "schema_version": 1,
+    "description": "Hanze ice-spike projectile. The visible tip is the local positive Y axis."
+  },
+  "target": "item",
+  "atlas": {
+    "width": 32,
+    "height": 64,
+    "regions": [
+      {
+        "id": "frost_core",
+        "rect": [0, 0, 16, 16],
+        "fill": "#70DDF4",
+        "palette": ["#3D93C6", "#70DDF4", "#BDF8FF", "#E8FFFF"],
+        "noise": 0.18
+      },
+      {
+        "id": "frost_edge",
+        "rect": [16, 0, 16, 16],
+        "fill": "#9AEEFF",
+        "palette": ["#5DB8E8", "#9AEEFF", "#F1FFFF"],
+        "noise": 0.12
+      }
+    ]
+  },
+  "parts": [
+    {
+      "id": "core",
+      "size": [4, 8, 4],
+      "pos": [6, 1, 6],
+      "pivot": [8, 1, 8],
+      "uv_origin": [0, 16]
+    },
+    {
+      "id": "upper_crystal",
+      "parent": "core",
+      "size": [3, 4, 3],
+      "pos": [6.5, 9, 6.5],
+      "pivot": [8, 9, 8],
+      "uv_origin": [12, 16]
+    },
+    {
+      "id": "tip",
+      "parent": "upper_crystal",
+      "size": [1.5, 3, 1.5],
+      "pos": [7.25, 13, 7.25],
+      "pivot": [8, 13, 8],
+      "uv_origin": [21, 16]
+    },
+    {
+      "id": "fin_left",
+      "parent": "core",
+      "size": [1, 5, 1],
+      "pos": [4.75, 3, 7.5],
+      "pivot": [6, 3, 8],
+      "rot": [0, 0, -20],
+      "uv_origin": [0, 28]
+    },
+    {
+      "id": "fin_right",
+      "parent": "core",
+      "size": [1, 5, 1],
+      "pos": [10.25, 3, 7.5],
+      "pivot": [10, 3, 8],
+      "rot": [0, 0, 20],
+      "uv_origin": [3, 28]
+    },
+    {
+      "id": "fin_front",
+      "parent": "core",
+      "size": [1, 4, 1],
+      "pos": [7.5, 4, 4.75],
+      "pivot": [8, 4, 6],
+      "rot": [20, 0, 0],
+      "uv_origin": [6, 28]
+    }
+  ],
+  "face_details": [
+    { "id": "left_crystal_fin", "part": "fin_left", "kind": "geometry" },
+    { "id": "right_crystal_fin", "part": "fin_right", "kind": "geometry" },
+    { "id": "front_crystal_fin", "part": "fin_front", "kind": "geometry" }
+  ]
+}

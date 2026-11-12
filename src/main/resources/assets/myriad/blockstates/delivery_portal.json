@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "myriad:block/delivery_portal"
+    }
+  }
+}

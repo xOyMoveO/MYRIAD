@@ -1,0 +1,26 @@
+Fenjue Flame Step: recorded wind and one sword swish, edited 2026-11-09.
+
+Wind: artisticdude, Swishes Sound Pack, CC0-1.0.
+https://opengameart.org/content/swishes-sound-pack
+Existing source archive: swishes.zip, entry swishes/swish-7.wav.
+Archive SHA256: 7980215241b739a787dcf26f660ce510bb237900968789395a86911619795693
+Entry SHA256: e6de737a34de16afed094d6170d7679149022f149e0a8356d2f029b0e8f4a4d7
+Edited asset: assets/myriad/sounds/skill/fenjue/step_wind.ogg
+Edits: actual recorded air movement, high-pass 160Hz, low-pass 7500Hz,
+peak-aligned short 0.30s excerpt, DC removal, 5ms/50ms fades, peak -9dB,
+48kHz mono Vorbis. No synthetic noise and no game-client loop.
+
+Sword: DavidDumaisAudio, Sword Slash and Swing.
+https://pixabay.com/sound-effects/film-special-effects-sword-slash-and-swing-185432/
+Previously selected and supplied by the user as the slash recording.
+Source SHA256: 2e4742e14585772e8f0c2ea0834150df95f0c973f97b540a88370e109b0135e5
+Edited asset: assets/myriad/sounds/skill/fenjue/step_slash.ogg
+Edits: source excerpt 0.10-0.64s, tempo 1.8 with pitch preserved, high-pass
+95Hz / low-pass 14000Hz, short fades, peak attenuation, mono Vorbis 48kHz.
+This is ONE stroke, not the existing Flame Slash's two-stroke recording.
+Pixabay Content License; synchronized in-game use, not a standalone library.
+https://pixabay.com/service/license-summary/
+https://pixabay.com/service/terms/
+
+Original downloads are unchanged and are not shipped in the mod JAR.
+The recordings remain third-party material, not original Myriad synthesis.

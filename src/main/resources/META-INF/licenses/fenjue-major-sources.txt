@@ -1,0 +1,23 @@
+Fenjue Cage, Burst, Fire Sea and Flame Armor recorded audio, 2026-11-10.
+
+Fire source: SFX - Collection of Flame Sword Swoosh Sound Design Elements
+Author: Fronbondi_Skegs
+https://pixabay.com/sound-effects/film-special-effects-sfx-collection-of-flame-sword-swoosh-sound-design-elements-275902/
+User-provided E:/mod/火焰.mp3, SHA256
+c14838525b180a13b0c0fc9f6113bc4a11ddc34e9f167b5cbcab744311ab7d6b
+Previously selected by the user, reused for the newly requested skill cues.
+License: Pixabay Content License (not relicensed as original Myriad audio).
+https://pixabay.com/service/license-summary/
+Clips are adapted/synchronized in-game effects, not a standalone audio library.
+
+Contact layers: Kenney Impact Sounds, CC0
+https://kenney.nl/assets/impact-sounds
+Recorded assets: impactMining_001, impactMining_003, impactSoft_heavy_002,
+impactMetal_light_001 from the existing licensed source archive.
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Edits: seven excerpts, pitch-preserving tempo changes, filtering, short fades,
+quiet recorded contact layers, peak attenuation, mono Vorbis 48kHz.
+No synthetic oscillator, MIDI or electronic spell tone was generated.
+Ongoing fire uses Minecraft's own FIRE_AMBIENT event; no vanilla audio is copied.
+Sources remain unchanged; project tool: tools/audio/prepare_fenjue_major.py.
