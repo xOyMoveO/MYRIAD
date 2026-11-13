@@ -22,7 +22,7 @@ public final class ShadowReturnSkill extends AbilitySkill {
     @Override public boolean needsPoint(){return true;} @Override public double pointRange(Cast c){return DASH_DISTANCE;}
  @Override public boolean canRelease(Cast c){return c.data.getBuff("g1_root")==0;}
  @Override public void release(Cast c){var m=c.memory();m.point=c.player.position();m.until=c.now()+60;c.buff(getId()+"_recast",60);
- c.dash(c.point.subtract(c.player.position()),DASH_TICKS,1.2,(t,first)->c.damage(t,c.value(55,18,.65f),PHYSICAL),()->{},false,false);}
+ c.actionDash(c.point.subtract(c.player.position()),DASH_TICKS,1.2,(t,first)->c.damage(t,c.value(55,18,.65f),PHYSICAL),()->{},false,false);}
  @Override public boolean recastAvailable(Cast c){return c.memory().point!=null&&c.memory().until>c.now();}
  @Override public void recast(Cast c){var m=c.memory();if(c.safe(m.point)){
  com.myriad.character.ability.AbilityVisuals.beam(c,c.player.position().add(0,.45,0),m.point.add(0,.45,0),.15);

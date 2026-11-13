@@ -14,10 +14,10 @@ public final class HeavenSwordSkill extends AbilitySkill {
 
     @Override public void release(Cast c){
         Vec3 origin=c.player.position(),forward=c.forward(1);
-        c.later(CHARGE_TICKS,true,()->{
+        c.windup(CHARGE_TICKS,0,()->{
             Vec3 chopOrigin=new Vec3(origin.x,c.player.getY(),origin.z);
             SwordVisuals.heavenRelease(c,chopOrigin,forward);
-            c.later(CHOP_TICKS,true,()->{
+            c.windup(CHOP_TICKS,0,()->{
                 SwordVisuals.heavenImpact(c,chopOrigin,forward);
                 Vec3 end=chopOrigin.add(forward.scale(REACH));
                 AABB candidates=new AABB(chopOrigin,end).inflate(WIDTH/2,4,WIDTH/2);

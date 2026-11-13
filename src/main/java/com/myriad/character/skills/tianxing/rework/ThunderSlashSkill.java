@@ -16,7 +16,7 @@ public final class ThunderSlashSkill extends AbilitySkill {
         ThunderSkillPresentation.charged(c,WINDUP,SLASH_READY,SLASH_FIRE,()->{
             ThunderAudio.play(c,ThunderAudio.Cue.CAST);
             boolean[] rooted={false};
-            c.projectile(RANGE,SPEED,RADIUS,true,false,(target,back)->{
+            c.actionProjectile(RANGE,SPEED,RADIUS,true,false,(target,back)->{
                 ThunderAudio.play(c,ThunderAudio.Cue.HIT,target.position());
                 c.damage(target,c.value(95,24,.95f),MAGIC);
                 if(!rooted[0]&&c.hero(target)){rooted[0]=true;c.root(target,12,false);}

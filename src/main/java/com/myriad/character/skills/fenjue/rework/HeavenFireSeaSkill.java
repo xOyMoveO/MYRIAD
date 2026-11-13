@@ -26,7 +26,7 @@ public final class HeavenFireSeaSkill extends AbilitySkill {
          &&com.myriad.character.ability.AbilityTargeting.clearArc(c.player,c.point,FLIGHT_TICKS,arcHeight(c.player.position(),c.point));}
  @Override public void release(Cast c){Vec3 at=c.point;FlameMajorAudio.seaJump(c);int gesture=FlameSkillPresentation.play(c,com.myriad.network.FlameSkillViewPayload.SEA_FLIGHT,32);
  boolean[] landedOnce={false};
- c.leap(at,FLIGHT_TICKS,arcHeight(c.player.position(),at),true,()->{
+ c.actionLeap(at,FLIGHT_TICKS,arcHeight(c.player.position(),at),true,()->{
  landedOnce[0]=true;FlameSkillPresentation.play(c,com.myriad.network.FlameSkillViewPayload.SEA_LAND,10,gesture);
  Vec3 landed=c.player.position();FlameMajorAudio.seaImpact(c,landed);com.myriad.character.ability.AbilityVisuals.field(c,landed,5,80);c.area(landed,5,c.value(140,60,1),PHYSICAL);
  c.repeat(80,30,i->FlameMajorAudio.burning(c,landed));

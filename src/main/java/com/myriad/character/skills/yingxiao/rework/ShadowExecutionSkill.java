@@ -21,7 +21,7 @@ public final class ShadowExecutionSkill extends AbilitySkill {
         NightVisuals.execution(c,target);
         NightSkillPresentation.play(c,NightSkillViewPayload.READY,WINDUP_TICKS);
         boolean[] resolved={false};
-        c.later(WINDUP_TICKS,true,()->{
+        c.windup(WINDUP_TICKS,0,()->{
             resolved[0]=true;
             if(!target.isAlive()||target.isRemoved()||target.level()!=c.player.level()
                     ||!SkillTargets.enemy(c.player,target)||!VisionSystem.canSee(c.player,target)||target.isInvisibleTo(c.player)

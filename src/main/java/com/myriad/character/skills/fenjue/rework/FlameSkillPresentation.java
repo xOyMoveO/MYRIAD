@@ -15,7 +15,7 @@ public final class FlameSkillPresentation {
     public static void play(Cast c,int action,int ticks,int token){PacketDistributor.sendToPlayer(c.player,new FlameSkillViewPayload(action,ticks,c.now(),token));}
     public static void mobileBurst(Cast c,Runnable release){
         int token=play(c,BURST_READY,13);boolean[] resolved={false};
-        c.later(13,true,.25f,()->{resolved[0]=true;play(c,BURST_FIRE,10,token);release.run();});
+        c.windup(13,.25f,()->{resolved[0]=true;play(c,BURST_FIRE,10,token);release.run();});
         c.whileActive(14,age->{if(resolved[0])return false;
             if(age>0&&!AbilityRuntime.channeling(c.player)){play(c,CANCEL,0,token);return false;}return true;});
     }

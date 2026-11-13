@@ -97,7 +97,9 @@ final class RosterRetirementChecks {
         target.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(1000);
         var previousPosition = player.position();
         float previousYaw = player.getYRot(), previousPitch = player.getXRot();
-        player.setPos(target.position().add(0, 0, -3));
+        // This synchronous contract exercises the first actual flight step; far-flight timing is
+        // covered by HeroActionTimeChecks rather than pretending repeated calls are new ticks.
+        player.setPos(target.position().add(0, 0, -1.5));
         player.setYRot(0);
         player.setXRot(0);
         try {
