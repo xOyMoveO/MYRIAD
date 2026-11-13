@@ -5,24 +5,29 @@ Weapon meshes and painted texture atlas:
     tools/assets/generate_yike_weapon.py
   Editable Blockbench parts: art_source/yike/hong_lie*.bbmodel
   Texture source: art_source/yike/hong_lie_atlas.png
-  Original cuboid geometry and deterministic palette/engraving, created for this project.
+  Original cuboid geometry and deterministic pixel-painted paneling, created for this project.
   Embedded atlas, face-bound materials and connected focusing rings were refined
   for the static-asset pass. Previews are rendered from the actual model parts.
+  The user-requested future-tech revision uses ceramic armor, graphite structure,
+  cobalt lining, ice-blue optical rails and restrained violet/magenta accents.
+  Technical panel seams, vents and emitter modules replace the former ornamental finish.
   No third-party weapon mesh, texture, icon or audio sample is included.
 
-Concept reference:
+Historical concept reference (superseded by the future-tech revision):
   art_source/yike/hong_lie_concept.png
   Generated with the built-in image generation tool from the project's confirmed
   original three-petal, dark-violet/coral/pale-gold arcane-staff brief.
   The complete prompt is retained in art_source/yike/README.md.
-  The concept image is an authoring reference, not a game texture or model.
+  The concept image is retained as historical reference, not the current design,
+  a game texture or a model. Current previews are rendered from the actual assets.
 
 Skill icons, visual geometry, sounds:
   Icons: eight new candidates generated with the built-in image generation tool
-    from the confirmed original skill descriptions and palette. Source sheet:
+    from the confirmed original skill descriptions and the current future-tech palette. Source sheet:
     art_source/yike/icon_source.png. Measured individual panels are cropped and
     exported as opaque 64x64 PNGs, replacing the earlier geometric drawings.
-  VFX: YikeVfxGeometry.java, original faceted crystals, open petals and ribbons.
+  VFX: YikeVfxGeometry.java, original photon projectiles, segmented electronic
+    targeting shapes, energy panels and continuous optical trails.
   Audio: original oscillator/noise synthesis in the generator, then mono
   Ogg Vorbis encoding with libsndfile via soundfile. No sampled audio, voices,
   musical recordings, commercial libraries or other game's sound effects.

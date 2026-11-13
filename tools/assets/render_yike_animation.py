@@ -13,7 +13,7 @@ from render_bbmodel import render, cuboid_faces, transform, dot, VIEWS
 ROOT=Path(__file__).resolve().parents[2]
 SOURCE=ROOT/"art_source/yike"
 OUT=SOURCE/"animation"
-BACKGROUND="#201D2B"
+BACKGROUND="#101C27"
 SIZE=(420,700)
 VIEW="isometric"
 
@@ -70,11 +70,11 @@ def main():
             image=Image.new("RGBA",SIZE,BACKGROUND)
             content=render(model_for(row,parts),view=VIEW,size=(SIZE[0],SIZE[1]-80),scale=scale,center=center,background=BACKGROUND)
             image.alpha_composite(content,(0,80));draw=ImageDraw.Draw(image)
-            draw.text((18,12),f"HONG LIE / {scene.upper()}",font=font,fill="#F3C879")
+            draw.text((18,12),f"HONG LIE / {scene.upper()}",font=font,fill="#5DDEFF")
             status=(f"Q PREP p={row['progress']:.2f}" if row["windup"]==2 else
                     "DEPLOYED" if row["mode"]>0 else f"WINDUP p={row['progress']:.2f}" if row["windup"]>=0 else "CLOSING / IDLE")
-            draw.text((18,36),f"t={row['time']/20:.2f}s | {status}",font=font,fill="#B9AFC6")
-            draw.text((18,58),"Production pose / source-model render",font=font,fill="#8F829D")
+            draw.text((18,36),f"t={row['time']/20:.2f}s | {status}",font=font,fill="#9AB6C9")
+            draw.text((18,58),"Production pose / source-model render",font=font,fill="#648297")
             image.save(folder/f"frame_{int(row['frame']):03d}.png");frames.append(image.convert("RGB"))
         # A common palette avoids per-frame palette shimmer.
         palette_source=Image.new("RGB",(SIZE[0]*len(frames),SIZE[1]))

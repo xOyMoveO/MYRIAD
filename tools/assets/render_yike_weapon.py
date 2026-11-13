@@ -11,7 +11,7 @@ from render_bbmodel import render
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "art_source/yike"
-BACKGROUND = "#201D2B"
+BACKGROUND = "#101C27"
 
 
 def assemble(opening, mobile=False):
@@ -42,9 +42,9 @@ def font(size):
 
 def label(image, title, subtitle=None):
     draw = ImageDraw.Draw(image)
-    draw.text((24, 22), title, font=font(24), fill="#F3C879")
+    draw.text((24, 22), title, font=font(24), fill="#5DDEFF")
     if subtitle:
-        draw.text((24, 55), subtitle, font=font(15), fill="#B9AFC6")
+        draw.text((24, 55), subtitle, font=font(15), fill="#9AB6C9")
     return image
 
 
@@ -70,9 +70,9 @@ def main():
         panels.append(image)
     parts = Image.new("RGBA", (1920, 740), BACKGROUND)
     for index, (name, title, view) in enumerate((
-        ("hong_lie_frame", "FRAME + CRYSTAL", "isometric"),
-        ("hong_lie_petal", "PETAL + HINGE", "isometric"),
-        ("hong_lie_ring", "OPEN FOCUS RING", "top"),
+        ("hong_lie_frame", "SEGMENTED PHOTON CORE", "isometric"),
+        ("hong_lie_petal", "CERAMIC WING + VENTS", "isometric"),
+        ("hong_lie_ring", "OPEN COLLIMATION RING", "top"),
     )):
         image = panel(SOURCE / f"{name}.bbmodel", title,
                       "Local origin and part interface preserved", view, (640, 740))
@@ -88,13 +88,19 @@ def main():
     for index, view in enumerate(("top", "isometric")):
         model = assemble(1)
         model["elements"] = [part for part in model["elements"]
-                             if part["name"] not in ("exposed_wrapped_grip", "lower_shaft", "counterweight", "counterweight_heart")
-                             and not part["name"].startswith("shaft_collar")]
+                             if part["name"] not in ("insulated_grip", "lower_shaft", "counterweight", "counterweight_heart")
+                             and not part["name"].startswith(("shaft_collar", "handle_", "battery_"))]
         image = panel(model, "MUZZLE / " + view.upper(),
-                      "True open geometry; crystal remains recessed", view, (720, 920))
+                      "True open aperture; recessed photon modules", view, (720, 920))
         detail.alpha_composite(image, (index * 720, 0))
     detail.save(SOURCE / "hong_lie_muzzle_preview.png")
-    print("OK: closed / mobile / deployed, parts, model sheet and muzzle views")
+    wing = Image.new("RGBA", (1280, 1080), BACKGROUND)
+    for index, (view, title) in enumerate((("rear", "WING / CERAMIC EXTERIOR"), ("isometric", "WING / COBALT INTERIOR"))):
+        image = panel(SOURCE / "hong_lie_petal.bbmodel", title,
+                      "Split armor / recessed fins / embedded light bus", view, (640, 1080))
+        wing.alpha_composite(image, (index * 640, 0))
+    wing.save(SOURCE / "hong_lie_wing_detail_preview.png")
+    print("OK: closed / mobile / deployed, parts, model sheet, muzzle and wing views")
 
 
 if __name__ == "__main__":

@@ -1,36 +1,41 @@
-"""Export yike's complete eight-candidate icon set from the accepted image source.
+"""Export Yike's future-tech eight-candidate icon set from the accepted image source.
 
-Source: OpenAI built-in image_gen, 2026-11-13; original exec-ba1ef958-7dcf-41c2-8e91-2335fde09d62.png.
-Every crop below was measured against its own visible outer metal border.
-Coordinates are Pillow (left, top, right-exclusive, bottom-exclusive), not fixed pitch.
-The generator's neutral gutters and cast shadows are excluded from the skill slots.
+Source: OpenAI built-in image_gen, 2026-11-13; original exec-46740bbd-f490-40ae-b0c7-d81227c83ef8.png.
+Each full titanium-frame crop was measured independently from its visible border,
+including its dark bevel. Coordinates are Pillow (left, top, right-exclusive,
+bottom-exclusive); the sheet's gutters are excluded. No fixed-pitch crop assumption.
 """
 from pathlib import Path
 
 from PIL import Image
 
-GENERATION_PROMPT = r"""Use case: stylized-concept. Asset type: production pixel-art skill icon atlas for a Minecraft fantasy combat mod. Create ONE landscape image with exactly EIGHT square independent icons in an evenly spaced FOUR COLUMN, TWO ROW grid. Every cell is a full self-contained finished square icon with its own compact 2-pixel-weight dark metal outer frame, thin colored inner line and tiny matching corner ornaments. Consistent top-left illumination and professional high-contrast hand-painted pixel-art shading throughout. Each icon fills its own panel, dark opaque textured background, no transparent area. Four columns and two rows only; visible neutral dark gutters separate every complete frame, margins outside the grid. Design for crisp readability after nearest-neighbor downsampling to 64x64 per icon: bold distinct silhouettes, sharp chunky pixel clusters, restrained shading, minimal micro-detail. This is detailed finished game skill art, not flat vector glyphs or geometric placeholders. No letters, no numbers, no captions, no hotkeys, no text, no watermarks, no portraits, no characters, no whole-sheet frame. Keep effects entirely within their own compact panel frame; never cross panel borders. Compose all cells at similar scale and detail.
-Character: Yike, a precision fantasy mage with a manually aimed deployable three-petal arcane artillery staff, prism rails and condensed magical shells. Palette: deep purple #282137 and almost-black violet background, luminous coral #FF6C78, pale brass gold #F3C879, warm ivory-white #FFF3DC, secondary violet #9B83F4. Match dark purple metal frames with thin brass inner line and tiny coral/pale-gold corner facets across all 8 icons. The weapon is a long delicate magical focusing device, coral petal armor around a hollow brass focus and warm-white crystal, not a gun. No triggers, modern guns, firearm sights, bullets, brass casings, ammo magazines, ordinary orange fireballs or large opaque purple fog. No generic rainbow stripes despite the skill names.
-Grid order, left to right then second row:
-TOP ROW CELL 1, Rainbow Mark Calibration: three separate short pale-gold targeting arcs around a bright warm-white diamond star, small coral prismatic petals bursting outward, dark purple negative space. Clear three-part open reticle and diamond silhouette, not a complete large target disc.
-TOP ROW CELL 2, Steady Barrier: three overlapping thin violet and pale-gold shield facets, warm-white short support struts and coral glints; three plane-like plates forming a protective front, no person inside. Clear angular shield silhouette.
-TOP ROW CELL 3, Rainbow Rail Shell: ONE streamlined pointed warm-white crystal projectile with curved coral shell petals, speeding diagonally from lower left to upper right, three layered violet/pale-gold trailing ribbons. Clear pointed magical shell, not a round fireball or metal bullet.
-TOP ROW CELL 4, Refraction Denial: several sharp coral crystal petals rising outward from an open sparse pale-gold ground range arc, translucent violet outward wave, dark gaps remain between the crystalline petal spikes. A low outward flower-like burst, no solid wall.
-BOTTOM ROW CELL 1, Fixed Artillery stance: fully unfolded arcane artillery focusing head in three-quarter diagonal view, three large coral armored petals spread symmetrically around a hollow brass focusing ring and long warm ivory crystal core, strong paired pale-gold rails and small grounded support glints. Show precise metal joints and directionality, no wielder. Broad stable tripod-flower silhouette distinct from next cell.
-BOTTOM ROW CELL 2, Mobile Array stance: slender long half-open arcane staff focusing head, two narrow pale-gold guide rails and tucked coral curved petals wrapped close around violet inner chassis, a warm-white crystal at tip; short lateral motion ribbons imply movement. Lighter, narrow diagonal silhouette with clear rail gaps, not the same full-open artillery head scaled down.
-BOTTOM ROW CELL 3, Distant Heavy Bombardment: long pointed three-petal coral heavy magical shell diving diagonally down from upper left to lower right along a vivid curved violet/gold trajectory, warm-white concentrated core, a small open gold ground targeting arc below and coral prismatic impact facets. Clear heavy descending projectile action, no orange flames, no smoke cloud.
-BOTTOM ROW CELL 4, Prismatic Array Beam: small three-petal brass/coral focusing muzzle at lower left projects a long sharply defined warm-white beam diagonally to upper right, coral outer stream and thin violet interleaved edge ribbons, parallel gold guide rails aligned with beam and bright concentrated endpoint. Long beam silhouette distinct from free-flying shell, no huge blank white panel.
-Target canvas roughly 2048x1024 landscape. All eight panels square with complete borders. No text anywhere."""
+GENERATION_PROMPT = r"""Use case: stylized-concept.
+Asset type: production high-contrast PIXEL ART skill-icon atlas for the futuristic photon-array character Yike / Honglie.
+Primary request: Create ONE wide image containing EXACTLY EIGHT independent SQUARE finished game skill icons arranged FOUR COLUMNS by TWO ROWS, reading left to right then next row. No heading or captions. Each square has its own complete compact titanium-gray hard metal frame with a thin ice-blue / cool-white inner circuit line and tiny magenta status lights. The frames must remain fully visible, including all four corners, separated by neutral dark gutters. Do not wrap the sheet in a single outer frame.
+Style: sophisticated sharp pixel-art painting, clear chunky pixel clusters, angular bevelled hard-surface 3D forms, deliberate highlights and deep shadows, top-left illumination. Match detail density and border construction across all eight. Must remain readable and distinct at 64x64 pixels. Finished richly shaded game art, not flat vector symbols, not simple geometric placeholders.
+Shared palette: white ceramic armor #DCE8F0, graphite #15222E, deep cobalt blue #18456B, luminous ice blue #5DDEFF, cold white #F1FCFF, restrained violet #A88AFF and a few magenta status lights #FF6AAE. Opaque dark-blue graphite textured background in every cell. Cold high-tech precision equipment, visible electronic light paths, capacitor cells, angular cooling slots and segmented collimator rings.
+Technology language: long slender photon-array device with a clear thin grip/shaft, THREE angular hard armor wings which unfold, and a hollow sliding segmented focusing ring on its firing axis. Ceramic plates have bevelled cut planes and tiny radiator grooves; cobalt/graphite structural chassis; small blue capacitor modules. The light source is an electronic emitter, never a gemstone.
+ABSOLUTELY AVOID: gold/brass/bronze trims, ornate fantasy decoration, engravings, leather, gemstones, crystal jewelry, magical flower petals, organic wing/petal silhouettes, wizard staves, spell runes, clock faces, orange flame, shell casings, ammo magazines, modern gun sights, rainbow stripes, fog filling a panel. No character portraits or people. No text, letters, numbers, UI hotkeys, labels, icons of letters, logos, watermarks.
+Exact grid content:
+TOP ROW, CELL 1 — Rainbow Mark Calibration: THREE separated angular electronic targeting brackets forming an OPEN three-part reticle around a small cold-white focused photon diamond/pixel point. Cobalt metal bracket housings, cyan signal paths, tiny magenta calibration points. Open negative space, a precision sensor impression, not a circular fantasy seal.
+TOP ROW, CELL 2 — Steady Barrier: THREE layered polygonal translucent ice-blue energy-shield facets, hard angular edges and white/cobalt miniature emitter anchors. Thin violet secondary diffraction at facet edges. Strong clear shield silhouette, no person and no fully opaque dome.
+TOP ROW, CELL 3 — Rainbow Rail Shell: ONE sharply pointed slim photon projectile racing diagonally from lower left to upper right, cold-white linear emitter core enclosed by short faceted cobalt/white ceramic fins, layered cyan and thin violet trajectories extending continuously behind it. A precise narrow energy dart, no round fireball or gemstone.
+TOP ROW, CELL 4 — Refraction Denial: angular segmented GROUND RANGE GATES and opposing ice-blue hard-light refraction wedges rising from a sparse open electronic ground range boundary. A low outward repulsion wave rendered as broken cyan planes with small magenta junctions, visible dark gaps, clear area-denial silhouette rather than another flying projectile.
+BOTTOM ROW, CELL 1 — Fixed Artillery: fully unfolded THREE-WING photon-artillery array, three broad angular white-ceramic/cobalt armor wings spread around a hollow segmented cyan-lit collimator ring, internal capacitor modules visible, slim graphite shaft/grip continues down-left, stable small deployment supports below. Three-quarter view, fully open broad radial stance, clean mechanical joints, no organic petals. The long axial focusing structure must be obvious.
+BOTTOM ROW, CELL 2 — Mobile Array: lighter long photon-array device in a half-open travelling configuration, side armor wings swept closer to two narrow blue guide rails, white/cobalt angular ceramic chassis, slim long graphite shaft/grip, small hollow segmented focusing ring at its forward tip, short motion trails. Narrow mobile diagonal silhouette clearly different from the broad fully open artillery icon; do not merely shrink the previous icon.
+BOTTOM ROW, CELL 3 — Distant Heavy Bombardment: pointed heavy focused-photon payload descending along an ARC from upper left toward lower right, a larger white/cobalt angular multi-fin body with cold-white narrow tip, curved cyan/violet flight trail showing a downward final direction, small angular electronic ground-range bracket below. A controlled heavy ballistic energy payload, no explosion cloud, no flame, no magic jewel.
+BOTTOM ROW, CELL 4 — Prismatic Array Beam: a compact angular white/cobalt segmented collimator emitter at lower left firing a LONG NARROW cold-white beam toward upper right, parallel cobalt/cyan rail lines framing the beam, small violet independently interleaved flow traces, bright focused contact point. Keep the beam core fine, not a giant blank white slab. Distinct long continuous laser silhouette versus the free-flying dart in top row.
+Composition: each subject centered and fills its own panel without touching/crossing the inner border. Similar subject weight across all panels, complete individual frames. Roughly 2048x1024 landscape canvas, four square panels across and two down, modest neutral dark gutters. No text anywhere."""
 
 PANELS = (
-    ("yike_rainbow_mark", (9, 12, 435, 424)),
-    ("yike_steady_barrier", (453, 12, 878, 424)),
-    ("yike_rainbow_shell", (896, 12, 1322, 424)),
-    ("yike_refraction_denial", (1340, 12, 1765, 424)),
-    ("yike_fixed_artillery", (9, 438, 435, 860)),
-    ("yike_mobile_array", (453, 438, 878, 860)),
-    ("yike_distant_bombardment", (896, 438, 1322, 860)),
-    ("yike_prismatic_beam", (1340, 438, 1765, 860)),
+    ("yike_rainbow_mark", (6, 5, 437, 420)),
+    ("yike_steady_barrier", (450, 5, 880, 420)),
+    ("yike_rainbow_shell", (893, 5, 1324, 420)),
+    ("yike_refraction_denial", (1337, 5, 1768, 420)),
+    ("yike_fixed_artillery", (6, 428, 437, 853)),
+    ("yike_mobile_array", (450, 428, 880, 853)),
+    ("yike_distant_bombardment", (893, 429, 1324, 853)),
+    ("yike_prismatic_beam", (1337, 429, 1768, 853)),
 )
 
 
@@ -45,7 +50,7 @@ def main():
         opaque = original.convert("RGBA")
         assert opaque.getchannel("A").getextrema() == (255, 255)
         source = opaque.convert("RGB")
-        native = Image.new("RGB", (4 * 64 + 3 * 8, 2 * 64 + 8), (14, 16, 23))
+        native = Image.new("RGB", (4 * 64 + 3 * 8, 2 * 64 + 8), (15, 23, 32))
         for index, (name, box) in enumerate(PANELS):
             icon = source.crop(box).resize((64, 64), Image.Resampling.NEAREST)
             assert icon.size == (64, 64) and icon.mode == "RGB"
@@ -55,7 +60,7 @@ def main():
         native.resize((native.width * 4, native.height * 4), Image.Resampling.NEAREST).save(
             source_dir / "icon_contact_sheet.png", optimize=True
         )
-    print(f"yike: {len(PANELS)} opaque 64x64 PNGs; nearest-neighbor export")
+    print(f"yike: {len(PANELS)} opaque 64x64 future-tech PNGs; nearest-neighbor export")
 
 
 if __name__ == "__main__":

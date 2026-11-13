@@ -35,8 +35,8 @@ final class YikeVisualChecks {
         }
         for(Vec3 f:List.of(new Vec3(1,0,0),new Vec3(0,1,0),new Vec3(0,-1,0),new Vec3(.3,-.8,.4).normalize()))for(int signal:new int[]{BASIC,0,HEAVY}){
             var p=packet(AbilityVfxGeometry.FLIGHT,signal,3,100,f.scale(1.4),signal==BASIC?.065f:signal==HEAVY?.36f:.14f);
-            var mesh=YikeVfxGeometry.build(p,.7f,false);h.assertTrue(!mesh.isEmpty(),"Every 3D flight has a pointed crystal body");
-            for(var q:mesh)for(var at:List.of(q.a(),q.b(),q.c(),q.d()))h.assertTrue(at.dot(f)<=1.4*.7+1E-6,"Crystal and petals never project in front of the received collision endpoint");
+            var mesh=YikeVfxGeometry.build(p,.7f,false);h.assertTrue(!mesh.isEmpty(),"Every 3D flight has a forward photon core");
+            for(var q:mesh)for(var at:List.of(q.a(),q.b(),q.c(),q.d()))h.assertTrue(at.dot(f)<=1.4*.7+1E-6,"Photon core and stabilizer panels never project in front of the received collision endpoint");
             var wake=YikeVfxGeometry.wakeForFlight(p);h.assertTrue(wake!=null&&wake.kind()==AbilityVfxGeometry.TRAIL&&wake.instance()==0&&wake.from().equals(p.from())&&wake.to().equals(p.to()),"Independent planar wake uses only actual swept endpoints");
             for(var q:YikeVfxGeometry.build(wake,1,false))for(var at:List.of(q.a(),q.b(),q.c(),q.d()))h.assertTrue(at.dot(f)>=-1E-6&&at.dot(f)<=1.4+1E-6,"All three ribbons stop at the confirmed wall/range segment");
             var life=new AbilityVisualLifetime();life.end(p,101);h.assertTrue(life.finished(p,101)&&!life.finished(wake,101),"Flight finish removes body while the finite planar wake fades independently");

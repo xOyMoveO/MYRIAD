@@ -28,9 +28,9 @@ def load_compiler():
 
 
 def atlas_image(spec):
-    """Paint restrained enamel, leather, brass and crystal from named regions."""
+    """Paint ceramic panels, insulation, industrial joints and photon light channels."""
     atlas = spec["atlas"]
-    image = Image.new("RGBA", (atlas["width"], atlas["height"]), "#282137")
+    image = Image.new("RGBA", (atlas["width"], atlas["height"]), "#15222E")
     draw = ImageDraw.Draw(image)
     for region in atlas["regions"]:
         x, y, w, h = region["rect"]
@@ -41,28 +41,31 @@ def atlas_image(spec):
         # Two restrained edge steps are material detail, not baked scene lighting.
         draw.rectangle((x+2, y+2, x+w-3, y+h-3), outline=dark, width=2)
         draw.line((x+5, y+h-6, x+5, y+5, x+w-6, y+5), fill=light, width=1)
-        if name == "wrapped_violet":
+        if name == "grip_insulator":
             for yy in range(y+10, y+h-6, 8):
-                draw.line((x+6, yy+3, x+w-7, yy-3), fill=dark, width=2)
-                draw.line((x+6, yy+2, x+w-7, yy-4), fill=light, width=1)
-        elif name in ("coral_enamel", "coral_root"):
-            draw.line((x+32, y+13, x+32, y+50), fill=dark, width=2)
-            for yy in (y+20, y+43):
-                draw.line((x+32, yy-5, x+37, yy, x+32, yy+5,
-                           x+27, yy, x+32, yy-5), fill="#D4A662", width=1)
-        elif name == "violet_lining":
-            draw.line((x+23, y+10, x+23, y+53), fill=dark, width=2)
-            draw.line((x+41, y+10, x+41, y+53), fill=dark, width=2)
-            draw.line((x+32, y+18, x+32, y+46), fill=light, width=1)
-        elif name in ("brass", "pale_gold", "rail_brass"):
-            for xx in (x+15, x+47):
-                draw.line((xx, y+9, xx, y+54), fill=dark, width=1)
-            for yy in (y+12, y+51):
-                draw.rectangle((x+29, yy-1, x+33, yy+1), fill=light)
-        elif name == "warm_crystal":
-            draw.rectangle((x+25, y+8, x+38, y+55), fill="#FFF9EC")
-            draw.line((x+21, y+8, x+21, y+55), fill=dark, width=1)
-            draw.line((x+43, y+8, x+43, y+55), fill=light, width=1)
+                draw.rectangle((x+7, yy, x+w-8, yy+2), fill=dark)
+                draw.line((x+8, yy-1, x+w-9, yy-1), fill=light, width=1)
+        elif name == "ceramic_armor":
+            for yy in (y+20, y+45):
+                draw.line((x+8, yy, x+19, yy, x+22, yy+3, x+54, yy+3), fill=dark, width=1)
+            for xx in (x+12, x+51):
+                for yy in (y+12, y+51):draw.rectangle((xx-1, yy-1, xx+1, yy+1), fill="#3B5468")
+        elif name in ("cobalt_panel", "graphite_frame"):
+            draw.line((x+15, y+8, x+15, y+24, x+20, y+29, x+20, y+55), fill=dark, width=2)
+            draw.line((x+47, y+8, x+47, y+39, x+42, y+44, x+42, y+55), fill=light, width=1)
+        elif name == "industrial_joint":
+            for xx in (x+13, x+50):
+                for yy in (y+13, y+50):
+                    draw.rectangle((xx-2, yy-2, xx+2, yy+2), fill=dark)
+                    draw.line((xx-1, yy, xx+1, yy), fill=light)
+        elif name == "recess_vent":
+            for yy in range(y+13, y+57, 9):
+                draw.rectangle((x+9, yy, x+54, yy+3), fill=dark)
+                draw.line((x+10, yy-1, x+53, yy-1), fill=light)
+        elif name in ("cyan_circuit", "cool_white_core", "violet_signal", "magenta_indicator"):
+            draw.rectangle((x+25, y+7, x+38, y+56), fill=light)
+            draw.line((x+19, y+8, x+19, y+55), fill=dark, width=1)
+            draw.line((x+44, y+8, x+44, y+55), fill=dark, width=1)
     for detail in spec.get("face_details", []):
         if detail["kind"] == "texture":
             x, y, w, h = detail["uv"]

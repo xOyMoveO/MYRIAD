@@ -60,24 +60,31 @@ public final class PreviewYikeVfx {
         return out;
     }
     private static BufferedImage board(int tick,boolean still,boolean dark){
-        String[] names={"Basic / tiny ivory crystal","Passive A / calibration marks","Passive B / three barrier facets","Q / charge, flight, layered hit","W / sparse warning then petals","Major A / fixed support lights","Major B / mobile support lights","Ultimate A / real parabolic direction","Ultimate B / clipped flowing beam","Muzzle / inward charge then discharge","Heavy impact / ivory, coral, fragments","Beam cancellation / 0.20s contraction"};
+        String[] names={"Basic / compact photon slug","Passive A / targeting brackets","Passive B / three shield panels","Q / collimation, bolt, shock panels","W / angular ranging then shock sectors","Major A / three-point photon array","Major B / paired mobile guide rails","Ultimate A / real parabolic direction","Ultimate B / clipped flowing beam","Muzzle / inward charge then discharge","Heavy impact / cold core, sectors, fragments","Beam cancellation / 0.20s contraction"};
         double[] scales={190,150,145,27,58,190,190,32,23,270,42,23};
         Vec3[] focus={new Vec3(0,.6,0),O,O,new Vec3(5,.4,0),O,O,O,new Vec3(1,1,0),new Vec3(8,0,0),O,new Vec3(0,.3,0),new Vec3(8,0,0)};
         var panels=new ArrayList<PreviewRoleMeshes.Panel>();for(int i=0;i<12;i++)panels.add(new PreviewRoleMeshes.Panel(names[i],sample(i,tick,still),scales[i],focus[i]));
-        return PreviewRoleMeshes.board("Yike / all eight candidates + basic / no bloom",panels,4,dark);
+        return PreviewRoleMeshes.board("Yike photon array / all eight candidates + basic / cold white + ice blue / no bloom",panels,4,dark);
     }
     private static BufferedImage stages(){
         var panels=new ArrayList<PreviewRoleMeshes.Panel>();
         for(float age:new float[]{0,1.5f,3,6})panels.add(new PreviewRoleMeshes.Panel("Q impact / tick "+age,mesh(2,AbilityVfxGeometry.BURST,IMPACT,O,O,1.5f,8,age,100),92,O));
         for(float age:new float[]{0,2,5,11})panels.add(new PreviewRoleMeshes.Panel("Heavy impact / tick "+age,mesh(6,AbilityVfxGeometry.BURST,HEAVY_IMPACT,O,O,4,14,age,100),42,new Vec3(0,.3,0)));
         for(float age:new float[]{0,1,2,3})panels.add(new PreviewRoleMeshes.Panel("Beam cancel / tick "+age,mesh(7,AbilityVfxGeometry.BEAM,BEAM_END,O,new Vec3(16,0,0),.625f,4,age,100),23,new Vec3(8,0,0)));
-        return PreviewRoleMeshes.board("Yike / actual production impact and cancellation stages",panels,4,true);
+        return PreviewRoleMeshes.board("Yike photon array / production shock-panel and beam shutdown stages",panels,4,true);
     }
     public static void main(String[] args)throws Exception{
         Path out=Path.of(args[0]);Files.createDirectories(out);
         PreviewRoleMeshes.png(out.resolve("yike_vfx_meshes_dark.png"),board(0,true,true));
         PreviewRoleMeshes.png(out.resolve("yike_vfx_meshes_grass.png"),board(0,true,false));
         PreviewRoleMeshes.png(out.resolve("yike_vfx_stages.png"),stages());
+        var hierarchy=new ArrayList<PreviewRoleMeshes.Panel>();
+        int[] projectiles={BASIC,0,HEAVY};float[] radii={.065f,.14f,.36f};
+        String[] hierarchyNames={"Basic / same 140px-per-block scale","Q / same 140px-per-block scale","Heavy / same 140px-per-block scale"};
+        for(int i=0;i<3;i++)hierarchy.add(new PreviewRoleMeshes.Panel(hierarchyNames[i],
+                flight(projectiles[i],new Vec3(-.8,.2,0),new Vec3(.8,.2,0),radii[i],100),140,new Vec3(.1,.2,0)));
+        PreviewRoleMeshes.png(out.resolve("yike_vfx_size_hierarchy.png"),PreviewRoleMeshes.board(
+                "Yike photon projectiles / identical cameras, physical scale and sampled endpoints",hierarchy,3,true));
         var frames=new ArrayList<BufferedImage>();for(int i=0;i<84;i++)frames.add(board(i,false,true));
         PreviewRoleMeshes.gif(out.resolve("yike_vfx_preview.gif"),frames,50);
         for(int t:new int[]{0,5,12,22,28,72,74})PreviewRoleMeshes.png(out.resolve("yike_vfx_frame_"+t+".png"),frames.get(t));
