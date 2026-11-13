@@ -256,8 +256,7 @@ public final class YunShengSkills extends Skill {
             Vec3 aim = target.getBoundingBox().getCenter();
             Vec3 delta = aim.subtract(crane.pos);
             if (delta.length() <= .7 || now >= crane.arriveAt) {
-                if (WindWallSystem.blocksProjectile(level, crane.pos, aim)
-                        || com.myriad.character.skills.feiyu.FeiYuSkills.blocksProjectile(level, owner, crane.pos, aim)) return true;
+                if (WindWallSystem.blocksProjectile(level, crane.pos, aim)) return true;
                 if (ally(owner, target)) {
                     if (target instanceof ServerPlayer allyPlayer) {
                         PlayerData targetData = PlayerDataProvider.get(allyPlayer);
@@ -284,8 +283,7 @@ public final class YunShengSkills extends Skill {
             double inv = 1.0 - progress;
             Vec3 next = crane.start.scale(inv * inv)
                     .add(control.scale(2.0 * inv * progress)).add(aim.scale(progress * progress));
-            if (WindWallSystem.blocksProjectile(level, crane.pos, next)
-                    || com.myriad.character.skills.feiyu.FeiYuSkills.blocksProjectile(level, owner, crane.pos, next)) return true;
+            if (WindWallSystem.blocksProjectile(level, crane.pos, next)) return true;
             crane.pos = next;
             level.sendParticles(PALE, crane.pos.x, crane.pos.y, crane.pos.z, 2, .06, .06, .06, .005);
             level.sendParticles(ParticleTypes.END_ROD, crane.pos.x, crane.pos.y, crane.pos.z, 1, 0, 0, 0, 0);
@@ -333,7 +331,7 @@ public final class YunShengSkills extends Skill {
                 float heal = (float)(40 + (pending.level - 1) * 12 + pending.sp * .50);
                 float effective = Math.min(heal, target.getMaxHealth() - target.getHealth());
                 com.myriad.combat.CombatTelemetry.heal(target, heal, "yunsheng_skill");
-                
+
                 registerProtectedTarget(owner, target, now);
                 if (target != owner) pulled.add(target.getUUID());
             } else {

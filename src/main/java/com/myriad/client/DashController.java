@@ -25,7 +25,7 @@ public final class DashController {
     public static void start(float x, float y, float z, int ticks) {
         boundedTarget = null;
         // 负持续时间表示服务端要求精确停在技能落点。仅用于必须以落点开启
-        // 后续交互的位移（例如折川循标后的折返），普通突进仍保留自然惯性。
+        // 后续交互的位移，普通突进仍保留自然惯性。
         if (ticks < 0) {
             remainingTicks = 0;
             totalTicks = 0;

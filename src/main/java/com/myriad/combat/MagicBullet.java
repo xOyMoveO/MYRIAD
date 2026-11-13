@@ -44,11 +44,6 @@ public final class MagicBullet {
     private static final DustParticleOptions QINGLUO_GLOW = new DustParticleOptions(0xC5FF9C, .95F);
     private static final DustParticleOptions YUNSHENG_ORB = new DustParticleOptions(0x75F2E5, 1.45F);
     private static final DustParticleOptions YUNSHENG_GLOW = new DustParticleOptions(0xEDFFF9, .8F);
-    /** 观澜魔法弹：青色星核与蓝色外辉。 */
-    private static final DustParticleOptions GUANLAN_ORB = new DustParticleOptions(0x42E6FF, 1.55F);
-    private static final DustParticleOptions GUANLAN_GLOW = new DustParticleOptions(0x397CFF, .95F);
-    private static final DustParticleOptions LUOHENG_BEAD = new DustParticleOptions(0x55EAF2, 1.25F);
-    private static final DustParticleOptions LUOHENG_GLOW = new DustParticleOptions(0xF1FDFF, .75F);
 
     private static final class Bullet {
         Vec3 pos;
@@ -71,14 +66,13 @@ public final class MagicBullet {
     /** 法师判定：使用初始法器右键发射魔法弹的角色。 */
     public static boolean isMage(ServerPlayer player) {
         PlayerData pd = PlayerDataProvider.get(player);
-        if (pd != null && "mingzhu".equals(pd.getCharacterId())) return true;
+
         return pd != null && pd.getCharacterId() != null
                 && (CharacterType.byId(pd.getCharacterId()) == CharacterType.XUANCHEN
                         || CharacterType.byId(pd.getCharacterId()) == CharacterType.HANZE
                         || CharacterType.byId(pd.getCharacterId()) == CharacterType.QINGLUO
-                        || CharacterType.byId(pd.getCharacterId()) == CharacterType.YUNSHENG
-                        || CharacterType.byId(pd.getCharacterId()) == CharacterType.GUANLAN
-                        || CharacterType.byId(pd.getCharacterId()) == CharacterType.LUOHENG);
+                        || CharacterType.byId(pd.getCharacterId()) == CharacterType.YUNSHENG);
+
     }
 
     /** 右键尝试发射魔法弹（初始武器 + 法师 + 攻速冷却） */
@@ -94,10 +88,7 @@ public final class MagicBullet {
         if (!isMage(player)) {
             return;
         }
-        if ("mingzhu".equals(PlayerDataProvider.get(player).getCharacterId())) {
-            com.myriad.character.skills.mingzhu.MingZhuSkills.fireBasic(player);
-            return;
-        }
+
         ServerLevel level = (ServerLevel) player.level();
         long now = level.getGameTime();
         double as = Math.max(0.05, player.getAttributeValue(
@@ -128,16 +119,9 @@ public final class MagicBullet {
         net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
                 new com.myriad.network.NetworkSetup.MagicBulletCooldownPayload(cd, cd));
         // 起手：枪口迸发 + 音效
-        if ("luoheng".equalsIgnoreCase(b.characterId)) {
-            level.sendParticles(LUOHENG_BEAD, pos.x, pos.y, pos.z, 14, .12, .12, .12, .015);
-            level.sendParticles(LUOHENG_GLOW, pos.x, pos.y, pos.z, 8, .08, .08, .08, .01);
-        } else if ("yunsheng".equalsIgnoreCase(b.characterId)) {
+        if ("yunsheng".equalsIgnoreCase(b.characterId)) {
             level.sendParticles(YUNSHENG_ORB, pos.x, pos.y, pos.z, 16, .13, .13, .13, .022);
             level.sendParticles(YUNSHENG_GLOW, pos.x, pos.y, pos.z, 9, .08, .08, .08, .015);
-        } else if ("guanlan".equalsIgnoreCase(b.characterId)) {
-            level.sendParticles(GUANLAN_ORB, pos.x, pos.y, pos.z, 18, .14, .14, .14, .025);
-            level.sendParticles(GUANLAN_GLOW, pos.x, pos.y, pos.z, 11, .10, .10, .10, .018);
-            level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, 5, .06, .06, .06, .012);
         } else if ("qingluo".equalsIgnoreCase(b.characterId)) {
             level.sendParticles(QINGLUO_ORB, pos.x, pos.y, pos.z, 18, .14, .14, .14, .025);
             level.sendParticles(QINGLUO_GLOW, pos.x, pos.y, pos.z, 10, .09, .09, .09, .018);
@@ -176,19 +160,11 @@ public final class MagicBullet {
             float dmg = (float) (b.sp * damageRatio(b.characterId) * b.attackMultiplier);
             DamageCalc.dealBasicDamage(caster, target, dmg, DamageCalc.Kind.MAGIC);
             // 命中爆散特效
-            if ("luoheng".equalsIgnoreCase(b.characterId)) {
-                level.sendParticles(LUOHENG_BEAD, target.getX(), target.getY() + target.getBbHeight() * .6, target.getZ(), 20, .28, .28, .28, .03);
-                level.sendParticles(LUOHENG_GLOW, target.getX(), target.getY() + target.getBbHeight() * .6, target.getZ(), 12, .2, .2, .2, .02);
-            } else if ("yunsheng".equalsIgnoreCase(b.characterId)) {
+            if ("yunsheng".equalsIgnoreCase(b.characterId)) {
                 level.sendParticles(YUNSHENG_ORB, target.getX(), target.getY() + target.getBbHeight() * .6, target.getZ(),
                         22, .3, .3, .3, .04);
                 level.sendParticles(YUNSHENG_GLOW, target.getX(), target.getY() + target.getBbHeight() * .6, target.getZ(),
                         12, .2, .2, .2, .03);
-            } else if ("guanlan".equalsIgnoreCase(b.characterId)) {
-                level.sendParticles(GUANLAN_ORB, target.getX(), target.getY() + target.getBbHeight() * .6, target.getZ(),
-                        26, .34, .34, .34, .045);
-                level.sendParticles(GUANLAN_GLOW, target.getX(), target.getY() + target.getBbHeight() * .6, target.getZ(),
-                        18, .27, .27, .27, .035);
             } else if ("qingluo".equalsIgnoreCase(b.characterId)) {
                 level.sendParticles(QINGLUO_ORB, target.getX(), target.getY() + target.getBbHeight() * .6, target.getZ(),
                         24, .32, .32, .32, .045);
@@ -213,13 +189,10 @@ public final class MagicBullet {
         }
         b.traveled += SPEED;
         if (b.traveled >= maxRange(b.characterId)) {
-            if ("guanlan".equalsIgnoreCase(b.characterId)) {
-                level.sendParticles(GUANLAN_ORB, next.x, next.y, next.z, 10, .16, .16, .16, .025);
-                level.sendParticles(GUANLAN_GLOW, next.x, next.y, next.z, 7, .12, .12, .12, .018);
-            } else {
+
                 level.sendParticles(ParticleTypes.END_ROD, next.x, next.y, next.z,
                         8, 0.15, 0.15, 0.15, 0.02);
-            }
+
             return true;
         }
         // 飞行拖尾：按角色区分特效
@@ -231,28 +204,9 @@ public final class MagicBullet {
 
     /** 飞行拖尾特效（按角色区分；墨尘 = 黑白粒子螺旋向前） */
     private static void spawnTrail(ServerLevel level, Bullet b, Vec3 pos) {
-        if ("luoheng".equalsIgnoreCase(b.characterId)) {
-            // 青白方块算珠：紧凑方核与四角白色刻度。
-            level.sendParticles(LUOHENG_BEAD, pos.x, pos.y, pos.z, 4, .055, .055, .055, .002);
-            Vec3 axis=b.dir,up=Math.abs(axis.y)>.95?new Vec3(1,0,0):new Vec3(0,1,0),side=axis.cross(up).normalize(),vert=side.cross(axis).normalize();
-            double phase=(b.spiralPhase&1)==0?.16:-.16;
-            for(Vec3 off:List.of(side.scale(phase).add(vert.scale(phase)),side.scale(-phase).add(vert.scale(phase)),side.scale(phase).add(vert.scale(-phase)),side.scale(-phase).add(vert.scale(-phase))))
-                level.sendParticles(LUOHENG_GLOW,pos.x+off.x,pos.y+off.y,pos.z+off.z,1,0,0,0,0);
-        } else if ("yunsheng".equalsIgnoreCase(b.characterId)) {
+        if ("yunsheng".equalsIgnoreCase(b.characterId)) {
             level.sendParticles(YUNSHENG_ORB, pos.x, pos.y, pos.z, 5, .08, .08, .08, .006);
             level.sendParticles(YUNSHENG_GLOW, pos.x, pos.y, pos.z, 2, .04, .04, .04, .003);
-        } else if ("guanlan".equalsIgnoreCase(b.characterId)) {
-            // 青色星核 + 蓝色双螺旋外辉，保持紧凑以免遮挡准星。
-            level.sendParticles(GUANLAN_ORB, pos.x, pos.y, pos.z, 5, .075, .075, .075, .006);
-            Vec3 axis = b.dir;
-            Vec3 up = Math.abs(axis.y) > .95 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0);
-            Vec3 side = axis.cross(up).normalize();
-            Vec3 vert = side.cross(axis).normalize();
-            double angle = b.spiralPhase * Math.PI / 5.0;
-            Vec3 offset = side.scale(Math.cos(angle) * .23).add(vert.scale(Math.sin(angle) * .23));
-            Vec3 first = pos.add(offset), second = pos.subtract(offset);
-            level.sendParticles(GUANLAN_GLOW, first.x, first.y, first.z, 1, 0, 0, 0, 0);
-            level.sendParticles(GUANLAN_GLOW, second.x, second.y, second.z, 1, 0, 0, 0, 0);
         } else if ("qingluo".equalsIgnoreCase(b.characterId)) {
             // 两层 Dust 聚成紧凑球体，中心亮、外围青绿，拖尾不遮挡视线。
             level.sendParticles(QINGLUO_ORB, pos.x, pos.y, pos.z, 7, .105, .105, .105, .008);

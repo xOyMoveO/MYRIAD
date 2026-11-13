@@ -24,7 +24,6 @@ public final class HudLayoutConfig {
         OBJECTIVE("objective", .50F, .14F, true),
         ANNOUNCEMENTS("announcements", .50F, .12F, true),
         PROMPTS("prompts", .50F, .50F, true),
-        HERO_RESOURCE("hero_resource", .92F, .88F, true),
         DPS("dps", .05F, .92F, true),
         COMBAT_STATS("combat_stats", .91F, .38F, false),
         FEEDBACK("feedback", .50F, .50F, true),

@@ -121,8 +121,7 @@ public class YingShaSkill extends Skill {
 
    private static boolean tickOne(ServerLevel level, ServerPlayer player, YingShaSkill.Dagger dagger) {
       Vec3 next = dagger.pos.add(dagger.dir.scale(2.0));
-      if (WindWallSystem.blocksProjectile(level, dagger.pos, next)
-              || com.myriad.character.skills.feiyu.FeiYuSkills.blocksProjectile(level, player, dagger.pos, next)) {
+      if (WindWallSystem.blocksProjectile(level, dagger.pos, next)) {
          removeVisual(dagger);
          return true;
       }
