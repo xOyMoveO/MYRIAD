@@ -31,6 +31,7 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
         if(p.theme()==0)return com.myriad.character.skills.yingxiao.rework.NightVfxGeometry.bounds(p);
         if(p.theme()==1)return com.myriad.character.skills.tianxing.rework.ThunderVfxGeometry.bounds(p);
         if(p.theme()==2)return com.myriad.character.skills.fenjue.rework.FlameVfxGeometry.bounds(p);
+        if(p.theme()==11)return com.myriad.character.skills.keheng.KehengVfx.bounds(p);
         return com.myriad.character.skills.lingyuan.rework.HeavenSwordVfx.owns(p)
                 ?com.myriad.character.skills.lingyuan.rework.HeavenSwordVfx.bounds(p)
                 :new AABB(p.from(),p.to()).inflate(Math.max(p.radius()+.5,p.theme()==5?5:2));
@@ -45,7 +46,8 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
         // packet is not already in its trail-only phase. Absolute expiry still rejects old
         // packets and bounds its lifetime; an end signal still removes it immediately.
         boolean movingBody=recipe.kind()==AbilityVfxGeometry.FLIGHT
-                &&(recipe.theme()==5&&recipe.variant()==4||(recipe.theme()==0||recipe.theme()==1)&&recipe.instance()>0);
+                &&(recipe.theme()==5&&recipe.variant()==4||(recipe.theme()==0||recipe.theme()==1||recipe.theme()==11)&&recipe.instance()>0
+                ||com.myriad.character.skills.yike.YikeVfxGeometry.movingBody(recipe));
         age=movingBody?0:(int)Math.clamp(level.getGameTime()-recipe.started(),0,lifetime);
         hasPhysics=false;gravity=0;xd=yd=zd=0;
         setBoundingBox(com.myriad.character.skills.fenjue.rework.FlameStepVfx.sides(recipe)&&anchor!=null
@@ -72,15 +74,24 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
         FLIGHTS.prune(mc.level.getGameTime());
         if(com.myriad.character.ability.AbilityVisualLifetime.expired(p,mc.level.getGameTime())||FLIGHTS.finished(p,mc.level.getGameTime()))return;
         com.myriad.client.firstperson.ShuoHeldLight.receive(p);
+        if(p.theme()==12&&(p.angle()==com.myriad.character.skills.yike.YikeVfx.MUZZLE
+                ||p.angle()==com.myriad.character.skills.yike.YikeVfx.LAST_MUZZLE))
+            com.myriad.client.YikeClientState.onMuzzle(p.owner(),p.started());
         // Keep a short, purely planar record of each received thunder flight segment.
         // It is not a FLIGHT body: new samples/end signals still kill the model immediately,
         // while this absolute-TTL wake dissipates in 0.30/0.35s. Owner/skill epochs clear both.
         var wake=com.myriad.character.skills.tianxing.rework.ThunderVfxGeometry.wakeForFlight(p);
         if(wake!=null&&!com.myriad.character.ability.AbilityVisualLifetime.expired(wake,mc.level.getGameTime()))
             mc.particleEngine.add(new AbilityMeshParticle(mc.level,wake));
+        var chronometricWake=com.myriad.character.skills.keheng.KehengVfx.wakeForFlight(p);
+        if(chronometricWake!=null&&!com.myriad.character.ability.AbilityVisualLifetime.expired(chronometricWake,mc.level.getGameTime()))
+            mc.particleEngine.add(new AbilityMeshParticle(mc.level,chronometricWake));
+        var rainbowWake=com.myriad.character.skills.yike.YikeVfxGeometry.wakeForFlight(p);
+        if(rainbowWake!=null&&!com.myriad.character.ability.AbilityVisualLifetime.expired(rainbowWake,mc.level.getGameTime()))
+            mc.particleEngine.add(new AbilityMeshParticle(mc.level,rainbowWake));
         mc.particleEngine.add(new AbilityMeshParticle(mc.level,p));
     }
-    public static void reset(){epoch++;OWNER_EPOCHS.clear();SKILL_EPOCHS.clear();FLIGHTS.clear();com.myriad.client.firstperson.ShuoHeldLight.reset();}
+    public static void reset(){epoch++;OWNER_EPOCHS.clear();SKILL_EPOCHS.clear();FLIGHTS.clear();com.myriad.client.firstperson.ShuoHeldLight.reset();com.myriad.client.YikeClientState.reset();}
     public static void registerGroup(RegisterParticleGroupsEvent event){event.register(GROUP,Group::new);}
     @Override public ParticleRenderType getGroup(){return GROUP;}
     @Override protected Layer getLayer(){return Layer.TRANSLUCENT;}
@@ -100,7 +111,8 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
         if(!isAlive()||com.myriad.character.ability.AbilityVisualLifetime.expired(recipe,level.getGameTime())||FLIGHTS.finished(recipe,level.getGameTime()))return;
         var mc=Minecraft.getInstance();if(mc.player==null)return;
         if(!recipe.personal()&&!FogOfWarClient.shouldRenderPlayer(recipe.owner())
-                &&!(com.myriad.character.skills.shuo.ShuoSkillVfx.owns(recipe)&&recipe.owner()==mc.player.getId()))return;
+                &&!(com.myriad.character.skills.shuo.ShuoSkillVfx.owns(recipe)&&recipe.owner()==mc.player.getId())
+                &&!(recipe.theme()==12&&recipe.anchor()<0))return;
         if(recipe.anchor()!=mc.player.getId()&&level.getEntity(recipe.anchor()) instanceof net.minecraft.world.entity.player.Player
                 &&!FogOfWarClient.shouldRenderPlayer(recipe.anchor()))return;
         double distance=camera.position().distanceTo(recipe.from());
@@ -172,6 +184,15 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
         @Override public boolean add(Particle particle) {
             if(!(particle instanceof AbilityMeshParticle))return false;
             var incoming=(AbilityMeshParticle)particle;
+            if(incoming.recipe.theme()==11||incoming.recipe.theme()==12){
+                if(particles.stream().anyMatch(old->incoming.recipe.theme()==11
+                        ?com.myriad.character.skills.keheng.KehengVfx.obsolete(incoming.recipe,old.recipe)
+                        :com.myriad.character.skills.yike.YikeVfxGeometry.obsolete(incoming.recipe,old.recipe)))return false;
+                particles.removeIf(old->{boolean replace=incoming.recipe.theme()==11
+                        ?com.myriad.character.skills.keheng.KehengVfx.replaces(incoming.recipe,old.recipe)
+                        :com.myriad.character.skills.yike.YikeVfxGeometry.replaces(incoming.recipe,old.recipe);
+                    if(replace)old.remove();return replace;});
+            }
             if(com.myriad.character.skills.fenjue.rework.FlameMajorVfx.owns(incoming.recipe)){
                 if(particles.stream().anyMatch(old->com.myriad.character.skills.fenjue.rework.FlameVisualMerge.obsolete(incoming.recipe,old.recipe)))return false;
                 particles.removeIf(old->{boolean replace=com.myriad.character.skills.fenjue.rework.FlameVisualMerge.replaces(incoming.recipe,old.recipe);

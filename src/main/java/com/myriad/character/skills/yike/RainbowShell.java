@@ -11,7 +11,7 @@ public final class RainbowShell extends AbilitySkill {
     @Override public boolean cooldownReady(AbilityRuntime.Cast c){return YikeStance.active(c.player)||super.cooldownReady(c);}
     @Override public int cooldownTicks(AbilityRuntime.Cast c){return YikeStance.active(c.player)?0:super.cooldownTicks(c);}
     @Override public boolean canRelease(AbilityRuntime.Cast c){return c.data.skillLevel(getId())>0&&!PrismaticBeam.active(c.player)&&YikeStance.canFire(c);}
-    @Override public void preparing(AbilityRuntime.Cast c){YikeVfx.event(c,"muzzle",c.player.getEyePosition(),c.player.getEyePosition().add(c.player.getLookAngle()),.35f,commitWindupTicks());}
+    @Override public void preparing(AbilityRuntime.Cast c){YikeVfx.event(c,"muzzle_charge",c.player.getEyePosition(),c.player.getEyePosition().add(c.player.getLookAngle()),.35f,commitWindupTicks());}
     @Override public boolean hasOwnCastSound(){return true;}
     @Override public void release(AbilityRuntime.Cast c){
         var p=c.player;var direction=YikeStance.active(p)?YikeStance.aim(p):p.getLookAngle();

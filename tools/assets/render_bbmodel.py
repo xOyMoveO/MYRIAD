@@ -82,7 +82,7 @@ def texture_images(model, source_dir):
 
 
 def render(model_path, output_path=None, view="isometric", size=(720, 1024),
-           scale=None, background="#17232c"):
+           scale=None, background="#17232c", center=None):
     """Render a path or in-memory bbmodel; larger depth values face the camera."""
     if isinstance(model_path, dict):
         model, source_dir = model_path, Path.cwd()
@@ -109,6 +109,8 @@ def render(model_path, output_path=None, view="isometric", size=(720, 1024),
     scale = scale or min((width - 64) / max(.001, max_x - min_x),
                          (height - 64) / max(.001, max_y - min_y))
     center_x, center_y = (min_x + max_x) / 2, (min_y + max_y) / 2
+    if center is not None:
+        center_x, center_y = center
     canvas = Image.new("RGBA", size, background)
     pixels = canvas.load()
     depths = [-float("inf")] * (width * height)

@@ -27,10 +27,10 @@ public final class KehengTimeFields {
     private static final Identifier MOVE=Identifier.fromNamespaceAndPath("myriad","local_action_movement");
     public static final class Field {
         final AbilityRuntime.Cast cast;final String key;final Vec3 origin,direction;final double radius,actorRate,flightRate;
-        final long begins,ends,impulse;final boolean follows,corridor;final float opening,pulse,ending;
+        final long begins,ends,impulse,created;final int visual;final boolean follows,corridor;final float opening,pulse,ending;
         long lastTick=Long.MIN_VALUE;boolean opened,inside,removed;
         Field(AbilityRuntime.Cast c,Vec3 at,Vec3 facing,double r,int warning,int duration,double actor,double flight,float open,float pulse,float end,boolean follow,boolean corridor){
-            cast=c;origin=at;direction=facing;radius=r;actorRate=actor;flightRate=flight;begins=c.now()+warning;ends=begins+duration;
+            cast=c;created=c.now();visual=c.newVisualInstance();origin=at;direction=facing;radius=r;actorRate=actor;flightRate=flight;begins=c.now()+warning;ends=begins+duration;
             impulse=KnockbackBuffer.impulseToken(c.player);follows=follow;this.corridor=corridor;opening=open;this.pulse=pulse;ending=end;
             key="keheng_field_"+c.castId();
         }
@@ -74,7 +74,8 @@ public final class KehengTimeFields {
     private static void add(Field field){FIELDS.add(field);tick(field.cast.player.level());refreshActor(field.cast.player);}
     public static boolean following(ServerPlayer p){return FIELDS.stream().anyMatch(f->f.follows&&f.cast.player==p&&!f.removed);}
     public static void cancelFollowing(ServerPlayer p){for(var f:new ArrayList<>(FIELDS))if(f.follows&&f.cast.player==p)remove(f);}
-    public static void remove(Field f){if(f.removed)return;f.removed=true;FIELDS.remove(f);KehengVisuals.end(f.cast,f.center(),f.radius);
+    public static void remove(Field f){remove(f,false,false);}
+    private static void remove(Field f,boolean natural,boolean clear){if(f.removed)return;f.removed=true;FIELDS.remove(f);KehengVisuals.end(f.cast,f.center(),f.radius,natural,f.visual,clear);
         if(f.follows)f.cast.buff("g1_keheng_follow",0);
         KehengAudio.play(f.cast.player,"end");refreshPublished();}
     public static void penetrate(Field f,float damage){if(f.removed)return;
@@ -93,11 +94,11 @@ public final class KehengTimeFields {
             if(f.lastTick==now)continue;f.lastTick=now;
             if(!AbilityRuntime.valid(f.cast.player)||!"keheng".equals(PlayerDataProvider.get(f.cast.player).getCharacterId())){remove(f);continue;}
             if(f.follows&&f.interrupted()||f.corridor&&(!AbilityRuntime.channeling(f.cast.player)||f.interrupted())){remove(f);continue;}
-            if(now>=f.ends){if(f.follows)damage(f,f.ending);if(f.pulse>0&&now==f.ends)damage(f,f.pulse);remove(f);continue;}
-            if(now<f.begins){if((now-f.begins)%3==0)KehengVisuals.warning(f.cast,f.center(),f.radius);continue;}
+            if(now>=f.ends){if(f.follows)damage(f,f.ending);if(f.pulse>0&&now==f.ends){damage(f,f.pulse);KehengVisuals.pulse(f.cast,f.center(),f.radius);}remove(f,true,false);continue;}
+            if(now<f.begins){if(now==f.created||(now-f.created)%3==0)KehengVisuals.warning(f.cast,f.center(),f.radius,now-f.created,f.visual);continue;}
             if(!f.opened){f.opened=true;if(f.opening>0)damage(f,f.opening);KehengAudio.play(f.cast.player,"field");}
             if(f.pulse>0&&now>f.begins&&(now-f.begins)%10==0){damage(f,f.pulse);KehengVisuals.pulse(f.cast,f.center(),f.radius);KehengAudio.play(f.cast.player,"pulse");}
-            if(now%3==0){if(f.corridor)KehengVisuals.corridor(f.cast,f.origin,f.origin.add(f.direction.scale(f.length())));else KehengVisuals.field(f.cast,f.center(),f.radius,f.follows);}
+            if(now==f.begins||now%3==0){if(f.corridor)KehengVisuals.corridor(f.cast,f.origin,f.origin.add(f.direction.scale(f.length())),f.visual);else KehengVisuals.field(f.cast,f.center(),f.radius,f.follows,now-f.begins,f.visual);}
             boolean inside=!f.corridor&&f.contains(f.cast.player.position());if(inside&&!f.inside)ConstantStepSkill.entered(f.cast.player);f.inside=inside;
         }
         NEEDLES.removeIf(n->n.cast.player.level()!=n.target.level()||!n.target.isAlive()||now>=n.until||!AbilityRuntime.valid(n.cast.player));
@@ -162,7 +163,7 @@ public final class KehengTimeFields {
         return rate;
     }
     public static void clear(ServerPlayer p){
-        for(var f:new ArrayList<>(FIELDS))if(f.cast.player==p)remove(f);
+        for(var f:new ArrayList<>(FIELDS))if(f.cast.player==p)remove(f,false,true);
         NEEDLES.removeIf(n->n.cast.player==p||n.target==p);CLEANSED.remove(p.getUUID());EngravedEchoSkill.clear(p);
         ModShieldSystem.removeSource(p,"keheng_hengbu/"+p.getUUID());ModShieldSystem.removeSource(p,"keheng_cuopaibu/"+p.getUUID());
         refreshPublished();var previous=PUBLISHED.remove(p.getUUID());if(previous!=null)for(var s:previous)ActionTime.remove(p.getUUID(),s.owner,s.key);

@@ -1,10 +1,11 @@
-# 刻衡静态资源
+# 刻衡资源与预览
 
 - `hengke.bbmodel`：可编辑模型，贴图已内嵌；移动文件后仍可在 Blockbench 中直接显示颜色。
 - `hengke.spec.json`：模型和材质的可编辑规格，基于原模型逆向，保留细刃与握区尺寸，补齐剑根、连续开口护手和微型擒纵轮连接。
 - `hengke_texture.png`：64×64 像素材质图；银白细刃、墨青脊线、深青皮革、琥珀金属和青绿时晶分别绑定独立 UV 区域。
 - `hengke_front.png`、`hengke_side.png`、`hengke_top.png`、`hengke_isometric.png`：从真实模型、旋转和 UV 离线渲染的正、侧、顶及斜角图；`hengke_orthographic.png` 为三视图合览，顶视图单独放大。
 - `icon_source.png`：专属技能图标原图；`icon_export.py` 保留完整生成提示和裁切坐标；`icon_contact_sheet_native.png` 与 `icon_contact_sheet.png` 分别供原尺寸和放大检查。运行图标位于 `src/main/resources/assets/myriad/textures/gui/sprites/skill_icons/generated/keheng/`。
+- `vfx/`：普攻及八个候选技能的生产网格动态 PNG/GIF，阶段图及再生成入口见 `vfx/README.md`。
 
 重新生成（需要 Pillow 及项目的 `minecraft-ai-generate-bbmodel` skill）：
 
