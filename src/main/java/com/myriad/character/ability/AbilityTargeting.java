@@ -32,10 +32,14 @@ public final class AbilityTargeting {
             if(floor.getType()!=HitResult.Type.BLOCK||floor.getDirection()!=Direction.UP)return null;
             at=floor.getLocation().add(0,.025,0);
         }
-        if(!inRange(p.position(),at,range)||!supported(p,at))return null;
-        var occlusion=p.level().clip(new ClipContext(eye,at.add(0,.1,0),ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,p));
-        if(occlusion.getType()!=HitResult.Type.MISS&&occlusion.getLocation().distanceToSqr(at)>.12)return null;
-        return !landing||canStand(p,at)?at:null;
+        return legalGround(p,at,range,landing)?at:null;
+    }
+    /** Recheck an already selected point at deferred commit without retargeting the player's aim. */
+    public static boolean legalGround(ServerPlayer p,Vec3 at,double range,boolean landing){
+        if(at==null||!inRange(p.position(),at,range)||!supported(p,at))return false;
+        var occlusion=p.level().clip(new ClipContext(p.getEyePosition(),at.add(0,.1,0),ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,p));
+        if(occlusion.getType()!=HitResult.Type.MISS&&occlusion.getLocation().distanceToSqr(at)>.12)return false;
+        return !landing||canStand(p,at);
     }
     public static boolean supported(ServerPlayer p,Vec3 at){
         if(!finite(at)||!p.level().hasChunkAt(BlockPos.containing(at))||!p.level().getWorldBorder().isWithinBounds(BlockPos.containing(at)))return false;
