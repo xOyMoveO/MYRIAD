@@ -38,6 +38,11 @@ public final class SkillChargeSystem {
         if(walkFactor==0)freeze(p);else p.setSprinting(false);
         PacketDistributor.sendToPlayer(p,new SkillChargePayload(skill,ticks,now,walkFactor));
     }
+    /** Keep an explicitly local-time windup locked without restarting its presentation. */
+    public static void extend(ServerPlayer p,int remainingTicks){
+        var c=ACTIVE.get(p.getUUID());
+        if(c!=null)ACTIVE.put(p.getUUID(),new Charge(c.player,c.role,c.level,c.skill,p.level().getGameTime()+remainingTicks,c.walkFactor));
+    }
     public static boolean active(ServerPlayer p){
         Charge c=ACTIVE.get(p.getUUID());return c!=null&&c.player==p&&c.level==p.level()&&c.until>p.level().getGameTime()
                 &&p.isAlive()&&!p.isSpectator()&&ModState.isEnabled()

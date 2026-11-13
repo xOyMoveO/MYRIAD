@@ -41,6 +41,7 @@ final class FirstGroupRegressionChecks {
             NightBasicNeedleChecks.verify(h);
             NightShieldChecks.verify(h);
             SharedControlChecks.start(h);
+            AbilityContractChecks.start(h);
             LevelUpPresentationChecks.verify(h);
             RuneRemovalChecks.run(h, p);
             CombatImpactChecks.verify(h,p);
