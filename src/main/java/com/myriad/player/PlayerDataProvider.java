@@ -249,12 +249,7 @@ public final class PlayerDataProvider {
             }
             return;
         }
-        com.myriad.character.skills.wuxiang.WuxiangSkills.clearFor(player.getUUID());
-        com.myriad.character.skills.feiyu.FeiYuSkills.clearFor(player.getUUID());
-        com.myriad.character.skills.wanyue.WanyueSkills.clearFor(player.getUUID());
-        com.myriad.character.skills.shenli.ShenLiSkills.clearFor(player);
-        com.myriad.character.skills.zhechuan.ZheChuanSkills.clearFor(player);
-        com.myriad.character.skills.mingzhu.MingZhuSkills.clearFor(player, true);
+
         ModShieldSystem.clearFor(player);
         if (com.myriad.game.TrainingMode.isEnabled()
                 && !type.getId().equalsIgnoreCase(data.getCharacterId() == null ? "" : data.getCharacterId())) {
@@ -410,25 +405,6 @@ public final class PlayerDataProvider {
                 || data.getPlacementType() == com.myriad.character.skills.yunsheng.YunShengSkills.CHORUS_PLACEMENT)
                 && type == CharacterType.YUNSHENG) {
             com.myriad.character.skills.yunsheng.YunShengSkills.confirmPlacement(player, data);
-        } else if (data.getPlacementType() >= com.myriad.character.skills.guanlan.GuanLanSkills.METEOR_PLACEMENT
-                && data.getPlacementType() <= com.myriad.character.skills.guanlan.GuanLanSkills.ULTIMATE_PLACEMENT
-                && type == CharacterType.GUANLAN) {
-            com.myriad.character.skills.guanlan.GuanLanSkills.confirmPlacement(player, data);
-        } else if (data.getPlacementType() == com.myriad.character.skills.luoheng.LuoHengSkills.Q_PLACEMENT
-                && type == CharacterType.LUOHENG) {
-            com.myriad.character.skills.luoheng.LuoHengSkills.confirmPlacement(player, data);
-        } else if (data.getPlacementType() == com.myriad.character.skills.luoheng.LuoHengSkills.W_SELECTION
-                && type == CharacterType.LUOHENG) {
-            // W 选边只接受再次按 W；左键在此状态下不替玩家自动选择节点。
-        } else if (data.getPlacementType() == com.myriad.character.skills.shenli.ShenLiSkills.W_PLACEMENT
-                && type == CharacterType.SHENLI) {
-            // 沈砺 W 只接受再次按 W 选色；左键不替玩家确认。
-        } else if (data.getPlacementType() == com.myriad.character.skills.zhechuan.ZheChuanSkills.Q_PLACEMENT
-                && type == CharacterType.ZHECHUAN) {
-            com.myriad.character.skills.zhechuan.ZheChuanSkills.confirmPlacement(player, data);
-        } else if (data.getPlacementType() == com.myriad.character.skills.mingzhu.MingZhuSkills.PLACEMENT
-                && type == CharacterType.MINGZHU) {
-            com.myriad.character.skills.mingzhu.MingZhuSkills.confirmPlacement(player, data);
         }
     }
 
@@ -473,25 +449,6 @@ public final class PlayerDataProvider {
                 || data.getPlacementType() == com.myriad.character.skills.yunsheng.YunShengSkills.CHORUS_PLACEMENT)
                 && type == CharacterType.YUNSHENG) {
             com.myriad.character.skills.yunsheng.YunShengSkills.cancelPlacement(player, data);
-        } else if (data.getPlacementType() >= com.myriad.character.skills.guanlan.GuanLanSkills.METEOR_PLACEMENT
-                && data.getPlacementType() <= com.myriad.character.skills.guanlan.GuanLanSkills.ULTIMATE_PLACEMENT
-                && type == CharacterType.GUANLAN) {
-            com.myriad.character.skills.guanlan.GuanLanSkills.cancelPlacement(player, data);
-        } else if (data.getPlacementType() == com.myriad.character.skills.luoheng.LuoHengSkills.Q_PLACEMENT
-                && type == CharacterType.LUOHENG) {
-            com.myriad.character.skills.luoheng.LuoHengSkills.cancelPlacement(player, data);
-        } else if (data.getPlacementType() == com.myriad.character.skills.luoheng.LuoHengSkills.W_SELECTION
-                && type == CharacterType.LUOHENG) {
-            com.myriad.character.skills.luoheng.LuoHengSkills.cancelW(player, data);
-        } else if (data.getPlacementType() == com.myriad.character.skills.shenli.ShenLiSkills.W_PLACEMENT
-                && type == CharacterType.SHENLI) {
-            com.myriad.character.skills.shenli.ShenLiSkills.cancelW(player, data);
-        } else if (data.getPlacementType() == com.myriad.character.skills.zhechuan.ZheChuanSkills.Q_PLACEMENT
-                && type == CharacterType.ZHECHUAN) {
-            com.myriad.character.skills.zhechuan.ZheChuanSkills.cancelPlacement(player, data);
-        } else if (data.getPlacementType() == com.myriad.character.skills.mingzhu.MingZhuSkills.PLACEMENT
-                && type == CharacterType.MINGZHU) {
-            com.myriad.character.skills.mingzhu.MingZhuSkills.cancelPlacement(player, data);
         }
     }
 
@@ -780,16 +737,7 @@ public final class PlayerDataProvider {
             com.myriad.character.skills.qingluo.QingLuoSkills.clearFor(player.getUUID());
             com.myriad.character.skills.chixiao.ChiXiaoSkills.clearFor(player.getUUID());
             com.myriad.character.skills.yunsheng.YunShengSkills.clearFor(player);
-            com.myriad.character.skills.lige.LiGeSkills.removeModifiers(player);
-            com.myriad.character.skills.lige.LiGeSkills.clearFor(player.getUUID());
-            com.myriad.character.skills.guanlan.GuanLanSkills.clearFor(player.getUUID());
-            com.myriad.character.skills.xuanjia.XuanJiaSkills.clearFor(player);
-            com.myriad.character.skills.wuxiang.WuxiangSkills.clearFor(player.getUUID());
-            com.myriad.character.skills.feiyu.FeiYuSkills.clearFor(player.getUUID());
-            com.myriad.character.skills.wanyue.WanyueSkills.clearFor(player.getUUID());
-            com.myriad.character.skills.shenli.ShenLiSkills.clearFor(player);
-            com.myriad.character.skills.zhechuan.ZheChuanSkills.disconnect(player);
-            com.myriad.character.skills.mingzhu.MingZhuSkills.clearFor(player, false);
+
             ModShieldSystem.clearFor(player.getUUID());
             if (GameManager.get() != null) {
                 GameManager.get().onPlayerQuit(player);
@@ -801,10 +749,7 @@ public final class PlayerDataProvider {
     public static void clearModGeneratedState(net.minecraft.server.MinecraftServer server) {
         com.myriad.character.ability.AbilityRuntime.clearAll();
         com.myriad.game.RecallSystem.clear();
-        com.myriad.character.skills.zhechuan.ZheChuanSkills.clearAll();
-        for (ServerPlayer p : server.getPlayerList().getPlayers())
-            com.myriad.character.skills.mingzhu.MingZhuSkills.clearFor(p, true);
-        com.myriad.character.skills.mingzhu.MingZhuSkills.clearAll();
+
         PENDING_DAMAGE_FLOATS.clear();
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             UUID id = player.getUUID();
@@ -833,16 +778,7 @@ public final class PlayerDataProvider {
             com.myriad.character.skills.qingluo.QingLuoSkills.clearFor(id);
             com.myriad.character.skills.chixiao.ChiXiaoSkills.clearFor(id);
             com.myriad.character.skills.yunsheng.YunShengSkills.clearFor(player);
-            com.myriad.character.skills.lige.LiGeSkills.removeModifiers(player);
-            com.myriad.character.skills.lige.LiGeSkills.clearFor(id);
-            com.myriad.character.skills.guanlan.GuanLanSkills.clearFor(id);
-            com.myriad.character.skills.xuanjia.XuanJiaSkills.clearFor(player);
-            com.myriad.character.skills.wuxiang.WuxiangSkills.clearFor(id);
-            com.myriad.character.skills.feiyu.FeiYuSkills.clearFor(id);
-            com.myriad.character.skills.wanyue.WanyueSkills.clearFor(id);
-            com.myriad.character.skills.luoheng.LuoHengSkills.clearFor(id);
-            com.myriad.character.skills.shenli.ShenLiSkills.clearFor(player);
-            com.myriad.character.skills.zhechuan.ZheChuanSkills.clearFor(player);
+
             ModShieldSystem.clearFor(player);
         }
         ModShieldSystem.clearAll();
@@ -979,20 +915,7 @@ public final class PlayerDataProvider {
 
     /** 初始武器名字与颜色（按角色区分：墨尘=墨杖黑色，夜影=影刺金色，天刑=雷霆剑蓝色） */
     private static net.minecraft.network.chat.Component initialWeaponName(String characterId) {
-        if ("mingzhu".equalsIgnoreCase(characterId)) {
-            return Component.translatable("item.myriad.mingzhu_core")
-                    .withStyle(net.minecraft.ChatFormatting.WHITE);
-        }
-        if ("zhechuan".equalsIgnoreCase(characterId)) {
-            return Component.translatable("item.myriad.zhechuan_blades")
-                    .withStyle(net.minecraft.ChatFormatting.BOLD)
-                    .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xFF5CE8EA));
-        }
-        if ("feiyu".equalsIgnoreCase(characterId)) {
-            return Component.translatable("item.myriad.feiyu_blades")
-                    .withStyle(net.minecraft.ChatFormatting.BOLD)
-                    .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xFFF0445E));
-        }
+
         if ("xuanchen".equalsIgnoreCase(characterId)) {
             return Component.translatable("item.myriad.zhenqi")
                     .withStyle(net.minecraft.ChatFormatting.BLACK)
@@ -1038,40 +961,7 @@ public final class PlayerDataProvider {
                     .withStyle(net.minecraft.ChatFormatting.BOLD)
                     .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xFF9EFFF2));
         }
-        if ("lige".equalsIgnoreCase(characterId)) {
-            return Component.translatable("item.myriad.lige_bow")
-                    .withStyle(net.minecraft.ChatFormatting.BOLD)
-                    .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xFFB48CFF));
-        }
-        if ("guanlan".equalsIgnoreCase(characterId)) {
-            return Component.translatable("item.myriad.guanlan_astrolabe")
-                    .withStyle(net.minecraft.ChatFormatting.BOLD)
-                    .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xFF9D82FF));
-        }
-        if ("xuanjia".equalsIgnoreCase(characterId)) {
-            return Component.translatable("item.myriad.xuanjia_gauntlet")
-                    .withStyle(net.minecraft.ChatFormatting.BOLD)
-                    .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xFFD4A84D));
-        }
-        if ("wuxiang".equalsIgnoreCase(characterId)) {
-            return Component.translatable("item.myriad.wuxiang_blade")
-                    .withStyle(net.minecraft.ChatFormatting.BOLD)
-                    .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xFF91E7E4));
-        }
-        if ("wanyue".equalsIgnoreCase(characterId)) {
-            return Component.translatable("item.myriad.wanyue_ring")
-                    .withStyle(net.minecraft.ChatFormatting.WHITE);
-        }
-        if ("luoheng".equalsIgnoreCase(characterId)) {
-            return Component.translatable("item.myriad.luoheng_ruler")
-                    .withStyle(net.minecraft.ChatFormatting.BOLD)
-                    .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xFFBDEEF2));
-        }
-        if ("shenli".equalsIgnoreCase(characterId)) {
-            return Component.translatable("item.myriad.shenli_gun")
-                    .withStyle(net.minecraft.ChatFormatting.BOLD)
-                    .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xFFD9A55A));
-        }
+
         if ("shuo".equalsIgnoreCase(characterId)) return Component.translatable("item.myriad.shuo_sword").withStyle(net.minecraft.ChatFormatting.WHITE);
         return Component.translatable("item.myriad.yingci")
                 .withStyle(net.minecraft.ChatFormatting.GOLD)
@@ -1313,16 +1203,7 @@ public final class PlayerDataProvider {
         com.myriad.character.skills.chixiao.ChiXiaoSkills.tick(player, data);
         com.myriad.character.skills.yunsheng.YunShengSkills.tick(player, data);
         }
-        com.myriad.character.skills.lige.LiGeSkills.tick(player, data);
-        com.myriad.character.skills.guanlan.GuanLanSkills.tick(player, data);
-        com.myriad.character.skills.xuanjia.XuanJiaSkills.tick(player, data);
-        com.myriad.character.skills.wuxiang.WuxiangSkills.tick(player, data);
-        com.myriad.character.skills.feiyu.FeiYuSkills.tick(player, data);
-        com.myriad.character.skills.wanyue.WanyueSkills.tick(player, data);
-        com.myriad.character.skills.luoheng.LuoHengSkills.tick(player, data);
-        com.myriad.character.skills.shenli.ShenLiSkills.tick(player, data);
-        com.myriad.character.skills.zhechuan.ZheChuanSkills.tick(player, data);
-        com.myriad.character.skills.mingzhu.MingZhuSkills.tick(player, data);
+
         // 法师魔法弹推进
         com.myriad.combat.MagicBullet.tickBullets(player, data);
         SpiritFlow.tick(player);
@@ -1422,9 +1303,7 @@ public final class PlayerDataProvider {
         if (entity.level().isClientSide()) {
             return;
         }
-        if (com.myriad.character.skills.wuxiang.WuxiangSkills.interceptMirrorDamage(entity, event)) {
-            return;
-        }
+
         if (event.getAmount() > 0) {
             com.myriad.game.VisionSystem.revealCombatant(entity);
             com.myriad.game.VisionSystem.revealCombatant(event.getSource().getEntity());
@@ -1458,18 +1337,7 @@ public final class PlayerDataProvider {
             if (qingLuoVictim != null && !com.myriad.character.rework.FirstGroupSkills.active(qingLuoVictim.getCharacterId()) && CharacterType.byId(qingLuoVictim.getCharacterId()) == CharacterType.CHIXIAO) {
                 com.myriad.character.skills.chixiao.ChiXiaoSkills.onIncomingDamage(victimPlayer, event);
             }
-            if (qingLuoVictim != null && CharacterType.byId(qingLuoVictim.getCharacterId()) == CharacterType.XUANJIA) {
-                com.myriad.character.skills.xuanjia.XuanJiaSkills.onIncomingDamage(victimPlayer, event);
-            }
-            if (qingLuoVictim != null && CharacterType.byId(qingLuoVictim.getCharacterId()) == CharacterType.WUXIANG) {
-                com.myriad.character.skills.wuxiang.WuxiangSkills.onIncomingDamage(victimPlayer, event);
-            }
-            if (qingLuoVictim != null && CharacterType.byId(qingLuoVictim.getCharacterId()) == CharacterType.FEIYU) {
-                com.myriad.character.skills.feiyu.FeiYuSkills.onIncomingDamage(victimPlayer, event);
-            }
-            if (qingLuoVictim != null && CharacterType.byId(qingLuoVictim.getCharacterId()) == CharacterType.ZHECHUAN) {
-                com.myriad.character.skills.zhechuan.ZheChuanSkills.onIncomingDamage(victimPlayer, event);
-            }
+
             // 凌渊【化形为剑】：剑势期间格挡首次伤害并反制；放在所有减伤结算之前，保证本次完全免伤。
             PlayerData swordVictim = get(victimPlayer);
             if (swordVictim != null
@@ -1550,8 +1418,6 @@ public final class PlayerDataProvider {
                 float ad = (float) attacker.getAttributeValue(
                         com.myriad.registry.ModAttributes.PHYSICAL_ATTACK);
                 PlayerData attackData = get(attacker);
-                if (attackData != null && CharacterType.isMarksman(
-                        CharacterType.byId(attackData.getCharacterId()))) ad *= .80F;
                 if (com.myriad.combat.MagicBullet.isMage(attacker) && ad > 10.0f
                         && !com.myriad.character.rework.FirstGroupSkills.active(attackData == null ? null : attackData.getCharacterId())) {
                     ad = 10.0f + (ad - 10.0f) * 0.05f;
@@ -1573,26 +1439,13 @@ public final class PlayerDataProvider {
                     crit = true;
                 }
                 float finalBasic = (float) (phys * roll);
-                PlayerData wanyueData = get(attacker);
-                if (wanyueData != null
-                        && CharacterType.byId(wanyueData.getCharacterId()) == CharacterType.WANYUE) {
-                    finalBasic *= com.myriad.character.skills.wanyue.WanyueSkills.consumeBasicMultiplier(attacker, entity);
-                }
+
                 finalBasic = com.myriad.combat.DamageCalc.applyMitigation(attacker, entity, finalBasic,
                         com.myriad.combat.DamageCalc.Kind.PHYSICAL);
                 finalBasic = com.myriad.combat.DamageCalc.applyMonsterCritReduction(entity, finalBasic, crit);
                 event.getContainer().setNewDamage(Math.max(1.0f, finalBasic) * targetMitigationScale);
                 PlayerData basicAttackerData = get(attacker);
-                if (customBasicAttack && basicAttackerData != null
-                        && CharacterType.byId(basicAttackerData.getCharacterId()) == CharacterType.LIGE
-                        && entity.isAlive()) {
-                    com.myriad.character.skills.lige.LiGeSkills.onBasicAttack(attacker, entity, event);
-                }
-                if (customBasicAttack && basicAttackerData != null
-                        && CharacterType.byId(basicAttackerData.getCharacterId()) == CharacterType.SHENLI
-                        && entity.isAlive()) {
-                    com.myriad.character.skills.shenli.ShenLiSkills.onBasicAttack(attacker, entity, event);
-                }
+
                 // Preserve explicit ranged falloff/skill multipliers; weak-release scaling is retired.
                 if (customBasicAttack && basicAttackMultiplier < 1.0F) {
                     event.getContainer().setNewDamage(event.getAmount() * basicAttackMultiplier);
@@ -1714,14 +1567,7 @@ public final class PlayerDataProvider {
                         && event.getAmount() > 0 && entity.isAlive()) {
                     com.myriad.character.skills.chixiao.ChiXiaoSkills.onDamageDealt(attacker, entity);
                 }
-                if (CharacterType.byId(attackerData.getCharacterId()) == CharacterType.WUXIANG
-                        && !skillHit && event.getAmount() > 0 && entity.isAlive()) {
-                    com.myriad.character.skills.wuxiang.WuxiangSkills.onBasicAttack(attacker, entity);
-                }
-                if (CharacterType.byId(attackerData.getCharacterId()) == CharacterType.FEIYU
-                        && !skillHit && event.getAmount() > 0 && entity.isAlive()) {
-                    com.myriad.character.skills.feiyu.FeiYuSkills.onBasicAttack(attacker, entity);
-                }
+
             }
             // 素岚【灵风标记】：目标受到伤害 +10%（普攻与技能均生效）
             if (event.getAmount() > 0
@@ -1932,11 +1778,7 @@ public final class PlayerDataProvider {
     @SubscribeEvent
     public static void onLivingKnockBack(LivingKnockBackEvent event) {
         if (!com.myriad.game.ModState.isEnabled() || event.getEntity().level().isClientSide()) return;
-        if (event.getEntity() instanceof ServerPlayer player
-                && com.myriad.character.skills.feiyu.FeiYuSkills.cancelParryKnockback(player)) {
-            event.setCanceled(true);
-            return;
-        }
+
         event.setCanceled(true);
     }
 
@@ -1958,7 +1800,7 @@ public final class PlayerDataProvider {
                 return;
             }
             com.myriad.character.ability.AbilityRuntime.clear(player);
-            com.myriad.character.skills.mingzhu.MingZhuSkills.clearFor(player, true);
+
             com.myriad.game.TacticalSupplySystem.clearRegeneration(player.getUUID());
             ModShieldSystem.clearFor(player);
             GameManager manager = GameManager.get();
@@ -1974,12 +1816,6 @@ public final class PlayerDataProvider {
                 syncToClient(player);
                 return;
             }
-
-            com.myriad.character.skills.wuxiang.WuxiangSkills.clearFor(player.getUUID());
-            com.myriad.character.skills.feiyu.FeiYuSkills.clearFor(player.getUUID());
-            com.myriad.character.skills.zhechuan.ZheChuanSkills.onDeath(player);
-            com.myriad.character.skills.wanyue.WanyueSkills.clearFor(player.getUUID());
-            com.myriad.character.skills.shenli.ShenLiSkills.clearFor(player);
 
             net.minecraft.world.entity.Entity credited = creditedKiller(player, event.getSource().getEntity());
             if (manager != null) {

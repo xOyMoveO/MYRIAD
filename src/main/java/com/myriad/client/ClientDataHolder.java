@@ -17,7 +17,7 @@ public final class ClientDataHolder {
     private static int buffSnapshotTick = 0;
     /** 技能冷却快照到达时的客户端游戏刻；所有技能栏数字均逐 tick 推算。 */
     private static int skillCdSnapshotTick = 0;
-    
+
     /** 普攻冷却快照到达时的客户端游戏刻；HUD 据此逐 tick 平滑刷新。 */
     private static int basicAttackSnapshotTick = 0;
     private static int magicBulletCooldown = 0;
@@ -173,9 +173,7 @@ public final class ClientDataHolder {
             if (e.getKey().startsWith("skill_charge_")) {
                 continue;
             }
-            if (e.getKey().startsWith("wanyue_wheel_")) {
-                continue;
-            }
+
             int remain = e.getValue() - elapsed;
             if (remain > 0) {
                 result.put(e.getKey(), remain);

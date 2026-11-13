@@ -34,11 +34,12 @@ public final class AbilityRuntime {
     public static String sourceSkill(){var s=SOURCE.get();return s==null?"":s.skill;}
     public static boolean sourceDirect(){var s=SOURCE.get();return s==null||s.direct;}
     public static int sourceCast(){var s=SOURCE.get();return s==null?0:s.cast;}
-    private interface Task {boolean tick(long now);}
+    private interface Task {boolean tick(long now);default void cancel(){}}
     private static final class Owner {
         final ServerPlayer player;final String role;final ServerLevel level;
         final List<Task> tasks=new ArrayList<>();final Map<String,Memory> memory=new HashMap<>();
-        String pending="";long pendingUntil,channelUntil,motionUntil,lastCast=-100,channelImpulse;int channelToken,motionToken,castToken;Vec3 channelOrigin;
+        Cast preparing;
+        int pendingWindup;String pending="";long pendingUntil,channelUntil,motionUntil,lastCast=-100,channelImpulse;int channelToken,motionToken,castToken;Vec3 channelOrigin;
         Owner(ServerPlayer p){player=p;role=PlayerDataProvider.get(p).getCharacterId();level=p.level();}
     }
     /** Skill-private scratch space. Removing one skill never removes another skill's state. */
@@ -58,8 +59,10 @@ public final class AbilityRuntime {
         com.myriad.character.skills.shuo.ShuoCombat.clear(p);
         com.myriad.character.skills.fenjue.rework.FlameHitVisuals.clear(p);
         SkillChargeSystem.clear(p);
+        ActionTime.clearOwner(p.getUUID());
         Owner old=OWNERS.remove(p.getUUID());
-        if(old!=null){old.tasks.clear();old.memory.clear();p.removeEffect(MobEffects.INVISIBILITY);
+        if(old!=null){if(old.preparing!=null)old.preparing.cancelCast();
+            for(var task:new ArrayList<>(old.tasks))task.cancel();old.tasks.clear();old.memory.clear();p.removeEffect(MobEffects.INVISIBILITY);
             for(var debuff:new ArrayList<>(DEBUFFS))if(FirstGroupSkills.candidates(old.role).stream()
                     .anyMatch(skill->debuff.id.getPath().equals("ability_slow_"+skill.getId()+"_"+p.getUUID()))){
                 var attr=debuff.target.getAttribute(Attributes.MOVEMENT_SPEED);if(attr!=null)attr.removeModifier(debuff.id);DEBUFFS.remove(debuff);
@@ -72,13 +75,13 @@ public final class AbilityRuntime {
         PlayerDataProvider.get(p).setPlacementType(0);
     }
     public static void clearAll(){for(var owner:new ArrayList<>(OWNERS.values()))clear(owner.player);
-        OWNERS.clear();for(var d:DEBUFFS){var a=d.target.getAttribute(Attributes.MOVEMENT_SPEED);if(a!=null)a.removeModifier(d.id);}DEBUFFS.clear();}
+        OWNERS.clear();ActionTime.clearAll();for(var d:DEBUFFS){var a=d.target.getAttribute(Attributes.MOVEMENT_SPEED);if(a!=null)a.removeModifier(d.id);}DEBUFFS.clear();}
     public static void cleanup(){
         for(var debuff:new ArrayList<>(DEBUFFS))if(!ModState.isEnabled()||!debuff.target.isAlive()||debuff.target.isRemoved()
                 ||debuff.target.level().getGameTime()>=debuff.until){
             var a=debuff.target.getAttribute(Attributes.MOVEMENT_SPEED);if(a!=null)a.removeModifier(debuff.id);DEBUFFS.remove(debuff);
         }
-        for(var owner:new ArrayList<>(OWNERS.values()))if(!valid(owner.player)||!Objects.equals(PlayerDataProvider.get(owner.player).getCharacterId(),owner.role))clear(owner.player);
+        for(var owner:new ArrayList<>(OWNERS.values()))if(!valid(owner.player)||owner.level!=owner.player.level()||!Objects.equals(PlayerDataProvider.get(owner.player).getCharacterId(),owner.role))clear(owner.player);
     }
     public static boolean valid(ServerPlayer p){
         return ModState.isEnabled()&&p.isAlive()&&!p.isRemoved()&&!p.isSpectator()
@@ -88,24 +91,31 @@ public final class AbilityRuntime {
     private static AbilitySkill passive(ServerPlayer p){var d=PlayerDataProvider.get(p);if(!FirstGroupSkills.active(d.getCharacterId()))return null;
         var n=FirstGroupSkills.selected(d.getCharacterId(),0,d.getSkillLevels());return n!=null&&d.skillLevel(n.getId())>0?n:null;}
     public static void request(ServerPlayer p,PlayerData d,AbilitySkill skill){
-        if(!valid(p)||!skill.role().equals(d.getCharacterId())||skill.isPassive())return;
+        request(p,d,skill,skill.commitWindupTicks());
+    }
+    /** Server-owned delayed-payment policy. The ordinary input entry remains immediate.
+     * No client packet supplies this duration; future skill modules may select it explicitly. */
+    public static Cast request(ServerPlayer p,PlayerData d,AbilitySkill skill,int windupTicks){
+        if(windupTicks<0)throw new IllegalArgumentException("Negative windup");
+        if(!valid(p)||!skill.role().equals(d.getCharacterId())||skill.isPassive())return null;
         var selected=FirstGroupSkills.resolve(CharacterType.byId(d.getCharacterId()),skill.slot(),d.getSkillLevels());
-        if(selected!=skill)return;
-        if(!skill.canCastWhileControlled()&&(d.getBuff("g1_stun")>0||com.myriad.combat.SilenceSystem.isSilenced(p)))return;
-        if(!TrainingMode.isEnabled()&&d.skillLevel(skill.getId())<=0){message(p,"message.myriad.skill_not_learned");return;}
+        if(selected!=skill)return null;
+        if(!skill.canCastWhileControlled()&&(d.getBuff("g1_stun")>0||com.myriad.combat.SilenceSystem.isSilenced(p)))return null;
+        if(!TrainingMode.isEnabled()&&d.skillLevel(skill.getId())<=0){message(p,"message.myriad.skill_not_learned");return null;}
         Cast c=context(p,skill);Owner o=c.owner;
-        if(com.myriad.character.skills.shuo.ShuoCombat.blocked(p))return;
-        if(SkillChargeSystem.active(p))return;
-        if(skill.recastAvailable(c)){if(d.getBuff("g1_root")>0||moving(p))return;skill.recast(c);SkillPresentation.cast(p,skill);PlayerDataProvider.syncToClient(p);return;}
+        if(com.myriad.character.skills.shuo.ShuoCombat.blocked(p))return null;
+        if(SkillChargeSystem.active(p))return null;
+        if(skill.recastAvailable(c)){if(d.getBuff("g1_root")>0||moving(p))return null;skill.recast(c);SkillPresentation.cast(p,skill);PlayerDataProvider.syncToClient(p);return null;}
         boolean controlBreak=skill.canCastWhileControlled()&&controlled(p);
-        if(o.channelUntil>c.now()||moving(p)&&!controlBreak||c.now()-o.lastCast<3&&!controlBreak)return;
+        if(o.preparing!=null||o.channelUntil>c.now()||moving(p)&&!controlBreak||c.now()-o.lastCast<3&&!controlBreak)return null;
         boolean noCd=TrainingMode.isEnabled()&&TrainingMode.isNoCooldown(),noMana=TrainingMode.isEnabled()&&TrainingMode.isNoMana();
-        if(!noCd&&d.getCooldown(skill.getId())>0){message(p,"message.myriad.g1.not_ready");return;}
-        if(!noMana&&d.getMana()<skill.getManaCost()){message(p,"message.myriad.not_enough_mana");return;}
+        if(!noCd&&d.getCooldown(skill.getId())>0){message(p,"message.myriad.g1.not_ready");return null;}
+        if(!noMana&&d.getMana()<skill.getManaCost()){message(p,"message.myriad.not_enough_mana");return null;}
         if(skill.needsPoint()){
-            o.pending=skill.getId();o.pendingUntil=c.now()+200;d.setPlacementType(100+skill.index());PlayerDataProvider.syncToClient(p);return;
+            o.pending=skill.getId();o.pendingWindup=windupTicks;o.pendingUntil=c.now()+200;d.setPlacementType(100+skill.index());PlayerDataProvider.syncToClient(p);return null;
         }
-        release(c,noCd,noMana);
+        begin(c,windupTicks);
+        return c;
     }
     public static void confirm(ServerPlayer p){
         var o=owner(p);var skill=FirstGroupSkills.byId(o.pending);if(skill==null)return;
@@ -117,21 +127,17 @@ public final class AbilityRuntime {
         boolean noCd=TrainingMode.isEnabled()&&TrainingMode.isNoCooldown(),noMana=TrainingMode.isEnabled()&&TrainingMode.isNoMana();
         if(!noCd&&d.getCooldown(skill.getId())>0||!noMana&&d.getMana()<skill.getManaCost())return;
         Cast c=context(p,skill);c.point=c.point(skill.pointRange(c));if(c.point==null){message(p,"message.myriad.g1.invalid_point");return;}
-        release(c,noCd,noMana);
+        begin(c,o.pendingWindup);
     }
-    public static void cancel(ServerPlayer p){owner(p).pending="";PlayerDataProvider.get(p).setPlacementType(0);PlayerDataProvider.syncToClient(p);}
-    private static void release(Cast c,boolean noCd,boolean noMana){
-        if(!c.skill.canRelease(c)){message(c.player,"message.myriad.no_skill_target");return;}
+    public static void cancel(ServerPlayer p){var o=owner(p);if(o.preparing!=null)o.preparing.cancelCast();o.pending="";PlayerDataProvider.get(p).setPlacementType(0);PlayerDataProvider.syncToClient(p);}
+    private static void begin(Cast c,int windupTicks){
+        if(!c.skill.canRelease(c)){message(c.player,"message.myriad.no_skill_target");c.phase=Phase.CANCELLED;return;}
         c.owner.pending="";c.owner.lastCast=c.now();c.castToken=++c.owner.castToken;c.data.setPlacementType(0);
-        if(!noMana)c.data.spendMana(c.skill.getManaCost());
-        if(!noCd){double reduction=Math.clamp(c.player.getAttributeValue(ModAttributes.COOLDOWN_REDUCTION),0,60);
-            c.data.setCooldown(c.skill.getId(),Math.max(1,(int)(c.skill.getCooldownTicks(c.rank)*(1-reduction/100))));}
-        c.player.removeEffect(MobEffects.INVISIBILITY);c.data.setStealthBonus(false);
-        c.skill.release(c);c.skill.present(c);SkillPresentation.cast(c.player,c.skill);
-        AbilitySkill passive=passive(c.player);if(passive!=null)passive.onCast(c);
-
-        PlayerDataProvider.syncToClient(c.player);
+        c.accepted=true;c.owner.preparing=c;
+        if(windupTicks>0)c.windup(windupTicks,0,c::commit);
+        else c.commit();
     }
+    public enum Phase { REQUESTED, WINDUP, COMMITTED, COMPLETED, CANCELLED }
     private static void message(ServerPlayer p,String key){p.sendSystemMessage(Component.translatable(key));}
     public static void tick(ServerPlayer p){
         if(!valid(p)||!FirstGroupSkills.active(PlayerDataProvider.get(p).getCharacterId())){if(OWNERS.containsKey(p.getUUID()))clear(p);return;}
@@ -141,9 +147,13 @@ public final class AbilityRuntime {
                 ||o.channelOrigin!=null&&p.position().subtract(o.channelOrigin).multiply(1,0,1).lengthSqr()>.64
                 ||KnockbackBuffer.recentlyForced(p)&&KnockbackBuffer.impulseToken(p)!=o.channelImpulse)){
             o.channelToken++;o.channelUntil=0;d.setBuff("g1_channel",0);
+            if(o.preparing!=null)o.preparing.cancelCast();
             SkillChargeSystem.clear(p);
         }
-        for(Task task:new ArrayList<>(o.tasks))if(!task.tick(now))o.tasks.remove(task);
+        for(Task task:new ArrayList<>(o.tasks)){
+            if(OWNERS.get(p.getUUID())!=o)break;
+            if(o.tasks.contains(task)&&!task.tick(now))o.tasks.remove(task);
+        }
         com.myriad.character.skills.shuo.ShuoCombat.tick(p);
         var passive=passive(p);if(passive!=null)passive.tickPassive(context(p,passive));
         if(!o.pending.isEmpty()&&now>o.pendingUntil){cancel(p);}
@@ -225,6 +235,38 @@ public final class AbilityRuntime {
     public static final class Cast {
         public final ServerPlayer player;public final PlayerData data;public final AbilitySkill skill;public final int rank;public final float strength;
         private final Owner owner;private int castToken;public Vec3 point;
+        private Phase phase=Phase.REQUESTED;private boolean accepted,committed;private int windupToken;
+        public Phase phase(){return phase;}
+        public boolean committed(){return committed;}
+        /** Revalidate at the actual payment boundary; rejected/cancelled handles cannot be replayed. */
+        public boolean commit(){
+            if(!accepted||committed||phase==Phase.WINDUP||phase==Phase.CANCELLED||phase==Phase.COMPLETED)return false;
+            boolean noCd=TrainingMode.isEnabled()&&TrainingMode.isNoCooldown();
+            boolean noMana=TrainingMode.isEnabled()&&TrainingMode.isNoMana();
+            if(OWNERS.get(player.getUUID())!=owner||owner.preparing!=this||owner.level!=player.level()
+                    ||!valid(player)||!skill.role().equals(data.getCharacterId())
+                    ||FirstGroupSkills.resolve(CharacterType.byId(data.getCharacterId()),skill.slot(),data.getSkillLevels())!=skill
+                    ||!TrainingMode.isEnabled()&&data.skillLevel(skill.getId())<=0
+                    ||!skill.canCastWhileControlled()&&(data.getBuff("g1_stun")>0||SilenceSystem.isSilenced(player))
+                    ||!noCd&&data.getCooldown(skill.getId())>0||!noMana&&data.getMana()<skill.getManaCost()
+                    ||skill.needsPoint()&&!AbilityTargeting.legalGround(player,point,skill.pointRange(this),skill.requiresStandingPoint())
+                    ||!skill.canRelease(this)){cancelCast();return false;}
+            committed=true;phase=Phase.COMMITTED;owner.preparing=null;
+            if(!noMana)data.spendMana(skill.getManaCost());
+            if(!noCd){double reduction=Math.clamp(player.getAttributeValue(ModAttributes.COOLDOWN_REDUCTION),0,60);
+                data.setCooldown(skill.getId(),Math.max(1,(int)(skill.getCooldownTicks(rank)*(1-reduction/100))));}
+            player.removeEffect(MobEffects.INVISIBILITY);data.setStealthBonus(false);
+            skill.release(this);skill.present(this);SkillPresentation.cast(player,skill);
+            AbilitySkill passive=passive(player);if(passive!=null)passive.onCast(this);
+            if(phase==Phase.COMMITTED)phase=Phase.COMPLETED;
+            PlayerDataProvider.syncToClient(player);return true;
+        }
+        public void cancelCast(){
+            if(phase==Phase.CANCELLED||phase==Phase.COMPLETED)return;
+            phase=Phase.CANCELLED;
+            if(owner.preparing==this||windupToken!=0&&owner.channelToken==windupToken){if(owner.preparing==this)owner.preparing=null;owner.channelToken++;owner.channelUntil=0;
+                data.setBuff("g1_channel",0);SkillChargeSystem.clear(player);}
+        }
         private Cast(ServerPlayer p,PlayerData data,AbilitySkill skill,Owner owner){this.player=p;this.data=data;this.skill=skill;this.owner=owner;
             rank=Math.clamp(Math.max(1,data.skillLevel(skill.getId())),1,skill.maxRank());strength=(float)p.getAttributeValue(ModAttributes.SPELL_POWER);castToken=owner.castToken;}
         public long now(){return player.level().getGameTime();}
@@ -307,6 +349,32 @@ public final class AbilityRuntime {
         public void ring(Vec3 at,double radius,boolean personal){AbilityVisuals.seal(this,at,radius,personal);}
         public int color(){return switch(skill.role()){case "yingxiao"->0x808080;case "tianxing"->0x80C7FF;case "fenjue"->0xFF853D;case "xuanchen"->0xE7D6A0;default->0x9CF0C4;};}
         public void trail(Vec3 from,Vec3 to){AbilityVisuals.beam(this,from,to,.09);}
+        /** Interruptible local-action windup. Real-time later/repeat remain unchanged. */
+        public void windup(int ticks,float walkFactor,Runnable action){
+            if(ticks<=0){action.run();return;}
+            phase=Phase.WINDUP;
+            final int expected=++owner.channelToken;windupToken=expected;
+            owner.channelUntil=now()+ticks+1;owner.channelOrigin=walkFactor>0?null:player.position();
+            owner.channelImpulse=KnockbackBuffer.impulseToken(player);
+            buff("g1_channel",ticks+1);SkillChargeSystem.start(player,skill.getId(),ticks,walkFactor);
+            SkillChargeSystem.extend(player,ticks+1);
+            var progress=new ActionTime.Progress(now());
+            owner.tasks.add(new Task(){
+                public boolean tick(long time){
+                    if(owner.channelToken!=expected||phase==Phase.CANCELLED){cancel();return false;}
+                    double rate=ActionTime.multiplier(player.getUUID(),time);
+                    if(progress.advance(time,rate,ticks)){
+                        owner.channelUntil=0;buff("g1_channel",0);SkillChargeSystem.clear(player);
+                        phase=committed?Phase.COMMITTED:Phase.REQUESTED;
+                        action.run();if(phase==Phase.COMMITTED)phase=Phase.COMPLETED;return false;
+                    }
+                    int remaining=Math.max(2,(int)Math.ceil((ticks-progress.completed())/rate)+1);
+                    owner.channelUntil=time+remaining;buff("g1_channel",remaining);
+                    SkillChargeSystem.extend(player,remaining);return true;
+                }
+                public void cancel(){cancelCast();}
+            });
+        }
         public void later(int ticks,boolean channel,Runnable action){
             later(ticks,channel,0,action);
         }
@@ -330,14 +398,29 @@ public final class AbilityRuntime {
         public void projectile(double range,double speed,double radius,boolean pierce,boolean returning,BiConsumer<LivingEntity,Boolean> impact){
             projectileAlong(player.getLookAngle(),range,speed,radius,pierce,returning,impact);
         }
+        /** Independent flight identity: actor rates never implicitly slow a projectile. */
+        public UUID actionProjectile(double range,double speed,double radius,boolean pierce,boolean returning,BiConsumer<LivingEntity,Boolean> impact){
+            UUID id=UUID.randomUUID();projectileAlong(player.getLookAngle(),range,speed,radius,pierce,returning,impact,id);return id;
+        }
         public void projectileAlong(Vec3 aim,double range,double speed,double radius,boolean pierce,boolean returning,BiConsumer<LivingEntity,Boolean> impact){
+            projectileAlong(aim,range,speed,radius,pierce,returning,impact,null);
+        }
+        private void projectileAlong(Vec3 aim,double range,double speed,double radius,boolean pierce,boolean returning,BiConsumer<LivingEntity,Boolean> impact,UUID actionId){
             Vec3 initial=aim.lengthSqr()<1E-8?forward(1):aim.normalize();
             final class Flight implements Task {
                 Vec3 pos=player.getEyePosition().add(initial.scale(.4)),direction=initial;double traveled;boolean back;
                 final Set<UUID> hit=new HashSet<>();final int visual=newVisualInstance();int age;boolean ended;
-                boolean finish(boolean dissipate){if(!ended){ended=true;AbilityVisuals.finishFlight(Cast.this,visual);if(dissipate)AbilityVisuals.dissipate(Cast.this,pos);}return false;}
-                public boolean tick(long now){if(++age>160)return finish(true);if(back){Vec3 toward=player.getEyePosition().subtract(pos);if(toward.length()<speed)return finish(true);direction=toward.normalize();}
-                    Vec3 end=pos.add(direction.scale(back?speed:Math.min(speed,range-traveled)));
+                long lastTick=now();double flightAge;
+                public void cancel(){if(actionId!=null)ActionTime.clearTarget(actionId);}
+                final int safetyTicks=2*(returning?160:Math.min(160,Math.max(1,(int)Math.ceil(range/speed))));
+                boolean finish(boolean dissipate){if(!ended){ended=true;cancel();AbilityVisuals.finishFlight(Cast.this,visual);if(dissipate)AbilityVisuals.dissipate(Cast.this,pos);}return false;}
+                public boolean tick(long now){
+                    if(actionId!=null&&now<=lastTick)return true;lastTick=now;
+                    double rate=actionId==null?1:ActionTime.multiplier(actionId,now);flightAge+=rate;
+                    if(++age>(actionId==null?160:safetyTicks)||flightAge>160)return finish(true);
+                    double step=speed*rate;
+                    if(back){Vec3 toward=player.getEyePosition().subtract(pos);if(toward.length()<step)return finish(true);direction=toward.normalize();}
+                    Vec3 end=pos.add(direction.scale(back?step:Math.min(step,range-traveled)));
                     Vec3 wallHit=com.myriad.combat.WindWallSystem.firstEnemyHit(player,pos,end);
                     if(wallHit!=null){AbilityVisuals.flight(Cast.this,pos,wallHit,age,back,visual);pos=wallHit;return finish(true);}
                     var clip=player.level().clip(new ClipContext(pos,end,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,player));boolean blocked=clip.getType()!=HitResult.Type.MISS;
@@ -354,30 +437,44 @@ public final class AbilityRuntime {
                     if(!back&&traveled>=range){if(!returning)return finish(true);back=true;hit.clear();}return true;}
             }owner.tasks.add(new Flight());
         }
+        public void actionDash(Vec3 delta,int ticks,double radius,BiConsumer<LivingEntity,Boolean> impact,Runnable end,boolean turn,boolean stopAtHero){
+            dash(delta,ticks,radius,impact,end,turn,stopAtHero,true);
+        }
         public void dash(Vec3 delta,int ticks,double radius,BiConsumer<LivingEntity,Boolean> impact,Runnable end,boolean turn,boolean stopAtHero){
+            dash(delta,ticks,radius,impact,end,turn,stopAtHero,false);
+        }
+        private void dash(Vec3 delta,int ticks,double radius,BiConsumer<LivingEntity,Boolean> impact,Runnable end,boolean turn,boolean stopAtHero,boolean local){
             if(data.getBuff("g1_root")>0||data.getBuff("g1_stun")>0)return;
             if(delta.lengthSqr()<.0025)return;
             final int token=++owner.motionToken;
-            final Vec3 destination=player.position().add(delta);final long start=now();
+            final Vec3 destination=player.position().add(delta);final long start=now();final long impulse=KnockbackBuffer.impulseToken(player);
             owner.motionUntil=now()+ticks+4;
             final class Dash implements Task {
-                Vec3 last=player.position(),direction=delta.normalize();final Set<UUID> hits=new HashSet<>();double moved;int age;
-                public boolean tick(long now){if(token!=owner.motionToken)return false;if(now==start)return true;
+                Vec3 last=player.position(),direction=delta.normalize();final Set<UUID> hits=new HashSet<>();double moved,age;long lastTick=start;
+                public boolean tick(long now){if(token!=owner.motionToken)return false;if(now==start||local&&now<=lastTick)return true;lastTick=now;
+                    if(local&&KnockbackBuffer.impulseToken(player)!=impulse){
+                        owner.motionUntil=0;Vec3 forced=player.getDeltaMovement();
+                        PacketDistributor.sendToPlayer(player,new NetworkSetup.DashPayload((float)forced.x,(float)forced.y,(float)forced.z,-1));
+                        return false;
+                    }
+                    double rate=local?ActionTime.multiplier(player.getUUID(),now):1;
+                    if(local)owner.motionUntil=now+Math.max(2,(int)Math.ceil((ticks+4-age)/rate));
                     Vec3 pos=player.position();moved+=Math.max(0,pos.subtract(last).dot(direction));
                     for(var target:DashHitbox.targets(player,last,pos,radius,hits)){boolean first=hits.isEmpty();hits.add(target.getUUID());impact.accept(target,first);
                         if(stopAtHero&&hero(target)){finish();return false;}}
                     AbilityVisuals.motionTrail(Cast.this,last,pos);last=pos;
-                    if(++age>=ticks+4||moved>=delta.length()-.04||!turn&&pos.distanceToSqr(destination)<.0025
+                    age+=rate;
+                    if(age>=ticks+4||moved>=delta.length()-.04||!turn&&pos.distanceToSqr(destination)<.0025
                             ||data.getBuff("g1_root")>0||data.getBuff("g1_stun")>0){finish();return false;}
                     if(turn)direction=direction.lerp(forward(1),.18).normalize();
-                    double step=Math.min(delta.length()/ticks,Math.max(0,delta.length()-moved));Vec3 velocity=direction.scale(step);
+                    double step=Math.min(delta.length()/ticks*rate,Math.max(0,delta.length()-moved));Vec3 velocity=direction.scale(step);
                     if(!AbilityTargeting.clearSweep(player,velocity)){finish();return false;}
                     sendMotion(velocity,turn?pos.add(direction.scale(delta.length()-moved)):destination);return true;}
                 void finish(){owner.motionUntil=0;Vec3 v=skill.requiresStandingPoint()?Vec3.ZERO:player.getDeltaMovement().scale(.12);
                     player.setDeltaMovement(v);player.hurtMarked=true;player.resetFallDistance();
                     PacketDistributor.sendToPlayer(player,new NetworkSetup.DashPayload((float)v.x,(float)v.y,(float)v.z,-1));end.run();}
             }
-            var dash=new Dash();Vec3 v=delta.scale(1.0/ticks);
+            var dash=new Dash();Vec3 v=delta.scale((local?ActionTime.multiplier(player.getUUID(),now()):1)/ticks);
             if(!AbilityTargeting.clearSweep(player,v)){dash.finish();return;}
             sendMotion(v,destination);owner.tasks.add(dash);
         }

@@ -79,65 +79,7 @@ public class SkillIcon {
             Map.entry("zhihechuanyin", "yunsheng/zhihechuanyin"),
             Map.entry("dingqisuo", "yunsheng/dingqisuo"),
             Map.entry("huiyinjiebiao", "yunsheng/huiyinjiebiao"),
-            Map.entry("zhongshengguizong", "yunsheng/zhongshengguizong"),
-            Map.entry("lige_passive", "lige/passive"),
-            Map.entry("lieyujian", "lige/lieyujian"),
-            Map.entry("huifengbu", "lige/huifengbu"),
-            Map.entry("yingxianfu", "lige/yingxianfu"),
-            Map.entry("baixianheyi", "lige/baixianheyi"),
-            Map.entry("guanlan_passive", "guanlan/passive"),
-            Map.entry("liuxingluozi", "guanlan/liuxingluozi"),
-            Map.entry("nizhuanxingpan", "guanlan/nizhuanxingpan"),
-            Map.entry("tianmufengxian", "guanlan/tianmufengxian"),
-            Map.entry("zhoutianzhuixing", "guanlan/zhoutianzhuixing"),
-            Map.entry("xuanjia_passive", "xuanjia/passive"),
-            Map.entry("hanshanquan", "xuanjia/hanshanquan"),
-            Map.entry("yanbihuti", "xuanjia/yanbihuti"),
-            Map.entry("duanmaichongfeng", "xuanjia/duanmaichongfeng"),
-            Map.entry("zhenyuetianmen", "xuanjia/zhenyuetianmen"),
-            Map.entry("wuxiang_passive", "wuxiang/passive"),
-            Map.entry("tajingliuguang", "wuxiang/tajingliuguang"),
-            Map.entry("liuxingyiwei", "wuxiang/liuxingyiwei"),
-            Map.entry("nizhaohuifeng", "wuxiang/nizhaohuifeng"),
-            Map.entry("baixiangwugui", "wuxiang/baixiangwugui"),
-            Map.entry("feiyu_passive", "feiyu/passive"),
-            Map.entry("liuxiashuangyanfan", "feiyu/liuxiashuangyanfan"),
-            Map.entry("liuxiashuangyanfan_2", "feiyu/liuxiashuangyanfan_2"),
-            Map.entry("yuanguangzhefengwu", "feiyu/yuanguangzhefengwu"),
-            Map.entry("yuanguangzhefengwu_2", "feiyu/yuanguangzhefengwu_2"),
-            Map.entry("tahongzhuiyue", "feiyu/tahongzhuiyue"),
-            Map.entry("tahongzhuiyue_2", "feiyu/tahongzhuiyue_2"),
-            Map.entry("jiuxiaofengwuliancheng", "feiyu/jiuxiaofengwuliancheng"),
-            Map.entry("wanyue_passive", "wanyue/passive"),
-            Map.entry("zhiyuehuixian", "wanyue/zhiyuehuixian"),
-            Map.entry("zhiyuehuixian_2", "wanyue/zhiyuehuixian_2"),
-            Map.entry("zheguangliuguang", "wanyue/zheguangliuguang"),
-            Map.entry("taxianzuiyue", "wanyue/taxianzuiyue"),
-            Map.entry("manyuexuntian", "wanyue/manyuexuntian"),
-            Map.entry("luoheng_passive", "luoheng/passive"),
-            Map.entry("luochouyixing", "luoheng/luochouyixing"),
-            Map.entry("gouchenxian", "luoheng/gouchenxian"),
-            Map.entry("gouchenxian_2", "luoheng/gouchenxian_2"),
-            Map.entry("yigonghuanshu", "luoheng/yigonghuanshu"),
-            Map.entry("sanyuantianluo", "luoheng/sanyuantianluo"),
-            Map.entry("shenli_passive", "shenli/passive"),
-            Map.entry("guanxingjiaoshe", "shenli/guanxingjiaoshe"),
-            Map.entry("xuanjidingtang", "shenli/xuanjidingtang"),
-            Map.entry("xuanjidingtang_2", "shenli/xuanjidingtang_2"),
-            Map.entry("tuihuofanchong", "shenli/tuihuofanchong"),
-            Map.entry("tiangongbuxilun", "shenli/tiangongbuxilun"),
-            Map.entry("zhechuan_passive", "zhechuan/passive"),
-            Map.entry("tourendingjie", "zhechuan/tourendingjie"),
-            Map.entry("xunbiaoguoxi", "zhechuan/xunbiaoguoxi"),
-            Map.entry("chefengnidu", "zhechuan/chefengnidu"),
-            Map.entry("chefengnidu_2", "zhechuan/chefengnidu_2"),
-            Map.entry("zhubiaowujinhuilang", "zhechuan/zhubiaowujinhuilang"),
-            Map.entry("mingzhu_passive", "mingzhu/passive"),
-            Map.entry("liuguangguanzhu", "mingzhu/liuguangguanzhu"),
-            Map.entry("juyaozhejing", "mingzhu/juyaozhejing"),
-            Map.entry("juyaozhejing_2", "mingzhu/juyaozhejing_2"),
-            Map.entry("yaobuhuihuan", "mingzhu/yaobuhuihuan"),
-            Map.entry("yixiantianming", "mingzhu/yixiantianming"));
+            Map.entry("zhongshengguizong", "yunsheng/zhongshengguizong"));
 
     /** 技能图标以 GUI sprite 渲染；sprite 文件指向 generated 目录中的图标。 */
     public static boolean hasIcon(String skillId) {
@@ -154,19 +96,11 @@ public class SkillIcon {
                 "skill_icons/generated/" + GENERATED_ICON_PATHS.get(skillId));
     }
 
-    /** 绯羽二段技能在服务器同步的再施放窗口内切换为独立图标。 */
+    /** 二段技能在服务器同步的再施放窗口内切换为独立图标。 */
     private static String displayedSkillId(String skillId) {
         String recastBuff = switch (skillId) {
             case "shuo_qiaofan" -> "shuo_qiaofan_recast";
             case "shuo_canyue" -> "shuo_canyue_recast";
-            case "liuxiashuangyanfan" -> "liuxiashuangyanfan_recast";
-            case "yuanguangzhefengwu" -> "yuanguangzhefengwu_recast";
-            case "tahongzhuiyue" -> "tahongzhuiyue_recast";
-            case "zhiyuehuixian" -> "zhiyuehuixian_recast";
-            case "gouchenxian" -> "gouchenxian_recast";
-            case "xuanjidingtang" -> "xuanjidingtang_recast";
-            case "chefengnidu" -> "chefengnidu_recast";
-            case "juyaozhejing" -> "juyaozhejing_recast";
             default -> null;
         };
         return recastBuff != null && ClientDataHolder.buffs().getOrDefault(recastBuff, 0) > 0
@@ -183,13 +117,7 @@ public class SkillIcon {
     public static void draw(GuiGraphicsExtractor gui, Font font, int x, int y, int size,
             Skill skill, boolean ultimate, boolean ready, String keyLabel) {
         boolean effectiveReady = ready;
-        if ("yixiantianming".equals(skill.getId()) && ClientDataHolder.syncedCounter("mingzhu_energy") < 120
-                && ClientDataHolder.buffTicks("mingzhu_channel") <= 0) effectiveReady = false;
-        if ("jiuxiaofengwuliancheng".equals(skill.getId())
-                && ClientDataHolder.syncedCounter("feiyu_stage") < 6
-                && ClientDataHolder.syncedCounter("feiyu_r_beat") <= 0) {
-            effectiveReady = false;
-        }
+
         int accent = ultimate && effectiveReady ? ACCENT_ULTIMATE : (effectiveReady ? ACCENT_READY : ACCENT_CD);
         // 用阴影和深色细描边承托图标，避免原先高亮四边框与图标自带边框互相抢眼。
         gui.fill(x + 1, y + 1, x + size + 2, y + size + 2, FRAME_SHADOW);
@@ -205,9 +133,6 @@ public class SkillIcon {
             int color = effectiveReady ? 0xFFFFFFFF : 0xFF9A9A9A;
             gui.text(font, keyLabel, x + (size - font.width(keyLabel)) / 2,
                     y + (size - font.lineHeight) / 2, color);
-        }
-        if (("jiuxiaofengwuliancheng".equals(skill.getId()) || "yixiantianming".equals(skill.getId())) && !effectiveReady) {
-            gui.fill(x, y, x + size, y + size, 0x78000000);
         }
         // 只在外轮廓上保留两条短状态线，冷却/大招状态仍清晰，但不遮挡图标画面。
         gui.fill(x + 3, y - 1, x + size - 3, y, accent);

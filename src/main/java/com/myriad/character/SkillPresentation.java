@@ -24,16 +24,6 @@ public final class SkillPresentation {
             case QINGLUO -> new Style("wood", 0x88CF65, 1);
             case CHIXIAO -> new Style("stone", 0xFFAB58, 0);
             case YUNSHENG -> new Style("wind", 0xB4E9D8, 1);
-            case LIGE -> new Style("wind", 0xDFB0FF, 1);
-            case GUANLAN -> new Style("water", 0x51C6D4, 1);
-            case WUXIANG -> new Style("ice", 0x9DEFE9, 2);
-            case FEIYU -> new Style("wind", 0xFF849E, 3);
-            case WANYUE -> new Style("blade", 0xACF0E7, 1);
-            case XUANJIA -> new Style("stone", 0xD4AE6D, 2);
-            case LUOHENG -> new Style("stone", 0xEACE85, 2);
-            case SHENLI -> new Style("shot", 0xE8B778, 0);
-            case ZHECHUAN -> new Style("blade", 0x7FDEE6, 0);
-            case MINGZHU -> new Style("ice", 0xFFD486, 2);
             case SHUO -> new Style("blade",0xCBEAFF,0);
         };
     }
@@ -84,7 +74,7 @@ public final class SkillPresentation {
         }
     }
     public static net.minecraft.sounds.SoundEvent impactSound(CharacterType type) {
-        return type == CharacterType.MINGZHU ? ModSounds.mingzhu("orb_hit") : ModSounds.foley(style(type).sound);
+        return ModSounds.foley(style(type).sound);
     }
     public static void hit(ServerPlayer p, LivingEntity target, boolean critical) {
         if (target instanceof com.myriad.game.DefenseTowerEntity) return;

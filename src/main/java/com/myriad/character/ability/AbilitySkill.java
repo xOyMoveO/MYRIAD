@@ -25,6 +25,8 @@ public abstract class AbilitySkill extends Skill {
     @Override public final void cast(ServerPlayer player,PlayerData data){AbilityRuntime.request(player,data,this);}
     /** The concrete class owns validation and whether it needs ground-point confirmation. */
     public boolean needsPoint(){return false;}
+    /** Server-side opt-in: delay payment/release by this many local action ticks. Existing skills pay immediately. */
+    public int commitWindupTicks(){return 0;}
     public boolean requiresStandingPoint(){return false;}
     public void present(AbilityRuntime.Cast cast){}
     /** Opt out of the generic cast Foley when this module owns its staged sound cues. */

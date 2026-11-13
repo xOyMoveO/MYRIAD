@@ -39,10 +39,6 @@ public final class BaseRules {
         }
     }
     public static void combat(Entity victim,Entity attacker){
-        if(victim instanceof ServerPlayer v && attacker instanceof ServerPlayer a && v!=a){
-            com.myriad.character.skills.mingzhu.MingZhuSkills.onHeroDamage(v,a);
-            com.myriad.character.skills.mingzhu.MingZhuSkills.onHeroDamage(a,v);
-        }
         RecallSystem.cancel(victim);RecallSystem.cancel(attacker);cancel(victim);if(attacker!=victim)cancel(attacker);
     }
     private static void cancel(Entity entity){if(entity instanceof ServerPlayer p){var s=STATES.computeIfAbsent(p.getUUID(),id->new State());s.combatUntil=p.level().getGameTime()+100;stop(p,s);}}

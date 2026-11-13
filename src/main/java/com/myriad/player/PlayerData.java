@@ -129,12 +129,6 @@ public class PlayerData {
         this.gold = Math.max(0, this.gold - amount);
     }
 
-
-
-
-
-
-
     public Faction getFaction() {
         return faction;
     }
@@ -286,35 +280,13 @@ public class PlayerData {
     // ---- 技能附加效果（持续时间展示） ----
     /** 技能 id -> 剩余效果刻数（客户端展示） */
     private final Map<String, Integer> buffs = new LinkedHashMap<>();
-    /** Quarter-energy units: 400 = 100 solar energy, serialized by the existing Gson codec. */
-    private int mingzhuEnergy;
-    // Additional eighth-unit bit keeps old quarter-unit saves compatible.
-    private int mingzhuEnergyHalf;
-    private long mingzhuHeroCombatAt;
-    public int getMingzhuEnergy() { return Math.clamp(mingzhuEnergy, 0, 400); }
-    public void setMingzhuEnergy(int value) { mingzhuEnergy = Math.clamp(value, 0, 400); if(value<=0||value>=400)mingzhuEnergyHalf=0; }
-    public int getMingzhuEnergyEighths() { return Math.min(800,getMingzhuEnergy()*2+(mingzhuEnergyHalf&1)); }
-    public void setMingzhuEnergyEighths(int value) { int v=Math.clamp(value,0,800);mingzhuEnergy=v/2;mingzhuEnergyHalf=v%2; }
-    public long getMingzhuHeroCombatAt() { return mingzhuHeroCombatAt; }
-    public void setMingzhuHeroCombatAt(long value) { mingzhuHeroCombatAt = value; }
-
     /**
      * 这些值是被动层数而不是持续时间。它们复用 buff 同步表供 HUD 读取，
      * 但绝不能在 tickBuffs 中递减，否则任意一次主动同步（例如施法）都会让
      * 客户端看到层数凭空 +1。
      */
     private static final java.util.Set<String> PASSIVE_STACK_COUNTERS = java.util.Set.of(
-            "sulan_passive_ready", "mingzhu_energy", "mingzhu_energy_eighths", "mingzhu_radiance", "chixiao_passive", "lige_passive", "guanlan_passive", "xuanjia_passive",
-            "wuxiang_passive", "feiyu_stage", "feiyu_r_beat", "feiyu_r_chapter", "feiyu_r_perfect",
-            "feiyu_r_direction", "feiyu_r_directions",
-            "wanyue_wheel_state", "wanyue_wheel_distance",
-            "luoheng_nodes", "luoheng_w_start", "luoheng_triangle_area",
-            "shenli_ammo", "shenli_ammo_1", "shenli_ammo_2", "shenli_ammo_3",
-            "shenli_ammo_4", "shenli_ammo_5", "shenli_ammo_6", "shenli_combo",
-            "shenli_fire_marks", "shenli_tristar", "shenli_w_color", "shenli_w_precise",
-            "shenli_w_pointer", "shenli_aiming",
-            "luoheng_edge_1", "luoheng_edge_2", "luoheng_edge_3",
-            "skill_charge_liuxingluozi", "skill_charge_tajingliuguang");
+            "sulan_passive_ready", "chixiao_passive");
 
     /** 技能附加效果剩余刻数 */
     public int getBuff(String skillId) {
@@ -532,9 +504,6 @@ public class PlayerData {
         this.buffs.clear();
         this.buffs.putAll(old.buffs);
         discardRetiredRuneBuffs();
-        this.mingzhuEnergy = old.mingzhuEnergy;
-        this.mingzhuEnergyHalf = old.mingzhuEnergyHalf;
-        this.mingzhuHeroCombatAt = old.mingzhuHeroCombatAt;
         java.util.Arrays.fill(this.equipment, "");
         for (int i = 0; i < Math.min(old.equipment.length, this.equipment.length); i++) {
             this.equipment[i] = old.equipment[i];

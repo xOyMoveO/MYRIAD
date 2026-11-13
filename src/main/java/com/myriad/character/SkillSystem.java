@@ -69,40 +69,7 @@ public final class SkillSystem {
         }
         boolean noCd = training && com.myriad.game.TrainingMode.isNoCooldown();
         boolean noMana = training && com.myriad.game.TrainingMode.isNoMana();
-        if (type == CharacterType.MINGZHU) {
-            com.myriad.character.skills.mingzhu.MingZhuSkills.handleCast(player, data, slot, skill, noCd, noMana);
-            return;
-        }
-        if (type == CharacterType.WUXIANG) {
-            com.myriad.character.skills.wuxiang.WuxiangSkills.handleCast(
-                    player, data, slot, skill, noCd, noMana);
-            return;
-        }
-        if (type == CharacterType.FEIYU) {
-            com.myriad.character.skills.feiyu.FeiYuSkills.handleCast(
-                    player, data, slot, skill, noCd, noMana);
-            return;
-        }
-        if (type == CharacterType.WANYUE) {
-            com.myriad.character.skills.wanyue.WanyueSkills.handleCast(
-                    player, data, slot, skill, noCd, noMana);
-            return;
-        }
-        if (type == CharacterType.LUOHENG) {
-            com.myriad.character.skills.luoheng.LuoHengSkills.handleCast(
-                    player, data, slot, skill, noCd, noMana);
-            return;
-        }
-        if (type == CharacterType.SHENLI) {
-            com.myriad.character.skills.shenli.ShenLiSkills.handleCast(
-                    player, data, slot, skill, noCd, noMana);
-            return;
-        }
-        if (type == CharacterType.ZHECHUAN) {
-            com.myriad.character.skills.zhechuan.ZheChuanSkills.handleCast(
-                    player, data, slot, skill, noCd, noMana);
-            return;
-        }
+
         // 冷却（训练模式无冷却开关开启时跳过）
         boolean chixiaoReturn = type == CharacterType.CHIXIAO && slot == CharacterType.SLOT_W
                 && com.myriad.character.skills.chixiao.ChiXiaoSkills.canReturn(player);
@@ -132,16 +99,7 @@ public final class SkillSystem {
             player.sendSystemMessage(Component.translatable("message.myriad.no_skill_target"));
             return;
         }
-        if (type == CharacterType.LIGE
-                && !com.myriad.character.skills.lige.LiGeSkills.hasTarget(player, slot)) {
-            player.sendSystemMessage(Component.translatable("message.myriad.no_skill_target"));
-            return;
-        }
-        if (type == CharacterType.GUANLAN
-                && !com.myriad.character.skills.guanlan.GuanLanSkills.canCast(player, slot)) {
-            player.sendSystemMessage(Component.translatable("message.myriad.guanlan_no_meteor_charge"));
-            return;
-        }
+
         if (!chixiaoReturn && !swordUser && !noMana && data.getMana() < skill.getManaCost()) {
             player.sendSystemMessage(Component.translatable("message.myriad.not_enough_mana"));
             return;
@@ -151,9 +109,6 @@ public final class SkillSystem {
         // 墨尘被动【阵眼共鸣】：每次释放技能为周围 8 格友方回复 5 法力
         if (CharacterType.byId(data.getCharacterId()) == CharacterType.XUANCHEN) {
             com.myriad.character.skills.xuanchen.XuanChenPassiveSkill.onSkillCast(player);
-        }
-        if (skill.isUltimate()) {
-            
         }
         if (!chixiaoReturn && !swordUser && !noMana) {
             data.spendMana(skill.getManaCost());

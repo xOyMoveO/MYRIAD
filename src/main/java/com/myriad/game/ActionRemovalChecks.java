@@ -37,12 +37,12 @@ final class ActionRemovalChecks {
             h.assertTrue(clients.equals(List.of("ClientInputAccessor", "ClientEntitySpawnMixin", "PlayerTabOverlayMixin", "ShuoHeldLightMixin")),
                     "Only gameplay hooks and Shuo's attached-light hook remain; no retired player-action mixin returns");
         } catch (java.io.IOException e) { throw new IllegalStateException(e); }
-        var ranged = Set.of("lige", "wanyue", "shenli", "mingzhu", "xuanchen", "hanze", "qingluo", "yunsheng", "guanlan", "luoheng");
+        var ranged = Set.of("xuanchen", "hanze", "qingluo", "yunsheng");
         for (var role : CharacterType.values()) {
             h.assertTrue(VanillaMeleeAttack.usesVanilla(role) == !ranged.contains(role.getId()),
                     "Removing actions must not reroute specialized ranged attacks: " + role.getId());
         }
         h.assertTrue(!VanillaMeleeAttack.usesVanilla(null), "Unselected players remain vanilla, without a mod attack route");
-        System.out.println("[MYRIAD-ACTION-REMOVAL] PASS: no retired player-action classes/assets/mixins, all 20 attack routes preserved; new Night Shadow local first-person view is separate");
+        System.out.println("[MYRIAD-ACTION-REMOVAL] PASS: no retired player-action classes/assets/mixins, all eleven retained attack routes preserved; new Night Shadow local first-person view is separate");
     }
 }

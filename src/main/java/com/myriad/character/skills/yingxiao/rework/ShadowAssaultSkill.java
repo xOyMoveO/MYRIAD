@@ -19,5 +19,5 @@ public final class ShadowAssaultSkill extends AbilitySkill {
     @Override public void present(Cast c){NightVisuals.assault(c);
         NightSkillPresentation.play(c,com.myriad.network.NightSkillViewPayload.DASH,10);}
     @Override public boolean canRelease(Cast c){return c.data.getBuff("g1_root")==0;}
- @Override public void release(Cast c){c.dash(c.forward(DASH_DISTANCE),DASH_TICKS,1.2,(t,first)->{c.damage(t,c.value(70,20,.8f),PHYSICAL);if(first&&c.behind(t))c.slow(t,.4f,20);},()->{},false,false);}
+ @Override public void release(Cast c){c.actionDash(c.forward(DASH_DISTANCE),DASH_TICKS,1.2,(t,first)->{c.damage(t,c.value(70,20,.8f),PHYSICAL);if(first&&c.behind(t))c.slow(t,.4f,20);},()->{},false,false);}
 }

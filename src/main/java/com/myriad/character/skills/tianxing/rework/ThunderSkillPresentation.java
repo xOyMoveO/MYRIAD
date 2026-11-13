@@ -20,7 +20,7 @@ public final class ThunderSkillPresentation {
     public static void charged(Cast c,int ticks,int ready,int fire,Runnable release){
         ThunderAudio.play(c,ThunderAudio.Cue.CHARGE);
         int token=play(c,ready,ticks);boolean[] resolved={false};
-        c.later(ticks,true,()->{resolved[0]=true;play(c,fire,10,token);release.run();});
+        c.windup(ticks,0,()->{resolved[0]=true;play(c,fire,10,token);release.run();});
         c.whileActive(ticks,age->{
             if(resolved[0])return false;
             if(age>0&&!AbilityRuntime.channeling(c.player)){play(c,ThunderSkillViewPayload.CANCEL,0,token);return false;}

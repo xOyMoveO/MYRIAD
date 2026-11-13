@@ -61,11 +61,11 @@ final class VanillaMeleeChecks {
             d.setPlacementType(1);p.attack(target);
             h.assertTrue(target.getHealth()==1000,"Placement click cannot also attack");d.setPlacementType(0);
             h.assertTrue(!VanillaMeleeAttack.prepare(p,p),"No self-hit");
-            for(var role:new CharacterType[]{CharacterType.LIGE,CharacterType.SHENLI,CharacterType.WANYUE,CharacterType.MINGZHU,CharacterType.XUANCHEN}){
+            for(var role:new CharacterType[]{CharacterType.XUANCHEN,CharacterType.HANZE,CharacterType.QINGLUO,CharacterType.YUNSHENG}){
                 h.assertTrue(!VanillaMeleeAttack.usesVanilla(role),"Dedicated ranged attacks remain custom: "+role);
             }
-            d.setCharacterId("shenli");var remoteAttack=new net.neoforged.neoforge.event.entity.player.AttackEntityEvent(p,target);
-            PlayerDataProvider.onPlayerAttack(remoteAttack);h.assertTrue(remoteAttack.isCanceled(),"Gun cannot bypass shooting with a vanilla melee packet");
+            d.setCharacterId("xuanchen");var remoteAttack=new net.neoforged.neoforge.event.entity.player.AttackEntityEvent(p,target);
+            PlayerDataProvider.onPlayerAttack(remoteAttack);h.assertTrue(remoteAttack.isCanceled(),"Ranged mage cannot bypass shooting with a vanilla melee packet");
             ModState.setEnabled(false);var vanilla=new net.neoforged.neoforge.event.entity.player.AttackEntityEvent(p,target);
             PlayerDataProvider.onPlayerAttack(vanilla);h.assertTrue(!vanilla.isCanceled(),"Mod off returns untouched vanilla behavior");
             for(int total:new int[]{1,4,20,29,100}){

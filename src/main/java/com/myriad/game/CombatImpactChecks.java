@@ -48,7 +48,6 @@ final class CombatImpactChecks {
         }
         h.assertTrue(!CombatImpactProfile.isPayload(5)&&!CombatImpactProfile.isPayload(6)&&!CombatImpactProfile.isPayload(100),"Legacy marker/UI codes are not reinterpreted as sound profiles");
         h.assertTrue(CombatImpactProfile.choose(CharacterType.LINGYUAN,0,false,false,false)==CombatImpactProfile.BLADE,"Sword contact is not a spell-cast whoosh");
-        h.assertTrue(CombatImpactProfile.choose(CharacterType.SHENLI,0,false,false,false)==CombatImpactProfile.PROJECTILE,"Ranged physical contact has its own material");
         h.assertTrue(CombatImpactProfile.choose(CharacterType.LINGYUAN,1,false,false,false)==CombatImpactProfile.ARCANE,"Actual magical damage uses the spell contact profile");
         h.assertTrue(CombatImpactProfile.choose(CharacterType.LINGYUAN,0,true,true,false)==CombatImpactProfile.STRUCTURE,"Structures retain their own impact even on crit");
         h.assertTrue(CombatImpactProfile.choose(CharacterType.LINGYUAN,0,true,false,true)==CombatImpactProfile.SHIELD,"Shield absorption does not pretend to hit flesh");
