@@ -12,640 +12,828 @@
   "elements": [
     {
       "name": "octagonal_ring_0",
+      "box_uv": false,
+      "type": "cube",
+      "uuid": "98712562-44d0-5020-b20c-b90f4ceb24e1",
       "from": [
-        7.7,
+        7.390101,
         7.87,
-        9.200000000000001
+        9.27
       ],
       "to": [
-        8.3,
+        8.609899,
         8.13,
-        9.6
+        9.53
+      ],
+      "origin": [
+        8.0,
+        8,
+        9.4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "inflate": 0,
+      "uv_offset": [
+        0,
+        0
       ],
       "faces": {
         "north": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
-          ],
-          "texture": 0
-        },
-        "east": {
-          "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            90.2449,
+            123.0,
+            101.7551
           ],
           "texture": 0
         },
         "south": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            90.2449,
+            123.0,
+            101.7551
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            69.0,
+            69.0,
+            123.0,
+            123.0
           ],
           "texture": 0
         },
         "west": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            69.0,
+            123.0,
+            123.0
           ],
           "texture": 0
         },
         "up": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            90.2449,
+            123.0,
+            101.7551
           ],
           "texture": 0
         },
         "down": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            90.2449,
+            123.0,
+            101.7551
           ],
           "texture": 0
         }
-      },
-      "uuid": "9395e2cc-6837-5f25-a669-d2e714b19541",
-      "type": "cube",
-      "origin": [
-        8,
-        8,
-        8
-      ],
-      "autouv": 0
+      }
     },
     {
       "name": "octagonal_ring_1",
+      "box_uv": false,
+      "type": "cube",
+      "uuid": "2baf92ab-255c-5154-9c41-1e36a9db9d4f",
       "from": [
-        8.689949493661166,
+        8.380051,
         7.87,
-        8.789949493661167
+        8.859949
       ],
       "to": [
-        9.289949493661167,
+        9.599849,
         8.13,
-        9.189949493661166
+        9.119949
+      ],
+      "origin": [
+        8.989949,
+        8,
+        8.989949
+      ],
+      "rotation": [
+        0,
+        45,
+        0
+      ],
+      "inflate": 0,
+      "uv_offset": [
+        0,
+        0
       ],
       "faces": {
         "north": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
-          ],
-          "texture": 0
-        },
-        "east": {
-          "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            90.2449,
+            123.0,
+            101.7551
           ],
           "texture": 0
         },
         "south": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            90.2449,
+            123.0,
+            101.7551
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            69.0,
+            69.0,
+            123.0,
+            123.0
           ],
           "texture": 0
         },
         "west": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            69.0,
+            123.0,
+            123.0
           ],
           "texture": 0
         },
         "up": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            90.2449,
+            123.0,
+            101.7551
           ],
           "texture": 0
         },
         "down": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            90.2449,
+            123.0,
+            101.7551
           ],
           "texture": 0
         }
-      },
-      "uuid": "4f9776a6-4532-5f25-ae24-9684190a3441",
-      "type": "cube",
-      "origin": [
-        8,
-        8,
-        8
-      ],
-      "autouv": 0
+      }
     },
     {
       "name": "octagonal_ring_2",
+      "box_uv": false,
+      "type": "cube",
+      "uuid": "27f058f5-e9be-5a6f-946b-c8a02fefcb39",
       "from": [
-        9.1,
+        9.27,
         7.87,
-        7.8
+        7.390101
       ],
       "to": [
-        9.700000000000001,
+        9.53,
         8.13,
-        8.2
+        8.609899
+      ],
+      "origin": [
+        9.4,
+        8,
+        8.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "inflate": 0,
+      "uv_offset": [
+        0,
+        0
       ],
       "faces": {
         "north": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
-          ],
-          "texture": 0
-        },
-        "east": {
-          "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            69.0,
+            123.0,
+            123.0
           ],
           "texture": 0
         },
         "south": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            69.0,
+            123.0,
+            123.0
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            69.0,
+            90.2449,
+            123.0,
+            101.7551
           ],
           "texture": 0
         },
         "west": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            90.2449,
+            123.0,
+            101.7551
           ],
           "texture": 0
         },
         "up": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            90.2449,
+            69.0,
+            101.7551,
+            123.0
           ],
           "texture": 0
         },
         "down": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            90.2449,
+            69.0,
+            101.7551,
+            123.0
           ],
           "texture": 0
         }
-      },
-      "uuid": "1992ec31-c4a4-5862-a437-e84c3e767e0b",
-      "type": "cube",
-      "origin": [
-        8,
-        8,
-        8
-      ],
-      "autouv": 0
+      }
     },
     {
       "name": "octagonal_ring_3",
+      "box_uv": false,
+      "type": "cube",
+      "uuid": "09f79161-d116-570e-8591-173bba9cb18c",
       "from": [
-        8.689949493661166,
+        8.859949,
         7.87,
-        6.8100505063388335
+        6.400152
       ],
       "to": [
-        9.289949493661167,
+        9.119949,
         8.13,
-        7.210050506338834
+        7.61995
+      ],
+      "origin": [
+        8.989949,
+        8,
+        7.010051
+      ],
+      "rotation": [
+        0,
+        45,
+        0
+      ],
+      "inflate": 0,
+      "uv_offset": [
+        0,
+        0
       ],
       "faces": {
         "north": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
-          ],
-          "texture": 0
-        },
-        "east": {
-          "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            69.0,
+            123.0,
+            123.0
           ],
           "texture": 0
         },
         "south": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            69.0,
+            123.0,
+            123.0
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            69.0,
+            90.2449,
+            123.0,
+            101.7551
           ],
           "texture": 0
         },
         "west": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            90.2449,
+            123.0,
+            101.7551
           ],
           "texture": 0
         },
         "up": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            90.2449,
+            69.0,
+            101.7551,
+            123.0
           ],
           "texture": 0
         },
         "down": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            90.2449,
+            69.0,
+            101.7551,
+            123.0
           ],
           "texture": 0
         }
-      },
-      "uuid": "f3ab5e78-6208-5ec5-8297-585c168dfa2c",
-      "type": "cube",
-      "origin": [
-        8,
-        8,
-        8
-      ],
-      "autouv": 0
+      }
     },
     {
       "name": "octagonal_ring_4",
+      "box_uv": false,
+      "type": "cube",
+      "uuid": "62311bdd-6d8d-5a83-aee5-9a9b0041afb5",
       "from": [
-        7.7,
+        7.390101,
         7.87,
-        6.3999999999999995
+        6.47
       ],
       "to": [
-        8.3,
+        8.609899,
         8.13,
-        6.8
+        6.73
+      ],
+      "origin": [
+        8.0,
+        8,
+        6.6
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "inflate": 0,
+      "uv_offset": [
+        0,
+        0
       ],
       "faces": {
         "north": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
-          ],
-          "texture": 0
-        },
-        "east": {
-          "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            90.2449,
+            123.0,
+            101.7551
           ],
           "texture": 0
         },
         "south": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            90.2449,
+            123.0,
+            101.7551
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            69.0,
+            69.0,
+            123.0,
+            123.0
           ],
           "texture": 0
         },
         "west": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            69.0,
+            123.0,
+            123.0
           ],
           "texture": 0
         },
         "up": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            90.2449,
+            123.0,
+            101.7551
           ],
           "texture": 0
         },
         "down": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            90.2449,
+            123.0,
+            101.7551
           ],
           "texture": 0
         }
-      },
-      "uuid": "2017ae95-a760-50bd-8565-38e31cabf040",
-      "type": "cube",
-      "origin": [
-        8,
-        8,
-        8
-      ],
-      "autouv": 0
+      }
     },
     {
       "name": "octagonal_ring_5",
+      "box_uv": false,
+      "type": "cube",
+      "uuid": "fef77741-eb41-548d-b712-5f606536bc03",
       "from": [
-        6.710050506338834,
+        6.400152,
         7.87,
-        6.8100505063388335
+        6.880051
       ],
       "to": [
-        7.3100505063388335,
+        7.61995,
         8.13,
-        7.210050506338834
+        7.140051
+      ],
+      "origin": [
+        7.010051,
+        8,
+        7.010051
+      ],
+      "rotation": [
+        0,
+        45,
+        0
+      ],
+      "inflate": 0,
+      "uv_offset": [
+        0,
+        0
       ],
       "faces": {
         "north": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
-          ],
-          "texture": 0
-        },
-        "east": {
-          "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            90.2449,
+            123.0,
+            101.7551
           ],
           "texture": 0
         },
         "south": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            90.2449,
+            123.0,
+            101.7551
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            69.0,
+            69.0,
+            123.0,
+            123.0
           ],
           "texture": 0
         },
         "west": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            69.0,
+            123.0,
+            123.0
           ],
           "texture": 0
         },
         "up": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            90.2449,
+            123.0,
+            101.7551
           ],
           "texture": 0
         },
         "down": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            90.2449,
+            123.0,
+            101.7551
           ],
           "texture": 0
         }
-      },
-      "uuid": "75ff0f3f-0674-5422-bd4e-5fef088f87a8",
-      "type": "cube",
-      "origin": [
-        8,
-        8,
-        8
-      ],
-      "autouv": 0
+      }
     },
     {
       "name": "octagonal_ring_6",
+      "box_uv": false,
+      "type": "cube",
+      "uuid": "f3dd3ed5-4696-581e-978a-7b963810acc3",
       "from": [
-        6.3,
+        6.47,
         7.87,
-        7.8
+        7.390101
       ],
       "to": [
-        6.8999999999999995,
+        6.73,
         8.13,
-        8.2
+        8.609899
+      ],
+      "origin": [
+        6.6,
+        8,
+        8.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "inflate": 0,
+      "uv_offset": [
+        0,
+        0
       ],
       "faces": {
         "north": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
-          ],
-          "texture": 0
-        },
-        "east": {
-          "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            69.0,
+            123.0,
+            123.0
           ],
           "texture": 0
         },
         "south": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            69.0,
+            123.0,
+            123.0
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            69.0,
+            90.2449,
+            123.0,
+            101.7551
           ],
           "texture": 0
         },
         "west": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            90.2449,
+            123.0,
+            101.7551
           ],
           "texture": 0
         },
         "up": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            90.2449,
+            69.0,
+            101.7551,
+            123.0
           ],
           "texture": 0
         },
         "down": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            90.2449,
+            69.0,
+            101.7551,
+            123.0
           ],
           "texture": 0
         }
-      },
-      "uuid": "cdf12eb8-e79e-5c62-90a8-491ef7a4b779",
-      "type": "cube",
-      "origin": [
-        8,
-        8,
-        8
-      ],
-      "autouv": 0
+      }
     },
     {
       "name": "octagonal_ring_7",
+      "box_uv": false,
+      "type": "cube",
+      "uuid": "4a3c3332-e224-5ca4-a129-5ddcf78fcb65",
       "from": [
-        6.710050506338834,
+        6.880051,
         7.87,
-        8.789949493661167
+        8.380051
       ],
       "to": [
-        7.3100505063388335,
+        7.140051,
         8.13,
-        9.189949493661166
+        9.599849
+      ],
+      "origin": [
+        7.010051,
+        8,
+        8.989949
+      ],
+      "rotation": [
+        0,
+        45,
+        0
+      ],
+      "inflate": 0,
+      "uv_offset": [
+        0,
+        0
       ],
       "faces": {
         "north": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
-          ],
-          "texture": 0
-        },
-        "east": {
-          "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            69.0,
+            123.0,
+            123.0
           ],
           "texture": 0
         },
         "south": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            69.0,
+            123.0,
+            123.0
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            69.0,
+            90.2449,
+            123.0,
+            101.7551
           ],
           "texture": 0
         },
         "west": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            69.0,
+            90.2449,
+            123.0,
+            101.7551
           ],
           "texture": 0
         },
         "up": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            90.2449,
+            69.0,
+            101.7551,
+            123.0
           ],
           "texture": 0
         },
         "down": {
           "uv": [
-            65.28,
-            97.28,
-            126.72,
-            190.72
+            90.2449,
+            69.0,
+            101.7551,
+            123.0
           ],
           "texture": 0
         }
-      },
-      "uuid": "5dca2e78-1a3a-5a30-aec0-63f53748190e",
-      "type": "cube",
-      "origin": [
-        8,
-        8,
-        8
-      ],
-      "autouv": 0
+      }
     }
   ],
   "outliner": [
-    "9395e2cc-6837-5f25-a669-d2e714b19541",
-    "4f9776a6-4532-5f25-ae24-9684190a3441",
-    "1992ec31-c4a4-5862-a437-e84c3e767e0b",
-    "f3ab5e78-6208-5ec5-8297-585c168dfa2c",
-    "2017ae95-a760-50bd-8565-38e31cabf040",
-    "75ff0f3f-0674-5422-bd4e-5fef088f87a8",
-    "cdf12eb8-e79e-5c62-90a8-491ef7a4b779",
-    "5dca2e78-1a3a-5a30-aec0-63f53748190e"
+    "98712562-44d0-5020-b20c-b90f4ceb24e1",
+    "2baf92ab-255c-5154-9c41-1e36a9db9d4f",
+    "27f058f5-e9be-5a6f-946b-c8a02fefcb39",
+    "09f79161-d116-570e-8591-173bba9cb18c",
+    "62311bdd-6d8d-5a83-aee5-9a9b0041afb5",
+    "fef77741-eb41-548d-b712-5f606536bc03",
+    "f3dd3ed5-4696-581e-978a-7b963810acc3",
+    "4a3c3332-e224-5ca4-a129-5ddcf78fcb65"
   ],
   "textures": [
     {
-      "path": "hong_lie_atlas.png",
       "name": "hong_lie",
       "id": "0",
       "width": 256,
       "height": 256,
-      "uv_width": 16,
-      "uv_height": 16
+      "uv_width": 256,
+      "uv_height": 256,
+      "source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAH5klEQVR4nO3dv2+d1QHH4ZP0qkupSqoCCSBHcaQmgFKilABDLFLGzN06tWXt2rkzKyszfwJTxQ+ZAQGJDCkkGWwUi0BIK0glsiBLqW4Sm/r6Jvc1Nj7ve77PsyTXcnyvFZ/Pe973Pfd43/EjL9wuwc789lxJ9o+5WyXZO8vXS7L9tV8AUM9o/S//vfXvkuRXv3hk0+OVLy+XJPOPH48+Ep49enDT48Vvsn7+F3599+ffDACCbcwA7ndkbM2smc7kkbE1s2Y6k0fG1sya6SzcOzK2anKmsyUAY4cPPlFadPX6tU6fd+rpp0uLLnz2WafPe+LEXGnRtYurnT7v98fa/P7PX9n6/U8NwHYGSx9NC9h2v5+ug6VVXQdLq85PGSwtum8A+mzWDGVysI+n/a2f2kATAehy+jFtgAMDCMCPOXrP4ugOPQjAT3X0HuoAX7/ivtM7C7v1dWBHAXD0hpAAdLmS3vLRG6ID8Mny0sx/bHCzWwtzWl+ANGthTq0FSKMWB/hurAOABKMhDn7rANpx8pVRWXp9raT6298Pldde/ara81sHQDU3//CfO4N/HIHydt5/xMlXRncG/zgCtSJoHQDVBv/Db/+mlHL9XgTWH+fNfF6rGAHrACobv/Eo7X0HPwz+H4wfT/t4ymnP0r2Z0F5HwDoA9tSDBnlCBE4+YJDXiIB1AOyZLoO75Qic7DC49zoC1gGwZ7oM7lYHf9fB3ZsZQN9vBT6IdQDDjEDLg79LBHp1DaDPg986gPYikDD4HxSBWushrAOgagTK8t0f/pTBPxmBxVfvLgayDuAebzjKMR704/v/4x/+s0dLnKXX1zZWAvbyvQDbZT8Atit5GfBYzWXAY9YBQDDrACCYdQAQzDoACGYdAASzDgCC2Q8AglkHAMGsA4Bg1gFAMOsAIJh1AFRlW/BD/dwW3H4A/NRsCz7K2xa81jsK6Rfbgo/a2xa8C79hGNuCj4a5Lfgs9gNgFtuCj4axLfg0jt7shG3BR8PZFrzLzrpdzr37fDGRvWVb8LXhbAv+yfLSzH9scLNdtgVfG8a24EMe4H4vQL/ZFnyt/9uC93nwt/R7AdJ+Meg624KvZW4LPot1ADlsC77W1rbgXbiTwP+zLfhXVX8grAOAYNYBUNXZowej/wcWKk3911kHAMGsA4BgTa4D6Iv5x4/36uvApP3lPgx+CA4A0D4BgGACAMH2d1lLnyZ1ff66axdXS7LzV1Zz7wKk76+38uXlkuyd5esl2eI3WT//TgEg2MYMIP22X/q9dktyHymJzAAg2L5/vfGX2yXYLw8eKsnmTv+5JHvqd38qycwAINjGNYA3F78oSc4tPLnp8VvvflqSvPzSM5seX/joYkly6rkTmx5/+92NkuTAQ4/e+dMMAIKNZh0ZWzNrpjN5ZGzNrJnO5JGxNbNmOgfuHRlbNTnTmfp24MPzj5UWXV35utPnzc0fKy1aXbnS7RN//nBp0vc3O33aU0fbvCV8afly9/0Aug6WVnUeLK3qOFhadWnKYGmRawAQrHe/F4A2zrM3XUv4sacUk7OQ8dcJn5n0agZQ+9Zh7eevfeuw9vMzfE4BIFiVU4BpdxmSLjpOu8sQf9GRKswAIJgAQLAqpwBJ0/1pTPfpCzMACCYAEEwAIJgAQDABgGACAMEEAIIJAAQTAAgmABBMACCYAEAwAYBgAgDBBACCCQAEEwAIJgAQTAAgmABAMAGAYAIAwQQAggkABBMACCYAEEwAIJgAQDABgGACAMEEAIIJAAQTAAgmABBMACDYqMaTHp5/bMvHrq58XVLMzR/b8rHVlStVXgvZzAAgmABAsCqnAEnT/WlM9+kLMwAItqMAnFt4cvdeyQCf/+WXnol+foavyikAbTv13InNH/j+5u584d36OmxwCgDBBACCTQ2Aq/Thi3LCp9qXli+X2GsAby5+UZK99e6nJdmFjy6WZN9+d6MkcQoAwUZ9uaVWW/ottS1X7sMceOjRksgMAIKNbtz6WUn2x7/+s2RL//6zmQFAsI1rAO+9/3lJcubFI7VfAlRnBgDBRmlHxrSZDmz7zUDPnn6+tOjjDz+o/RJgGO8GNFigfa4BQDABgGD7h3xBrfbzw9CZAUCwKluCTbvL4KIj7D0zAAgmABCsyimA6T70gxkABBMACCYAEEwAIJgAQDABgGACAMEEAIIJAAQTAAgmABBMACCYAEAwAYBgAgDBBACCCQAEEwAIJgAQTAAgmABAMAGAYAIAwQQAggkABBMACCYAEEwAIJgAQDABgGACAMEEAIIJAAQTAAgmABBsVONJnz39/JaPffzhBzVeCkQzA4BgAgDBqpwCmO5DP5gBQLAdBeDMi0d275UM8Plh6MwAIJgAQDABgGBTA+AqPYTeBnzv/c/rvBJgzzkFgGAbMwC31CCPGQAE23f8yAu3a78IoA4zAAgmABBMACCYAEAwAYBgAgDBBACCCQAEEwAIJgAQTAAgmABAMAGAYAIAwQQAggkABBMACCYAEEwAIJgAQDABgGACAMEEAIIJAAQTAAgmABBMACCYAEAwAYBgAgDBBACCCQAEEwAIJgAQTAAgmABAMAGAYAIAwQQAggkABBMACCYAEEwAIJgAQDABgGACAMEEAIIJAAQTAAgmABBMACCYAEAwAYBgAgDBBACCCQAEEwAIJgAQTAAgmABAMAGAYAIAwQQASq7/ARO5LjkiJkBcAAAAAElFTkSuQmCC",
+      "internal": true,
+      "saved": false,
+      "uuid": "53e94388-d822-55d0-bea1-257602ff040d"
     }
-  ]
+  ],
+  "credit": "MYRIAD original; reviewed asset spec with preserved sub-pixel geometry",
+  "display": {
+    "gui": {
+      "rotation": [
+        25,
+        -38,
+        0
+      ],
+      "translation": [
+        0,
+        -1,
+        0
+      ],
+      "scale": [
+        0.66,
+        0.66,
+        0.66
+      ]
+    },
+    "ground": {
+      "rotation": [
+        0,
+        0,
+        40
+      ],
+      "translation": [
+        0,
+        3,
+        0
+      ],
+      "scale": [
+        0.45,
+        0.45,
+        0.45
+      ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        0,
+        -18
+      ],
+      "translation": [
+        5,
+        -2,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        0,
+        18
+      ],
+      "translation": [
+        -5,
+        -2,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ]
+    }
+  }
 }

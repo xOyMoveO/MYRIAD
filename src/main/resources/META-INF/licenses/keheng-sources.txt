@@ -5,10 +5,17 @@ role emblem, chronometric procedural VFX and eight synthesized mechanical/air/me
 were authored specifically for this project from the confirmed Keheng design contract.
 No third-party source image, recording, font or stock model is incorporated.
 
-Editable source: art_source/keheng/hengke.bbmodel, hengke_texture.png,
-hengke_orthographic.svg and tools/build_keheng_assets.py.
+Editable weapon source: art_source/keheng/hengke.spec.json, hengke.bbmodel,
+hengke_texture.png and tools/assets/generate_keheng_weapon.py.
+The weapon uses the project Blockbench asset-spec generator, with the existing
+fine geometry precision retained. Model previews are rendered from the actual model.
 The native item JSON is also editable. The first-person arm uses the existing vanilla
 player skin/mesh path already used by the project's other weapon rigs.
+
+The eight candidate skill icons were refreshed with the built-in image generation
+tool from the confirmed original skill descriptions and palette. Source sheet:
+art_source/keheng/icon_source.png. Each measured panel is cropped and exported as
+an opaque 64x64 PNG. The earlier procedural icon drawings are no longer generated.
 
 Synthesized audio uses Python standard-library oscillators/noise and FFmpeg's native
 Vorbis encoder; no source recording or sampled third-party instrument is embedded.

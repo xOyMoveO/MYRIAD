@@ -1,0 +1,838 @@
+{
+  "meta": {
+    "name": "hong_lie_petal",
+    "schema_version": 1,
+    "description": "Original Hong Lie geometry reversed losslessly; preserved local origin (8,8,8), thin rails and hinge scale. Continuous open octagonal rings and explicit material UVs."
+  },
+  "target": "item",
+  "atlas": {
+    "width": 256,
+    "height": 256,
+    "regions": [
+      {
+        "id": "wrapped_violet",
+        "rect": [
+          0,
+          0,
+          64,
+          64
+        ],
+        "fill": "#282137",
+        "palette": [
+          "#191622",
+          "#473952"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "violet_lining",
+        "rect": [
+          64,
+          0,
+          64,
+          64
+        ],
+        "fill": "#644781",
+        "palette": [
+          "#422D59",
+          "#9671AB"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "coral_enamel",
+        "rect": [
+          128,
+          0,
+          64,
+          64
+        ],
+        "fill": "#E46576",
+        "palette": [
+          "#A4425E",
+          "#FF9294"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "coral_root",
+        "rect": [
+          192,
+          0,
+          64,
+          64
+        ],
+        "fill": "#A4425E",
+        "palette": [
+          "#673049",
+          "#D7697C"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "brass",
+        "rect": [
+          0,
+          64,
+          64,
+          64
+        ],
+        "fill": "#D4A662",
+        "palette": [
+          "#8A6946",
+          "#F3C879"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "pale_gold",
+        "rect": [
+          64,
+          64,
+          64,
+          64
+        ],
+        "fill": "#E1BE7B",
+        "palette": [
+          "#9F7F50",
+          "#FFE0A2"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "warm_crystal",
+        "rect": [
+          128,
+          64,
+          64,
+          64
+        ],
+        "fill": "#FFF3DC",
+        "palette": [
+          "#CDBFAF",
+          "#FFF9EC"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "dark_metal",
+        "rect": [
+          192,
+          64,
+          64,
+          64
+        ],
+        "fill": "#282137",
+        "palette": [
+          "#171521",
+          "#51445F"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "rail_brass",
+        "rect": [
+          0,
+          128,
+          64,
+          64
+        ],
+        "fill": "#BE9B65",
+        "palette": [
+          "#826344",
+          "#EDD09B"
+        ],
+        "noise": 0
+      }
+    ]
+  },
+  "parts": [
+    {
+      "id": "hinge",
+      "size": [
+        0.9,
+        0.7,
+        0.79
+      ],
+      "pos": [
+        7.55,
+        7.85,
+        8.76
+      ],
+      "pivot": [
+        8,
+        8,
+        8
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            5.0,
+            75.0,
+            59.0,
+            117.0
+          ],
+          "region": "brass"
+        },
+        "south": {
+          "uv": [
+            5.0,
+            75.0,
+            59.0,
+            117.0
+          ],
+          "region": "brass"
+        },
+        "east": {
+          "uv": [
+            5.0,
+            72.0759,
+            59.0,
+            119.9241
+          ],
+          "region": "brass"
+        },
+        "west": {
+          "uv": [
+            5.0,
+            72.0759,
+            59.0,
+            119.9241
+          ],
+          "region": "brass"
+        },
+        "up": {
+          "uv": [
+            5.0,
+            72.3,
+            59.0,
+            119.7
+          ],
+          "region": "brass"
+        },
+        "down": {
+          "uv": [
+            5.0,
+            72.3,
+            59.0,
+            119.7
+          ],
+          "region": "brass"
+        }
+      }
+    },
+    {
+      "id": "hinge_axle",
+      "size": [
+        1.16,
+        0.3,
+        0.29
+      ],
+      "pos": [
+        7.42,
+        8.02,
+        9.03
+      ],
+      "pivot": [
+        8,
+        8,
+        8
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            69.0,
+            89.0172,
+            123.0,
+            102.9828
+          ],
+          "region": "pale_gold"
+        },
+        "south": {
+          "uv": [
+            69.0,
+            89.0172,
+            123.0,
+            102.9828
+          ],
+          "region": "pale_gold"
+        },
+        "east": {
+          "uv": [
+            69.9,
+            69.0,
+            122.1,
+            123.0
+          ],
+          "region": "pale_gold"
+        },
+        "west": {
+          "uv": [
+            69.9,
+            69.0,
+            122.1,
+            123.0
+          ],
+          "region": "pale_gold"
+        },
+        "up": {
+          "uv": [
+            69.0,
+            89.25,
+            123.0,
+            102.75
+          ],
+          "region": "pale_gold"
+        },
+        "down": {
+          "uv": [
+            69.0,
+            89.25,
+            123.0,
+            102.75
+          ],
+          "region": "pale_gold"
+        }
+      }
+    },
+    {
+      "id": "coral_petal_root",
+      "size": [
+        0.76,
+        1.75,
+        0.37
+      ],
+      "pos": [
+        7.62,
+        8.35,
+        9.15
+      ],
+      "pivot": [
+        8,
+        8,
+        8
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            212.2743,
+            5.0,
+            235.7257,
+            59.0
+          ],
+          "region": "coral_root"
+        },
+        "south": {
+          "uv": [
+            212.2743,
+            5.0,
+            235.7257,
+            59.0
+          ],
+          "region": "coral_root"
+        },
+        "east": {
+          "uv": [
+            218.2914,
+            5.0,
+            229.7086,
+            59.0
+          ],
+          "region": "coral_root"
+        },
+        "west": {
+          "uv": [
+            218.2914,
+            5.0,
+            229.7086,
+            59.0
+          ],
+          "region": "coral_root"
+        },
+        "up": {
+          "uv": [
+            197.0,
+            18.8553,
+            251.0,
+            45.1447
+          ],
+          "region": "coral_root"
+        },
+        "down": {
+          "uv": [
+            197.0,
+            18.8553,
+            251.0,
+            45.1447
+          ],
+          "region": "coral_root"
+        }
+      }
+    },
+    {
+      "id": "coral_petal_shoulder",
+      "size": [
+        1.34,
+        3.6,
+        0.4
+      ],
+      "pos": [
+        7.33,
+        10.1,
+        9.15
+      ],
+      "pivot": [
+        8,
+        8,
+        8
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            149.95,
+            5.0,
+            170.05,
+            59.0
+          ],
+          "region": "coral_enamel"
+        },
+        "south": {
+          "uv": [
+            149.95,
+            5.0,
+            170.05,
+            59.0
+          ],
+          "region": "coral_enamel"
+        },
+        "east": {
+          "uv": [
+            221.0,
+            5.0,
+            227.0,
+            59.0
+          ],
+          "region": "coral_root"
+        },
+        "west": {
+          "uv": [
+            221.0,
+            5.0,
+            227.0,
+            59.0
+          ],
+          "region": "coral_root"
+        },
+        "up": {
+          "uv": [
+            197.0,
+            23.9403,
+            251.0,
+            40.0597
+          ],
+          "region": "coral_root"
+        },
+        "down": {
+          "uv": [
+            197.0,
+            23.9403,
+            251.0,
+            40.0597
+          ],
+          "region": "coral_root"
+        }
+      }
+    },
+    {
+      "id": "coral_petal_taper",
+      "size": [
+        0.96,
+        1.8,
+        0.4
+      ],
+      "pos": [
+        7.52,
+        13.7,
+        9.15
+      ],
+      "pivot": [
+        8,
+        8,
+        8
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            145.6,
+            5.0,
+            174.4,
+            59.0
+          ],
+          "region": "coral_enamel"
+        },
+        "south": {
+          "uv": [
+            145.6,
+            5.0,
+            174.4,
+            59.0
+          ],
+          "region": "coral_enamel"
+        },
+        "east": {
+          "uv": [
+            218.0,
+            5.0,
+            230.0,
+            59.0
+          ],
+          "region": "coral_root"
+        },
+        "west": {
+          "uv": [
+            218.0,
+            5.0,
+            230.0,
+            59.0
+          ],
+          "region": "coral_root"
+        },
+        "up": {
+          "uv": [
+            197.0,
+            20.75,
+            251.0,
+            43.25
+          ],
+          "region": "coral_root"
+        },
+        "down": {
+          "uv": [
+            197.0,
+            20.75,
+            251.0,
+            43.25
+          ],
+          "region": "coral_root"
+        }
+      }
+    },
+    {
+      "id": "petal_tip",
+      "size": [
+        0.64,
+        0.6,
+        0.4
+      ],
+      "pos": [
+        7.68,
+        15.5,
+        9.15
+      ],
+      "pivot": [
+        8,
+        8,
+        8
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            69.0,
+            70.6875,
+            123.0,
+            121.3125
+          ],
+          "region": "pale_gold"
+        },
+        "south": {
+          "uv": [
+            69.0,
+            70.6875,
+            123.0,
+            121.3125
+          ],
+          "region": "pale_gold"
+        },
+        "east": {
+          "uv": [
+            78.0,
+            69.0,
+            114.0,
+            123.0
+          ],
+          "region": "pale_gold"
+        },
+        "west": {
+          "uv": [
+            78.0,
+            69.0,
+            114.0,
+            123.0
+          ],
+          "region": "pale_gold"
+        },
+        "up": {
+          "uv": [
+            69.0,
+            79.125,
+            123.0,
+            112.875
+          ],
+          "region": "pale_gold"
+        },
+        "down": {
+          "uv": [
+            69.0,
+            79.125,
+            123.0,
+            112.875
+          ],
+          "region": "pale_gold"
+        }
+      }
+    },
+    {
+      "id": "violet_inner",
+      "size": [
+        1.02,
+        3.3,
+        0.17
+      ],
+      "pos": [
+        7.49,
+        10.25,
+        8.98
+      ],
+      "pivot": [
+        8,
+        8,
+        8
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            87.6545,
+            5.0,
+            104.3455,
+            59.0
+          ],
+          "region": "violet_lining"
+        },
+        "south": {
+          "uv": [
+            87.6545,
+            5.0,
+            104.3455,
+            59.0
+          ],
+          "region": "violet_lining"
+        },
+        "east": {
+          "uv": [
+            94.5,
+            5.0,
+            97.5,
+            59.0
+          ],
+          "region": "violet_lining"
+        },
+        "west": {
+          "uv": [
+            94.5,
+            5.0,
+            97.5,
+            59.0
+          ],
+          "region": "violet_lining"
+        },
+        "up": {
+          "uv": [
+            69.0,
+            27.5,
+            123.0,
+            36.5
+          ],
+          "region": "violet_lining"
+        },
+        "down": {
+          "uv": [
+            69.0,
+            27.5,
+            123.0,
+            36.5
+          ],
+          "region": "violet_lining"
+        }
+      }
+    },
+    {
+      "id": "outer_gilded_spine",
+      "size": [
+        0.12,
+        6.25,
+        0.06
+      ],
+      "pos": [
+        7.94,
+        9.2,
+        9.55
+      ],
+      "pivot": [
+        8,
+        8,
+        8
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            94.5,
+            69.0,
+            97.5,
+            123.0
+          ],
+          "region": "pale_gold"
+        },
+        "south": {
+          "uv": [
+            94.5,
+            69.0,
+            97.5,
+            123.0
+          ],
+          "region": "pale_gold"
+        },
+        "east": {
+          "uv": [
+            94.5,
+            69.0,
+            97.5,
+            123.0
+          ],
+          "region": "pale_gold"
+        },
+        "west": {
+          "uv": [
+            94.5,
+            69.0,
+            97.5,
+            123.0
+          ],
+          "region": "pale_gold"
+        },
+        "up": {
+          "uv": [
+            69.0,
+            82.5,
+            123.0,
+            109.5
+          ],
+          "region": "pale_gold"
+        },
+        "down": {
+          "uv": [
+            69.0,
+            82.5,
+            123.0,
+            109.5
+          ],
+          "region": "pale_gold"
+        }
+      }
+    },
+    {
+      "id": "fine_core_line",
+      "size": [
+        0.1,
+        1.95,
+        0.04
+      ],
+      "pos": [
+        7.95,
+        10.9,
+        8.94
+      ],
+      "pivot": [
+        8,
+        8,
+        8
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            158.5,
+            69.0,
+            161.5,
+            123.0
+          ],
+          "region": "warm_crystal"
+        },
+        "south": {
+          "uv": [
+            158.5,
+            69.0,
+            161.5,
+            123.0
+          ],
+          "region": "warm_crystal"
+        },
+        "east": {
+          "uv": [
+            158.5,
+            69.0,
+            161.5,
+            123.0
+          ],
+          "region": "warm_crystal"
+        },
+        "west": {
+          "uv": [
+            158.5,
+            69.0,
+            161.5,
+            123.0
+          ],
+          "region": "warm_crystal"
+        },
+        "up": {
+          "uv": [
+            133.0,
+            85.2,
+            187.0,
+            106.8
+          ],
+          "region": "warm_crystal"
+        },
+        "down": {
+          "uv": [
+            133.0,
+            85.2,
+            187.0,
+            106.8
+          ],
+          "region": "warm_crystal"
+        }
+      }
+    }
+  ],
+  "face_details": [
+    {
+      "id": "hinge_axle",
+      "part": "hinge_axle",
+      "kind": "geometry"
+    },
+    {
+      "id": "violet_inner_panel",
+      "part": "violet_inner",
+      "kind": "geometry"
+    }
+  ]
+}
