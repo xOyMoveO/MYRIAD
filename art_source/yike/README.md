@@ -3,9 +3,12 @@
 动态预览另存于两个子目录：
 
 - `animation/`：`fixed.gif`（定轨展开）、`mobile.gif`（游走半展）、`cancel.gif`（暂停后取消）、`shot.gif`（真实出膛回震），以及各段分帧 PNG、联系表和 `pose_trace.csv`。`tools/assets/YikeWeaponPreview.java` 调用生产动画控制器导出姿态，再由 `render_yike_animation.py` 驱动实际源模型渲染，固定画布、缩放与中心；没有另写近似动画曲线。
-- `vfx/`：`yike_vfx_preview.gif`、明暗背景总览、命中／收束阶段图及关键帧。`tools/vfx/PreviewYikeVfx.java` 调用生产网格生成方法，使用 `PreviewRoleMeshes.java` 做 CPU 离线投影。
+- `vfx/`：`yike_vfx_preview.gif`、明暗背景总览、命中／收束阶段图及关键帧。当前使用实际高清透明PNG、完整UV、材质色与alpha叠加；`tools/vfx/PreviewYikeVfx.java` 调用生产网格生成方法，使用 `PreviewRoleMeshes.java` 做 CPU 离线纹理采样，不再用平涂多边形替代贴图。高清环/弧片/流光/冲击/薄幕/电子盾为256×256，像素碎光/星火为64×64；源及联系表保存在 `vfx/hd/`。
+- `projectiles/`：普攻、Q/架炮、终极重弹三种真实Blockbench模型及各自LOD、规格和256×256材质源；生成链、+Y前轴和完整/LOD面数见该目录README。`vfx/yike_projectiles_actual_uv*.png/.gif` 显示实际PNG/UV模型、独立高清流光和像素尾流在相同比例下的三维朝向。
 
 以上预览用于检查实际姿态和网格阶段，不是游戏内截图，不代表第一／第三人称遮挡、多人延迟、场景照明或游戏内观感已经验收。
+
+本轮分层特效保留实际技能信号和时间：命中先出现冷白核心闪光，再展开独立高清冲击波片，后段由像素碎光退尽；预警、电子屏障、阵列支点和准直充能分别使用对应纹理，束流沿真实截断长度叠加流光和薄幕。普攻、Q/架炮与重弹始终以真实模型为主体，再叠独立2D光流与像素修饰。普通特效上限192面，LOD96面；飞行模型单粒子上限512面、LOD192面。飞行物本体在一个已确认运动tick后不再生成，旧独立尾流仍按原TTL结束。
 
 当前虹列采用未来科技方向：细长便携的光子阵列发射器，白陶瓷装甲、石墨骨架、钴蓝内板与冰蓝光路，紫色/紫红仅用于小型状态灯。正式游戏资产为同源导出的 `models/item/hong_lie*.json`、`textures/item/hong_lie.png`；三翼、主架与镂空准直环独立，运行时沿用服务端认可的展开进度组合。
 

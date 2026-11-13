@@ -60,7 +60,7 @@ public final class PreviewKehengVfx {
             Vec3 focus=i==7?new Vec3(0,1.2,6):i==0||i==1?new Vec3(0,.8,0):i==6?new Vec3(0,1.3,0):i==8?new Vec3(0,.8,.4):new Vec3(0,.5,0);
             panels.add(new PreviewRoleMeshes.Panel(LABELS[i],mesh(i,time,still),scale,focus));
         }
-        return PreviewRoleMeshes.board("刻衡 · 生产网格逐帧投影 / 独立阶段时间轴，长领域加速展示 / 非游戏截图",panels,3,dark);
+        return PreviewRoleMeshes.board("刻衡 · HD纹理切片＋实体迟针 / 独立阶段时间轴，长领域加速展示 / 实际PNG与UV",panels,3,dark);
     }
     public static void main(String[] args)throws Exception{
         Path out=Path.of(args[0]);Files.createDirectories(out);
@@ -77,6 +77,25 @@ public final class PreviewKehengVfx {
         stages.add(new PreviewRoleMeshes.Panel("随行域 / 打断散开",cut,38,new Vec3(0,.5,0)));
         var end=new ArrayList<Quad>();field(end,5,53,0,50,3,Vec3.ZERO);stages.add(new PreviewRoleMeshes.Panel("随行域 / 自然收针",end,38,new Vec3(0,.5,0)));
         PreviewRoleMeshes.png(out.resolve("keheng_phase_steps.png"),PreviewRoleMeshes.board("刻衡 / 实际网格阶段与两种结束",stages,4,true));
+        var models=new ArrayList<PreviewRoleMeshes.Panel>();
+        Vec3[] headings={new Vec3(1,0,0),new Vec3(0,1,0),new Vec3(.6,-.7,.3).normalize()};
+        for(int i=0;i<3;i++){
+            var p=new AbilityVfxPayload(1,-1,11,2,FLIGHT,Vec3.ZERO,headings[i].scale(1.2),.22f,0,3,100,false,7);
+            models.add(new PreviewRoleMeshes.Panel(new String[]{"迟针 / 水平前向","迟针 / 竖直向上","迟针 / 斜向下降"}[i],AbilityVfxGeometry.build(p,.8f,false),240,headings[i].scale(.5)));
+        }
+        var lod=new AbilityVfxPayload(1,-1,11,2,FLIGHT,Vec3.ZERO,new Vec3(1.2,0,0),.22f,0,3,100,false,7);
+        models.add(new PreviewRoleMeshes.Panel("迟针 / LOD真实贴图面",AbilityVfxGeometry.build(lod,.8f,true),240,new Vec3(.5,0,0)));
+        PreviewRoleMeshes.png(out.resolve("keheng_projectile_model_meshes.png"),PreviewRoleMeshes.board("刻衡 / 真实模型面与纹理UV / 同物理尺寸，前端绑定采样点",models,4,true));
+        var penetration=new ArrayList<PreviewRoleMeshes.Panel>();
+        var charge=new ArrayList<Quad>();add(charge,7,CHARGE,Vec3.ZERO,new Vec3(0,0,12),1.5f,0,5,112,.5f);
+        penetration.add(new PreviewRoleMeshes.Panel("12×3走廊 / 仅真实准备层",charge,27,new Vec3(0,1.3,6)));
+        for(float age:new float[]{.25f,1.25f}){
+            var shot=new ArrayList<Quad>();add(shot,7,BEAM,new Vec3(0,1.3,0),new Vec3(0,1.3,12),1.5f,0,6,116,age);
+            penetration.add(new PreviewRoleMeshes.Panel("出剑峰值 / tick "+age+" / 窄实体＋两侧切片",shot,27,new Vec3(0,1.3,6)));
+        }
+        var closeup=new ArrayList<Quad>();add(closeup,7,BEAM,new Vec3(0,1.3,0),new Vec3(0,1.3,12),1.5f,0,6,116,.7f);
+        penetration.add(new PreviewRoleMeshes.Panel("末端纹理细节 / 局部裁切放大",closeup,190,new Vec3(0,1.3,11.55)));
+        PreviewRoleMeshes.png(out.resolve("keheng_penetration_peak.png"),PreviewRoleMeshes.board("刻衡 / 终刻贯穿实际出剑峰值与两侧纹理层 / 独立放大格不表示扩大攻击范围",penetration,4,true));
         System.out.println("[MYRIAD-KEHENG-PREVIEW] PASS: nine production mesh timelines, true stages/world phase, PNG dark/grass and 40-frame GIF; offline only");
     }
 }

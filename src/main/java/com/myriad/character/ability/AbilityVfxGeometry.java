@@ -19,7 +19,8 @@ public final class AbilityVfxGeometry {
     }
     /** Complex closed models have their own budget; other role recipes stay at 192. */
     public static int maxQuads(AbilityVfxPayload p) {
-        return p.theme()==5&&p.kind()!=RETICLE&&p.kind()!=INVALID&&p.kind()!=CANCEL?4096:192;
+        return p.theme()==5&&p.kind()!=RETICLE&&p.kind()!=INVALID&&p.kind()!=CANCEL?4096
+                :p.theme()==12&&p.kind()==FLIGHT?512:192;
     }
     private final List<Quad> quads=new ArrayList<>();
     private final int theme,variant,color,bright;private final float fade;private final double time;

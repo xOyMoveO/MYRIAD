@@ -118,8 +118,10 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
         double distance=camera.position().distanceTo(recipe.from());
         boolean reduced=mc.options.particles().get()!=net.minecraft.server.level.ParticleStatus.ALL||distance>32;
         boolean thunderModel=com.myriad.character.skills.tianxing.rework.ThunderVfxGeometry.usesProjectileModel(recipe);
-        if((recipe.theme()==5||thunderModel||recipe.theme()==0&&recipe.kind()==AbilityVfxGeometry.FLIGHT&&recipe.variant()==2)&&!recipe.personal()){
-            int budget=recipe.theme()==5?4096:thunderModel?1200:192;
+        boolean rosterModel=com.myriad.character.skills.keheng.KehengVfx.usesProjectileModel(recipe)
+                ||recipe.theme()==12&&recipe.kind()==AbilityVfxGeometry.FLIGHT;
+        if((recipe.theme()==5||thunderModel||rosterModel||recipe.theme()==0&&recipe.kind()==AbilityVfxGeometry.FLIGHT&&recipe.variant()==2)&&!recipe.personal()){
+            int budget=recipe.theme()==5?4096:thunderModel?1200:recipe.theme()==12?512:192;
             if(mesh.remaining()<(recipe.theme()==5?256:thunderModel?320:64))return;
             reduced|=distance>20||mesh.remaining()<budget;
         }
@@ -145,9 +147,9 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
                     recipe.from().add(offset),recipe.to().add(offset),recipe.radius(),recipe.angle(),recipe.life(),recipe.started(),recipe.personal(),recipe.instance());}
         float visualAge=Math.max(0,age-1+partial);
         var geometry=AbilityVfxGeometry.build(displayed,visualAge,reduced);
-        if(com.myriad.player.LevelUpBeamGeometry.owns(recipe)
+        if(recipe.theme()==11||recipe.theme()==12||com.myriad.player.LevelUpBeamGeometry.owns(recipe)
                 ||com.myriad.character.skills.shuo.ShuoSkillVfx.owns(recipe))mesh.sortTranslucent();
-        if((recipe.theme()==5||thunderModel||recipe.theme()==0&&recipe.kind()==AbilityVfxGeometry.FLIGHT&&recipe.variant()==2)&&!recipe.personal()){
+        if((recipe.theme()==5||thunderModel||rosterModel||recipe.theme()==0&&recipe.kind()==AbilityVfxGeometry.FLIGHT&&recipe.variant()==2)&&!recipe.personal()){
             if(!mesh.addModelBatch(geometry,camera.position(),sprites,near)&&!reduced)
                 mesh.addModelBatch(AbilityVfxGeometry.build(displayed,visualAge,true),camera.position(),sprites,near);
             return;

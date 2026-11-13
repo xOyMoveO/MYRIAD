@@ -5,6 +5,9 @@ import com.myriad.character.skills.keheng.KehengVfx;
 import com.myriad.network.AbilityVfxPayload;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.phys.Vec3;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
+import static com.myriad.character.ability.AbilityVfxMaterials.*;
 import java.util.*;
 import static com.myriad.character.ability.AbilityVfxGeometry.*;
 
@@ -40,9 +43,13 @@ final class KehengVisualChecks {
         int count=0;
         for(var recipe:samples())for(float age:new float[]{0,.75f,2}){
             var mesh=AbilityVfxGeometry.build(recipe,age,false);var low=AbilityVfxGeometry.build(recipe,age,true);
-            h.assertTrue(!mesh.isEmpty()&&mesh.size()<=192&&low.size()<=mesh.size(),"Keheng production stages retain finite normal/reduced meshes");
+            if(recipe.kind()==FLIGHT&&age>=1){h.assertTrue(mesh.isEmpty()&&low.isEmpty(),"No physical needle is left parked on an old segment endpoint");continue;}
+            h.assertTrue(!mesh.isEmpty()&&mesh.size()<=AbilityVfxGeometry.maxQuads(recipe)&&low.size()<=mesh.size(),"Keheng production stages retain finite normal/reduced meshes");
+            h.assertTrue(mesh.stream().anyMatch(q->q.material()>=KEHENG_HD_RING),"Every stage samples authored textures or actual model faces");
             for(var q:mesh){
                 h.assertTrue(q.alpha()>0&&q.alpha()<=1,"Keheng alpha remains bounded");
+                h.assertTrue(q.startU()>=0&&q.startU()<q.endU()&&q.endU()<=1&&q.startV()>=0&&q.startV()<q.endV()&&q.endV()<=1,"Real texture UVs stay within their atlas sprite");
+                h.assertTrue(q.b().subtract(q.a()).cross(q.c().subtract(q.a())).lengthSqr()>1E-14,"Actual model and effect faces have positive area");
                 for(var v:new Vec3[]{q.a(),q.b(),q.c(),q.d()})h.assertTrue(Double.isFinite(v.x)&&Double.isFinite(v.y)&&Double.isFinite(v.z)&&KehengVfx.bounds(recipe).inflate(.01).contains(v),"Keheng world bounds contain actual mesh vertices");
             }
             h.assertTrue(AbilityVfxGeometry.build(recipe,recipe.life(),false).isEmpty(),"Keheng actual expiry leaves no geometry");count++;
@@ -58,21 +65,34 @@ final class KehengVisualChecks {
             float radius=variant==6?4:variant==4?3.5f:variant==5?3:2;
             var field=p(variant,SEAL,Vec3.ZERO,new Vec3(0,1,0),radius,18,5,118,70);
             var mesh=AbilityVfxGeometry.build(field,1,false);
-            double maxRadius=0;
+            double maxRadius=0;int ringFaces=0;
             for(var q:mesh){
-                h.assertTrue(q.color()!=KehengVfx.WHITE,"Persistent time fields never become constant white screens");
-                double area=q.b().subtract(q.a()).cross(q.d().subtract(q.a())).length();
-                h.assertTrue(area<.6,"Time field uses open strips instead of filled panels");
-                for(var v:new Vec3[]{q.a(),q.b(),q.c(),q.d()})maxRadius=Math.max(maxRadius,Math.sqrt(v.x*v.x+v.z*v.z));
+                if(q.material()==KEHENG_HD_RING){
+                    ringFaces++;double support=visibleRadius(q,image(q.material()));maxRadius=Math.max(maxRadius,support);
+                    h.assertTrue(support<=radius+1E-5,"Visible boundary alpha, not transparent quad corners, stays inside the actual radius");
+                }
             }
-            h.assertTrue(maxRadius>=radius-.05&&maxRadius<=radius+.10,"Visual boundary agrees with actual 2/3/3.5/4 block radius");
+            h.assertTrue(ringFaces==2&&maxRadius>=radius-.05,"Authored outer boundary visibly reaches actual 2/3/3.5/4 block extent");
+            h.assertTrue(mesh.stream().map(q->q.material()).distinct().count()>=3,"Active fields have independent boundary, time-slice detail and pixel fragments");
         }
         for(var direction:List.of(new Vec3(0,1,0),new Vec3(0,-1,0),new Vec3(1,.6,-.7).normalize(),new Vec3(0,0,1))){
             var shot=p(2,FLIGHT,Vec3.ZERO,direction.scale(1.2),.22f,0,3,100,9);var mesh=AbilityVfxGeometry.build(shot,.8f,false);
             double foremost=-100,rearmost=100;
             for(var q:mesh)for(var v:new Vec3[]{q.a(),q.b(),q.c(),q.d()}){double along=v.dot(direction);foremost=Math.max(foremost,along);rearmost=Math.min(rearmost,along);}
-            h.assertTrue(foremost>1&&rearmost<.1,"Needle tip and twin wake follow horizontal, vertical and oblique motion");
+            h.assertTrue(Math.abs(foremost-.96)<1E-6&&rearmost<.1,"The actual model tip leads horizontal/vertical/diagonal motion without passing the interpolated endpoint");
+            h.assertTrue(mesh.stream().filter(q->q.material()==KEHENG_PROJECTILE_MODEL).count()==KehengVfx.modelFaces(false),"Production flight contains every real source model face once");
+            for(var q:AbilityVfxGeometry.build(shot,.8f,true))for(var v:List.of(q.a(),q.b(),q.c(),q.d()))h.assertTrue(v.dot(direction)<=.96+1E-6,"LOD and adornment stay behind the confirmed forward tip");
         }
+        var penetration=p(7,BEAM,Vec3.ZERO,new Vec3(0,0,12),1.5f,0,6,116,0);
+        var penetrationMesh=AbilityVfxGeometry.build(penetration,.7f,false);
+        boolean left=false,right=false;
+        for(var q:penetrationMesh){
+            double centerX=(q.a().x+q.b().x+q.c().x+q.d().x)*.25;
+            if(q.material()==KEHENG_HD_VEIL){left|=centerX<-.1;right|=centerX>.1;}
+            if(q.material()==KEHENG_PROJECTILE_MODEL)for(var v:List.of(q.a(),q.b(),q.c(),q.d()))
+                h.assertTrue(v.z>=-1E-6&&v.z<=12+1E-6&&Math.hypot(v.x,v.y)<.06,"Penetration stretches only the physical needle axis inside the confirmed corridor, never into a white panel");
+        }
+        h.assertTrue(left&&right,"Actual textured penetration cut planes occupy both sides of the needle");
         var natural=p(5,BURST,Vec3.ZERO,new Vec3(0,1,0),3,KehengVfx.NATURAL_END,6,150,0);
         var interrupted=p(5,BURST,Vec3.ZERO,new Vec3(0,1,0),3,KehengVfx.INTERRUPTED_END,4,150,0);
         h.assertTrue(!AbilityVfxGeometry.build(natural,1,false).equals(AbilityVfxGeometry.build(interrupted,1,false)),"Natural gathering needle and interrupted scatter are distinct");
@@ -83,6 +103,41 @@ final class KehengVisualChecks {
         h.assertTrue(lifetime.finished(refresh,116)&&!lifetime.finished(other,116),"Field end suppresses only its queued visual instance");
         var wake=KehengVfx.wakeForFlight(p(2,FLIGHT,Vec3.ZERO,new Vec3(1,.2,0),.2f,0,3,100,8));
         h.assertTrue(wake!=null&&wake.instance()==0&&wake.kind()==TRAIL&&wake.life()<=5&&AbilityVisualLifetime.expired(wake,105),"Needle wake follows real sampled endpoints and retires within 0.25 seconds");
-        System.out.println("[MYRIAD-KEHENG-VISUAL] PASS: "+count+" real stage frames, eight candidates/basic, world phase, 3D orientation, exact boundaries, open strips, per-instance lifecycle and reduced budget");
+        textureChecks(h);
+        h.assertTrue(KehengVfx.modelParts(false)>KehengVfx.modelParts(true)&&KehengVfx.modelParts(true)>=4&&KehengVfx.modelFaces(false)>=KehengVfx.modelParts(false)*4,"Normal/LOD contain separately authored physical parts and face sets");
+        System.out.println("[MYRIAD-KEHENG-VISUAL] PASS: "+count+" real textured stage frames, eight candidates/basic, physical needle faces/UV/LOD, alpha-correct exact boundaries, continuous phase and finite lifecycle");
     }
+    private static final Map<Integer,BufferedImage> IMAGES=new HashMap<>();
+    private static BufferedImage image(int material){return IMAGES.computeIfAbsent(material,m->{
+        String[] names={"ring","arc","stream","impact","veil","shield","motes","spark"};
+        String name=m==KEHENG_PROJECTILE_MODEL?"keheng_projectiles_atlas":"keheng_hd_"+names[m-KEHENG_HD_RING];
+        try(var in=KehengVisualChecks.class.getResourceAsStream("/assets/myriad/textures/particle/vfx/"+name+".png")){
+            if(in==null)throw new IllegalStateException("Missing authored Keheng atlas "+name);return ImageIO.read(in);
+        }catch(java.io.IOException e){throw new IllegalStateException(e);}
+    });}
+    private static void textureChecks(GameTestHelper h){
+        for(int m=KEHENG_HD_RING;m<=KEHENG_HD_SPARK;m++){
+            var im=image(m);int size=m>=KEHENG_HD_MOTES?64:256;h.assertTrue(im.getWidth()==size&&im.getHeight()==size,"HD bodies and pixel accents retain their distinct real resolutions");
+            int clear=0,visible=0,soft=0;
+            for(int y=0;y<size;y++)for(int x=0;x<size;x++){int alpha=im.getRGB(x,y)>>>24;if(alpha==0)clear++;else{visible++;if(alpha<255)soft++;}
+                if(x==0||y==0||x==size-1||y==size-1)h.assertTrue(alpha==0,"No opaque rectangular sprite background");}
+            h.assertTrue(clear>0&&visible>16&&soft>0,"Each actual sprite has real transparent gaps, content, and smooth alpha");
+        }
+        var ring=image(KEHENG_HD_RING);h.assertTrue((ring.getRGB(128,128)>>>24)==0,"The ground ring keeps its real transparent center");
+        var model=image(KEHENG_PROJECTILE_MODEL);h.assertTrue(model.getWidth()==128&&model.getHeight()==128,"Physical needle uses its embedded 128px atlas");
+    }
+    /** Sample every nonzero-alpha texel corner through the actual production UV and plane map. */
+    private static double visibleRadius(AbilityVfxGeometry.Quad q,BufferedImage image){
+        double maximum=0;int width=image.getWidth(),height=image.getHeight();
+        for(int y=0;y<height;y++)for(int x=0;x<width;x++)if((image.getRGB(x,y)>>>24)>0){
+            for(int dy=0;dy<=1;dy++)for(int dx=0;dx<=1;dx++){
+                double u=((x+dx)/(double)width-q.startU())/(q.endU()-q.startU());
+                double v=((y+dy)/(double)height-q.startV())/(q.endV()-q.startV());if(q.reverseV())v=1-v;
+                if(u<0||u>1||v<0||v>1)continue;
+                var point=q.a().scale((1-u)*v).add(q.b().scale(u*v)).add(q.c().scale(u*(1-v))).add(q.d().scale((1-u)*(1-v)));
+                maximum=Math.max(maximum,Math.hypot(point.x,point.z));
+            }
+        }return maximum;
+    }
+
 }

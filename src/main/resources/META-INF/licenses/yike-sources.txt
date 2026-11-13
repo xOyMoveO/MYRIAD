@@ -28,6 +28,16 @@ Skill icons, visual geometry, sounds:
     exported as opaque 64x64 PNGs, replacing the earlier geometric drawings.
   VFX: YikeVfxGeometry.java, original photon projectiles, segmented electronic
     targeting shapes, energy panels and continuous optical trails.
+    Layered HD revision: six 256x256 RGBA components and two 64x64 pixel accents
+    generated with the built-in image generator for the future-tech photon theme.
+    Source sheet and exact processing are in art_source/yike/vfx/hd/hd_source.png
+    and export_hd.py. Only alpha <= 8/255 is cleared; other partial alpha is kept
+    with transparent padding for the existing translucent renderer.
+    The user's example supplies the broad layering technique, not copied screen
+    pixels, symbols, lightning forms or scene layout.
+    Basic, shell and heavy flying bodies plus LODs are original editable specs
+    and Blockbench models under art_source/yike/projectiles/. Runtime faces use
+    assets/myriad/vfx/yike_projectiles_mesh.json and yike_projectiles_atlas.png.
   Audio: original oscillator/noise synthesis in the generator, then mono
   Ogg Vorbis encoding with libsndfile via soundfile. No sampled audio, voices,
   musical recordings, commercial libraries or other game's sound effects.
