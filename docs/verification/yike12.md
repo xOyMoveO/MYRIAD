@@ -1,6 +1,6 @@
 # #12 虹轨·伊珂：实施与验证记录
 
-2026-11-13，对应父规格 #2 与归并工单 #12。独立分支 `feat/roster13-yike12`，工作目录 `/private/tmp/myriad-delivery/yike12`。本记录首先保存服务端与资源阶段结果；客户端验收未完成，本票尚未完成，唯一综合审查仍由主流程在最终整合后执行（当前 0/1）。
+2026-11-13，对应父规格 #2 与归并工单 #12。独立分支 `feat/roster13-yike12`，工作目录 `/private/tmp/myriad-delivery/yike12`。用户最新要求先完成功能，视角效果后续统一调整，并禁止使用 computer use 进行游戏内测试。本轮玩法、输入、资源、控制、同步与必要HUD功能反馈已交付，视觉观感未验收；唯一综合审查仍由主流程在最终整合后执行（当前 0/1）。
 
 ## 当前实现
 
@@ -17,6 +17,7 @@ JDK25：`/Library/Java/JavaVirtualMachines/jdk-25.jdk/Contents/Home`。Gradle任
 | 执行 | 真实结果 |
 |---|---|
 | `runYikeTestServer`，`yike-test-6.log` | 退出0，`MYRIAD-YIKE PASS: 52 real-input cases`，GameTest 1/1通过。涵盖Q取消／低蓝／重复提交、W取消、五炮／四炮精确22／27 tick、提交点与退出冷却、禁锢／眩晕／沉默／强制位移、六跳取消、重轰撞墙、A65左键与右键无弹、有限转向、稳态累计路程、全护盾有效虹标、死亡／换角／跨维度／重置／关闭玩法清理。S230组合真实结算2070.5/1.5、总蓝耗405。 |
+| 补充四个缺失验收点后 `runYikeTestServer`，`yike-test-7.log` | 退出0，56个真实输入场景、GameTest 1/1通过。新增实际束流逐tick最多2.25°／20tick精确45°、W使用区域中心视线而非施法者后续视线、楼板遮挡、球外高度不结算。仅扩充测试，生产代码未变化。 |
 | `build runFirstGroupTestServer`，`build-aggregate-3.log` | 退出0，`BUILD SUCCESSFUL in 10s`；GameTest 1/1通过，既有十一人聚合和26个公共施法契约场景完成。 |
 | `python tools/check_namespace.py --jar build/libs/myriad-0.1.0.jar` | 退出0；命名空间、包、JSON、发行JAR通过。 |
 | `python tools/check_retired_roster.py --jar build/libs/myriad-0.1.0.jar` | 退出0；1259个源／工具／资产文件、1382个JAR条目通过；源树与JAR各261条自有资源引用均有目标。 |
@@ -33,6 +34,8 @@ JDK25：`/Library/Java/JavaVirtualMachines/jdk-25.jdk/Contents/Home`。Gradle任
 
 `build/libs/myriad-0.1.0.jar`，25,726,438字节；SHA256 `fc54166d29d9eb4f3215a0c28d2bf536cb30711ef868d2badd91323fd4d9ff67`。尚未安装正式实例，未加载正式世界、未推送、未创建PR或合并main。
 
-## 待完成验收
+## 本轮边界与后置视觉
 
-客户端新世界的第一／第三人称携行与展开、炮口认可方向、HUD、逐技能VFX及声音观感仍未执行；多人远端客户端观察也未执行。服务端GameTest和静态资源检查不能替代这些结果。等待共享任务窗口释放后继续实际游戏验收，必要的视觉修复再单独提交。
+伊珂客户端未启动，未进行游戏内 computer use 输入或截图验收；为隔离客户端准备的临时启动外壳没有运行。第一／第三人称携行与展开、握持、炮口视觉方向、HUD画面、逐技能VFX及声音观感、多人远端客户端观察均未验收，按用户最新要求统一后置，不将这些项目写成通过。服务端GameTest和静态资源检查不能替代画面或听感结果。
+
+客户端状态与必要HUD代码已实现，包含姿态／弹数／待发／冷却／低蓝／独立认可炮口方向／六跳计数／稳态就绪，循环声音随服务端状态退出与快照失效停止。当前证据验证服务端玩法与资源完整性，不声称人工观察过这些画面。最终跨角色实际领域组合验证、正式选角开放与唯一综合审查由主流程继续整合；#4取消的旧玩家／检查点兼容不在范围。
