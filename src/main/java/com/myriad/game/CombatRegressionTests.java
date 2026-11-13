@@ -24,6 +24,7 @@ public final class CombatRegressionTests {
         FUNCTIONS.register("keheng", () -> KehengChecks::run);
         FUNCTIONS.register("yike", () -> YikeChecks::run);
         FUNCTIONS.register("first_group", () -> FirstGroupRegressionChecks::run);
+        FUNCTIONS.register("roster_delivery", () -> RosterDeliveryChecks::run);
         FUNCTIONS.register("melee_arc", () -> helper -> {
             verifyMeleeArc(helper);
             helper.succeed();
