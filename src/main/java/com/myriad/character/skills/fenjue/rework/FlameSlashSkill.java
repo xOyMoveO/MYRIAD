@@ -25,7 +25,7 @@ public final class FlameSlashSkill extends AbilitySkill {
             var sweep=FlameSlashAim.sweep(visual,cut);
             // Owner-bound tasks are cancelled by death, role/world changes, logout, reset and mod-off.
             // Four ticks between strokes also respects the normal three-tick hurt immunity window.
-            c.later(FlameSlashAim.hitTick(cut),false,()->{
+            c.actionLater(FlameSlashAim.hitTick(cut),()->{
                 for(var target:c.player.level().getEntitiesOfClass(LivingEntity.class,sweep.bounds(),t->SkillTargets.enemy(c.player,t)))
                     if(sweep.contains(target.getBoundingBox())&&c.player.level().clip(new ClipContext(visual.from(),target.getBoundingBox().getCenter(),
                             ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,c.player)).getType()==HitResult.Type.MISS)

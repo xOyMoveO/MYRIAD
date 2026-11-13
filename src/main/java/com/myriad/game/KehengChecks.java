@@ -263,7 +263,7 @@ final class KehengChecks {
     private static void identity(GameTestHelper h){
         var skills=FirstGroupSkills.candidates("keheng");h.assertTrue(skills.size()==8&&skills.stream().map(Object::getClass).distinct().count()==8,"Eight concrete independent Keheng modules");
         h.assertTrue(FirstGroupGrowth.health("keheng",1)==600&&FirstGroupGrowth.health("keheng",20)==2215,"Exact HP growth");
-        h.assertTrue(Arrays.stream(CharacterType.playableValues()).noneMatch(t->t==CharacterType.KEHENG),"Production draft remains gated until integration");
+        h.assertTrue(Arrays.stream(CharacterType.playableValues()).anyMatch(t->t==CharacterType.KEHENG),"Production draft includes the integrated Keheng role");
         for(var skill:skills){var ranks=new HashMap<String,Integer>();int other=FirstGroupSkills.opposite(skill.index());
             if(other>=0){ranks.put(skills.get(other).getId(),1);h.assertTrue(FirstGroupSkills.learnError("keheng",ranks,20,20,skill.getId())!=null,"Exclusive branch rejects contradictory spend");}}
         var saved=new PlayerData();saved.setCharacterId("keheng");saved.setSkillLevel("keheng_chizhen",3);saved.setFirstGroupAttribute("wisdom",10);

@@ -8,7 +8,7 @@ public final class WuShengSkill extends AbilitySkill {
     @Override public void release(AbilityRuntime.Cast c){
         if(ShuoCombat.drawn(c.player)){
             ShuoCombat.cut(c,com.myriad.network.ShuoViewPayload.FLASH,8);
-            c.dash(c.forward(6),6,1.0,(t,first)->{},()->{
+            c.actionDash(c.forward(6),6,1.0,(t,first)->{},()->{
                 if(c.data.getBuff("g1_stun")>0||c.data.getBuff("g1_root")>0)return;
                 ShuoCombat.cut(c,com.myriad.network.ShuoViewPayload.CUT_DOWN,8);
                 ShuoVisuals.slash(c,5,120,2);
@@ -18,10 +18,10 @@ public final class WuShengSkill extends AbilitySkill {
         ShuoCombat.windup(c,14,()->{
         float damage=c.value(320,100,1.6f)+ShuoCombat.draw(c.player,com.myriad.network.ShuoViewPayload.FLASH,10);
         var targets=new HashSet<java.util.UUID>();
-        c.dash(c.forward(12),7,1.3,(t,first)->{targets.add(t.getUUID());ShuoVisuals.mark(c,t);},()->{
+        c.actionDash(c.forward(12),7,1.3,(t,first)->{targets.add(t.getUUID());ShuoVisuals.mark(c,t);},()->{
             if(c.data.getBuff("g1_stun")>0||c.data.getBuff("g1_root")>0){ShuoVisuals.cancel(c.player,index());return;}
             ShuoCombat.sheathe(c.player);
-            c.whileActive(8,age->{
+            c.actionWhile(8,age->{
                 if(c.data.getBuff("g1_stun")>0||c.data.getBuff("g1_root")>0){ShuoVisuals.cancel(c.player,index());return false;}
                 if(age<8)return true;
                 ShuoVisuals.cancel(c.player,index());

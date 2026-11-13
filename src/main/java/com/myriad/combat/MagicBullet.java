@@ -17,6 +17,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 import com.myriad.character.CharacterType;
+import com.myriad.character.ability.ActionTime;
+import com.myriad.character.ability.AbilityRuntime;
 import com.myriad.game.Faction;
 import com.myriad.game.GameManager;
 import com.myriad.player.PlayerData;
@@ -53,11 +55,13 @@ public final class MagicBullet {
         float attackMultiplier;
         String characterId;
         int spiralPhase;
+        final UUID flight=UUID.randomUUID();
+        long lastTick=Long.MIN_VALUE;int age;
     }
 
     /** 飞行中的魔法弹（玩家 UUID -> 魔法弹列表） */
     private static final Map<UUID, List<Bullet>> BULLETS = new HashMap<>();
-    /** 发射冷却（玩家 UUID -> 完全恢复刻与本轮总时长）。 */
+    /** 发射恢复（玩家 UUID -> 已完成的行动量与本轮所需总量）。 */
     private static final Map<UUID, FireCooldown> FIRE_CD = new HashMap<>();
 
     private MagicBullet() {
@@ -95,10 +99,9 @@ public final class MagicBullet {
                 com.myriad.registry.ModAttributes.ATTACK_SPEED));
         int cd = (int) Math.ceil(20.0 / as);
         FireCooldown previous = FIRE_CD.get(player.getUUID());
-        if (previous != null && !BasicAttackSystem.isEarlyReady(now, previous.readyAt, previous.totalTicks)) return;
-        float attackMultiplier = previous == null ? 1.0F
-                : BasicAttackSystem.recoveryDamageMultiplier(now, previous.readyAt);
-        FIRE_CD.put(player.getUUID(), new FireCooldown(now + cd, cd));
+        if (previous != null && !previous.progress.advance(now,ActionTime.multiplier(player.getUUID(),now),previous.totalTicks)) return;
+        float attackMultiplier = 1.0F;
+        FIRE_CD.put(player.getUUID(), new FireCooldown(now,cd));
 
         Vec3 dir = player.getLookAngle().normalize();
         if (dir.lengthSqr() < 1.0E-4) {
@@ -117,7 +120,7 @@ public final class MagicBullet {
         b.spiralPhase = 0;
         BULLETS.computeIfAbsent(player.getUUID(), k -> new ArrayList<>()).add(b);
         net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
-                new com.myriad.network.NetworkSetup.MagicBulletCooldownPayload(cd, cd));
+                new com.myriad.network.NetworkSetup.MagicBulletCooldownPayload(remaining(player), total(player)));
         // 起手：枪口迸发 + 音效
         if ("yunsheng".equalsIgnoreCase(b.characterId)) {
             level.sendParticles(YUNSHENG_ORB, pos.x, pos.y, pos.z, 16, .13, .13, .13, .022);
@@ -138,12 +141,16 @@ public final class MagicBullet {
 
     /** 每 tick 推进魔法弹（PlayerDataProvider 调用） */
     public static void tickBullets(ServerPlayer player, PlayerData data) {
+        var recovery=FIRE_CD.get(player.getUUID());
+        if(recovery!=null){boolean ready=recovery.progress.advance(player.level().getGameTime(),ActionTime.multiplier(player.getUUID(),player.level().getGameTime()),recovery.totalTicks);
+            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,new com.myriad.network.NetworkSetup.MagicBulletCooldownPayload(remaining(player),total(player)));
+            if(ready)FIRE_CD.remove(player.getUUID());}
         List<Bullet> list = BULLETS.get(player.getUUID());
         if (list == null || list.isEmpty()) {
             return;
         }
         ServerLevel level = (ServerLevel) player.level();
-        list.removeIf(b -> tickOne(level, player, b));
+        list.removeIf(b -> {boolean ended=tickOne(level,player,b);if(ended)ActionTime.clearTarget(b.flight);return ended;});
         if (list.isEmpty()) {
             BULLETS.remove(player.getUUID());
         }
@@ -151,7 +158,10 @@ public final class MagicBullet {
 
     /** 推进单颗魔法弹；返回 true 表示已消耗（命中、撞墙或射程耗尽） */
     private static boolean tickOne(ServerLevel level, ServerPlayer caster, Bullet b) {
-        Vec3 next = b.pos.add(b.dir.scale(SPEED));
+        long now=level.getGameTime();if(b.lastTick==now)return false;b.lastTick=now;
+        if(++b.age>2*Math.ceil(maxRange(b.characterId)/SPEED))return true;
+        double step=Math.min(SPEED*AbilityRuntime.projectileRate(caster,b.flight,b.pos,now),maxRange(b.characterId)-b.traveled);
+        Vec3 next = b.pos.add(b.dir.scale(step));
         if (com.myriad.combat.WindWallSystem.firstEnemyHit(caster, b.pos, next) != null) {
             return true;
         }
@@ -187,7 +197,7 @@ public final class MagicBullet {
             // 撞到方块直接消失：不播放墨尘专属的幽魂消散特效，也不复用其他角色的命中表现。
             return true;
         }
-        b.traveled += SPEED;
+        b.traveled += step;
         if (b.traveled >= maxRange(b.characterId)) {
 
                 level.sendParticles(ParticleTypes.END_ROD, next.x, next.y, next.z,
@@ -292,11 +302,14 @@ public final class MagicBullet {
 
     /** 玩家退出时清理其全部飞行中的魔法弹 */
     public static void clearFor(UUID playerId) {
-        BULLETS.remove(playerId);
+        var bullets=BULLETS.remove(playerId);if(bullets!=null)bullets.forEach(b->ActionTime.clearTarget(b.flight));
         FIRE_CD.remove(playerId);
     }
 
-    private record FireCooldown(long readyAt, int totalTicks) { }
+    private static final class FireCooldown {final ActionTime.Progress progress;final int totalTicks;
+        FireCooldown(long now,int total){progress=new ActionTime.Progress(now);totalTicks=total;}}
+    public static int remaining(ServerPlayer p){var s=FIRE_CD.get(p.getUUID());if(s==null)return 0;double rate=ActionTime.multiplier(p.getUUID(),p.level().getGameTime());return Math.max(0,(int)Math.ceil((s.totalTicks-s.progress.completed())/rate));}
+    public static int total(ServerPlayer p){var s=FIRE_CD.get(p.getUUID());double base=s==null?Math.ceil(20/Math.max(.05,p.getAttributeValue(com.myriad.registry.ModAttributes.ATTACK_SPEED))):s.totalTicks;return Math.max(1,(int)Math.ceil(base/ActionTime.multiplier(p.getUUID(),p.level().getGameTime())));}
 
     /** 风墙：清除位置满足条件的飞行中魔法弹（阻挡投射物） */
     public static void blockIn(ServerLevel level, java.util.function.Predicate<Vec3> inside) {
@@ -315,7 +328,7 @@ public final class MagicBullet {
                 it.remove();
                 continue;
             }
-            list.removeIf(b -> inside.test(b.pos));
+            list.removeIf(b -> {if(!inside.test(b.pos))return false;ActionTime.clearTarget(b.flight);return true;});
             if (list.isEmpty()) {
                 it.remove();
             }

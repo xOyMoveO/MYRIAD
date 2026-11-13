@@ -785,8 +785,7 @@ public enum CharacterType {
         return null;
     }
 
-    public boolean developmentOnly(){return this==KEHENG||this==YIKE;}
-    public static CharacterType[] playableValues(){return java.util.Arrays.stream(values()).filter(t->!t.developmentOnly()).toArray(CharacterType[]::new);}
+    public static CharacterType[] playableValues(){return values();}
 
     public static List<String> ids() {
         List<String> result = new ArrayList<>();

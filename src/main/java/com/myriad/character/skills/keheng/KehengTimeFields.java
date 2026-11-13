@@ -9,6 +9,7 @@ import com.myriad.registry.ModAttributes;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.*;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.attributes.*;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.*;
@@ -58,7 +59,7 @@ public final class KehengTimeFields {
     private static final Map<UUID,Long> CLEANSED=new HashMap<>();
     private static final Map<UUID,ServerPlayer> ACTORS=new HashMap<>();
 
-    public static float health(LivingEntity t){return (MonsterManager.isMonster(t)?MonsterManager.modHealth(t):t.getHealth())+ModShieldSystem.value(t);}
+    public static float health(LivingEntity t){return (MonsterManager.isMonster(t)?MonsterManager.modHealth(t):LaneSystem.isManaged(t)?LaneSystem.health(t):t.getHealth())+ModShieldSystem.value(t);}
     public static boolean clear(ServerPlayer p,Vec3 from,Vec3 to){return p.level().clip(new ClipContext(from,to,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,p)).getType()==HitResult.Type.MISS;}
     public static void ground(AbilityRuntime.Cast c,Vec3 at,double radius,int warning,int duration,double rate,float opening,float pulse){
         add(new Field(c,at,Vec3.ZERO,radius,warning,duration,rate,rate,opening,pulse,0,false,false));
@@ -103,9 +104,12 @@ public final class KehengTimeFields {
         CLEANSED.entrySet().removeIf(e->e.getValue()<=now);
     }
     public static void needle(AbilityRuntime.Cast c,LivingEntity t,double rate){
-        if(!(t instanceof ServerPlayer p)||!susceptible(p,c.now()))return;
-        int duration=(int)Math.ceil(25*(1-Math.clamp(t.getAttributeValue(ModAttributes.TENACITY),0,60)/100));
-        NEEDLES.add(new Needle(c,t,rate,c.now()+duration,"keheng_needle_"+c.castId()));refreshActor(p);
+        if(t instanceof ServerPlayer p){if(!susceptible(p,c.now()))return;}
+        else if(!susceptibleNpc(t)||!SkillTargets.enemy(c.player,t))return;
+        var tenacity=t.getAttribute(ModAttributes.TENACITY);
+        int duration=(int)Math.ceil(25*(1-Math.clamp(tenacity==null?0:tenacity.getValue(),0,60)/100));
+        NEEDLES.add(new Needle(c,t,rate,c.now()+duration,"keheng_needle_"+c.castId()));
+        if(t instanceof ServerPlayer p)refreshActor(p);
     }
     /** A cleanse grants only the specified fixed immunity to Keheng's action slow. */
     public static void cleanse(ServerPlayer p){NEEDLES.removeIf(n->n.target==p);CLEANSED.put(p.getUUID(),p.level().getGameTime()+15);refreshActor(p);}
@@ -136,8 +140,25 @@ public final class KehengTimeFields {
         if(factor<1)attr.addTransientModifier(new AttributeModifier(MOVE,factor-1,AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
     }
     private static void refreshPublished(){for(var p:new ArrayList<>(ACTORS.values()))if(!p.isRemoved())refreshActor(p);}
-    public static double projectileRate(ServerPlayer owner,Vec3 at,long now){double rate=1;
-        for(var f:FIELDS)if(f.cast.player.level()==owner.level()&&f.active(now)&&SkillTargets.enemy(f.cast.player,owner)&&f.contains(at))rate=Math.min(rate,f.flightRate);
+    /** Only match-owned ordinary combatants consume NPC action time; structures and all four large bosses do not. */
+    private static boolean susceptibleNpc(LivingEntity target){
+        if(!ModState.isEnabled()||!target.isAlive()||LaneSystem.isTower(target))return false;
+        var type=MonsterManager.typeOf(target);
+        return type==null?LaneSystem.isManaged(target):!type.isLargeBoss();
+    }
+    public static double managedNpcRate(LivingEntity target,long now){
+        if(!susceptibleNpc(target))return 1;
+        double rate=1;
+        for(var n:NEEDLES)if(n.target==target&&now<n.until&&n.cast.player.level()==target.level())rate=Math.min(rate,n.rate);
+        for(var f:FIELDS)if(f.cast.player.level()==target.level()&&f.active(now)&&SkillTargets.enemy(f.cast.player,target)
+                &&f.contains(f.corridor?target.getBoundingBox().getCenter():target.position()))rate=Math.min(rate,f.actorRate);
+        return rate;
+    }
+    public static double projectileRate(ServerPlayer owner,Vec3 at,long now){return projectileRate((Entity)owner,at,now);}
+    /** Vanilla arrows retain their actual entity owner (player or mob); ownerless arrows have no enemy attribution. */
+    public static double projectileRate(Entity owner,Vec3 at,long now){double rate=1;
+        if(owner==null||!ModState.isEnabled())return rate;
+        for(var f:FIELDS)if(f.cast.player.level()==owner.level()&&f.active(now)&&!SkillTargets.ally(f.cast.player,owner)&&f.contains(at))rate=Math.min(rate,f.flightRate);
         return rate;
     }
     public static void clear(ServerPlayer p){

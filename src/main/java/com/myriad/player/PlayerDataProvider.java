@@ -229,7 +229,7 @@ public final class PlayerDataProvider {
             player.sendSystemMessage(Component.translatable("message.myriad.mod_off"));
             return;
         }
-        if (type == null || type.developmentOnly() && !com.myriad.game.TrainingMode.isEnabled()) {
+        if (type == null) {
             player.sendSystemMessage(Component.translatable("message.myriad.invalid_character"));
             return;
         }

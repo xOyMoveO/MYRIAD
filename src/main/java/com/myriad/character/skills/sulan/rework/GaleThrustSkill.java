@@ -16,5 +16,5 @@ public final class GaleThrustSkill extends AbilitySkill {
     public GaleThrustSkill(Definition definition){super(definition);}
     @Override public void present(Cast c){com.myriad.character.ability.AbilityVisuals.arc(c,c.player.position(),1.4,55);}
     @Override public boolean canRelease(Cast c){return c.data.getBuff("g1_root")==0;} @Override public void release(Cast c){
- c.dash(c.forward(6),7,1.2,(t,first)->c.damage(t,c.value(50,15,.6f),PHYSICAL),()->{},false,false);}
+ c.actionDash(c.forward(6),7,1.2,(t,first)->c.damage(t,c.value(50,15,.6f),PHYSICAL),()->{},false,false);}
 }

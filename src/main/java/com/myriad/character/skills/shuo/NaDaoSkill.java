@@ -13,7 +13,7 @@ public final class NaDaoSkill extends AbilitySkill {
             ShuoVisuals.slash(c,3,90,1);
             ShuoCombat.cone(c,3,90,total*.6f,0);
             // The after-cut stays where the retreat began; moving out is real counterplay.
-            c.whileActive(7,age->{
+            c.actionWhile(7,age->{
                 if(AbilityRuntime.controlled(c.player)){ShuoVisuals.cancel(c.player,index());return false;}
                 if(age<7)return true;
                 ShuoVisuals.slashAt(c,origin,facing,3,90,0);
@@ -22,7 +22,7 @@ public final class NaDaoSkill extends AbilitySkill {
         }
         var forward=c.forward(1);var side=new net.minecraft.world.phys.Vec3(forward.z,0,-forward.x);
         var delta=forward.scale(-.9).add(side.scale(.4358899)).normalize().scale(3);
-        c.dash(delta,6,.2,(t,first)->{},()->{if(exposed)ShuoCombat.sheathe(c.player);else if(!AbilityRuntime.controlled(c.player))c.haste(.20f,30);},false,false);
+        c.actionDash(delta,6,.2,(t,first)->{},()->{if(exposed)ShuoCombat.sheathe(c.player);else if(!AbilityRuntime.controlled(c.player))c.haste(.20f,30);},false,false);
         ShuoVisuals.trackMotion(c,exposed);
     }
 }

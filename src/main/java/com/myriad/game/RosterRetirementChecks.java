@@ -18,16 +18,16 @@ import java.util.Set;
 final class RosterRetirementChecks {
     private static final Set<String> RETIRED = Set.of(
             "lige", "shenli", "mingzhu", "zhechuan", "guanlan", "luoheng", "xuanjia", "wuxiang", "feiyu", "wanyue");
-    private static final Set<String> RETAINED = Set.of(
-            "yingxiao", "tianxing", "fenjue", "xuanchen", "sulan", "lingyuan", "hanze", "qingluo", "chixiao", "yunsheng", "shuo");
+    private static final Set<String> FINAL_ROSTER = Set.of(
+            "yingxiao", "tianxing", "fenjue", "xuanchen", "sulan", "lingyuan", "hanze", "qingluo", "chixiao", "yunsheng", "shuo", "keheng", "yike");
 
     static void verify(GameTestHelper h, ServerPlayer player) {
         var data = PlayerDataProvider.get(player);
-        h.assertTrue(Set.copyOf(java.util.Arrays.stream(CharacterType.playableValues()).map(CharacterType::getId).toList()).equals(RETAINED)
-                && FirstGroupSkills.ROLES.containsAll(RETAINED),
-                "Registration and the candidate graph contain exactly the retained eleven heroes");
+        h.assertTrue(Set.copyOf(java.util.Arrays.stream(CharacterType.playableValues()).map(CharacterType::getId).toList()).equals(FINAL_ROSTER)
+                && FirstGroupSkills.ROLES.equals(FINAL_ROSTER),
+                "Registration and the candidate graph contain exactly the final thirteen heroes");
         int candidates = 0;
-        for (String id : RETAINED) {
+        for (String id : FINAL_ROSTER) {
             var role = CharacterType.byId(id);
             PlayerDataProvider.chooseCharacter(player, role);
             h.assertTrue(id.equals(data.getCharacterId()) && ModItems.initialWeaponItem(id) != Items.AIR,
@@ -46,7 +46,7 @@ final class RosterRetirementChecks {
                     && copied.getGold() == 523 && copied.getMana() == 321,
                     "Valid role, skill and ordinary resources survive save/copy: " + id);
         }
-        h.assertTrue(candidates == 88, "The eleven-hero baseline contains eighty-eight candidates");
+        h.assertTrue(candidates == 104, "The thirteen-hero roster contains 104 candidates");
         verifyRetainedRangedBasics(h, player);
         PlayerDataProvider.chooseCharacter(player, CharacterType.YINGXIAO);
         data.refundAllSkillPointsForTraining();
@@ -88,7 +88,7 @@ final class RosterRetirementChecks {
         } finally {
             PlayerDataProvider.resetForHostSession(player);
         }
-        System.out.println("[MYRIAD-ROSTER-RETIREMENT] PASS: eleven heroes/eighty-eight candidates, valid save/copy, ten rejected wire IDs/commands, no weapon remapping");
+        System.out.println("[MYRIAD-ROSTER-RETIREMENT] PASS: thirteen heroes/104 candidates, valid save/copy, ten rejected wire IDs/commands, no weapon remapping");
     }
     private static void verifyRetainedRangedBasics(GameTestHelper h, ServerPlayer player) {
         var target = h.spawn(net.minecraft.world.entity.EntityTypes.PIG, new net.minecraft.core.BlockPos(2, 3, 2));
@@ -97,7 +97,9 @@ final class RosterRetirementChecks {
         target.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(1000);
         var previousPosition = player.position();
         float previousYaw = player.getYRot(), previousPitch = player.getXRot();
-        player.setPos(target.position().add(0, 0, -3));
+        // This synchronous contract exercises the first actual flight step; far-flight timing is
+        // covered by HeroActionTimeChecks rather than pretending repeated calls are new ticks.
+        player.setPos(target.position().add(0, 0, -1.5));
         player.setYRot(0);
         player.setXRot(0);
         try {

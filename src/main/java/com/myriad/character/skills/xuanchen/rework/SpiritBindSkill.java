@@ -15,5 +15,5 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 public final class SpiritBindSkill extends AbilitySkill {
     public SpiritBindSkill(Definition definition){super(definition);}
     @Override public void present(Cast c){com.myriad.character.ability.AbilityVisuals.seal(c,c.player.position(),.6,false);}
-    @Override public void release(Cast c){c.projectile(16,1.25,.9,false,false,(t,back)->{c.damage(t,c.value(45,15,.55f),MAGIC);c.root(t,12+2*(c.rank-1),false);});}
+    @Override public void release(Cast c){c.actionProjectile(16,1.25,.9,false,false,(t,back)->{c.damage(t,c.value(45,15,.55f),MAGIC);c.root(t,12+2*(c.rank-1),false);});}
 }

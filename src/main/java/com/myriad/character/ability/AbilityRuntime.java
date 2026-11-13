@@ -56,6 +56,8 @@ public final class AbilityRuntime {
         else if(o.player!=p||o.level!=p.level()||!Objects.equals(o.role,role)){clear(p);o=new Owner(p);OWNERS.put(p.getUUID(),o);}return o;
     }
     public static void clear(ServerPlayer p){AbilityVisuals.cancel(p);
+        com.myriad.combat.MagicBullet.clearFor(p.getUUID());
+        if(p.connection!=null)PacketDistributor.sendToPlayer(p,new NetworkSetup.MagicBulletCooldownPayload(0,1));
         com.myriad.character.skills.shuo.ShuoCombat.clear(p);
         com.myriad.character.skills.yike.YikeRework.clear(p);
         com.myriad.character.skills.fenjue.rework.FlameHitVisuals.clear(p);
@@ -409,6 +411,17 @@ public final class AbilityRuntime {
         public void later(int ticks,boolean channel,Runnable action){
             later(ticks,channel,0,action);
         }
+        /** Unfinished actor attacks/volley releases consume local work; effect timers use later(). */
+        public void actionLater(int ticks,Runnable action){
+            actionWhile(ticks,progress->{if(progress+1E-9<ticks)return true;action.run();return false;});
+        }
+        /** Owner-bound local sequence with a per-tick interruption/geometry check. */
+        public void actionWhile(int ticks,DoublePredicate action){
+            if(ticks<0)throw new IllegalArgumentException("Negative action duration");
+            var progress=new ActionTime.Progress(now());
+            owner.tasks.add(time->{boolean finished=progress.advance(time,ActionTime.multiplier(player.getUUID(),time),ticks);
+                return action.test(finished?ticks:progress.completed())&&!finished;});
+        }
         /** Mobile windups retain the same CC/cast-token ownership as stationary windups. */
         public void later(int ticks,boolean channel,float walkFactor,Runnable action){
             long due=now()+ticks;int token=owner.channelToken;
@@ -437,7 +450,10 @@ public final class AbilityRuntime {
         }
         /** Independent flight identity: actor rates never implicitly slow a projectile. */
         public UUID actionProjectile(double range,double speed,double radius,boolean pierce,boolean returning,BiConsumer<LivingEntity,Boolean> impact){
-            UUID id=UUID.randomUUID();projectileAlong(player.getLookAngle(),range,speed,radius,pierce,returning,impact,id);return id;
+            return actionProjectileAlong(player.getLookAngle(),range,speed,radius,pierce,returning,impact);
+        }
+        public UUID actionProjectileAlong(Vec3 aim,double range,double speed,double radius,boolean pierce,boolean returning,BiConsumer<LivingEntity,Boolean> impact){
+            UUID id=UUID.randomUUID();projectileAlong(aim,range,speed,radius,pierce,returning,impact,id);return id;
         }
         public void projectileAlong(Vec3 aim,double range,double speed,double radius,boolean pierce,boolean returning,BiConsumer<LivingEntity,Boolean> impact){
             projectileAlong(aim,range,speed,radius,pierce,returning,impact,null);
@@ -525,21 +541,36 @@ public final class AbilityRuntime {
         }
         /** Exact preflight arc, with landing effects only after successful arrival (no impact on an aborted leap). */
         public void leap(Vec3 destination,int ticks,double height,boolean precise,Runnable landed){
+            leap(destination,ticks,height,precise,false,landed);
+        }
+        public void actionLeap(Vec3 destination,int ticks,double height,Runnable landed){
+            leap(destination,ticks,height,false,true,landed);
+        }
+        public void actionLeap(Vec3 destination,int ticks,double height,boolean precise,Runnable landed){
+            leap(destination,ticks,height,precise,true,landed);
+        }
+        private void leap(Vec3 destination,int ticks,double height,boolean precise,boolean local,Runnable landed){
             if(data.getBuff("g1_root")>0||data.getBuff("g1_stun")>0||!AbilityTargeting.clearArc(player,destination,ticks,height))return;
             final int token=++owner.motionToken;owner.motionUntil=now()+ticks+8;
-            Vec3 origin=player.position();long start=now();final int[] age={0};
+            Vec3 origin=player.position();long start=now();final double[] age={0};
+            double initialRate=local?ActionTime.multiplier(player.getUUID(),start):1;
+            final double[] point={initialRate};final long impulse=KnockbackBuffer.impulseToken(player);final long[] lastTick={start};
             Runnable finish=()->{owner.motionUntil=0;player.setDeltaMovement(Vec3.ZERO);player.resetFallDistance();
                 PacketDistributor.sendToPlayer(player,new NetworkSetup.DashPayload(0,0,0,-1));
                 if(precise&&player.position().distanceToSqr(destination)>.16)return;
                 if(safe(player.position()))landed.run();else whileActive(12,a->{
                     if(token!=owner.motionToken)return false;if(safe(player.position())){landed.run();return false;}return true;});};
-            Task motion=time->{if(token!=owner.motionToken)return false;if(time==start)return true;
-                if(++age[0]>ticks+8||data.getBuff("g1_root")>0||data.getBuff("g1_stun")>0){
+            Task motion=time->{if(token!=owner.motionToken)return false;if(time<=lastTick[0])return true;lastTick[0]=time;
+                if(local&&KnockbackBuffer.impulseToken(player)!=impulse){owner.motionUntil=0;Vec3 forced=player.getDeltaMovement();
+                    PacketDistributor.sendToPlayer(player,new NetworkSetup.DashPayload((float)forced.x,(float)forced.y,(float)forced.z,-1));return false;}
+                double rate=local?ActionTime.multiplier(player.getUUID(),time):1;age[0]+=rate;
+                if(local)owner.motionUntil=time+Math.max(2,(int)Math.ceil((ticks+8-age[0])/rate));
+                if(age[0]>ticks+8||data.getBuff("g1_root")>0||data.getBuff("g1_stun")>0){
                     if(precise){owner.motionUntil=0;player.setDeltaMovement(Vec3.ZERO);player.resetFallDistance();
                         PacketDistributor.sendToPlayer(player,new NetworkSetup.DashPayload(0,0,0,-1));return false;}
                     finish.run();return false;}
                 if(age[0]>=ticks&&player.position().distanceToSqr(destination)<.01){finish.run();return false;}
-                double t=Math.min(1,(age[0]+1)/(double)ticks);
+                point[0]+=rate;double t=Math.min(1,point[0]/ticks);
                 Vec3 desired=origin.lerp(destination,t).add(0,4*height*t*(1-t),0);
                 Vec3 velocity=desired.subtract(player.position());double cap=origin.distanceTo(destination)/ticks+1;
                 if(precise&&velocity.length()>cap+4*height/ticks){
@@ -550,7 +581,7 @@ public final class AbilityRuntime {
                 if(!precise&&velocity.length()>cap)velocity=velocity.normalize().scale(cap);
                 if(!AbilityTargeting.clearSweep(player,velocity)){finish.run();return false;}
                 AbilityVisuals.motionTrail(Cast.this,player.position(),desired);sendMotion(velocity,desired);return true;};
-            double t=1.0/ticks;Vec3 desired=origin.lerp(destination,t).add(0,4*height*t*(1-t),0);
+            double t=initialRate/ticks;Vec3 desired=origin.lerp(destination,t).add(0,4*height*t*(1-t),0);
             if(!AbilityTargeting.clearSweep(player,desired.subtract(origin))){finish.run();return;}
             sendMotion(desired.subtract(origin),desired);owner.tasks.add(motion);
         }

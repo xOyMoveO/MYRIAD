@@ -16,6 +16,6 @@ public final class ThousandWindDashSkill extends AbilitySkill {
     public ThousandWindDashSkill(Definition definition){super(definition);}
     @Override public void present(Cast c){com.myriad.character.ability.AbilityVisuals.charging(c,10,12,.35);}
     @Override public boolean canRelease(Cast c){return c.data.getBuff("g1_root")==0;}
- @Override public void release(Cast c){c.later(10,true,()->c.dash(c.forward(12),14,1.2,(t,first)->{},
+ @Override public void release(Cast c){c.windup(10,0,()->c.actionDash(c.forward(12),14,1.2,(t,first)->{},
  ()->{Vec3 at=c.player.position();c.area(at,2.5,c.value(160,65,1.2f),PHYSICAL);for(var t:c.enemies(at,2.5))c.slow(t,.3f,30);},true,true));}
 }

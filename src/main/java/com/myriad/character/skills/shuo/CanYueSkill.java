@@ -24,7 +24,7 @@ public final class CanYueSkill extends AbilitySkill {
         ShuoCombat.windup(c,4,()->{
             if(chase){
                 ShuoCombat.cut(c,com.myriad.network.ShuoViewPayload.FLASH,5);
-                c.dash(c.forward(2),4,.2,(t,first)->{},()->{if(!AbilityRuntime.controlled(c.player))strike(c,step);},false,false);
+                c.actionDash(c.forward(2),4,.2,(t,first)->{},()->{if(!AbilityRuntime.controlled(c.player))strike(c,step);},false,false);
                 ShuoVisuals.trackMotion(c,true);
             }else strike(c,step);
         });

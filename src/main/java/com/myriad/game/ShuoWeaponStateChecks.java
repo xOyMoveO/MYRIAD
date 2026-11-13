@@ -40,6 +40,8 @@ final class ShuoWeaponStateChecks {
         h.assertTrue(ShuoWeaponState.drawn(p.getMainHandItem()),"Actual draw immediately updates tracked weapon equipment state");
         ShuoCombat.sheathe(p);
         h.assertTrue(ShuoWeaponState.drawn(p.getMainHandItem()),"Sword remains visibly drawn during the return animation");
+        // Mock player has no automatic private-action tick; preserve the exact eight-tick assertion.
+        for(int tick=1;tick<8;tick++)h.runAfterDelay(tick,()->ShuoCombat.tick(p));
         h.runAfterDelay(8,()->{
             ShuoCombat.tick(p);
             h.assertTrue(!ShuoWeaponState.drawn(p.getMainHandItem())&&!ShuoCombat.drawn(p),"The completed return switches third-person state, not the initial key press");

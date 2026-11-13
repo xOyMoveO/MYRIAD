@@ -55,6 +55,7 @@ public class Myriad {
 
         // 玩家数据 Attachment
         PlayerDataProvider.ATTACHMENTS.register(modEventBus);
+        com.myriad.combat.VanillaArrowTime.ATTACHMENTS.register(modEventBus);
         // 网络包注册
         modEventBus.addListener(NetworkSetup::register);
         // 自定义属性挂到玩家身上

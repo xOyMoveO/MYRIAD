@@ -105,6 +105,8 @@ public final class LaneSystem {
         float maxHealth;
         float attackDamage;
         long lastAttackTick;
+        double attackRecovery = 36;
+        transient long lastRecoveryTick = Long.MIN_VALUE;
         transient UUID towerLockTarget;
         /** 首名在塔下伤害友方英雄的敌方英雄；有效期间覆盖普通小兵仇恨。 */
         transient UUID towerHeroPriorityTarget;
@@ -533,6 +535,12 @@ public final class LaneSystem {
     }
 
     private static void tickMinion(ServerLevel level, Mob minion, UnitState state, long now) {
+        int cooldown = state.ranged() ? 36 : state.kind==Kind.SIEGE?30:22;
+        if(now>state.lastRecoveryTick){
+            state.attackRecovery=Math.min(cooldown,state.attackRecovery+
+                    com.myriad.character.skills.keheng.KehengTimeFields.managedNpcRate(minion,now));
+            state.lastRecoveryTick=now;
+        }
         ((LaneMinionEntity)minion).setMoving(false);
         scaleMinion(minion,state,now);
         NpcNavigation.separate(level,(LaneMinionEntity)minion);
@@ -635,8 +643,8 @@ public final class LaneSystem {
         if (target != null) {
             if (minion.distanceToSqr(target) <= range * range && NpcNavigation.visible(minion, target)) {
                 state.navigation.clear();
-                int cooldown = state.ranged() ? 36 : state.kind==Kind.SIEGE?30:22;
-                if (now - state.lastAttackTick >= cooldown) {
+                if (state.attackRecovery + 1E-9 >= cooldown) {
+                    state.attackRecovery = 0;
                     state.lastAttackTick = now;
                     ((LaneMinionEntity)minion).attackAnimation();
                     minion.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES, target.getEyePosition());
@@ -1615,7 +1623,7 @@ public final class LaneSystem {
             for(var entry:UNITS.entrySet())if(!before.contains(entry.getKey())) {
                 UnitState live=entry.getValue();live.maxHealth=saved.maxHealth;live.health=saved.health;
                 if (java.util.Objects.equals(live.path,saved.path)) live.waypointIndex=saved.waypointIndex;
-                live.lastAttackTick=saved.lastAttackTick;live.entity.setPos(position.x,position.y,position.z);
+                live.lastAttackTick=saved.lastAttackTick;live.attackRecovery=saved.attackRecovery;live.entity.setPos(position.x,position.y,position.z);
                 CombatChunks.prepare(level,BlockPos.containing(position));updateName(live.entity,live);
             }
         }
