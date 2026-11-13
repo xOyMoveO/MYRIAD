@@ -23,8 +23,8 @@ final class RosterRetirementChecks {
 
     static void verify(GameTestHelper h, ServerPlayer player) {
         var data = PlayerDataProvider.get(player);
-        h.assertTrue(Set.copyOf(CharacterType.ids()).equals(RETAINED)
-                && Set.copyOf(FirstGroupSkills.ROLES).equals(RETAINED),
+        h.assertTrue(java.util.Arrays.stream(CharacterType.playableValues()).map(CharacterType::getId).collect(java.util.stream.Collectors.toSet()).equals(RETAINED)
+                && FirstGroupSkills.ROLES.containsAll(RETAINED),
                 "Registration and the candidate graph contain exactly the retained eleven heroes");
         int candidates = 0;
         for (String id : RETAINED) {

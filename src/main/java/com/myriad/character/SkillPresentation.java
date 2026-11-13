@@ -24,6 +24,7 @@ public final class SkillPresentation {
             case QINGLUO -> new Style("wood", 0x88CF65, 1);
             case CHIXIAO -> new Style("stone", 0xFFAB58, 0);
             case YUNSHENG -> new Style("wind", 0xB4E9D8, 1);
+            case YIKE -> new Style("shot",0xFF6C78,2);
             case SHUO -> new Style("blade",0xCBEAFF,0);
         };
     }

@@ -9,7 +9,13 @@
     "LivingEntityMaxHealthMixin",
     "LivingEntityControlMixin"
   ],
-  "client": ["ClientInputAccessor", "ClientEntitySpawnMixin", "PlayerTabOverlayMixin", "ShuoHeldLightMixin"],
+  "client": [
+    "ClientInputAccessor",
+    "ClientEntitySpawnMixin",
+    "PlayerTabOverlayMixin",
+    "ShuoHeldLightMixin",
+    "YikeArmPoseMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   }

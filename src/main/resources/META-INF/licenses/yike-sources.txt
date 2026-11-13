@@ -1,0 +1,27 @@
+MYRIAD original Yike / Prismatic Array assets, 2026-11-13.
+
+Weapon meshes and painted texture atlas:
+  Authoring source: tools/assets/generate_yike_assets.py
+  Editable Blockbench parts: art_source/yike/hong_lie*.bbmodel
+  Texture source: art_source/yike/hong_lie_atlas.png
+  Original cuboid geometry and deterministic palette/engraving, created for this project.
+  No third-party weapon mesh, texture, icon or audio sample is included.
+
+Concept reference:
+  art_source/yike/hong_lie_concept.png
+  Generated with the built-in image generation tool from the project's confirmed
+  original three-petal, dark-violet/coral/pale-gold arcane-staff brief.
+  The complete prompt is retained in art_source/yike/README.md.
+  The concept image is an authoring reference, not a game texture or model.
+
+Skill icons, visual geometry, sounds:
+  Icons: authored geometric drawings from the same generator.
+  VFX: YikeVfxGeometry.java, original faceted crystals, open petals and ribbons.
+  Audio: original oscillator/noise synthesis in the generator, then mono
+  Ogg Vorbis encoding with libsndfile via soundfile. No sampled audio, voices,
+  musical recordings, commercial libraries or other game's sound effects.
+  Three independent short shot variants plus deployment, impact, warning,
+  barrier, heavy and beam stages. The beam loop is a periodic authored waveform.
+
+These project-created assets follow this repository's All Rights Reserved notice.
+Existing third-party licenses elsewhere in this directory remain unchanged.

@@ -27,8 +27,16 @@ public abstract class AbilitySkill extends Skill {
     public boolean needsPoint(){return false;}
     /** Server-side opt-in: delay payment/release by this many local action ticks. Existing skills pay immediately. */
     public int commitWindupTicks(){return 0;}
+    public int inputRecoveryTicks(){return 3;}
+    public float windupWalkFactor(AbilityRuntime.Cast c){return 0;}
+    public boolean cooldownReady(AbilityRuntime.Cast c){return c.data.getCooldown(getId())<=0;}
+    public int cooldownTicks(AbilityRuntime.Cast c){return getCooldownTicks(c.rank);}
+    public boolean interruptPreparation(AbilityRuntime.Cast c){return false;}
+    public boolean recastWhileRooted(){return false;}
+    public boolean recastDuringChannel(){return false;}
     public boolean requiresStandingPoint(){return false;}
     public void present(AbilityRuntime.Cast cast){}
+    public void preparing(AbilityRuntime.Cast c){}
     /** Opt out of the generic cast Foley when this module owns its staged sound cues. */
     public boolean hasOwnCastSound(){return false;}
     public double pointRange(AbilityRuntime.Cast c){return 12;}

@@ -54,6 +54,9 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> KILL_QUADRA = register("announcement_kill_quadra");
     public static final DeferredHolder<SoundEvent, SoundEvent> KILL_PENTA = register("announcement_kill_penta");
 
+    private static final java.util.Map<String,DeferredHolder<SoundEvent,SoundEvent>> YIKE=new java.util.HashMap<>();
+    static {for(String cue:new String[]{"basic","shot_0","shot_1","shot_2","impact","warning","mark","barrier","deploy","close","heavy_charge","heavy_flight","heavy_impact","beam_charge","beam_loop","beam_tick","beam_end"})YIKE.put(cue,register("yike_"+cue));}
+    public static SoundEvent yike(String cue){return YIKE.get(cue).get();}
     private ModSounds() { }
     private static final java.util.Map<String,DeferredHolder<SoundEvent,SoundEvent>> SHUO=new java.util.HashMap<>();
     static {for(String cue:new String[]{"draw","sheathe","slash","parry","charge"})SHUO.put(cue,register("shuo_"+cue));}

@@ -18,6 +18,7 @@ public final class FirstGroupGrowth {
     public static int price(int rank){return 180+40*Math.clamp(rank,0,9);}
     public static double health(String role,int level){
         int[] pair=switch(role){
+            case "yike"->new int[]{550,75};
             case "shuo"->new int[]{640,100};
             case "yingxiao"->new int[]{com.myriad.character.skills.yingxiao.rework.YingxiaoRework.INITIAL_HEALTH,
                     com.myriad.character.skills.yingxiao.rework.YingxiaoRework.HEALTH_PER_LEVEL};

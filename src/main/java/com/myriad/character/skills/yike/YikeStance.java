@@ -107,7 +107,7 @@ public final class YikeStance {
         if (!usable(c.player, s)) return false;
         var q = YikeRework.q(c.player);
         return q != null && c.skill == q && c.data.skillLevel(q.getId()) > 0
-                && s.shots > 0 && nextShotTicks(c.player) == 0
+                && s.shots > 0 && nextShotTicks(c.player) <= (s.fired && !c.accepted() ? 5 : 0)
                 && (unlimitedMana() || c.data.getMana() >= 35);
     }
 

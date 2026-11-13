@@ -42,6 +42,7 @@ public final class BasicAttackSystem {
         if (!(attacker.level() instanceof ServerLevel level)) return;
         CharacterType role = CharacterType.byId(data.getCharacterId());
         if (role == null || !canAttackNow(attacker, data)) return;
+        if(role==CharacterType.YIKE){com.myriad.character.skills.yike.YikeBasicAttack.tryFire(attacker);return;}
         if (VanillaMeleeAttack.usesVanilla(role)) return;
         // Retained ranged heroes fire through MagicBullet; custom target-hit packets cannot deal damage.
     }
@@ -84,6 +85,7 @@ public final class BasicAttackSystem {
     public static int cooldownRemaining(ServerPlayer player) {
         if(VanillaMeleeAttack.usesVanilla(CharacterType.byId(PlayerDataProvider.get(player).getCharacterId())))
             return Math.max(0,(int)Math.ceil((1-player.getAttackStrengthScale(0))*player.getCurrentItemAttackStrengthDelay()));
+        if("yike".equals(PlayerDataProvider.get(player).getCharacterId()))return com.myriad.character.skills.yike.YikeBasicAttack.remaining(player);
         AttackCooldown cooldown = ATTACK_COOLDOWNS.get(player.getUUID());
         return cooldown == null ? 0 : Math.max(0, (int) (cooldown.readyAt - player.level().getGameTime()));
     }
@@ -91,6 +93,7 @@ public final class BasicAttackSystem {
     public static int cooldownTotal(ServerPlayer player) {
         if(VanillaMeleeAttack.usesVanilla(CharacterType.byId(PlayerDataProvider.get(player).getCharacterId())))
             return Math.max(1,(int)Math.ceil(player.getCurrentItemAttackStrengthDelay()));
+        if("yike".equals(PlayerDataProvider.get(player).getCharacterId()))return com.myriad.character.skills.yike.YikeBasicAttack.total(player);
         AttackCooldown cooldown = ATTACK_COOLDOWNS.get(player.getUUID());
         return cooldown == null ? Math.max(1, (int) Math.ceil(20.0 /
                 Math.max(0.1, player.getAttributeValue(ModAttributes.ATTACK_SPEED)))) : cooldown.totalTicks;

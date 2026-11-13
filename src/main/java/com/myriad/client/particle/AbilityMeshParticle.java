@@ -64,7 +64,8 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
         if(mc.level==null||mc.player==null||sprites==null||!ClientDataHolder.modEnabled()||!p.valid())return;
         if(p.personal()&&p.owner()!=mc.player.getId())return;
         if(!p.personal()&&!FogOfWarClient.shouldRenderPlayer(p.owner())
-                &&!(com.myriad.character.skills.shuo.ShuoSkillVfx.owns(p)&&p.owner()==mc.player.getId()))return;
+                &&!(com.myriad.character.skills.shuo.ShuoSkillVfx.owns(p)&&p.owner()==mc.player.getId())
+                &&!(p.theme()==12&&p.anchor()<0))return;
         if(p.anchor()!=mc.player.getId()&&mc.level.getEntity(p.anchor()) instanceof net.minecraft.world.entity.player.Player
                 &&!FogOfWarClient.shouldRenderPlayer(p.anchor()))return;
         if(mc.player.position().distanceToSqr(p.from())>Math.pow(80+p.radius(),2))return;

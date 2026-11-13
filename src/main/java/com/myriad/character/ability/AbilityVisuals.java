@@ -27,7 +27,7 @@ public final class AbilityVisuals {
     }
     private static int theme(Cast c){return switch(c.skill.role()){
         case "yingxiao"->0;case "tianxing"->1;case "fenjue"->2;case "xuanchen"->3;case "sulan"->4;
-        case "lingyuan"->5;case "hanze"->6;case "qingluo"->7;case "chixiao"->8;case "yunsheng"->9;case "shuo"->10;default->0;};}
+        case "lingyuan"->5;case "hanze"->6;case "qingluo"->7;case "chixiao"->8;case "yunsheng"->9;case "shuo"->10;case "yike"->12;default->0;};}
     public static void emit(Cast c,int kind,Vec3 from,Vec3 to,double radius,double angle,int life,boolean personal) {
         send(c,kind,from,to,radius,angle,life,personal,-1);
     }

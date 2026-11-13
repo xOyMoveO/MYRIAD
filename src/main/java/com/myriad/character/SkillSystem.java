@@ -27,7 +27,7 @@ public final class SkillSystem {
         if (data == null ) {
             return;
         }
-        if (com.myriad.character.ability.SkillChargeSystem.active(player)) return;
+
         boolean training = com.myriad.game.TrainingMode.isEnabled();
         GameManager manager = GameManager.get();
         if (!training && (manager == null || manager.getPhase() != GameManager.Phase.PLAYING)) {
@@ -53,6 +53,7 @@ public final class SkillSystem {
                 com.myriad.character.ability.AbilityRuntime.request(player, data, ability);
             return;
         }
+        if (com.myriad.character.ability.SkillChargeSystem.active(player)) return;
         if (data.getBuff("g1_stun") > 0) return;
         if (com.myriad.combat.SilenceSystem.isSilenced(player)) {
             player.sendSystemMessage(Component.translatable("message.myriad.silenced"));

@@ -42,6 +42,19 @@ import com.myriad.game.Faction;
  * 当前角色池由玄霄宗与幽冥宗共享，旧归属字段仅保留阵营侧展示位置。
  */
 public enum CharacterType {
+    YIKE("yike",Faction.XUANXIAO,new Skill[0]) {
+        @Override public double initialHp(){return 550;}
+        @Override public double growthHp(){return 75;}
+        @Override public double initialAd(){return 65;}
+        @Override public double initialSp(){return 30;}
+        @Override public double initialMp(){return 700;}
+        @Override public double initialPd(){return 45;}
+        @Override public double initialMr(){return 45;}
+        @Override public double initialAs(){return .70;}
+        @Override public double initialMs(){return .10;}
+        @Override public double initialHpRegen(){return 2;}
+        @Override public double initialManaRegen(){return 4;}
+    },
     YINGXIAO("yingxiao", Faction.XUANXIAO, new Skill[] { new YingXiaoPassiveSkill() },
             new YingXiSkill(), new HuaYingSkill(), new YingShaSkill(), new LingDunSkill()) {
         @Override public double initialHpRegen() { return 3.5; }
@@ -758,6 +771,8 @@ public enum CharacterType {
         return null;
     }
 
+    public boolean developmentOnly(){return this==YIKE;}
+    public static CharacterType[] playableValues(){return java.util.Arrays.stream(values()).filter(t->!t.developmentOnly()).toArray(CharacterType[]::new);}
     public static List<String> ids() {
         List<String> result = new ArrayList<>();
         for (CharacterType type : values()) {

@@ -233,6 +233,9 @@ public final class PlayerDataProvider {
             player.sendSystemMessage(Component.translatable("message.myriad.invalid_character"));
             return;
         }
+        if(type.developmentOnly()&&!com.myriad.game.TrainingMode.isEnabled()){
+            player.sendSystemMessage(Component.literal("此角色暂由训练入口验收。"));return;
+        }
         PlayerData data = get(player);
         if (data == null) {
             return;
@@ -962,6 +965,7 @@ public final class PlayerDataProvider {
                     .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xFF9EFFF2));
         }
 
+        if ("yike".equalsIgnoreCase(characterId)) return Component.translatable("item.myriad.hong_lie").withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xFFF3C879));
         if ("shuo".equalsIgnoreCase(characterId)) return Component.translatable("item.myriad.shuo_sword").withStyle(net.minecraft.ChatFormatting.WHITE);
         return Component.translatable("item.myriad.yingci")
                 .withStyle(net.minecraft.ChatFormatting.GOLD)
@@ -1607,9 +1611,14 @@ public final class PlayerDataProvider {
         if (event.getAmount() > 0.0f) {
             float absorbed = ModShieldSystem.consume(entity, event.getAmount());
             if (absorbed > 0.0f) {
-                if(damageFloat!=null&&event.getSource().getEntity() instanceof ServerPlayer shieldAttacker)
+                if(damageFloat!=null&&event.getSource().getEntity() instanceof ServerPlayer shieldAttacker){
                     com.myriad.combat.CombatImpactFeedback.confirmed(shieldAttacker,entity,damageFloat.type(),
                             damageFloat.crit(),damageFloat.skill()&&!damageFloat.direct(),absorbed,true);
+                    // A fully absorbed hit still counts; partial absorption already notifies through the HP-loss path.
+                    if(event.getAmount()-absorbed<=.0001f)com.myriad.character.ability.AbilityRuntime.hit(shieldAttacker,entity,absorbed,!damageFloat.skill(),
+                            damageFloat.abilitySource(),damageFloat.direct(),damageFloat.type()==com.myriad.client.DamageFloater.TYPE_MAGIC?1:
+                            damageFloat.type()==com.myriad.client.DamageFloater.TYPE_TRUE?2:0);
+                }
                 if (entity instanceof ServerPlayer shieldedPlayer) {
                     com.myriad.combat.CombatTelemetry.recordShieldDamage(
                             shieldedPlayer, absorbed, event.getSource().getEntity());
