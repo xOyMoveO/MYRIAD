@@ -964,6 +964,7 @@ public final class PlayerDataProvider {
                     .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xFF9EFFF2));
         }
 
+        if ("yike".equalsIgnoreCase(characterId)) return Component.translatable("item.myriad.hong_lie").withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xFFF3C879));
         if ("shuo".equalsIgnoreCase(characterId)) return Component.translatable("item.myriad.shuo_sword").withStyle(net.minecraft.ChatFormatting.WHITE);
         return Component.translatable("item.myriad.yingci")
                 .withStyle(net.minecraft.ChatFormatting.GOLD)

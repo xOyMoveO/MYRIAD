@@ -139,6 +139,10 @@ public class MyriadClient {
             return;
         }
 
+        if("yike".equals(com.myriad.client.ClientDataHolder.characterId())){
+            ClientPacketDistributor.sendToServer(new NetworkSetup.BasicAttackPayload(-1));
+            event.setSwingHand(false);event.setCanceled(true);return;
+        }
         AttackRay ray = findCurrentAttackTarget(mc);
         if (ray.target != null) {
             net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(
@@ -306,6 +310,7 @@ public class MyriadClient {
 
     /** 远程恢复期间隐藏第一人称专属武器；原版近战不隐藏。 */
     private static void onRenderHand(net.neoforged.neoforge.client.event.RenderHandEvent event) {
+        if (com.myriad.client.firstperson.YikeWeaponView.render(event)) return;
         if (com.myriad.client.firstperson.ShuoView.render(event)) return;
         if (com.myriad.client.firstperson.NightDaggerView.render(event)) return;
         if (com.myriad.client.firstperson.KehengView.render(event)) return;
@@ -362,6 +367,7 @@ public class MyriadClient {
             com.myriad.client.firstperson.ThunderSwordView.tick();
             com.myriad.client.firstperson.FlameDaoView.tick();
             com.myriad.client.firstperson.ShuoView.tick();
+            com.myriad.client.YikeClientState.tick();
             com.myriad.client.StarPullController.tick();
             com.myriad.client.RespawnSpectatorView.enforceFirstPerson();
             lockWeaponSlot(local);

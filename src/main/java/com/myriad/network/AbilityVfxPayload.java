@@ -28,7 +28,7 @@ public record AbilityVfxPayload(int owner, int anchor, int theme, int variant, i
                 b.readFloat(),b.readFloat(),b.readVarInt(),b.readLong(),b.readBoolean(),b.readVarInt());
     }
     public boolean valid() {
-        return owner>=0&&anchor>=-1&&theme>=0&&theme<12&&variant>=0&&variant<8&&kind>=0&&kind<13
+        return owner>=0&&anchor>=-1&&theme>=0&&theme<13&&variant>=0&&variant<8&&kind>=0&&kind<13
                 &&finite(from)&&finite(to)&&from.distanceToSqr(to)<=128*128
                 &&Float.isFinite(radius)&&radius>=0&&radius<=24&&Float.isFinite(angle)&&angle>=0&&angle<=360
                 &&life>=1&&life<=120&&instance>=0&&(!(kind==12&&angle==2)||instance>0);

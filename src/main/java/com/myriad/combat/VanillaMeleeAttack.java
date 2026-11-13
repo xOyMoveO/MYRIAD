@@ -20,7 +20,7 @@ public final class VanillaMeleeAttack {
     /** Gameplay attack routing, independent of any custom animation system. */
     public static boolean usesVanilla(CharacterType role){
         return role != null && switch(role){
-            case XUANCHEN, HANZE, QINGLUO, YUNSHENG -> false;
+            case XUANCHEN, HANZE, QINGLUO, YUNSHENG, YIKE -> false;
             default -> true;
         };
     }

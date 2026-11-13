@@ -34,10 +34,10 @@ final class ActionRemovalChecks {
             h.assertTrue(stream != null, "Normal gameplay mixins remain registered");
             var json = JsonParser.parseReader(new InputStreamReader(stream, StandardCharsets.UTF_8)).getAsJsonObject();
             var clients = json.getAsJsonArray("client").asList().stream().map(v -> v.getAsString()).toList();
-            h.assertTrue(clients.equals(List.of("ClientInputAccessor", "ClientEntitySpawnMixin", "PlayerTabOverlayMixin", "ShuoHeldLightMixin", "ClientAttackTimeMixin")),
-                    "Only gameplay hooks and Shuo's attached-light hook remain; no retired player-action mixin returns");
+            h.assertTrue(clients.equals(List.of("ClientInputAccessor", "ClientEntitySpawnMixin", "PlayerTabOverlayMixin", "ShuoHeldLightMixin", "ClientAttackTimeMixin", "YikeArmPoseMixin")),
+                    "Gameplay, local time, attached light and Yike local weapon pose hooks remain; no retired player-action mixin returns");
         } catch (java.io.IOException e) { throw new IllegalStateException(e); }
-        var ranged = Set.of("xuanchen", "hanze", "qingluo", "yunsheng");
+        var ranged = Set.of("xuanchen", "hanze", "qingluo", "yunsheng", "yike");
         for (var role : CharacterType.values()) {
             h.assertTrue(VanillaMeleeAttack.usesVanilla(role) == !ranged.contains(role.getId()),
                     "Removing actions must not reroute specialized ranged attacks: " + role.getId());

@@ -29,10 +29,22 @@ final class KehengChecks {
             ModState.setEnabled(mod);TrainingMode.setEnabled(training);TrainingMode.setNoMana(noMana);TrainingMode.setNoCooldown(noCd);};
         try {
             identity(h);
-            for(int i=0;i<30;i++)fixtures.add(fixture(h,i));
+            for(int i=0;i<38;i++)fixtures.add(fixture(h,i));
             for(int i=0;i<fixtures.size();i++){
                 var f=fixtures.get(i);var d=PlayerDataProvider.get(f.p);
                 switch(i){
+                    case 30,31,32,33,34,35,36,37->{
+                        h.getLevel().addNewPlayer(f.p);
+                        learn(f,4,7);point(f,2);SkillSystem.cast(f.p,2);AbilityRuntime.confirm(f.p);
+                        var yd=PlayerDataProvider.get(f.t);yd.setCharacterId("yike");
+                        yd.setSkillLevel(FirstGroupSkills.node("yike",2).getId(),1);
+                        yd.setSkillLevel(FirstGroupSkills.node("yike",3).getId(),1);
+                        f.t.setItemSlot(EquipmentSlot.MAINHAND,new net.minecraft.world.item.ItemStack(ModItems.HONG_LIE.get()));
+                        f.t.setYRot(180);f.t.setXRot(0);f.t.getAttribute(ModAttributes.ATTACK_SPEED).setBaseValue(.7);
+                        f.t.getAttribute(ModAttributes.PHYSICAL_ATTACK).setBaseValue(65);
+                        if(i==32||i==33||i==35)yd.setSkillLevel(FirstGroupSkills.node("yike",i==35?5:4).getId(),1);
+                        if(i==34)yd.setSkillLevel(FirstGroupSkills.node("yike",7).getId(),1);
+                    }
                     case 0->{learn(f,2,1);SkillSystem.cast(f.p,0);h.assertTrue(d.getMana()==660&&d.getCooldown("keheng_chizhen")==140,"Q charges at the normal accepted-cast boundary");}
                     case 1->{learn(f,2,5);f.t.getAttribute(ModAttributes.TENACITY).setBaseValue(60);SkillSystem.cast(f.p,0);}
                     case 2->{learn(f,2,1);SkillSystem.cast(f.p,0);d.setBuff("g1_stun",2);}
@@ -76,6 +88,10 @@ final class KehengChecks {
                         if(AbilityRuntime.moving(fixtures.get(3).p))fixtures.get(3).p.move(MoverType.SELF,fixtures.get(3).p.getDeltaMovement());
                         for(var f:fixtures){AbilityRuntime.tick(f.p);KehengTimeFields.refreshActor(f.t);f.t.invulnerableTime=0;}
                         KehengTimeFields.tick(h.getLevel());
+                        for(int i=30;i<38;i++){
+                            var f=fixtures.get(i);AbilityRuntime.tick(f.t);PlayerDataProvider.get(f.t).tickCooldowns();
+                        }
+                        crossCases(h,fixtures,age);
                         fixtures.get(29).t.doTick();AbilityRuntime.tick(fixtures.get(29).t);
                         fixtures.get(4).t.doTick();
                         if(age==2){var f=fixtures.get(29);var d=PlayerDataProvider.get(f.t);d.setCharacterId("tianxing");d.setSkillLevel(FirstGroupSkills.node("tianxing",3).getId(),1);f.t.setYRot(180);SkillSystem.cast(f.t,1);}
@@ -135,13 +151,69 @@ final class KehengChecks {
                         if(age==86)h.assertTrue(PlayerDataProvider.get(fixtures.get(25).p).getBuff("g1_keheng_marks")==0,"The second hit does not renew the first hit's fixed four-second window");
                         if(age==94){hp(h,fixtures.get(26),9540.4f,"Multi-pulse dome adds one mark across all six jumps, including after three-stack clear");
                             h.assertTrue(PlayerDataProvider.get(fixtures.get(26).p).getBuff("g1_keheng_marks")==0,"Remaining jumps never re-enter a cleared passive window");
+                        }
+                        if(age==150){
                             done[0]=true;net.neoforged.neoforge.common.NeoForge.EVENT_BUS.unregister(this);cleanup.run();
-                            System.out.println("[MYRIAD-KEHENG] PASS: 30 real-cast scenarios; identity/growth/graph/save/melee, exact Q/W/field/follow/dome/corridor/echo resources and timings, actor/flight geometry, control/cleanse and lifecycle");h.succeed();}
+                            System.out.println("[MYRIAD-KEHENG] PASS: 38 real-cast scenarios (30 Keheng + 8 Keheng/Yike integration); identity/growth/graph/save/melee, exact Q/W/field/follow/dome/corridor/echo resources and timings, actor/flight geometry, control/cleanse and lifecycle");h.succeed();}
                     }catch(Throwable failure){done[0]=true;net.neoforged.neoforge.common.NeoForge.EVENT_BUS.unregister(this);cleanup.run();throw new IllegalStateException(failure);}
                 }
             };
             net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(listener);
         }catch(Throwable failure){cleanup.run();throw new IllegalStateException(failure);}
+    }
+    /** The two new roles share actual field geometry and runtime consumers; no private Yike→Keheng coupling. */
+    private static void crossCases(GameTestHelper h,List<Fixture> fixtures,int age){
+        if(age==10)for(int i=30;i<38;i++){
+            var f=fixtures.get(i);rate(h,f.t,.5,"Real rank-7 Keheng field reaches Yike actor: "+i);
+            if(i==37)com.myriad.character.skills.yike.YikeBasicAttack.tryFire(f.t);
+            else SkillSystem.cast(f.t,i==32||i==33||i==35?2:i==34?3:0);
+        }
+        if(age==12){
+            var f=fixtures.get(36);f.t.setXRot((float)Math.toDegrees(Math.atan2(f.t.getEyeHeight(),2)));
+            SkillSystem.cast(f.t,1);AbilityRuntime.confirm(f.t);
+            h.assertTrue(PlayerDataProvider.get(f.t).getMana()==645&&PlayerDataProvider.get(f.t).getCooldown("yike_rainbow_shell")==0,
+                    "Real-field W interrupts unpaid slow Q, paying only W");
+        }
+        if(age==19)h.assertTrue(PlayerDataProvider.get(fixtures.get(30).t).getMana()==700,"Real .5 field preserves nine unfinished Yike Q ticks");
+        if(age==20){
+            h.assertTrue(PlayerDataProvider.get(fixtures.get(30).t).getMana()==665,"Yike Q commits once after ten real ticks in real .5 field");
+            fixtures.get(31).t.setPos(fixtures.get(31).origin.add(0,0,10));
+        }
+        if(age==21)h.assertTrue(fixtures.get(31).p.getHealth()==10000,"Launched Yike shell still samples field geometry after its actor exits");
+        if(age==22){
+            h.assertTrue(Math.abs(fixtures.get(31).p.getHealth()-9888.5)<.12,"Independent Yike shell arrives on its slowed second flight tick; health="+fixtures.get(31).p.getHealth());
+            h.assertTrue(fixtures.get(36).p.getHealth()==10000,"W ground warning is not accelerated by merged local-time consumers");
+        }
+        if(age==23)h.assertTrue(Math.abs(fixtures.get(36).p.getHealth()-9919.5)<.12,"W ground warning resolves after eleven real ticks inside real field");
+        if(age==24){var f=fixtures.get(35);
+            h.assertTrue(com.myriad.character.skills.yike.YikeStance.mobile(f.t),"Seven-tick mobile deployment takes fourteen real ticks at .5");
+            h.assertTrue(Math.abs(f.t.getAttributeValue(Attributes.MOVEMENT_SPEED)/f.t.getAttribute(Attributes.MOVEMENT_SPEED).getBaseValue()-.35)<.001,
+                    "Mobile stance keeps .7 self movement and .5 external time limit");}
+        if(age==27)h.assertTrue(!com.myriad.character.skills.yike.YikeStance.active(fixtures.get(32).t),"Fixed deployment does not complete before eighteen real ticks");
+        if(age==28)for(int i:new int[]{32,33}){var f=fixtures.get(i);
+            h.assertTrue(com.myriad.character.skills.yike.YikeStance.active(f.t)&&com.myriad.character.skills.yike.YikeStance.remaining(f.t)==120,
+                    "Slowed fixed deployment starts an unscaled 120-tick deadline");}
+        if(age==29)SkillSystem.cast(fixtures.get(33).t,0);
+        if(age==30){var f=fixtures.get(35);AbilityRuntime.cleanseControls(f.t);
+            h.assertTrue(Math.abs(f.t.getAttributeValue(Attributes.MOVEMENT_SPEED)/f.t.getAttribute(Attributes.MOVEMENT_SPEED).getBaseValue()-.7)<.001,
+                    "Cleanse removes external field limit without erasing mobile stance");}
+        if(age==33)h.assertTrue(!com.myriad.character.skills.yike.PrismaticBeam.active(fixtures.get(34).t),"Real field slows the twelve-action-tick beam charge");
+        if(age==34)h.assertTrue(com.myriad.character.skills.yike.PrismaticBeam.active(fixtures.get(34).t),"Beam starts after twenty-four real charge ticks");
+        if(age==39){var f=fixtures.get(33);
+            h.assertTrue(com.myriad.character.skills.yike.YikeStance.shots(f.t)==4&&com.myriad.character.skills.yike.YikeStance.nextShotTicks(f.t)==22,
+                    "Slowed shot consumes one shell and starts the fixed real 22-tick interval");
+            com.myriad.character.skills.yike.YikeBasicAttack.tryFire(fixtures.get(37).t);
+            h.assertTrue(Math.abs(fixtures.get(37).p.getHealth()-9935)<.12,"Yike basic recovery rejects early repetition in the actual field");}
+        if(age==45){var f=fixtures.get(35);rate(h,f.t,.5,"Fixed fifteen-tick cleanse immunity ends inside real field");
+            h.assertTrue(Math.abs(f.t.getAttributeValue(Attributes.MOVEMENT_SPEED)/f.t.getAttribute(Attributes.MOVEMENT_SPEED).getBaseValue()-.35)<.001,"Mobile self movement remains after external field publication resumes");}
+        if(age==49)h.assertTrue(com.myriad.character.skills.yike.YikeStance.nextShotTicks(fixtures.get(33).t)==12,"Artillery interval advances ten real ticks despite .5 action rate");
+        if(age==56)SkillSystem.cast(fixtures.get(33).t,0);
+        if(age==61)h.assertTrue(com.myriad.character.skills.yike.YikeStance.nextShotTicks(fixtures.get(33).t)==0&&com.myriad.character.skills.yike.YikeStance.shots(fixtures.get(33).t)==4,"Real muzzle deadline expires while the second slowed preparation remains unfinished");
+        if(age==66)h.assertTrue(com.myriad.character.skills.yike.YikeStance.shots(fixtures.get(33).t)==3,"Second manually requested slow preparation commits once, without queued bonus shots");
+        if(age==68)com.myriad.character.skills.yike.YikeBasicAttack.tryFire(fixtures.get(37).t);
+        if(age==70)h.assertTrue(Math.abs(fixtures.get(37).p.getHealth()-9870)<.12&&PlayerDataProvider.get(fixtures.get(37).t).getMana()==700,"Actual field preserves 29 completed basic-action ticks across 58 real ticks, two free A65 flights");
+        if(age==94)h.assertTrue(!com.myriad.character.skills.yike.PrismaticBeam.active(fixtures.get(34).t)&&Math.abs(fixtures.get(34).p.getHealth()-9535)<.12,"After slowed charge, beam still completes six unscaled ten-tick jumps in sixty real ticks");
+        if(age==148)h.assertTrue(!com.myriad.character.skills.yike.YikeStance.active(fixtures.get(32).t)&&com.myriad.character.skills.yike.YikeStance.exitReason(fixtures.get(32).t).equals("expired"),"Fixed stance expires exactly 120 real ticks after slowed deployment");
     }
     private static void rate(GameTestHelper h,ServerPlayer p,double rate,String why){h.assertTrue(Math.abs(ActionTime.multiplier(p.getUUID(),p.level().getGameTime())-rate)<.00001,why);}
     private static void hp(GameTestHelper h,Fixture f,float hp,String why){h.assertTrue(Math.abs(f.t.getHealth()-hp)<.12,why+"; actual="+f.t.getHealth()+" expected="+hp);}

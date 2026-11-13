@@ -15,7 +15,8 @@
     "ClientEntitySpawnMixin",
     "PlayerTabOverlayMixin",
     "ShuoHeldLightMixin",
-    "ClientAttackTimeMixin"
+    "ClientAttackTimeMixin",
+    "YikeArmPoseMixin"
   ],
   "injectors": {
     "defaultRequire": 1

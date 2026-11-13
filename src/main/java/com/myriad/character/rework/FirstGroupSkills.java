@@ -14,11 +14,11 @@ public final class FirstGroupSkills {
     private FirstGroupSkills() {}
     // Historical class name is retained for saved/network entry points; registration spans both migrated batches.
     public static final Set<String> SECOND_GROUP=Set.of("lingyuan","hanze","qingluo","chixiao","yunsheng");
-    public static final Set<String> ROLES=Set.of("yingxiao","tianxing","fenjue","xuanchen","sulan","lingyuan","hanze","qingluo","chixiao","yunsheng","shuo","keheng");
+    public static final Set<String> ROLES=Set.of("yingxiao","tianxing","fenjue","xuanchen","sulan","lingyuan","hanze","qingluo","chixiao","yunsheng","shuo","keheng","yike");
     private static final Map<String,List<AbilitySkill>> BY_ROLE=new LinkedHashMap<>();
     private static final Map<String,AbilitySkill> BY_ID=new LinkedHashMap<>();
     static {
-        try { for(String resource:List.of("first_group","second_group","shuo","keheng")) {
+        try { for(String resource:List.of("first_group","second_group","shuo","keheng","yike")) {
           try(var stream=FirstGroupSkills.class.getResourceAsStream("/data/myriad/role_rework/"+resource+".json")) {
             if(stream==null)throw new IllegalStateException("Missing first-group skill definitions");
             var doc=JsonParser.parseReader(new InputStreamReader(stream,StandardCharsets.UTF_8)).getAsJsonObject();
@@ -30,6 +30,7 @@ public final class FirstGroupSkills {
                         d.get("name").getAsString(),d.get("description").getAsString(),d.get("iconAlias").getAsString());
                 AbilitySkill node=switch(role){
                     case "keheng"->com.myriad.character.skills.keheng.KehengRework.bind(definition);
+                    case "yike"->com.myriad.character.skills.yike.YikeRework.bind(definition);
                     case "shuo"->com.myriad.character.skills.shuo.ShuoRework.bind(definition);
                     case "yingxiao"->com.myriad.character.skills.yingxiao.rework.YingxiaoRework.bind(definition);
                     case "tianxing"->com.myriad.character.skills.tianxing.rework.TianxingRework.bind(definition);

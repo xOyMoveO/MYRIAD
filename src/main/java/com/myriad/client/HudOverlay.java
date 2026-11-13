@@ -126,6 +126,7 @@ public class HudOverlay implements GuiLayer {
         HudLayoutConfig.render(gui, HudLayoutConfig.Element.ATTACKS, () -> {
             renderBasicAttackBar(gui, font, data);
             renderMagicBulletBar(gui, font, data);
+            com.myriad.client.YikeHud.draw(gui,font);
         });
         HudLayoutConfig.render(gui, HudLayoutConfig.Element.MINIMAP, () -> MinimapOverlay.render(gui, font));
         HudLayoutConfig.render(gui, HudLayoutConfig.Element.BUFFS, () -> renderBuffs(gui, font));
