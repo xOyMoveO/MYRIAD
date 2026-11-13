@@ -122,7 +122,7 @@ public class PickScreen extends Screen {
 
     private static List<CharacterType> charsOf(Faction faction) {
         List<CharacterType> result = new ArrayList<>();
-        for (CharacterType t : CharacterType.values()) {
+        for (CharacterType t : CharacterType.playableValues()) {
             result.add(t);
         }
         return result;
@@ -130,7 +130,7 @@ public class PickScreen extends Screen {
 
     /** 全角色共享池的响应式网格位置，保证头像与名称始终处于屏幕可见范围。 */
     private AvatarSlot avatarSlot(CharacterType target) {
-        CharacterType[] all = CharacterType.values();
+        CharacterType[] all = CharacterType.playableValues();
         int count = all.length;
         int sideMargin = rosterWidth()+14;
         int usableW = Math.max(80, this.width - sideMargin * 2);
@@ -261,7 +261,7 @@ public class PickScreen extends Screen {
     /** 倒计时阶段：全部角色已选，头像保持在屏幕两侧边缘。 */
     private void drawCountdownLayout(GuiGraphicsExtractor gui, net.minecraft.client.gui.Font font,
             NetworkSetup.PickStatePayload state) {
-        for (CharacterType t : CharacterType.values()) {
+        for (CharacterType t : CharacterType.playableValues()) {
             String picker = state.taken().get(t.getId());
             if (picker != null) {
                 drawEdgeAvatar(gui, font, t, picker, state.takenUuids().get(t.getId()));
@@ -341,7 +341,7 @@ public class PickScreen extends Screen {
     private void drawPickedEdges(GuiGraphicsExtractor gui, net.minecraft.client.gui.Font font,
             NetworkSetup.PickStatePayload state) {
         long now = Minecraft.getInstance().level == null ? 0 : Minecraft.getInstance().level.getGameTime();
-        for (CharacterType t : CharacterType.values()) {
+        for (CharacterType t : CharacterType.playableValues()) {
             String picker = state.taken().get(t.getId());
             if (picker == null) {
                 continue;
@@ -556,7 +556,7 @@ public class PickScreen extends Screen {
     private String hitAnyCharacter(double mouseX, double mouseY, NetworkSetup.PickStatePayload state) {
         String center = hitCharacter(mouseX, mouseY, state);
         if (center != null) return center;
-        for (CharacterType t : CharacterType.values()) {
+        for (CharacterType t : CharacterType.playableValues()) {
             if (!state.taken().containsKey(t.getId())) continue;
             int[] edge = edgePos(t);
             if (mouseX >= edge[0] && mouseX <= edge[0] + TARGET_SIZE

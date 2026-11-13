@@ -1,0 +1,736 @@
+{
+  "credit": "MYRIAD original Yike mesh; authoring source tools/assets/generate_yike_assets.py",
+  "ambientocclusion": false,
+  "gui_light": "front",
+  "textures": {
+    "weapon": "myriad:item/hong_lie",
+    "particle": "myriad:item/hong_lie"
+  },
+  "elements": [
+    {
+      "name": "hinge",
+      "from": [
+        7.55,
+        7.85,
+        8.76
+      ],
+      "to": [
+        8.45,
+        8.55,
+        9.55
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.08,
+            6.08,
+            3.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "east": {
+          "uv": [
+            0.08,
+            6.08,
+            3.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "south": {
+          "uv": [
+            0.08,
+            6.08,
+            3.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "west": {
+          "uv": [
+            0.08,
+            6.08,
+            3.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "up": {
+          "uv": [
+            0.08,
+            6.08,
+            3.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "down": {
+          "uv": [
+            0.08,
+            6.08,
+            3.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        }
+      }
+    },
+    {
+      "name": "hinge_axle",
+      "from": [
+        7.42,
+        8.02,
+        9.03
+      ],
+      "to": [
+        8.58,
+        8.32,
+        9.32
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "east": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "south": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "west": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "up": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "down": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        }
+      }
+    },
+    {
+      "name": "coral_petal_root",
+      "from": [
+        7.62,
+        8.35,
+        9.15
+      ],
+      "to": [
+        8.38,
+        10.1,
+        9.52
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.08,
+            0.08,
+            15.92,
+            5.92
+          ],
+          "texture": "#weapon"
+        },
+        "east": {
+          "uv": [
+            12.08,
+            0.08,
+            15.92,
+            5.92
+          ],
+          "texture": "#weapon"
+        },
+        "south": {
+          "uv": [
+            12.08,
+            0.08,
+            15.92,
+            5.92
+          ],
+          "texture": "#weapon"
+        },
+        "west": {
+          "uv": [
+            12.08,
+            0.08,
+            15.92,
+            5.92
+          ],
+          "texture": "#weapon"
+        },
+        "up": {
+          "uv": [
+            12.08,
+            0.08,
+            15.92,
+            5.92
+          ],
+          "texture": "#weapon"
+        },
+        "down": {
+          "uv": [
+            12.08,
+            0.08,
+            15.92,
+            5.92
+          ],
+          "texture": "#weapon"
+        }
+      }
+    },
+    {
+      "name": "coral_petal_shoulder",
+      "from": [
+        7.33,
+        10.1,
+        9.15
+      ],
+      "to": [
+        8.67,
+        13.7,
+        9.55
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.08,
+            0.08,
+            11.92,
+            5.92
+          ],
+          "texture": "#weapon"
+        },
+        "east": {
+          "uv": [
+            8.08,
+            0.08,
+            11.92,
+            5.92
+          ],
+          "texture": "#weapon"
+        },
+        "south": {
+          "uv": [
+            8.08,
+            0.08,
+            11.92,
+            5.92
+          ],
+          "texture": "#weapon"
+        },
+        "west": {
+          "uv": [
+            8.08,
+            0.08,
+            11.92,
+            5.92
+          ],
+          "texture": "#weapon"
+        },
+        "up": {
+          "uv": [
+            8.08,
+            0.08,
+            11.92,
+            5.92
+          ],
+          "texture": "#weapon"
+        },
+        "down": {
+          "uv": [
+            8.08,
+            0.08,
+            11.92,
+            5.92
+          ],
+          "texture": "#weapon"
+        }
+      }
+    },
+    {
+      "name": "coral_petal_taper",
+      "from": [
+        7.52,
+        13.7,
+        9.15
+      ],
+      "to": [
+        8.48,
+        15.5,
+        9.55
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.08,
+            0.08,
+            11.92,
+            5.92
+          ],
+          "texture": "#weapon"
+        },
+        "east": {
+          "uv": [
+            8.08,
+            0.08,
+            11.92,
+            5.92
+          ],
+          "texture": "#weapon"
+        },
+        "south": {
+          "uv": [
+            8.08,
+            0.08,
+            11.92,
+            5.92
+          ],
+          "texture": "#weapon"
+        },
+        "west": {
+          "uv": [
+            8.08,
+            0.08,
+            11.92,
+            5.92
+          ],
+          "texture": "#weapon"
+        },
+        "up": {
+          "uv": [
+            8.08,
+            0.08,
+            11.92,
+            5.92
+          ],
+          "texture": "#weapon"
+        },
+        "down": {
+          "uv": [
+            8.08,
+            0.08,
+            11.92,
+            5.92
+          ],
+          "texture": "#weapon"
+        }
+      }
+    },
+    {
+      "name": "petal_tip",
+      "from": [
+        7.68,
+        15.5,
+        9.15
+      ],
+      "to": [
+        8.32,
+        16.1,
+        9.55
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "east": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "south": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "west": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "up": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "down": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        }
+      }
+    },
+    {
+      "name": "violet_inner",
+      "from": [
+        7.49,
+        10.25,
+        8.98
+      ],
+      "to": [
+        8.51,
+        13.55,
+        9.15
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.08,
+            0.08,
+            7.92,
+            5.92
+          ],
+          "texture": "#weapon"
+        },
+        "east": {
+          "uv": [
+            4.08,
+            0.08,
+            7.92,
+            5.92
+          ],
+          "texture": "#weapon"
+        },
+        "south": {
+          "uv": [
+            4.08,
+            0.08,
+            7.92,
+            5.92
+          ],
+          "texture": "#weapon"
+        },
+        "west": {
+          "uv": [
+            4.08,
+            0.08,
+            7.92,
+            5.92
+          ],
+          "texture": "#weapon"
+        },
+        "up": {
+          "uv": [
+            4.08,
+            0.08,
+            7.92,
+            5.92
+          ],
+          "texture": "#weapon"
+        },
+        "down": {
+          "uv": [
+            4.08,
+            0.08,
+            7.92,
+            5.92
+          ],
+          "texture": "#weapon"
+        }
+      }
+    },
+    {
+      "name": "outer_gilded_spine",
+      "from": [
+        7.94,
+        9.2,
+        9.55
+      ],
+      "to": [
+        8.06,
+        15.45,
+        9.61
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "east": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "south": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "west": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "up": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "down": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        }
+      }
+    },
+    {
+      "name": "fine_core_line",
+      "from": [
+        7.95,
+        10.9,
+        8.94
+      ],
+      "to": [
+        8.05,
+        12.85,
+        8.98
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.08,
+            6.08,
+            11.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "east": {
+          "uv": [
+            8.08,
+            6.08,
+            11.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "south": {
+          "uv": [
+            8.08,
+            6.08,
+            11.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "west": {
+          "uv": [
+            8.08,
+            6.08,
+            11.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "up": {
+          "uv": [
+            8.08,
+            6.08,
+            11.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "down": {
+          "uv": [
+            8.08,
+            6.08,
+            11.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        }
+      }
+    }
+  ],
+  "display": {
+    "gui": {
+      "rotation": [
+        25,
+        -38,
+        0
+      ],
+      "translation": [
+        0,
+        -1,
+        0
+      ],
+      "scale": [
+        0.66,
+        0.66,
+        0.66
+      ]
+    },
+    "ground": {
+      "rotation": [
+        0,
+        0,
+        40
+      ],
+      "translation": [
+        0,
+        3,
+        0
+      ],
+      "scale": [
+        0.45,
+        0.45,
+        0.45
+      ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        0,
+        -18
+      ],
+      "translation": [
+        5,
+        -2,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        0,
+        18
+      ],
+      "translation": [
+        -5,
+        -2,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ]
+    }
+  }
+}

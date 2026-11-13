@@ -16,6 +16,16 @@ public final class AbilityTargeting {
         if(!finite(remaining)||!finite(velocity)||remaining.dot(velocity)<=0||remaining.lengthSqr()<.0004)return Vec3.ZERO;
         return velocity.length()>remaining.length()?remaining:velocity;
     }
+    /** Keep the swept width, but require its contact with the actual target volume to be unobstructed.
+     * An inflated box alone can extend in front of a thin wall while the entire target is behind it. */
+    public static java.util.Optional<Vec3> unobstructedHit(ServerPlayer p,AABB target,Vec3 from,Vec3 to,double radius){
+        var hit=target.inflate(radius).clip(from,to);
+        if(hit.isEmpty())return hit;
+        var at=hit.get();
+        var surface=new Vec3(Math.clamp(at.x,target.minX,target.maxX),Math.clamp(at.y,target.minY,target.maxY),Math.clamp(at.z,target.minZ,target.maxZ));
+        var wall=p.level().clip(new ClipContext(from,surface,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,p));
+        return wall.getType()==HitResult.Type.MISS?hit:java.util.Optional.empty();
+    }
     public static Vec3 ground(ServerPlayer p,double range,boolean landing){
         Vec3 eye=p.getEyePosition(),look=p.getLookAngle();
         var hit=p.level().clip(new ClipContext(eye,eye.add(look.scale(range+1.7)),ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,p));

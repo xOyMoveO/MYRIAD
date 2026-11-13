@@ -15,6 +15,7 @@ public abstract class ShuoHeldLightMixin {
     @Inject(method="submitArmWithItem",at=@At("HEAD"),cancellable=true)
     private void myriad$closedLeftHand(ArmedEntityRenderState state,ItemStackRenderState rendered,ItemStack item,HumanoidArm arm,PoseStack stack,SubmitNodeCollector collector,int light,CallbackInfo ci){
         var layer=(ItemInHandLayer<?,?>)(Object)this;
+        if(com.myriad.client.firstperson.YikeWeaponView.held((net.minecraft.client.model.ArmedModel)layer.getParentModel(),state,item,arm,stack,collector,light)){ci.cancel();return;}
         if(com.myriad.client.firstperson.ShuoHeldView.submit((net.minecraft.client.model.ArmedModel)layer.getParentModel(),state,item,arm,stack,collector,light))ci.cancel();
     }
     @Inject(method="submitArmWithItem",at=@At(value="INVOKE",target="Lnet/minecraft/client/renderer/item/ItemStackRenderState;submit(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;III)V"))

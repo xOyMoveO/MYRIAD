@@ -1240,7 +1240,8 @@ public final class NetworkSetup {
     }
 
     public static void register(RegisterPayloadHandlersEvent event) {
-        event.registrar("16")
+        event.registrar("17")
+                .playToClient(YikeStatePayload.TYPE,YikeStatePayload.CODEC,(payload,context)->com.myriad.client.YikeClientState.receive(payload))
                 .playToClient(ShuoViewPayload.TYPE,ShuoViewPayload.CODEC,
                         (payload,context)->com.myriad.client.firstperson.ShuoView.receive(payload))
                 .playToClient(FlameSkillViewPayload.TYPE,FlameSkillViewPayload.CODEC,

@@ -1,0 +1,17 @@
+MYRIAD / Keheng original assets — 2026-11-13
+
+Hengke weapon geometry, pixel-painted texture, orthographic views, eight candidate icons,
+role emblem, chronometric procedural VFX and eight synthesized mechanical/air/metal cues
+were authored specifically for this project from the confirmed Keheng design contract.
+No third-party source image, recording, font or stock model is incorporated.
+
+Editable source: art_source/keheng/hengke.bbmodel, hengke_texture.png,
+hengke_orthographic.svg and tools/build_keheng_assets.py.
+The native item JSON is also editable. The first-person arm uses the existing vanilla
+player skin/mesh path already used by the project's other weapon rigs.
+
+Synthesized audio uses Python standard-library oscillators/noise and FFmpeg's native
+Vorbis encoder; no source recording or sampled third-party instrument is embedded.
+
+Project ownership and license: All Rights Reserved, consistent with this repository.
+This notice does not change the license of Minecraft, NeoForge, Pillow or FFmpeg.

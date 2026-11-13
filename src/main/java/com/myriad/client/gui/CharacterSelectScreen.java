@@ -44,9 +44,10 @@ public class CharacterSelectScreen extends Screen {
         return false;
     }
 
+
     @Override
     protected void init() {
-        CharacterType[] types = CharacterType.values();
+        CharacterType[] types = CharacterType.playableValues();
         String current = ClientDataHolder.characterId();
         boolean firstOpen = selectedId == null;
         if (selectedId == null) {
@@ -138,7 +139,7 @@ public class CharacterSelectScreen extends Screen {
     }
 
     private void scrollBy(int rows) {
-        int maxScroll = Math.max(0, CharacterType.values().length - visibleRows);
+        int maxScroll = Math.max(0, CharacterType.playableValues().length - visibleRows);
         int next = Math.max(0, Math.min(maxScroll, scrollRow + rows));
         if (next != scrollRow) {
             scrollRow = next;
@@ -161,7 +162,7 @@ public class CharacterSelectScreen extends Screen {
     public void extractRenderState(net.minecraft.client.gui.GuiGraphicsExtractor gui,
             int mouseX, int mouseY, float partialTick) {
         super.extractRenderState(gui, mouseX, mouseY, partialTick);
-        int total = CharacterType.values().length;
+        int total = CharacterType.playableValues().length;
         int maxScroll = Math.max(0, total - visibleRows);
         if (maxScroll > 0) {
             int trackX = listX + LIST_W + 1;

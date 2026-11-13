@@ -464,5 +464,230 @@
         "name": "myriad:foley/thunder_2"
       }
     ]
+  },
+  "keheng_cast": {
+    "subtitle": "subtitle.myriad.keheng.cast",
+    "sounds": [
+      {
+        "name": "myriad:keheng/cast",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "keheng_hit": {
+    "subtitle": "subtitle.myriad.keheng.hit",
+    "sounds": [
+      {
+        "name": "myriad:keheng/hit",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "keheng_field": {
+    "subtitle": "subtitle.myriad.keheng.field",
+    "sounds": [
+      {
+        "name": "myriad:keheng/field",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "keheng_shield": {
+    "subtitle": "subtitle.myriad.keheng.shield",
+    "sounds": [
+      {
+        "name": "myriad:keheng/shield",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "keheng_echo": {
+    "subtitle": "subtitle.myriad.keheng.echo",
+    "sounds": [
+      {
+        "name": "myriad:keheng/echo",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "keheng_pulse": {
+    "subtitle": "subtitle.myriad.keheng.pulse",
+    "sounds": [
+      {
+        "name": "myriad:keheng/pulse",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "keheng_pierce": {
+    "subtitle": "subtitle.myriad.keheng.pierce",
+    "sounds": [
+      {
+        "name": "myriad:keheng/pierce",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "keheng_end": {
+    "subtitle": "subtitle.myriad.keheng.end",
+    "sounds": [
+      {
+        "name": "myriad:keheng/end",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "yike_basic": {
+    "sounds": [
+      {
+        "name": "myriad:yike/basic",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.myriad.yike_basic"
+  },
+  "yike_shot_0": {
+    "sounds": [
+      {
+        "name": "myriad:yike/shot_0",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.myriad.yike_shot_0"
+  },
+  "yike_shot_1": {
+    "sounds": [
+      {
+        "name": "myriad:yike/shot_1",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.myriad.yike_shot_1"
+  },
+  "yike_shot_2": {
+    "sounds": [
+      {
+        "name": "myriad:yike/shot_2",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.myriad.yike_shot_2"
+  },
+  "yike_impact": {
+    "sounds": [
+      {
+        "name": "myriad:yike/impact",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.myriad.yike_impact"
+  },
+  "yike_warning": {
+    "sounds": [
+      {
+        "name": "myriad:yike/warning",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.myriad.yike_warning"
+  },
+  "yike_mark": {
+    "sounds": [
+      {
+        "name": "myriad:yike/mark",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.myriad.yike_mark"
+  },
+  "yike_barrier": {
+    "sounds": [
+      {
+        "name": "myriad:yike/barrier",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.myriad.yike_barrier"
+  },
+  "yike_deploy": {
+    "sounds": [
+      {
+        "name": "myriad:yike/deploy",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.myriad.yike_deploy"
+  },
+  "yike_close": {
+    "sounds": [
+      {
+        "name": "myriad:yike/close",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.myriad.yike_close"
+  },
+  "yike_heavy_charge": {
+    "sounds": [
+      {
+        "name": "myriad:yike/heavy_charge",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.myriad.yike_heavy_charge"
+  },
+  "yike_heavy_flight": {
+    "sounds": [
+      {
+        "name": "myriad:yike/heavy_flight",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.myriad.yike_heavy_flight"
+  },
+  "yike_heavy_impact": {
+    "sounds": [
+      {
+        "name": "myriad:yike/heavy_impact",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.myriad.yike_heavy_impact"
+  },
+  "yike_beam_charge": {
+    "sounds": [
+      {
+        "name": "myriad:yike/beam_charge",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.myriad.yike_beam_charge"
+  },
+  "yike_beam_loop": {
+    "sounds": [
+      {
+        "name": "myriad:yike/beam_loop",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.myriad.yike_beam_loop"
+  },
+  "yike_beam_tick": {
+    "sounds": [
+      {
+        "name": "myriad:yike/beam_tick",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.myriad.yike_beam_tick"
+  },
+  "yike_beam_end": {
+    "sounds": [
+      {
+        "name": "myriad:yike/beam_end",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitle.myriad.yike_beam_end"
   }
 }

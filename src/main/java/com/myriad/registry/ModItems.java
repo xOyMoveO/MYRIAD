@@ -36,9 +36,14 @@ public final class ModItems {
     public static final DeferredItem<Item> LINGYUAN_SWORD = ITEMS.registerSimpleItem("lingyuan_sword");
 
     /** 六名既有角色的专属初始武器；战斗属性仍由模组角色系统接管。 */
+    public static final DeferredItem<Item> HENGKE=ITEMS.registerSimpleItem("hengke");
     public static final DeferredItem<Item> YINGCI = ITEMS.registerSimpleItem("yingci");
     public static final DeferredItem<Item> LEITINGJIAN = ITEMS.registerSimpleItem("leitingjian");
     public static final DeferredItem<com.myriad.item.ShuoSwordItem> SHUO_SWORD=ITEMS.registerItem("shuo_sword",com.myriad.item.ShuoSwordItem::new);
+    public static final DeferredItem<Item> HONG_LIE_FRAME=ITEMS.registerSimpleItem("hong_lie_frame");
+    public static final DeferredItem<Item> HONG_LIE_PETAL=ITEMS.registerSimpleItem("hong_lie_petal");
+    public static final DeferredItem<Item> HONG_LIE_RING=ITEMS.registerSimpleItem("hong_lie_ring");
+    public static final DeferredItem<Item> HONG_LIE=ITEMS.registerSimpleItem("hong_lie");
     public static final DeferredItem<Item> SHUO_SCABBARD=ITEMS.registerSimpleItem("shuo_scabbard");
     public static final DeferredItem<Item> LIEYANJIAN = ITEMS.registerSimpleItem("lieyanjian");
     public static final DeferredItem<Item> ZHENQI = ITEMS.registerSimpleItem("zhenqi");
@@ -97,6 +102,8 @@ public final class ModItems {
             case "xuanchen" -> ZHENQI.get();
             case "hanze" -> SHUANGBING.get();
             case "tianxing" -> LEITINGJIAN.get();
+            case "keheng" -> HENGKE.get();
+            case "yike" -> HONG_LIE.get();
             case "shuo" -> SHUO_SWORD.get();
             case "fenjue" -> LIEYANJIAN.get();
             case "sulan" -> FENGREN.get();
@@ -109,7 +116,7 @@ public final class ModItems {
     }
 
     public static boolean isInitialWeaponItem(ItemStack stack) {
-        return stack.is(YINGCI.get())
+        return stack.is(HENGKE.get()) || stack.is(HONG_LIE.get()) || stack.is(YINGCI.get())
                 || stack.is(SHUO_SWORD.get())
                 || stack.is(LEITINGJIAN.get())
                 || stack.is(LIEYANJIAN.get())

@@ -20,6 +20,15 @@ public class SkillIcon {
     private static final int ACCENT_CD = 0xA0646A76;
     private static final int ACCENT_ULTIMATE = 0xC9E2B94B;
     private static final Map<String, String> GENERATED_ICON_PATHS = Map.ofEntries(
+            Map.entry("keheng_kehen", "keheng/kehen"),
+            Map.entry("keheng_hengbu", "keheng/hengbu"),
+            Map.entry("keheng_chizhen", "keheng/chizhen"),
+            Map.entry("keheng_cuopaibu", "keheng/cuopaibu"),
+            Map.entry("keheng_chijie", "keheng/chijie"),
+            Map.entry("keheng_suixing", "keheng/suixing"),
+            Map.entry("keheng_yimiao", "keheng/yimiao"),
+            Map.entry("keheng_zhongke", "keheng/zhongke"),
+
             Map.entry("shuo_cangfeng", "shuo/passive"),
             Map.entry("shuo_jianqie", "shuo/shuo_jianqie"),
             Map.entry("shuo_nadao", "shuo/shuo_nadao"),
@@ -72,6 +81,14 @@ public class SkillIcon {
             Map.entry("wanmuchunhui", "qingluo/wanmuchunhui"),
             Map.entry("chixiao_passive", "chixiao/passive"),
             Map.entry("duanyuezhan", "chixiao/duanyuezhan"),
+                        Map.entry("yike_rainbow_mark", "yike/yike_rainbow_mark"),
+            Map.entry("yike_steady_barrier", "yike/yike_steady_barrier"),
+            Map.entry("yike_rainbow_shell", "yike/yike_rainbow_shell"),
+            Map.entry("yike_refraction_denial", "yike/yike_refraction_denial"),
+            Map.entry("yike_fixed_artillery", "yike/yike_fixed_artillery"),
+            Map.entry("yike_mobile_array", "yike/yike_mobile_array"),
+            Map.entry("yike_distant_bombardment", "yike/yike_distant_bombardment"),
+            Map.entry("yike_prismatic_beam", "yike/yike_prismatic_beam"),
             Map.entry("zhuihunta", "chixiao/zhuihunta"),
             Map.entry("chixiaofanfeng", "chixiao/chixiaofanfeng"),
             Map.entry("pojunwuhui", "chixiao/pojunwuhui"),

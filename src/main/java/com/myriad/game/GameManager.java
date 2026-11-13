@@ -405,6 +405,7 @@ public class GameManager {
 
     /** 对称宗门选人：双方共享全部角色池，仍保持角色唯一。 */
     public boolean onPick(ServerPlayer player, com.myriad.character.CharacterType type) {
+        if(type==null||type.developmentOnly())return false;
         if (phase != Phase.PICKING || type == null || !player.getUUID().equals(currentPicker())) {
             return false;
         }
@@ -553,7 +554,7 @@ public class GameManager {
         if (faction == null) {
             return result;
         }
-        for (com.myriad.character.CharacterType type : com.myriad.character.CharacterType.values()) {
+        for (com.myriad.character.CharacterType type : com.myriad.character.CharacterType.playableValues()) {
             if (!charPicks.containsKey(type.getId())) {
                 result.add(type);
             }
@@ -623,7 +624,7 @@ public class GameManager {
         java.util.Map<String, String> taken = new java.util.LinkedHashMap<>();
         java.util.Map<String, String> takenUuids = new java.util.LinkedHashMap<>();
         for (com.myriad.character.CharacterType type :
-                com.myriad.character.CharacterType.values()) {
+                com.myriad.character.CharacterType.playableValues()) {
             UUID uid = charPicks.get(type.getId());
             if (uid != null) {
                 ServerPlayer sp = server.getPlayerList().getPlayer(uid);

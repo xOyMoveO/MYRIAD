@@ -87,6 +87,7 @@ public class MyriadClient {
         NeoForge.EVENT_BUS.addListener(MyriadClient::onRenderLivingPre);
         // 远程使用武器显隐提示完整恢复；近战保留原版武器显示。
         NeoForge.EVENT_BUS.addListener(MyriadClient::onRenderHand);
+        NeoForge.EVENT_BUS.addListener(com.myriad.client.firstperson.KehengView::attack);
         NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingIn event) ->
                 com.myriad.client.ClientDataHolder.resetConnection());
         NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) ->
@@ -138,6 +139,10 @@ public class MyriadClient {
             return;
         }
 
+        if("yike".equals(com.myriad.client.ClientDataHolder.characterId())){
+            ClientPacketDistributor.sendToServer(new NetworkSetup.BasicAttackPayload(-1));
+            event.setSwingHand(false);event.setCanceled(true);return;
+        }
         AttackRay ray = findCurrentAttackTarget(mc);
         if (ray.target != null) {
             net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(
@@ -305,8 +310,10 @@ public class MyriadClient {
 
     /** 远程恢复期间隐藏第一人称专属武器；原版近战不隐藏。 */
     private static void onRenderHand(net.neoforged.neoforge.client.event.RenderHandEvent event) {
+        if (com.myriad.client.firstperson.YikeWeaponView.render(event)) return;
         if (com.myriad.client.firstperson.ShuoView.render(event)) return;
         if (com.myriad.client.firstperson.NightDaggerView.render(event)) return;
+        if (com.myriad.client.firstperson.KehengView.render(event)) return;
         if (com.myriad.client.firstperson.ThunderSwordView.render(event)) return;
         if (com.myriad.client.firstperson.FlameDaoView.render(event)) return;
         Minecraft mc = Minecraft.getInstance();
@@ -360,6 +367,7 @@ public class MyriadClient {
             com.myriad.client.firstperson.ThunderSwordView.tick();
             com.myriad.client.firstperson.FlameDaoView.tick();
             com.myriad.client.firstperson.ShuoView.tick();
+            com.myriad.client.YikeClientState.tick();
             com.myriad.client.StarPullController.tick();
             com.myriad.client.RespawnSpectatorView.enforceFirstPerson();
             lockWeaponSlot(local);

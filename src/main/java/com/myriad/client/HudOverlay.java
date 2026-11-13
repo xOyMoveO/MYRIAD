@@ -126,6 +126,7 @@ public class HudOverlay implements GuiLayer {
         HudLayoutConfig.render(gui, HudLayoutConfig.Element.ATTACKS, () -> {
             renderBasicAttackBar(gui, font, data);
             renderMagicBulletBar(gui, font, data);
+            com.myriad.client.YikeHud.draw(gui,font);
         });
         HudLayoutConfig.render(gui, HudLayoutConfig.Element.MINIMAP, () -> MinimapOverlay.render(gui, font));
         HudLayoutConfig.render(gui, HudLayoutConfig.Element.BUFFS, () -> renderBuffs(gui, font));
@@ -412,7 +413,13 @@ public class HudOverlay implements GuiLayer {
         String label = fullReady ? "普攻" : String.format("%.1fs", cooldown / 20.0F);
         gui.text(font, label, x + (width - font.width(label)) / 2, y - 10,
                 fullReady ? 0xFF9FFFD0 : 0xFFB9ECFF);
-        if ("shuo".equals(data.characterId())) {
+        if ("keheng".equals(data.characterId())) {
+            int marks=ClientDataHolder.syncedCounter("g1_keheng_marks"),icd=ClientDataHolder.buffTicks("g1_keheng_step_cd");
+            String status=ClientDataHolder.buffTicks("g1_keheng_follow")>0?Component.translatable("hud.myriad.keheng.follow").getString():
+                    data.skillLevels().getOrDefault("keheng_hengbu",0)>0?Component.translatable("hud.myriad.keheng.step",icd/20.0f).getString():
+                    Component.translatable("hud.myriad.keheng.marks",marks,ClientDataHolder.buffTicks("g1_keheng_mark_window")/20.0f).getString();
+            gui.text(font,status,x+width/2-font.width(status)/2,y-24,0xFF42D9BD);
+        } else if ("shuo".equals(data.characterId())) {
             int gauge=Math.clamp(ClientDataHolder.syncedCounter("g1_shuo_gauge"),0,100);
             var passive=com.myriad.character.rework.FirstGroupSkills.selected("shuo",0,data.skillLevels());
             boolean edge=passive!=null&&passive.index()==0&&data.skillLevels().getOrDefault(passive.getId(),0)>0;
