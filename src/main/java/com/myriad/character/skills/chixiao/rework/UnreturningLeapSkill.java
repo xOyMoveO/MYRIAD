@@ -13,7 +13,7 @@ public final class UnreturningLeapSkill extends AbilitySkill {
 @Override public double pointRange(Cast c){return 12;}
 @Override public double previewRadius(Cast c){return 4.5;}
 @Override public boolean canRelease(Cast c){return c.data.getBuff("g1_root")==0&&c.point!=null&&AbilityTargeting.clearArc(c.player,c.point,14,2);}
-@Override public void release(Cast c){Vec3 at=c.point;c.leap(at,14,2,()->{c.area(c.player.position(),4.5,c.value(170,65,.85f),PHYSICAL);for(var t:c.enemies(c.player.position(),4.5))c.slow(t,.4f,40);});}
+@Override public void release(Cast c){Vec3 at=c.point;c.actionLeap(at,14,2,()->{c.area(c.player.position(),4.5,c.value(170,65,.85f),PHYSICAL);for(var t:c.enemies(c.player.position(),4.5))c.slow(t,.4f,40);});}
 @Override public void present(Cast c){AbilityVisuals.warning(c,c.point,4.5,14);}
 }
 

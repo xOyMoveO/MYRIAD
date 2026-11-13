@@ -110,6 +110,15 @@ neoForge {
             gameDirectory = project.file('run-yike-client')
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
+        heroActionTimeTestServer {
+            type = "gameTestServer"
+            gameDirectory = project.file('run-hero-action-time-test')
+            systemProperty 'myriad.combatTests', 'true'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            programArguments.addAll '--tests', 'myriad:hero_action_time', '--universe', 'myriad-hero-action-new-world',
+                    '--report', project.file('build/reports/hero-action-time-gametest.xml').absolutePath
+            logLevel = org.slf4j.event.Level.INFO
+        }
         firstGroupTestServer {
             type = "gameTestServer"
             gameDirectory = project.file('run-first-group-test')
@@ -156,7 +165,7 @@ neoForge {
 }
 
 // GameTest's XML reporter does not create its parent directory after a clean build.
-tasks.matching { it.name in ['runFirstGroupTestServer', 'runArenaTestServer', 'runKehengTestServer', 'runYikeTestServer'] }.configureEach {
+tasks.matching { it.name in ['runFirstGroupTestServer', 'runArenaTestServer', 'runKehengTestServer', 'runYikeTestServer', 'runHeroActionTimeTestServer'] }.configureEach {
     def reportDirectory = layout.buildDirectory.dir('reports')
     doFirst { reportDirectory.get().asFile.mkdirs() }
 }
@@ -169,6 +178,7 @@ tasks.named('jar') {
     exclude 'data/myriad/test_instance/first_group.json'
     exclude 'data/myriad/test_instance/keheng.json'
     exclude 'data/myriad/test_instance/yike.json'
+    exclude 'data/myriad/test_instance/hero_action_time.json'
     exclude 'data/myriad/structure/combat_test_empty.nbt'
 }
 

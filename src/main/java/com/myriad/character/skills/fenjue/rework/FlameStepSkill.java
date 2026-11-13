@@ -23,7 +23,7 @@ public final class FlameStepSkill extends AbilitySkill {
         var delta=c.forward(DISTANCE);
         boolean begins=AbilityTargeting.clearSweep(c.player,delta.scale(1.0/6));
         if(begins){FlameStepVfx.follow(c,0);FlameStepAudio.start(c);}
-        c.dash(delta,6,1.2,(t,first)->c.damage(t,c.value(35,12,.4f),PHYSICAL),()->{
+        c.actionDash(delta,6,1.2,(t,first)->c.damage(t,c.value(35,12,.4f),PHYSICAL),()->{
             if(!begins)return;
             if(!AbilityRuntime.valid(c.player)||c.data.getBuff("g1_stun")>0||c.data.getBuff("g1_root")>0){AbilityVisuals.cancelSkill(c);return;}
             // Cosmetic finish only. The dash's existing once-per-target damage remains unchanged.

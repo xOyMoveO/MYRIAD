@@ -86,6 +86,7 @@ public final class BasicAttackSystem {
         if(VanillaMeleeAttack.usesVanilla(CharacterType.byId(PlayerDataProvider.get(player).getCharacterId())))
             return Math.max(0,(int)Math.ceil((1-player.getAttackStrengthScale(0))*player.getCurrentItemAttackStrengthDelay()));
         if("yike".equals(PlayerDataProvider.get(player).getCharacterId()))return com.myriad.character.skills.yike.YikeBasicAttack.remaining(player);
+        if(MagicBullet.isMage(player))return MagicBullet.remaining(player);
         AttackCooldown cooldown = ATTACK_COOLDOWNS.get(player.getUUID());
         return cooldown == null ? 0 : Math.max(0, (int) (cooldown.readyAt - player.level().getGameTime()));
     }
@@ -94,6 +95,7 @@ public final class BasicAttackSystem {
         if(VanillaMeleeAttack.usesVanilla(CharacterType.byId(PlayerDataProvider.get(player).getCharacterId())))
             return Math.max(1,(int)Math.ceil(player.getCurrentItemAttackStrengthDelay()));
         if("yike".equals(PlayerDataProvider.get(player).getCharacterId()))return com.myriad.character.skills.yike.YikeBasicAttack.total(player);
+        if(MagicBullet.isMage(player))return MagicBullet.total(player);
         AttackCooldown cooldown = ATTACK_COOLDOWNS.get(player.getUUID());
         return cooldown == null ? Math.max(1, (int) Math.ceil(20.0 /
                 Math.max(0.1, player.getAttributeValue(ModAttributes.ATTACK_SPEED)))) : cooldown.totalTicks;
