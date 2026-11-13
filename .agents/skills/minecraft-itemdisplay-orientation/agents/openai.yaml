@@ -1,0 +1,3 @@
+interface:
+  display_name: "Minecraft Model Orientation"
+  short_description: "Align Blockbench ItemDisplay models in 3D"

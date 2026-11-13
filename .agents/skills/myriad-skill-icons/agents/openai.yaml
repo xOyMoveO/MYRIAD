@@ -1,0 +1,3 @@
+interface:
+  display_name: "万象技能图标"
+  short_description: "生成并接入统一风格的角色技能图标"
