@@ -52,6 +52,10 @@ __pycache__/
 *.class
 *.log
 *.bak
+/.local-tools/
+/tools/mcpfabric/node_modules/
+/tools/mcpfabric/.npm-cache/
+/.codex/config.toml
 
 ### Local credentials (never commit) ###
 .env

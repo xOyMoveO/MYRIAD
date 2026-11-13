@@ -1,0 +1,10 @@
+{
+  "name": "myriad-mcpfabric-tools",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.16" },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "mcpfabric-mcp-server": "0.10.0"
+  }
+}
