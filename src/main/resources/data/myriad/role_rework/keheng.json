@@ -1,0 +1,132 @@
+{
+  "skills": [
+    {
+      "role": "keheng",
+      "id": "keheng_kehen",
+      "index": 0,
+      "maxRank": 5,
+      "mana": 0,
+      "cooldowns": [
+        0
+      ],
+      "name": "刻痕回响",
+      "description": "不同次主动施法对同一英雄有效命中叠1层；首击固定4秒，3层造成50+12(r-1)+0.25S魔法伤害。整次施法去重；护盾算命中，完全免伤不算。",
+      "iconAlias": "keheng_kehen"
+    },
+    {
+      "role": "keheng",
+      "id": "keheng_hengbu",
+      "index": 1,
+      "maxRank": 5,
+      "mana": 0,
+      "cooldowns": [
+        0
+      ],
+      "name": "恒步",
+      "description": "实际进入自己的缓时领域，获得75+15(r-1)+0.30S护盾2秒，真实内置冷却12秒；与W盾独立，同源不叠加。",
+      "iconAlias": "keheng_hengbu"
+    },
+    {
+      "role": "keheng",
+      "id": "keheng_chizhen",
+      "index": 2,
+      "maxRank": 5,
+      "mana": 40,
+      "cooldowns": [
+        140,
+        130,
+        120,
+        110,
+        100
+      ],
+      "name": "迟针",
+      "description": "起手0.20秒，12格、24格/秒、半径0.40针体首敌停止，造成80+18(r-1)+0.50S魔法伤害；行动倍率0.85/0.80/0.75/0.70/0.65，1.25秒受韧性；不影响已发弹体。",
+      "iconAlias": "keheng_chizhen"
+    },
+    {
+      "role": "keheng",
+      "id": "keheng_cuopaibu",
+      "index": 3,
+      "maxRank": 5,
+      "mana": 45,
+      "cooldowns": [
+        280,
+        260,
+        240,
+        220,
+        200
+      ],
+      "name": "错拍步",
+      "description": "输入方向位移4.5格约0.25秒，不穿墙不无敌。出发点2格残圈1.5秒，敌方行动及独立弹体倍率0.80。自身35+10(r-1)+0.15S护盾2秒；无伤害。",
+      "iconAlias": "keheng_cuopaibu"
+    },
+    {
+      "role": "keheng",
+      "id": "keheng_chijie",
+      "index": 4,
+      "maxRank": 7,
+      "mana": 75,
+      "cooldowns": [
+        400,
+        380,
+        360,
+        340,
+        320,
+        300,
+        280
+      ],
+      "name": "迟界",
+      "description": "10格合法地面选点，0.45秒独立预警后展开3.5格领域3+0.25(r-1)秒，造成一次80+18(r-1)+0.45S魔法伤害；行动/弹体倍率0.65至0.50。三维中心遮挡，不隔墙楼板。",
+      "iconAlias": "keheng_chijie"
+    },
+    {
+      "role": "keheng",
+      "id": "keheng_suixing",
+      "index": 5,
+      "maxRank": 7,
+      "mana": 75,
+      "cooldowns": [
+        400,
+        380,
+        360,
+        340,
+        320,
+        300,
+        280
+      ],
+      "name": "随行秒域",
+      "description": "0.25秒展开随身3格领域，持续2.5+0.15(r-1)秒，倍率0.75至0.60。仅自然结束对仍在圈内敌人造成90+18(r-1)+0.50S魔法伤害；再按E或硬控中断无结束伤害。禁锢不打断。",
+      "iconAlias": "keheng_suixing"
+    },
+    {
+      "role": "keheng",
+      "id": "keheng_yimiao",
+      "index": 6,
+      "maxRank": 3,
+      "mana": 160,
+      "cooldowns": [
+        1400,
+        1300,
+        1200
+      ],
+      "name": "一秒之外",
+      "description": "12格地面选点，0.65秒独立预警后4格穹层持续3秒；倍率0.40/0.35/0.30，每0.5秒一次24+8(r-1)+0.12S魔法伤害，共六跳。不眩晕、不停时。",
+      "iconAlias": "keheng_yimiao"
+    },
+    {
+      "role": "keheng",
+      "id": "keheng_zhongke",
+      "index": 7,
+      "maxRank": 3,
+      "mana": 150,
+      "cooldowns": [
+        1300,
+        1200,
+        1100
+      ],
+      "name": "终刻贯穿",
+      "description": "定身蓄势0.80秒，锁起手方向12×3×3走廊，遇墙截断。蓄势敌方行动倍率0.70、弹体0.40，完成每敌一次330+100(r-1)+1.35S魔法伤害；硬控可打断，走出可躲。",
+      "iconAlias": "keheng_zhongke"
+    }
+  ]
+}

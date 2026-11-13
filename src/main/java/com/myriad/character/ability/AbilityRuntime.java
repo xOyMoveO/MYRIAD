@@ -59,6 +59,7 @@ public final class AbilityRuntime {
         com.myriad.character.skills.shuo.ShuoCombat.clear(p);
         com.myriad.character.skills.fenjue.rework.FlameHitVisuals.clear(p);
         SkillChargeSystem.clear(p);
+        com.myriad.character.skills.keheng.KehengTimeFields.clear(p);
         ActionTime.clearOwner(p.getUUID());
         Owner old=OWNERS.remove(p.getUUID());
         if(old!=null){if(old.preparing!=null)old.preparing.cancelCast();
@@ -105,7 +106,7 @@ public final class AbilityRuntime {
         Cast c=context(p,skill);Owner o=c.owner;
         if(com.myriad.character.skills.shuo.ShuoCombat.blocked(p))return null;
         if(SkillChargeSystem.active(p))return null;
-        if(skill.recastAvailable(c)){if(d.getBuff("g1_root")>0||moving(p))return null;skill.recast(c);SkillPresentation.cast(p,skill);PlayerDataProvider.syncToClient(p);return null;}
+        if(skill.recastAvailable(c)){if((d.getBuff("g1_root")>0||moving(p))&&!skill.role().equals("keheng"))return null;skill.recast(c);SkillPresentation.cast(p,skill);PlayerDataProvider.syncToClient(p);return null;}
         boolean controlBreak=skill.canCastWhileControlled()&&controlled(p);
         if(o.preparing!=null||o.channelUntil>c.now()||moving(p)&&!controlBreak||c.now()-o.lastCast<3&&!controlBreak)return null;
         boolean noCd=TrainingMode.isEnabled()&&TrainingMode.isNoCooldown(),noMana=TrainingMode.isEnabled()&&TrainingMode.isNoMana();
@@ -141,6 +142,7 @@ public final class AbilityRuntime {
     private static void message(ServerPlayer p,String key){p.sendSystemMessage(Component.translatable(key));}
     public static void tick(ServerPlayer p){
         if(!valid(p)||!FirstGroupSkills.active(PlayerDataProvider.get(p).getCharacterId())){if(OWNERS.containsKey(p.getUUID()))clear(p);return;}
+        com.myriad.character.skills.keheng.KehengTimeFields.refreshActor(p);
         Owner o=owner(p);long now=p.level().getGameTime();var d=PlayerDataProvider.get(p);
         if(o.channelUntil>=now&&o.channelUntil>0&&(d.getBuff("g1_stun")>0
                 ||com.myriad.combat.SilenceSystem.isSilenced(p)
@@ -166,6 +168,16 @@ public final class AbilityRuntime {
         if(now%10==0){for(var debuff:new ArrayList<>(DEBUFFS))if(!debuff.target.isAlive()||debuff.target.level()!=p.level()&&debuff.target.isRemoved()||debuff.target.level().getGameTime()>=debuff.until){
             var a=debuff.target.getAttribute(Attributes.MOVEMENT_SPEED);if(a!=null)a.removeModifier(debuff.id);DEBUFFS.remove(debuff);}}
     }
+    public static double projectileRate(ServerPlayer owner,UUID flight,Vec3 position,long now){
+        return Math.min(ActionTime.multiplier(flight,now),com.myriad.character.skills.keheng.KehengTimeFields.projectileRate(owner,position,now));
+    }
+    public static double ordinarySlowRate(LivingEntity t){
+        var a=t.getAttribute(Attributes.MOVEMENT_SPEED);if(a==null)return 1;
+        double rate=1;
+        for(var modifier:a.getModifiers())if(modifier.amount()<0&&modifier.operation()==AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL
+                &&(modifier.id().getPath().startsWith("ability_slow_")||modifier.id().getPath().equals("effect.slowness")))rate*=1+modifier.amount();
+        return Math.max(.0001,rate);
+    }
     public static boolean channeling(ServerPlayer p){var o=OWNERS.get(p.getUUID());return o!=null&&o.channelUntil>p.level().getGameTime();}
     public static boolean moving(ServerPlayer p){var o=OWNERS.get(p.getUUID());return o!=null&&o.motionUntil>p.level().getGameTime();}
     /** Control only; damage-over-time and unrelated negative/positive attributes are not cleansed. */
@@ -182,6 +194,7 @@ public final class AbilityRuntime {
     /** One-time cleanse, not future control immunity; invoked only after normal cast validation/payment. */
     public static void cleanseControls(ServerPlayer p){
         boolean stop=controlled(p);
+        com.myriad.character.skills.keheng.KehengTimeFields.cleanse(p);
         var d=PlayerDataProvider.get(p);d.setBuff("g1_stun",0);d.setBuff("g1_root",0);
         for(var effect:List.of(MobEffects.SLOWNESS,MobEffects.LEVITATION,MobEffects.BLINDNESS,MobEffects.DARKNESS,MobEffects.MINING_FATIGUE))p.removeEffect(effect);
         var speed=p.getAttribute(Attributes.MOVEMENT_SPEED);
@@ -416,7 +429,7 @@ public final class AbilityRuntime {
                 boolean finish(boolean dissipate){if(!ended){ended=true;cancel();AbilityVisuals.finishFlight(Cast.this,visual);if(dissipate)AbilityVisuals.dissipate(Cast.this,pos);}return false;}
                 public boolean tick(long now){
                     if(actionId!=null&&now<=lastTick)return true;lastTick=now;
-                    double rate=actionId==null?1:ActionTime.multiplier(actionId,now);flightAge+=rate;
+                    double rate=actionId==null?1:projectileRate(player,actionId,pos,now);flightAge+=rate;
                     if(++age>(actionId==null?160:safetyTicks)||flightAge>160)return finish(true);
                     double step=speed*rate;
                     if(back){Vec3 toward=player.getEyePosition().subtract(pos);if(toward.length()<step)return finish(true);direction=toward.normalize();}

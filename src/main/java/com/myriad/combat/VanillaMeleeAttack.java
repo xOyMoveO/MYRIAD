@@ -39,6 +39,7 @@ public final class VanillaMeleeAttack {
         // Player.onAttack() resets strength BEFORE hurtOrSimulate in Minecraft 26.2.
         STRENGTH.put(player,new Snapshot(target.getUUID(),player.level().getGameTime(),player.getAttackStrengthScale(.5f)));
         com.myriad.character.skills.shuo.ShuoCombat.basic(player);
+        com.myriad.character.skills.keheng.KehengBasic.swing(player);
         com.myriad.character.skills.yingxiao.rework.NightBasicVisuals.swing(player);
         return true;
     }
