@@ -1,0 +1,11 @@
+{
+  "upstream": "https://github.com/denfry/mcpfabric",
+  "mod_version": "0.10.0+26.2-neoforge",
+  "mod_url": "https://cdn.modrinth.com/data/eA63YgUh/versions/719fUXc7/mcpfabric-neoforge-0.10.0%2B26.2.jar",
+  "mod_sha512": "fb959d17619466512650d132b1090037510f38650569120170a7dae64a1a4c6998a33cfec32f50b51cd8996690d9a0fe3b35d5f54ae04e2c89ea950355390702",
+  "minecraft": "26.2",
+  "neoforge": "26.2.0.88",
+  "mcp_package": "mcpfabric-mcp-server@0.10.0",
+  "asset_index": "32",
+  "asset_index_sha1": "941b1ea6afb4a472d164c0d12e3e3272bf3435f8"
+}

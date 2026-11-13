@@ -46,7 +46,22 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
 neoForge {
     // Specify the version of NeoForge to use.
-    version = project.neo_version
+    if (providers.gradleProperty('myriadMcpClient').isPresent()) {
+        enable {
+            version = project.neo_version
+            // The 26.2.0.88 source pipeline fails recompiling HolderSet; use patched binaries.
+            disableRecompilation = true
+        }
+        sourceSets.create('mcpAdapter') {
+            java.srcDir('tools/mcpfabric/client-adapter/java')
+            compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+            runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
+        }
+        addModdingDependenciesTo(sourceSets.mcpAdapter)
+        dependencies.add('mcpAdapterCompileOnly', files('run-mcpfabric/mods/mcpfabric-neoforge-0.10.0+26.2.jar'))
+    } else {
+        version = project.neo_version
+    }
 
     // This line is optional. Access Transformers are automatically detected
     // accessTransformers = project.files('src/main/resources/META-INF/accesstransformer.cfg')
@@ -58,6 +73,15 @@ neoForge {
             client()
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        // Isolated visual acceptance client; start with tools/mcpfabric/launch-client.sh.
+        mcpClient {
+            client()
+            gameDirectory = project.file('run-mcpfabric')
+            if (providers.gradleProperty('myriadMcpClient').isPresent()) {
+                sourceSet = sourceSets.mcpAdapter
+            }
         }
 
         server {
@@ -180,6 +204,9 @@ neoForge {
         // multi mod projects should define one per mod
         "${mod_id}" {
             sourceSet(sourceSets.main)
+            if (providers.gradleProperty('myriadMcpClient').isPresent()) {
+                sourceSet(sourceSets.mcpAdapter)
+            }
         }
     }
 }
