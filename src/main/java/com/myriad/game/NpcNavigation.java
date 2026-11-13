@@ -13,6 +13,9 @@ public final class NpcNavigation {
     }
     public static void move(ServerLevel level,Mob mob,Route route,Vec3 goal,double step){
         long now=level.getGameTime();
+        // This is the autonomous movement layer: do not scale entity velocity, gravity or external pushes.
+        step*=Math.min(com.myriad.character.ability.AbilityRuntime.ordinarySlowRate(mob),
+                com.myriad.character.skills.keheng.KehengTimeFields.managedNpcRate(mob,now));
         if (route.goal != null && route.goal.distanceToSqr(goal)>2.25) route.clear();
         if(now>=route.nextPlan && (route.path==null||route.path.isDone()||route.goal==null||route.goal.distanceToSqr(goal)>2.25)){
             route.path=mob.getNavigation().createPath(net.minecraft.core.BlockPos.containing(goal),0);

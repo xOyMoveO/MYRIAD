@@ -86,6 +86,16 @@ neoForge {
             logLevel = org.slf4j.event.Level.INFO
         }
 
+        worldTimeTestServer {
+            type = "gameTestServer"
+            gameDirectory = project.file('run-world_time-test')
+            systemProperty 'myriad.combatTests', 'true'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            programArguments.addAll '--tests', 'myriad:world_time', '--universe', 'myriad-world_time-development-20261113',
+                    '--report', project.file('build/reports/world_time-gametest.xml').absolutePath
+            logLevel = org.slf4j.event.Level.INFO
+        }
+
         kehengTestServer {
             type = "gameTestServer"
             gameDirectory = project.file('run-keheng-test')
@@ -166,7 +176,7 @@ neoForge {
 }
 
 // GameTest's XML reporter does not create its parent directory after a clean build.
-tasks.matching { it.name in ['runFirstGroupTestServer', 'runArenaTestServer', 'runKehengTestServer', 'runYikeTestServer', 'runRosterDeliveryTestServer'] }.configureEach {
+tasks.matching { it.name in ['runFirstGroupTestServer', 'runArenaTestServer', 'runKehengTestServer', 'runYikeTestServer', 'runRosterDeliveryTestServer', 'runWorldTimeTestServer'] }.configureEach {
     def reportDirectory = layout.buildDirectory.dir('reports')
     doFirst { reportDirectory.get().asFile.mkdirs() }
 }
@@ -178,6 +188,7 @@ tasks.named('jar') {
     exclude 'data/myriad/test_instance/combat_regression.json'
     exclude 'data/myriad/test_instance/first_group.json'
     exclude 'data/myriad/test_instance/keheng.json'
+    exclude 'data/myriad/test_instance/world_time.json'
     exclude 'data/myriad/test_instance/yike.json'
     exclude 'data/myriad/test_instance/roster_delivery.json'
     exclude 'data/myriad/structure/combat_test_empty.nbt'
