@@ -286,7 +286,7 @@ public class PlayerData {
      * 客户端看到层数凭空 +1。
      */
     private static final java.util.Set<String> PASSIVE_STACK_COUNTERS = java.util.Set.of(
-            "sulan_passive_ready", "chixiao_passive");
+            "sulan_passive_ready", "chixiao_passive", "g1_keheng_marks", "g1_keheng_rate");
 
     /** 技能附加效果剩余刻数 */
     public int getBuff(String skillId) {

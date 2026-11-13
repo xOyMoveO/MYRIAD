@@ -229,7 +229,7 @@ public final class PlayerDataProvider {
             player.sendSystemMessage(Component.translatable("message.myriad.mod_off"));
             return;
         }
-        if (type == null) {
+        if (type == null || type.developmentOnly() && !com.myriad.game.TrainingMode.isEnabled()) {
             player.sendSystemMessage(Component.translatable("message.myriad.invalid_character"));
             return;
         }
@@ -915,6 +915,8 @@ public final class PlayerDataProvider {
 
     /** 初始武器名字与颜色（按角色区分：墨尘=墨杖黑色，夜影=影刺金色，天刑=雷霆剑蓝色） */
     private static net.minecraft.network.chat.Component initialWeaponName(String characterId) {
+        if("keheng".equalsIgnoreCase(characterId))return Component.translatable("item.myriad.hengke").withStyle(net.minecraft.ChatFormatting.BOLD)
+                .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0x42D9BD));
 
         if ("xuanchen".equalsIgnoreCase(characterId)) {
             return Component.translatable("item.myriad.zhenqi")
@@ -1423,9 +1425,10 @@ public final class PlayerDataProvider {
                     ad = 10.0f + (ad - 10.0f) * 0.05f;
                 }
                 float phys = ad * (vanillaMelee?com.myriad.combat.VanillaMeleeAttack.damageScale(strength):Math.max(0.2f,strength));
-                float roll = 0.95f + attacker.getRandom().nextFloat() * 0.10f;
+                boolean exactBasic="keheng".equals(get(attacker).getCharacterId());
+                float roll = exactBasic?1:0.95f + attacker.getRandom().nextFloat() * 0.10f;
                 // 跳劈（下落攻击）：伤害 +10%
-                if (attacker.fallDistance > 0.0f) {
+                if (!exactBasic && attacker.fallDistance > 0.0f) {
                     phys *= 1.10f;
                 }
                 // 模组暴击判定（角色当前暴击率）
@@ -1607,9 +1610,14 @@ public final class PlayerDataProvider {
         if (event.getAmount() > 0.0f) {
             float absorbed = ModShieldSystem.consume(entity, event.getAmount());
             if (absorbed > 0.0f) {
-                if(damageFloat!=null&&event.getSource().getEntity() instanceof ServerPlayer shieldAttacker)
+                if(damageFloat!=null&&event.getSource().getEntity() instanceof ServerPlayer shieldAttacker){
                     com.myriad.combat.CombatImpactFeedback.confirmed(shieldAttacker,entity,damageFloat.type(),
                             damageFloat.crit(),damageFloat.skill()&&!damageFloat.direct(),absorbed,true);
+                    // A fully absorbed hit still counts; partial absorption already notifies through the HP-loss path.
+                    if(event.getAmount()-absorbed<=.0001f)com.myriad.character.ability.AbilityRuntime.hit(shieldAttacker,entity,absorbed,!damageFloat.skill(),
+                            damageFloat.abilitySource(),damageFloat.direct(),damageFloat.type()==com.myriad.client.DamageFloater.TYPE_MAGIC?1:
+                            damageFloat.type()==com.myriad.client.DamageFloater.TYPE_TRUE?2:0);
+                }
                 if (entity instanceof ServerPlayer shieldedPlayer) {
                     com.myriad.combat.CombatTelemetry.recordShieldDamage(
                             shieldedPlayer, absorbed, event.getSource().getEntity());

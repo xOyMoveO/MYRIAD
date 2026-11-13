@@ -87,6 +87,7 @@ public class MyriadClient {
         NeoForge.EVENT_BUS.addListener(MyriadClient::onRenderLivingPre);
         // 远程使用武器显隐提示完整恢复；近战保留原版武器显示。
         NeoForge.EVENT_BUS.addListener(MyriadClient::onRenderHand);
+        NeoForge.EVENT_BUS.addListener(com.myriad.client.firstperson.KehengView::attack);
         NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingIn event) ->
                 com.myriad.client.ClientDataHolder.resetConnection());
         NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) ->
@@ -307,6 +308,7 @@ public class MyriadClient {
     private static void onRenderHand(net.neoforged.neoforge.client.event.RenderHandEvent event) {
         if (com.myriad.client.firstperson.ShuoView.render(event)) return;
         if (com.myriad.client.firstperson.NightDaggerView.render(event)) return;
+        if (com.myriad.client.firstperson.KehengView.render(event)) return;
         if (com.myriad.client.firstperson.ThunderSwordView.render(event)) return;
         if (com.myriad.client.firstperson.FlameDaoView.render(event)) return;
         Minecraft mc = Minecraft.getInstance();

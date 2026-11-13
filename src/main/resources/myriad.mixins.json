@@ -7,9 +7,16 @@
     "PlayerSweepAttackMixin",
     "ManagedMobDespawnMixin",
     "LivingEntityMaxHealthMixin",
-    "LivingEntityControlMixin"
+    "LivingEntityControlMixin",
+    "LivingAttackTimeMixin"
   ],
-  "client": ["ClientInputAccessor", "ClientEntitySpawnMixin", "PlayerTabOverlayMixin", "ShuoHeldLightMixin"],
+  "client": [
+    "ClientInputAccessor",
+    "ClientEntitySpawnMixin",
+    "PlayerTabOverlayMixin",
+    "ShuoHeldLightMixin",
+    "ClientAttackTimeMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   }

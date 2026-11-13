@@ -130,7 +130,7 @@ final class FirstGroupRegressionChecks {
                 d.setFirstGroupAttribute("strength",0); d.setFirstGroupAttribute("wisdom",0);
                 AbilityRuntime.clear(p);
             }
-            h.assertTrue(classes.size()==88,"Eighty-eight independent modules including Shuo's eight new branches");
+            h.assertTrue(classes.size()==FirstGroupSkills.ROLES.size()*8,"Eighty-eight independent modules including Shuo's eight new branches");
             var d=PlayerDataProvider.get(p); d.setCharacterId("yingxiao"); d.setLevel(20);
             d.refundAllSkillPointsForTraining(); d.setGold(10000);
             var pig=h.spawn(net.minecraft.world.entity.EntityTypes.PIG,new net.minecraft.core.BlockPos(3,2,3));

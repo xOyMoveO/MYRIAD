@@ -20,6 +20,15 @@ public class SkillIcon {
     private static final int ACCENT_CD = 0xA0646A76;
     private static final int ACCENT_ULTIMATE = 0xC9E2B94B;
     private static final Map<String, String> GENERATED_ICON_PATHS = Map.ofEntries(
+            Map.entry("keheng_kehen", "keheng/kehen"),
+            Map.entry("keheng_hengbu", "keheng/hengbu"),
+            Map.entry("keheng_chizhen", "keheng/chizhen"),
+            Map.entry("keheng_cuopaibu", "keheng/cuopaibu"),
+            Map.entry("keheng_chijie", "keheng/chijie"),
+            Map.entry("keheng_suixing", "keheng/suixing"),
+            Map.entry("keheng_yimiao", "keheng/yimiao"),
+            Map.entry("keheng_zhongke", "keheng/zhongke"),
+
             Map.entry("shuo_cangfeng", "shuo/passive"),
             Map.entry("shuo_jianqie", "shuo/shuo_jianqie"),
             Map.entry("shuo_nadao", "shuo/shuo_nadao"),

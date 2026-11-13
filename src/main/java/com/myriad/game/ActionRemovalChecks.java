@@ -34,7 +34,7 @@ final class ActionRemovalChecks {
             h.assertTrue(stream != null, "Normal gameplay mixins remain registered");
             var json = JsonParser.parseReader(new InputStreamReader(stream, StandardCharsets.UTF_8)).getAsJsonObject();
             var clients = json.getAsJsonArray("client").asList().stream().map(v -> v.getAsString()).toList();
-            h.assertTrue(clients.equals(List.of("ClientInputAccessor", "ClientEntitySpawnMixin", "PlayerTabOverlayMixin", "ShuoHeldLightMixin")),
+            h.assertTrue(clients.equals(List.of("ClientInputAccessor", "ClientEntitySpawnMixin", "PlayerTabOverlayMixin", "ShuoHeldLightMixin", "ClientAttackTimeMixin")),
                     "Only gameplay hooks and Shuo's attached-light hook remain; no retired player-action mixin returns");
         } catch (java.io.IOException e) { throw new IllegalStateException(e); }
         var ranged = Set.of("xuanchen", "hanze", "qingluo", "yunsheng");
