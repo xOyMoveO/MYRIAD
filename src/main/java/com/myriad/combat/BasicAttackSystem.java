@@ -7,7 +7,7 @@ import com.myriad.player.PlayerData;
 import com.myriad.player.PlayerDataProvider;
 import com.myriad.registry.ModAttributes;
 import com.myriad.character.CharacterType;
-import com.myriad.character.skills.sulan.FengQiangSkill;
+import com.myriad.combat.WindWallSystem;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -42,107 +42,9 @@ public final class BasicAttackSystem {
         if (!(attacker.level() instanceof ServerLevel level)) return;
         CharacterType role = CharacterType.byId(data.getCharacterId());
         if (role == null || !canAttackNow(attacker, data)) return;
+        if(role==CharacterType.YIKE){com.myriad.character.skills.yike.YikeBasicAttack.tryFire(attacker);return;}
         if (VanillaMeleeAttack.usesVanilla(role)) return;
-        // 离歌使用原版弓式右键蓄力/松开射击，不接受左键模组普攻包。
-        if (role == CharacterType.LIGE) return;
-        if (role == CharacterType.SHENLI) {
-            if (com.myriad.character.skills.shenli.ShenLiSkills.fireBasic(attacker)) {
-                data.setLastCombatGameTime(level.getGameTime());
-                com.myriad.game.RecallSystem.cancel(attacker);
-                PlayerDataProvider.syncToClient(attacker);
-            }
-            return;
-        }
-        if (role == CharacterType.MINGZHU) {
-            com.myriad.character.skills.mingzhu.MingZhuSkills.fireBasic(attacker);
-            return;
-        }
-        if (MagicBullet.isMage(attacker)) return;
-        boolean wanyue = role == CharacterType.WANYUE;
-
-        // 接轮强化普攻是朝准星方向发射的穿透弹体，不要求客户端先选中实体。
-        if (wanyue && com.myriad.character.skills.wanyue.WanyueSkills.hasEmpoweredBasic(attacker)) {
-            long now = level.getGameTime();
-            AttackCooldown current = ATTACK_COOLDOWNS.get(attacker.getUUID());
-            double attackSpeed = Math.max(0.1, attacker.getAttributeValue(ModAttributes.ATTACK_SPEED));
-            int cooldownTicks = Math.max(1, (int)Math.ceil(20.0 / attackSpeed));
-            AttackWindow window = attackWindow(now, current);
-            if (!window.allowed()) return;
-            if (com.myriad.character.skills.wanyue.WanyueSkills.fireEmpoweredBasic(attacker,
-                    window.damageMultiplier())) {
-                ATTACK_COOLDOWNS.put(attacker.getUUID(), new AttackCooldown(now + cooldownTicks, cooldownTicks));
-                PlayerDataProvider.syncToClient(attacker);
-            }
-            return;
-        }
-
-        Entity raw = level.getEntity(targetId);
-        if (!(raw instanceof LivingEntity target) || target == attacker || !target.isAlive() || isAlly(attacker, target)) {
-            return;
-        }
-        if (!com.myriad.game.VisionSystem.canSee(attacker, target)) return;
-        if (wanyue && !com.myriad.character.skills.wanyue.WanyueSkills.canBasicAttack(attacker)) return;
-        boolean ranged = wanyue;
-        Vec3 origin = wanyue
-                ? com.myriad.character.skills.wanyue.WanyueSkills.basicOrigin(attacker)
-                : attacker.getEyePosition();
-        double range = ranged ? 10.0 : 0.0;
-        Vec3 closest = new Vec3(
-                net.minecraft.util.Mth.clamp(origin.x, target.getBoundingBox().minX, target.getBoundingBox().maxX),
-                net.minecraft.util.Mth.clamp(origin.y, target.getBoundingBox().minY, target.getBoundingBox().maxY),
-                net.minecraft.util.Mth.clamp(origin.z, target.getBoundingBox().minZ, target.getBoundingBox().maxZ));
-        boolean inRange = ranged ? origin.distanceToSqr(closest) <= range * range
-                : attacker.isWithinEntityInteractionRange(target, 0.0);
-        boolean clearLine = level.clip(new ClipContext(origin, target.getBoundingBox().getCenter(),
-                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, attacker)).getType() == HitResult.Type.MISS;
-        if (!inRange || (ranged ? !clearLine : !attacker.hasLineOfSight(target))) {
-            return;
-        }
-        Vec3 toward = target.getBoundingBox().getCenter().subtract(attacker.getEyePosition());
-        if (toward.lengthSqr() < 1.0E-6 || attacker.getLookAngle().normalize().dot(toward.normalize()) < 0.35) {
-            return;
-        }
-        long now = level.getGameTime();
-        AttackCooldown current = ATTACK_COOLDOWNS.get(attacker.getUUID());
-        double attackSpeed = Math.max(0.1, attacker.getAttributeValue(ModAttributes.ATTACK_SPEED));
-        int cooldownTicks = Math.max(1, (int) Math.ceil(20.0 / attackSpeed));
-        AttackWindow window = attackWindow(now, current);
-        if (!window.allowed()) return;
-        ATTACK_COOLDOWNS.put(attacker.getUUID(), new AttackCooldown(now + cooldownTicks, cooldownTicks));
-        if (ranged && FengQiangSkill.blocksProjectile(level, origin,
-                target.getBoundingBox().getCenter())) {
-            PlayerDataProvider.syncToClient(attacker);
-            level.playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(),
-                    SoundEvents.ARROW_SHOOT, SoundSource.PLAYERS, .55F, 1.35F);
-            return;
-        }
-
-        // 保留 PLAYER_ATTACK 伤害源，以复用既有物攻、暴击、吸血与角色被动结算链。
-        DamageSource source = target.damageSources().playerAttack(attacker);
-        DamageCalc.markBasicAttack(attacker, target, window.damageMultiplier());
-        target.hurt(source, 1.0F);
-        DamageCalc.clearBasicAttack(attacker, target);
-
-        // 立即下发冷却起点；后续逐 tick 动画由客户端按本地游戏刻推演，避免每 tick 发送整包状态。
-        PlayerDataProvider.syncToClient(attacker);
-        data.setLastCombatGameTime(now);
-        level.playSound(null, target.getX(), target.getY(), target.getZ(),
-                SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.PLAYERS, 0.75F, 1.0F);
-        level.sendParticles(ParticleTypes.CRIT, target.getX(), target.getY() + target.getBbHeight() * 0.55,
-                target.getZ(), 7, 0.22, 0.22, 0.22, 0.03);
-        if (ranged) {
-            Vec3 from = origin;
-            Vec3 to = target.getBoundingBox().getCenter();
-            int points = Math.max(4, (int)Math.ceil(from.distanceTo(to) * 3));
-            net.minecraft.core.particles.DustParticleOptions arrow = new net.minecraft.core.particles.DustParticleOptions(
-                    wanyue ? 0xB8E9FF : 0x62E6E8, .9F);
-            for (int i = 0; i <= points; i++) {
-                Vec3 p = from.lerp(to, i / (double)points);
-                level.sendParticles(arrow, p.x, p.y, p.z, 1, 0, 0, 0, 0);
-            }
-            level.playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(),
-                    SoundEvents.ARROW_SHOOT, SoundSource.PLAYERS, .55F, 1.35F);
-        }
+        // Retained ranged heroes fire through MagicBullet; custom target-hit packets cannot deal damage.
     }
 
     public static void clearFor(UUID playerId) {
@@ -152,7 +54,7 @@ public final class BasicAttackSystem {
 
     public static boolean canAttackNow(ServerPlayer player, PlayerData data) {
         GameManager manager = GameManager.get();
-        return player.isAlive() && !player.isSpectator() 
+        return player.isAlive() && !player.isSpectator()
                 && !com.myriad.character.skills.shuo.ShuoCombat.blocked(player)
                 && data.getPlacementType() == 0
                 && (com.myriad.game.TrainingMode.isEnabled()
@@ -174,7 +76,7 @@ public final class BasicAttackSystem {
         return facing.dot(delta.scale(1 / distance)) >= Math.cos(Math.min(Math.PI / 2, halfAngle + tolerance));
     }
 
-    /** 立即刷新普攻：供裂羽箭等技能使用，并立刻同步攻速条。 */
+    /** 立即刷新普攻：供技能使用，并立刻同步攻速条。 */
     public static void refreshCooldown(ServerPlayer player) {
         ATTACK_COOLDOWNS.remove(player.getUUID());
         PlayerDataProvider.syncToClient(player);
@@ -183,6 +85,8 @@ public final class BasicAttackSystem {
     public static int cooldownRemaining(ServerPlayer player) {
         if(VanillaMeleeAttack.usesVanilla(CharacterType.byId(PlayerDataProvider.get(player).getCharacterId())))
             return Math.max(0,(int)Math.ceil((1-player.getAttackStrengthScale(0))*player.getCurrentItemAttackStrengthDelay()));
+        if("yike".equals(PlayerDataProvider.get(player).getCharacterId()))return com.myriad.character.skills.yike.YikeBasicAttack.remaining(player);
+        if(MagicBullet.isMage(player))return MagicBullet.remaining(player);
         AttackCooldown cooldown = ATTACK_COOLDOWNS.get(player.getUUID());
         return cooldown == null ? 0 : Math.max(0, (int) (cooldown.readyAt - player.level().getGameTime()));
     }
@@ -190,6 +94,8 @@ public final class BasicAttackSystem {
     public static int cooldownTotal(ServerPlayer player) {
         if(VanillaMeleeAttack.usesVanilla(CharacterType.byId(PlayerDataProvider.get(player).getCharacterId())))
             return Math.max(1,(int)Math.ceil(player.getCurrentItemAttackStrengthDelay()));
+        if("yike".equals(PlayerDataProvider.get(player).getCharacterId()))return com.myriad.character.skills.yike.YikeBasicAttack.total(player);
+        if(MagicBullet.isMage(player))return MagicBullet.total(player);
         AttackCooldown cooldown = ATTACK_COOLDOWNS.get(player.getUUID());
         return cooldown == null ? Math.max(1, (int) Math.ceil(20.0 /
                 Math.max(0.1, player.getAttributeValue(ModAttributes.ATTACK_SPEED)))) : cooldown.totalTicks;

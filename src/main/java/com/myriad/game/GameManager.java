@@ -82,7 +82,6 @@ public class GameManager {
     private static final int LARGE_VEIN_RADIUS = 12;
     private static final int SMALL_VEIN_EFFECT_RADIUS = 5;
     private static final int LARGE_VEIN_EFFECT_RADIUS = 10;
-    
 
     private static final net.minecraft.resources.Identifier MOON_VEIN_BONUS =
             net.minecraft.resources.Identifier.parse("myriad:moon_vein_bonus");
@@ -554,7 +553,7 @@ public class GameManager {
         if (faction == null) {
             return result;
         }
-        for (com.myriad.character.CharacterType type : com.myriad.character.CharacterType.values()) {
+        for (com.myriad.character.CharacterType type : com.myriad.character.CharacterType.playableValues()) {
             if (!charPicks.containsKey(type.getId())) {
                 result.add(type);
             }
@@ -562,7 +561,6 @@ public class GameManager {
         return result;
     }
 
-    
     private void finishPicking(MinecraftServer server) {
         phase = Phase.PLAYING;
         pickCountdownEndTick = -1;
@@ -625,7 +623,7 @@ public class GameManager {
         java.util.Map<String, String> taken = new java.util.LinkedHashMap<>();
         java.util.Map<String, String> takenUuids = new java.util.LinkedHashMap<>();
         for (com.myriad.character.CharacterType type :
-                com.myriad.character.CharacterType.values()) {
+                com.myriad.character.CharacterType.playableValues()) {
             UUID uid = charPicks.get(type.getId());
             if (uid != null) {
                 ServerPlayer sp = server.getPlayerList().getPlayer(uid);
@@ -650,12 +648,9 @@ public class GameManager {
 
     /** 本局第 index 次三选一的品质（全员一致） */
 
-
     /** 天道威压：记录一次阵营伤害增益（30 秒，可叠加） */
 
-
     /** 该阵营当前伤害增益层数（% = 层数 × 5） */
-
 
     /** 赛前配置固定刷新点；属性灵脉 1=月、2=火、3=木，大型候选编号 1~2。 */
     public boolean setSpiritVeinSpawn(boolean large, int slot, BlockPos pos) {
@@ -805,7 +800,6 @@ public class GameManager {
     }
 
     private void resetMatchObjectives() {
-        com.myriad.character.skills.zhechuan.ZheChuanSkills.clearAll();
         if (server != null) HeroRespawnSystem.reset(server);
         spiritVeins.clear();
         clearSpiritVeinBonuses();
@@ -1057,7 +1051,6 @@ public class GameManager {
 
     public void endMatch(Faction winner) {
         if (phase != Phase.PLAYING) return;
-        com.myriad.character.skills.zhechuan.ZheChuanSkills.clearAll();
         this.winner = winner;
         this.phase = Phase.ENDED;
         this.matchEndTime = server == null ? matchStartTime : server.overworld().getGameTime();

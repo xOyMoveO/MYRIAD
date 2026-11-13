@@ -34,15 +34,15 @@ final class ActionRemovalChecks {
             h.assertTrue(stream != null, "Normal gameplay mixins remain registered");
             var json = JsonParser.parseReader(new InputStreamReader(stream, StandardCharsets.UTF_8)).getAsJsonObject();
             var clients = json.getAsJsonArray("client").asList().stream().map(v -> v.getAsString()).toList();
-            h.assertTrue(clients.equals(List.of("ClientInputAccessor", "ClientEntitySpawnMixin", "PlayerTabOverlayMixin", "ShuoHeldLightMixin")),
-                    "Only gameplay hooks and Shuo's attached-light hook remain; no retired player-action mixin returns");
+            h.assertTrue(clients.equals(List.of("ClientInputAccessor", "ClientEntitySpawnMixin", "PlayerTabOverlayMixin", "ShuoHeldLightMixin", "ClientAttackTimeMixin", "YikeArmPoseMixin")),
+                    "Gameplay, local time, attached light and Yike local weapon pose hooks remain; no retired player-action mixin returns");
         } catch (java.io.IOException e) { throw new IllegalStateException(e); }
-        var ranged = Set.of("lige", "wanyue", "shenli", "mingzhu", "xuanchen", "hanze", "qingluo", "yunsheng", "guanlan", "luoheng");
+        var ranged = Set.of("xuanchen", "hanze", "qingluo", "yunsheng", "yike");
         for (var role : CharacterType.values()) {
             h.assertTrue(VanillaMeleeAttack.usesVanilla(role) == !ranged.contains(role.getId()),
                     "Removing actions must not reroute specialized ranged attacks: " + role.getId());
         }
         h.assertTrue(!VanillaMeleeAttack.usesVanilla(null), "Unselected players remain vanilla, without a mod attack route");
-        System.out.println("[MYRIAD-ACTION-REMOVAL] PASS: no retired player-action classes/assets/mixins, all 20 attack routes preserved; new Night Shadow local first-person view is separate");
+        System.out.println("[MYRIAD-ACTION-REMOVAL] PASS: no retired player-action classes/assets/mixins, all thirteen attack routes preserved; new Night Shadow local first-person view is separate");
     }
 }

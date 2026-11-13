@@ -40,7 +40,10 @@ final class FirstGroupRegressionChecks {
             FlameStepAudioChecks.verify(h);
             NightBasicNeedleChecks.verify(h);
             NightShieldChecks.verify(h);
+            SharedControlChecks.start(h);
+            AbilityContractChecks.start(h);
             LevelUpPresentationChecks.verify(h);
+            RosterRetirementChecks.verify(h, p);
             RuneRemovalChecks.run(h, p);
             CombatImpactChecks.verify(h,p);
             VanillaMeleeChecks.verify(h);
@@ -127,7 +130,7 @@ final class FirstGroupRegressionChecks {
                 d.setFirstGroupAttribute("strength",0); d.setFirstGroupAttribute("wisdom",0);
                 AbilityRuntime.clear(p);
             }
-            h.assertTrue(classes.size()==88,"Eighty-eight independent modules including Shuo's eight new branches");
+            h.assertTrue(classes.size()==FirstGroupSkills.ROLES.size()*8,"Every registered hero owns eight independent candidate implementations");
             var d=PlayerDataProvider.get(p); d.setCharacterId("yingxiao"); d.setLevel(20);
             d.refundAllSkillPointsForTraining(); d.setGold(10000);
             var pig=h.spawn(net.minecraft.world.entity.EntityTypes.PIG,new net.minecraft.core.BlockPos(3,2,3));
@@ -159,7 +162,7 @@ final class FirstGroupRegressionChecks {
             FirstGroupSpatialChecks.verify(h,p,d);
             SkillChargeChecks.verify(h,p);
             SecondGroupChecks.verify(h,p);
-            System.out.println("[MYRIAD-G1-G2] PASS: 88 modules, caps, alternatives, budgets, growth, economy, persistence, cancel");
+            System.out.println("[MYRIAD-G1-G2] PASS: "+classes.size()+" independent modules across "+FirstGroupSkills.ROLES.size()+" heroes, caps, alternatives, budgets, growth, economy, persistence, cancel");
             boolean[] completed={false};
             AbilityRuntime.context(p,FirstGroupSkills.node("yingxiao",6)).later(3,true,()->{
                 h.assertTrue(!com.myriad.character.ability.SkillChargeSystem.active(p),"Charge lock is released before the follow-up action");

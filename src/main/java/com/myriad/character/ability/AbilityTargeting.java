@@ -16,6 +16,16 @@ public final class AbilityTargeting {
         if(!finite(remaining)||!finite(velocity)||remaining.dot(velocity)<=0||remaining.lengthSqr()<.0004)return Vec3.ZERO;
         return velocity.length()>remaining.length()?remaining:velocity;
     }
+    /** Keep the swept width, but require its contact with the actual target volume to be unobstructed.
+     * An inflated box alone can extend in front of a thin wall while the entire target is behind it. */
+    public static java.util.Optional<Vec3> unobstructedHit(ServerPlayer p,AABB target,Vec3 from,Vec3 to,double radius){
+        var hit=target.inflate(radius).clip(from,to);
+        if(hit.isEmpty())return hit;
+        var at=hit.get();
+        var surface=new Vec3(Math.clamp(at.x,target.minX,target.maxX),Math.clamp(at.y,target.minY,target.maxY),Math.clamp(at.z,target.minZ,target.maxZ));
+        var wall=p.level().clip(new ClipContext(from,surface,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,p));
+        return wall.getType()==HitResult.Type.MISS?hit:java.util.Optional.empty();
+    }
     public static Vec3 ground(ServerPlayer p,double range,boolean landing){
         Vec3 eye=p.getEyePosition(),look=p.getLookAngle();
         var hit=p.level().clip(new ClipContext(eye,eye.add(look.scale(range+1.7)),ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,p));
@@ -32,10 +42,14 @@ public final class AbilityTargeting {
             if(floor.getType()!=HitResult.Type.BLOCK||floor.getDirection()!=Direction.UP)return null;
             at=floor.getLocation().add(0,.025,0);
         }
-        if(!inRange(p.position(),at,range)||!supported(p,at))return null;
-        var occlusion=p.level().clip(new ClipContext(eye,at.add(0,.1,0),ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,p));
-        if(occlusion.getType()!=HitResult.Type.MISS&&occlusion.getLocation().distanceToSqr(at)>.12)return null;
-        return !landing||canStand(p,at)?at:null;
+        return legalGround(p,at,range,landing)?at:null;
+    }
+    /** Recheck an already selected point at deferred commit without retargeting the player's aim. */
+    public static boolean legalGround(ServerPlayer p,Vec3 at,double range,boolean landing){
+        if(at==null||!inRange(p.position(),at,range)||!supported(p,at))return false;
+        var occlusion=p.level().clip(new ClipContext(p.getEyePosition(),at.add(0,.1,0),ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,p));
+        if(occlusion.getType()!=HitResult.Type.MISS&&occlusion.getLocation().distanceToSqr(at)>.12)return false;
+        return !landing||canStand(p,at);
     }
     public static boolean supported(ServerPlayer p,Vec3 at){
         if(!finite(at)||!p.level().hasChunkAt(BlockPos.containing(at))||!p.level().getWorldBorder().isWithinBounds(BlockPos.containing(at)))return false;

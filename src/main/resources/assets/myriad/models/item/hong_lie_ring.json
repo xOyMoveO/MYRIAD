@@ -1,0 +1,667 @@
+{
+  "credit": "MYRIAD original Yike mesh; authoring source tools/assets/generate_yike_assets.py",
+  "ambientocclusion": false,
+  "gui_light": "front",
+  "textures": {
+    "weapon": "myriad:item/hong_lie",
+    "particle": "myriad:item/hong_lie"
+  },
+  "elements": [
+    {
+      "name": "octagonal_ring_0",
+      "from": [
+        7.7,
+        7.87,
+        9.200000000000001
+      ],
+      "to": [
+        8.3,
+        8.13,
+        9.6
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "east": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "south": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "west": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "up": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "down": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        }
+      }
+    },
+    {
+      "name": "octagonal_ring_1",
+      "from": [
+        8.689949493661166,
+        7.87,
+        8.789949493661167
+      ],
+      "to": [
+        9.289949493661167,
+        8.13,
+        9.189949493661166
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "east": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "south": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "west": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "up": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "down": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        }
+      }
+    },
+    {
+      "name": "octagonal_ring_2",
+      "from": [
+        9.1,
+        7.87,
+        7.8
+      ],
+      "to": [
+        9.700000000000001,
+        8.13,
+        8.2
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "east": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "south": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "west": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "up": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "down": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        }
+      }
+    },
+    {
+      "name": "octagonal_ring_3",
+      "from": [
+        8.689949493661166,
+        7.87,
+        6.8100505063388335
+      ],
+      "to": [
+        9.289949493661167,
+        8.13,
+        7.210050506338834
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "east": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "south": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "west": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "up": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "down": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        }
+      }
+    },
+    {
+      "name": "octagonal_ring_4",
+      "from": [
+        7.7,
+        7.87,
+        6.3999999999999995
+      ],
+      "to": [
+        8.3,
+        8.13,
+        6.8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "east": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "south": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "west": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "up": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "down": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        }
+      }
+    },
+    {
+      "name": "octagonal_ring_5",
+      "from": [
+        6.710050506338834,
+        7.87,
+        6.8100505063388335
+      ],
+      "to": [
+        7.3100505063388335,
+        8.13,
+        7.210050506338834
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "east": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "south": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "west": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "up": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "down": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        }
+      }
+    },
+    {
+      "name": "octagonal_ring_6",
+      "from": [
+        6.3,
+        7.87,
+        7.8
+      ],
+      "to": [
+        6.8999999999999995,
+        8.13,
+        8.2
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "east": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "south": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "west": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "up": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "down": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        }
+      }
+    },
+    {
+      "name": "octagonal_ring_7",
+      "from": [
+        6.710050506338834,
+        7.87,
+        8.789949493661167
+      ],
+      "to": [
+        7.3100505063388335,
+        8.13,
+        9.189949493661166
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "east": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "south": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "west": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "up": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        },
+        "down": {
+          "uv": [
+            4.08,
+            6.08,
+            7.92,
+            11.92
+          ],
+          "texture": "#weapon"
+        }
+      }
+    }
+  ],
+  "display": {
+    "gui": {
+      "rotation": [
+        25,
+        -38,
+        0
+      ],
+      "translation": [
+        0,
+        -1,
+        0
+      ],
+      "scale": [
+        0.66,
+        0.66,
+        0.66
+      ]
+    },
+    "ground": {
+      "rotation": [
+        0,
+        0,
+        40
+      ],
+      "translation": [
+        0,
+        3,
+        0
+      ],
+      "scale": [
+        0.45,
+        0.45,
+        0.45
+      ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        0,
+        -18
+      ],
+      "translation": [
+        5,
+        -2,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        0,
+        18
+      ],
+      "translation": [
+        -5,
+        -2,
+        0
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ]
+    }
+  }
+}

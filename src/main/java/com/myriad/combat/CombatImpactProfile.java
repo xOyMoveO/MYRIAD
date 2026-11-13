@@ -20,8 +20,7 @@ public enum CombatImpactProfile {
         if(structure)return STRUCTURE;
         if(critical)return CRITICAL;
         if(damageType==1)return ARCANE;
-        if(role==CharacterType.XUANJIA||role==CharacterType.CHIXIAO)return BLUNT;
-        if(role==CharacterType.LIGE||role==CharacterType.SHENLI||role==CharacterType.WANYUE)return PROJECTILE;
+        if(role==CharacterType.CHIXIAO)return BLUNT;
         if(role!=null&&!VanillaMeleeAttack.usesVanilla(role))return ARCANE;
         return BLADE;
     }

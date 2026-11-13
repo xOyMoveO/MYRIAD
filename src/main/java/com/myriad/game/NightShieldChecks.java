@@ -4,7 +4,7 @@ import com.myriad.character.CharacterType;
 import com.myriad.character.SkillSystem;
 import com.myriad.character.ability.*;
 import com.myriad.character.rework.*;
-import com.myriad.character.skills.yunsheng.YunShengSkills;
+import com.myriad.combat.SilenceSystem;
 import com.myriad.player.*;
 import com.myriad.registry.ModAttributes;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -48,7 +48,7 @@ final class NightShieldChecks {
                 ModShieldSystem.grant(p,"other_shield",50,100);
                 double mana=d.getMana();
                 SkillSystem.cast(p,CharacterType.SLOT_R);
-                h.assertTrue(d.getBuff("g1_stun")==0&&d.getBuff("g1_root")==0&&!YunShengSkills.isSilenced(p),"Public slot entry casts while stunned/rooted/silenced and cleanses immediately");
+                h.assertTrue(d.getBuff("g1_stun")==0&&d.getBuff("g1_root")==0&&!SilenceSystem.isSilenced(p),"Public slot entry casts while stunned/rooted/silenced and cleanses immediately");
                 for(var effect:List.of(MobEffects.SLOWNESS,MobEffects.LEVITATION,MobEffects.BLINDNESS,MobEffects.DARKNESS,MobEffects.MINING_FATIGUE))
                     h.assertTrue(!p.hasEffect(effect),"Existing crowd control potion removed");
                 h.assertTrue(!AbilityRuntime.controlled(p)&&p.getAttributeValue(Attributes.MOVEMENT_SPEED)>p.getAttribute(Attributes.MOVEMENT_SPEED).getBaseValue(),"Slow removed, positive haste preserved and new haste applied");
@@ -83,14 +83,14 @@ final class NightShieldChecks {
             SkillSystem.cast(p,CharacterType.SLOT_Q);
             h.assertTrue(d.getCooldown(FirstGroupSkills.node("yingxiao",2).getId())==0&&d.getMana()==700,"Other skills remain blocked by stun");
             d.setBuff("g1_stun",0);silence(p);SkillSystem.cast(p,CharacterType.SLOT_Q);
-            h.assertTrue(d.getMana()==700&&YunShengSkills.isSilenced(p),"Other skills remain blocked by silence");
+            h.assertTrue(d.getMana()==700&&SilenceSystem.isSilenced(p),"Other skills remain blocked by silence");
             resetRanks(d);d.setSkillLevel(skill.getId(),1);ModState.setEnabled(false);SkillSystem.cast(p,CharacterType.SLOT_R);
-            h.assertTrue(YunShengSkills.isSilenced(p)&&ModShieldSystem.value(p)==0,"Mod-off request does not cleanse or grant a shield");
+            h.assertTrue(SilenceSystem.isSilenced(p)&&ModShieldSystem.value(p)==0,"Mod-off request does not cleanse or grant a shield");
             // A successful cleanse does not grant control immunity afterward.
-            ModState.setEnabled(true);YunShengSkills.cleanseSilence(p);d.setBuff("g1_stun",30);
+            ModState.setEnabled(true);SilenceSystem.cleanse(p);d.setBuff("g1_stun",30);
             h.assertTrue(AbilityRuntime.controlled(p),"New control can apply normally after the one-time cleanse");
         }finally{
-            YunShengSkills.cleanseSilence(p);AbilityRuntime.clear(p);ModShieldSystem.clearFor(p);p.discard();
+            SilenceSystem.cleanse(p);AbilityRuntime.clear(p);ModShieldSystem.clearFor(p);p.discard();
             ModState.setEnabled(mod);TrainingMode.setEnabled(training);TrainingMode.setNoCooldown(noCd);TrainingMode.setNoMana(noMana);
         }
         System.out.println("[MYRIAD-NIGHT-SHIELD] PASS: real public R cast under CC, immediate cleanse; exact x1.7 ranks/strength and tooltip, other shield/buff preservation, normal cost/CD, invalid requests and no immunity");
@@ -101,9 +101,5 @@ final class NightShieldChecks {
             p.addEffect(new MobEffectInstance(effect,60,1));
     }
     private static void resetRanks(PlayerData d){for(String id:d.getSkillLevels().keySet())d.setSkillLevel(id,0);}
-    @SuppressWarnings("unchecked") private static void silence(ServerPlayer p){
-        try{var field=YunShengSkills.class.getDeclaredField("SILENCED_UNTIL");field.setAccessible(true);
-            ((Map<UUID,Long>)field.get(null)).put(p.getUUID(),p.level().getGameTime()+60);
-        }catch(ReflectiveOperationException e){throw new IllegalStateException(e);}
-    }
+    private static void silence(ServerPlayer p) { SilenceSystem.apply(p, 60); }
 }

@@ -54,6 +54,12 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> KILL_QUADRA = register("announcement_kill_quadra");
     public static final DeferredHolder<SoundEvent, SoundEvent> KILL_PENTA = register("announcement_kill_penta");
 
+    private static final java.util.Map<String,DeferredHolder<SoundEvent,SoundEvent>> KEHENG=new java.util.HashMap<>();
+    static {for(String cue:new String[]{"cast","hit","field","shield","echo","pulse","pierce","end"})KEHENG.put(cue,register("keheng_"+cue));}
+    public static SoundEvent keheng(String cue){return KEHENG.get(cue).get();}
+    private static final java.util.Map<String,DeferredHolder<SoundEvent,SoundEvent>> YIKE=new java.util.HashMap<>();
+    static {for(String cue:new String[]{"basic","shot_0","shot_1","shot_2","impact","warning","mark","barrier","deploy","close","heavy_charge","heavy_flight","heavy_impact","beam_charge","beam_loop","beam_tick","beam_end"})YIKE.put(cue,register("yike_"+cue));}
+    public static SoundEvent yike(String cue){return YIKE.get(cue).get();}
     private ModSounds() { }
     private static final java.util.Map<String,DeferredHolder<SoundEvent,SoundEvent>> SHUO=new java.util.HashMap<>();
     static {for(String cue:new String[]{"draw","sheathe","slash","parry","charge"})SHUO.put(cue,register("shuo_"+cue));}
@@ -64,20 +70,6 @@ public final class ModSounds {
             FOLEY.put(family, register("foley_" + family));
     }
     public static SoundEvent foley(String family) { return FOLEY.get(family).get(); }
-    private static final java.util.Map<String, DeferredHolder<SoundEvent, SoundEvent>> MINGZHU = new java.util.HashMap<>();
-    static {
-        for (String action : new String[]{"orb_cast", "orb_hit", "mirror_place", "mirror_turn", "dash", "beam_start", "beam_body", "beam_end"})
-            MINGZHU.put(action, register("mingzhu_" + action));
-    }
-    public static SoundEvent mingzhu(String action) { return MINGZHU.get(action).get(); }
-
-    public static final DeferredHolder<SoundEvent, SoundEvent> ZHECHUAN_THROW = register("zhechuan_throw");
-    public static final DeferredHolder<SoundEvent, SoundEvent> ZHECHUAN_OUTBOUND = register("zhechuan_outbound");
-    public static final DeferredHolder<SoundEvent, SoundEvent> ZHECHUAN_RETURN = register("zhechuan_return");
-    public static final DeferredHolder<SoundEvent, SoundEvent> ZHECHUAN_PALINDROME = register("zhechuan_palindrome");
-    public static final DeferredHolder<SoundEvent, SoundEvent> ZHECHUAN_CORRIDOR = register("zhechuan_corridor");
-    public static final DeferredHolder<SoundEvent, SoundEvent> ZHECHUAN_FINISHER = register("zhechuan_finisher");
-
     private static DeferredHolder<SoundEvent, SoundEvent> register(String id) {
         return SOUND_EVENTS.register(id, () -> SoundEvent.createVariableRangeEvent(
                 Identifier.fromNamespaceAndPath(Myriad.MODID, id)));

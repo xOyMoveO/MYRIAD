@@ -4,7 +4,7 @@ import com.mojang.math.Transformation;
 import com.myriad.character.Skill;
 import com.myriad.combat.DamageCalc;
 import com.myriad.combat.DamageCalc.Kind;
-import com.myriad.character.skills.sulan.FengQiangSkill;
+import com.myriad.combat.WindWallSystem;
 import com.myriad.game.Faction;
 import com.myriad.game.GameManager;
 import com.myriad.player.PlayerData;
@@ -121,8 +121,7 @@ public class YingShaSkill extends Skill {
 
    private static boolean tickOne(ServerLevel level, ServerPlayer player, YingShaSkill.Dagger dagger) {
       Vec3 next = dagger.pos.add(dagger.dir.scale(2.0));
-      if (FengQiangSkill.blocksProjectile(level, dagger.pos, next)
-              || com.myriad.character.skills.feiyu.FeiYuSkills.blocksProjectile(level, player, dagger.pos, next)) {
+      if (WindWallSystem.blocksProjectile(level, dagger.pos, next)) {
          removeVisual(dagger);
          return true;
       }

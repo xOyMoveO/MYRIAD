@@ -126,6 +126,7 @@ public class HudOverlay implements GuiLayer {
         HudLayoutConfig.render(gui, HudLayoutConfig.Element.ATTACKS, () -> {
             renderBasicAttackBar(gui, font, data);
             renderMagicBulletBar(gui, font, data);
+            com.myriad.client.YikeHud.draw(gui,font);
         });
         HudLayoutConfig.render(gui, HudLayoutConfig.Element.MINIMAP, () -> MinimapOverlay.render(gui, font));
         HudLayoutConfig.render(gui, HudLayoutConfig.Element.BUFFS, () -> renderBuffs(gui, font));
@@ -141,8 +142,6 @@ public class HudOverlay implements GuiLayer {
             KillAnnouncementOverlay.render(gui, font);
             TowerAlertOverlay.render(gui, font);
         });
-        HudLayoutConfig.render(gui, HudLayoutConfig.Element.HERO_RESOURCE,
-                () -> renderZheChuanPalindromeBonus(gui, font, data));
         HudLayoutConfig.render(gui, HudLayoutConfig.Element.DPS, () -> DpsTracker.render(gui, font));
         HudLayoutConfig.render(gui, HudLayoutConfig.Element.COMBAT_STATS,
                 () -> CombatStatsPanel.render(gui, font));
@@ -159,7 +158,7 @@ public class HudOverlay implements GuiLayer {
         HudLayoutConfig.render(gui, HudLayoutConfig.Element.TAB, () -> MatchTabOverlay.render(gui, font));
     }
 
-    /** 右下角：折川当局回文斩永久增伤，图标在上、累计数值在下。 */
+    /** 复活倒计时与观战目标提示。 */
     private void renderHeroRespawn(GuiGraphicsExtractor gui, Font font) {
         int ticks = ClientDataHolder.buffTicks("hero_respawn");
         if (ticks <= 0) return;
@@ -187,23 +186,6 @@ public class HudOverlay implements GuiLayer {
         gui.fill(x-76,y+17,x+76,y+20,0xFF293C48);
         int filled=Math.max(0,Math.min(152,152*(160-ticks)/160));
         gui.fill(x-76,y+17,x-76+filled,y+20,0xFF66DCCE);
-    }
-
-    private void renderZheChuanPalindromeBonus(GuiGraphicsExtractor gui, Font font, PlayerDataPayload data) {
-        if (!"zhechuan".equals(data.characterId())) return;
-        Skill[] passives = CharacterType.ZHECHUAN.passives();
-        if (passives.length == 0) return;
-        int sw = Minecraft.getInstance().getWindow().getGuiScaledWidth();
-        int sh = Minecraft.getInstance().getWindow().getGuiScaledHeight();
-        int size = 24;
-        int x = sw - size - 12;
-        int y = sh - size - 25;
-        gui.fill(x - 2, y - 2, x + size + 2, y + size + 14, 0xB20A1018);
-        SkillIcon.drawBuff(gui, font, x, y, size, passives[0]);
-        int bonus = Math.max(0, ClientDataHolder.syncedCounter("zhechuan_palindrome_bonus"));
-        String value = "+" + bonus;
-        gui.text(font, value, x + (size - font.width(value)) / 2, y + size + 3,
-                bonus > 0 ? 0xFFFFD76A : 0xFF93A4AE);
     }
 
     /** 位于灵脉范围内时显示双方人数与双向占领进度。 */
@@ -335,7 +317,6 @@ public class HudOverlay implements GuiLayer {
                 sw / 2 - font.width(text) / 2, sh / 2 + 26, 0xFF66FFEE);
     }
 
-
     /** 屏幕右上角：技能附加效果以对应技能图标 + 剩余时间显示；非技能增益保留文字显示。 */
     private void renderBuffs(GuiGraphicsExtractor gui, Font font) {
         java.util.Map<String, Integer> buffs = ClientDataHolder.buffs();
@@ -355,10 +336,7 @@ public class HudOverlay implements GuiLayer {
         }
         CharacterType type = CharacterType.byId(ClientDataHolder.get().characterId());
         for (java.util.Map.Entry<String, Integer> entry : buffs.entrySet()) {
-            if ("chixiao_passive".equals(entry.getKey()) || "lige_passive".equals(entry.getKey())
-                    || "guanlan_passive".equals(entry.getKey()) || "xuanjia_passive".equals(entry.getKey()) || "sulan_passive_ready".equals(entry.getKey())
-                    || entry.getKey().startsWith("feiyu_") || entry.getKey().startsWith("luoheng_")
-                    || entry.getKey().startsWith("shenli_") || entry.getKey().startsWith("zhechuan_") || entry.getKey().startsWith("mingzhu_")
+            if ("chixiao_passive".equals(entry.getKey()) || "sulan_passive_ready".equals(entry.getKey())
                     || entry.getKey().startsWith("skill_charge_") || entry.getKey().startsWith("g1_attribute_")
                     || entry.getKey().startsWith("g1_shuo_") || entry.getKey().startsWith("rune_") || entry.getKey().equals("g1_channel")
                     || entry.getKey().equals("hero_respawn") || entry.getKey().equals("recall") || entry.getKey().endsWith("_recast")
@@ -388,9 +366,7 @@ public class HudOverlay implements GuiLayer {
 
     private static final java.util.Map<String, String> BUFF_ICON_SKILLS = java.util.Map.of(
             "yufengqianli_buff", "yufengqianli",
-            "fentianhuohai_ad", "fentianhuohai",
-            "wanyue_empowered", "wanyue_passive",
-            "taxianzuiyue_shield", "taxianzuiyue");
+            "fentianhuohai_ad", "fentianhuohai");
 
     private Skill buffSkill(CharacterType type, String buffId) {
         var ability = com.myriad.character.rework.FirstGroupSkills.byId(buffId);
@@ -437,23 +413,12 @@ public class HudOverlay implements GuiLayer {
         String label = fullReady ? "普攻" : String.format("%.1fs", cooldown / 20.0F);
         gui.text(font, label, x + (width - font.width(label)) / 2, y - 10,
                 fullReady ? 0xFF9FFFD0 : 0xFFB9ECFF);
-        if ("mingzhu".equals(data.characterId())) {
-            int energy = Math.clamp(ClientDataHolder.syncedCounter("mingzhu_energy_eighths"), 0, 800);
-            int iy = y - 28;
-            gui.fill(x-1, iy-1, x+73, iy+6, 0xEE191923);
-            gui.fill(x, iy, x+72, iy+5, 0xFF493723);
-            gui.fill(x, iy, x+Math.round(72*energy/800F), iy+5, energy>=240?0xFFFFD277:0xFFAD8957);
-            String energyText=Component.translatable("hud.myriad.mingzhu_energy", String.format("%.3f", energy/8F)).getString();
-            gui.text(font,energyText,x,iy-11,0xFFFFE6B2);
-            String hint=ClientDataHolder.buffTicks("mingzhu_channel")>0
-                    ? Component.translatable("hud.myriad.mingzhu_channel",String.format("%.2f",ClientDataHolder.buffTicks("mingzhu_beam_time")/20F)).getString()
-                    : energy<240?Component.translatable("message.myriad.mingzhu_need_energy").getString():"";
-            if(!hint.isEmpty())gui.text(font,hint,x,iy-22,0xFFE7CC91);
-            if(ClientDataHolder.buffTicks("mingzhu_channel")>0){
-                int radiance=Math.clamp(ClientDataHolder.syncedCounter("mingzhu_radiance"),0,10);
-                gui.text(font,Component.translatable("hud.myriad.mingzhu_radiance",radiance).getString(),x+80,iy-11,0xFFFFEFC9);
-                for(int i=0;i<5;i++)gui.fill(x+80+i*10,iy,x+87+i*10,iy+5,i*2<radiance?0xFFFFE3A0:0xFF55472F);
-            }
+        if ("keheng".equals(data.characterId())) {
+            int marks=ClientDataHolder.syncedCounter("g1_keheng_marks"),icd=ClientDataHolder.buffTicks("g1_keheng_step_cd");
+            String status=ClientDataHolder.buffTicks("g1_keheng_follow")>0?Component.translatable("hud.myriad.keheng.follow").getString():
+                    data.skillLevels().getOrDefault("keheng_hengbu",0)>0?Component.translatable("hud.myriad.keheng.step",icd/20.0f).getString():
+                    Component.translatable("hud.myriad.keheng.marks",marks,ClientDataHolder.buffTicks("g1_keheng_mark_window")/20.0f).getString();
+            gui.text(font,status,x+width/2-font.width(status)/2,y-24,0xFF42D9BD);
         } else if ("shuo".equals(data.characterId())) {
             int gauge=Math.clamp(ClientDataHolder.syncedCounter("g1_shuo_gauge"),0,100);
             var passive=com.myriad.character.rework.FirstGroupSkills.selected("shuo",0,data.skillLevels());
@@ -480,153 +445,6 @@ public class HudOverlay implements GuiLayer {
             gui.text(font, "战", ix + 2, iy + 2, stacks >= 3 ? 0xFFFFFF88 : 0xFFFFFFFF);
             if (stacks >= 3) { gui.fill(ix - 2, iy - 2, ix + 14, iy - 1, 0xFFFFC84A); gui.fill(ix - 2, iy + 13, ix + 14, iy + 14, 0xFFFFC84A); }
             if (internalCd > 0) gui.text(font, String.valueOf((internalCd + 19) / 20), ix + 3, iy + 3, 0xFFFFD060);
-        } else if ("lige".equals(data.characterId())) {
-            int stacks = Math.max(0, Math.min(3, ClientDataHolder.syncedCounter("lige_passive")));
-            Skill[] passives = CharacterType.LIGE.passives();
-            if (passives.length > 0) {
-                int ix = x + 11;
-                int iy = y - 31;
-                SkillIcon.drawBuff(gui, font, ix, iy, 14, passives[0]);
-                if (stacks == 0) gui.fill(ix, iy, ix + 14, iy + 14, 0xA8000000);
-                String stackText = "×" + stacks;
-                gui.text(font, stackText, ix + 18, iy + 3,
-                        stacks >= 3 ? 0xFFFFF09A : (stacks > 0 ? 0xFF8EF5F2 : 0xFF74808C));
-                if (stacks >= 3) {
-                    gui.fill(ix - 2, iy - 2, ix + 16, iy - 1, 0xFFFFE56E);
-                    gui.fill(ix - 2, iy + 15, ix + 16, iy + 16, 0xFFFFE56E);
-                }
-            }
-        } else if ("feiyu".equals(data.characterId())) {
-            int stage = Math.max(0, Math.min(6, ClientDataHolder.syncedCounter("feiyu_stage")));
-            int remain = ClientDataHolder.buffTicks("feiyu_score_time");
-            String[] names = {"未入谱", "羽", "翎", "翔", "霄", "鸿", "凰"};
-            int ix = x - 9, iy = y - 34;
-            int[] colors = {0xFF54E1D0,0xFF559CFF,0xFF9B65FF,0xFFF0445E,0xFFFFC95C,0xFFFFF1B0};
-            for (int i = 0; i < 6; i++) {
-                int fx = ix + i * 11;
-                gui.fill(fx, iy + Math.abs(3 - i) / 2, fx + 8, iy + 10, i < stage ? colors[i] : 0xFF303640);
-            }
-            String stageText = names[stage] + (stage > 0 ? String.format("  %.1fs", remain / 20F) : "");
-            gui.text(font, stageText, ix + 30 - font.width(stageText) / 2, iy - 10,
-                    stage >= 6 ? 0xFFFFE58A : 0xFFEAFBFF);
-            int recovery = ClientDataHolder.buffTicks("feiyu_recovery");
-            if (recovery > 0) {
-                String recoveryText = String.format("收势 %.2fs", recovery / 20F);
-                gui.text(font, recoveryText, ix + 30 - font.width(recoveryText) / 2, iy + 13, 0xFFFFE09A);
-            }
-            int beat = ClientDataHolder.syncedCounter("feiyu_r_beat");
-            int window = ClientDataHolder.buffTicks("feiyu_r_window");
-            if (beat > 0 || window > 0) {
-                int chapter = ClientDataHolder.syncedCounter("feiyu_r_chapter");
-                int perfect = ClientDataHolder.syncedCounter("feiyu_r_perfect");
-                int direction = ClientDataHolder.syncedCounter("feiyu_r_direction") - 1;
-                int used = ClientDataHolder.syncedCounter("feiyu_r_directions");
-                String[] arrows = {"→", "↘", "↓", "↙", "←", "↖", "↑", "↗"};
-                int beatX = ix + 3;
-                for (int i = 0; i < 5; i++) {
-                    int bx = beatX + i * 12;
-                    gui.fill(bx, iy - 31, bx + 9, iy - 27, i < beat ? 0xFFFFC75A : 0xFF38414D);
-                }
-                String timing = String.format("下一拍 %.2fs", window / 20F);
-                gui.text(font, timing, ix + 30 - font.width(timing) / 2, iy - 43,
-                        window <= 12 && window > 0 ? 0xFFFFFFFF : 0xFFFFC75A);
-                String rText = "羽章 " + chapter + "  完美 " + perfect + "/3"
-                        + (direction >= 0 && direction < 8 ? "  上拍 " + arrows[direction] : "");
-                gui.text(font, rText, ix + 30 - font.width(rText) / 2, iy - 22, 0xFFFFC75A);
-                StringBuilder dirs = new StringBuilder();
-                for (int i = 0; i < 8; i++) dirs.append((used & (1 << i)) != 0 ? "·" : arrows[i]);
-                gui.text(font, dirs.toString(), ix + 30 - font.width(dirs.toString()) / 2, iy - 12, 0xFF9BEDE7);
-            }
-        } else if ("shenli".equals(data.characterId())) {
-            int ix = x - 5, iy = y - 37;
-            int[] colors = {0xFFD85A36, 0xFF67EDF2, 0xFFF5C451};
-            int ammo = Math.max(0, Math.min(6, ClientDataHolder.syncedCounter("shenli_ammo")));
-            for (int i = 0; i < 6; i++) {
-                int bx = ix + i * 11;
-                int colorId = ClientDataHolder.syncedCounter("shenli_ammo_" + (i + 1));
-                gui.fill(bx - 1, iy - 1, bx + 9, iy + 10, 0xDD15191F);
-                gui.fill(bx, iy, bx + 8, iy + 9,
-                        i < ammo && colorId >= 1 && colorId <= 3 ? colors[colorId - 1] : 0xFF353B43);
-            }
-            int forced = ClientDataHolder.buffTicks("shenli_forced_reload");
-            int windup = ClientDataHolder.buffTicks("shenli_basic_windup");
-            int mind = ClientDataHolder.buffTicks("shenli_mind");
-            int combo = Math.max(0, Math.min(4, ClientDataHolder.syncedCounter("shenli_combo")));
-            String gunMode = Component.translatable(ClientDataHolder.syncedCounter("shenli_aiming") > 0
-                    ? "hud.myriad.shenli_aim" : "hud.myriad.shenli_hip").getString();
-            String state = windup > 0 ? String.format("射击后摇 %.2fs", windup / 20F)
-                    : forced > 0 ? String.format("装填 %.2fs", forced / 20F)
-                    : mind > 0 ? String.format("机心 %.1fs", mind / 20F) : gunMode + " " + combo + "/4";
-            gui.text(font, state, ix + 27 - font.width(state) / 2, iy - 11,
-                    windup > 0 ? 0xFFFFFFFF : forced > 0 ? 0xFFFFB36A : mind > 0 ? 0xFFFFE58A : 0xFFC8D3DC);
-            int wTime = ClientDataHolder.buffTicks("shenli_w_time");
-            if (wTime > 0) {
-                int pointer = Math.max(1, Math.min(6, ClientDataHolder.syncedCounter("shenli_w_pointer")));
-                int chosen = ClientDataHolder.syncedCounter("shenli_w_color");
-                boolean precise = ClientDataHolder.syncedCounter("shenli_w_precise") > 0;
-                int px = ix + (pointer - 1) * 11;
-                gui.fill(px - 2, iy + 11, px + 10, iy + 13, precise ? 0xFFFFFFFF : 0xFFFF9B5A);
-                String wText = String.format("定膛 %.2fs", wTime / 20F);
-                gui.text(font, wText, ix + 27 - font.width(wText) / 2, iy + 16,
-                        chosen >= 1 && chosen <= 3 ? colors[chosen - 1] : 0xFFFFFFFF);
-            }
-            int r = ClientDataHolder.buffTicks("shenli_r");
-            if (r > 0) {
-                int marks = ClientDataHolder.syncedCounter("shenli_fire_marks");
-                String stamp = ((marks & 1) != 0 ? "赤" : "·") + ((marks & 2) != 0 ? "青" : "·")
-                        + ((marks & 4) != 0 ? "金" : "·")
-                        + (ClientDataHolder.syncedCounter("shenli_tristar") > 0 ? " 三曜待发" : "");
-                gui.text(font, stamp, ix + 27 - font.width(stamp) / 2, iy - 21, 0xFFFFD66E);
-            }
-        } else if ("luoheng".equals(data.characterId())) {
-            int ix=x-8,iy=y-42;
-            String[] symbols={"◇","□","✦"};
-            for(int i=0;i<3;i++){
-                int remain=ClientDataHolder.buffTicks("luoheng_node_"+(i+1));int bx=ix+i*24;
-                gui.fill(bx-1,iy-1,bx+19,iy+19,0xCC101923);
-                gui.fill(bx,iy,bx+18,iy+18,remain>0?0xCC135A68:0xAA303640);
-                gui.text(font,symbols[i],bx+5,iy+1,remain>0?0xFFE9FFFF:0xFF74808C);
-                if(remain>0){String sec=String.valueOf((remain+19)/20);gui.text(font,sec,bx+10-font.width(sec)/2,iy+10,0xFFFFDF8A);}
-            }
-            int start=ClientDataHolder.syncedCounter("luoheng_w_start");
-            int rTicks=ClientDataHolder.buffTicks("sanyuantianluo");
-            if(start>0){String text="贯线起点 "+symbols[start-1];gui.text(font,text,ix+28-font.width(text)/2,iy-11,0xFFF1FDFF);}
-            if(rTicks>0){
-                int area=ClientDataHolder.syncedCounter("luoheng_triangle_area");
-                String text=String.format("天罗 %.1fs  面积 %d",rTicks/20F,area);
-                gui.text(font,text,ix+28-font.width(text)/2,iy-21,0xFFFFC768);
-                String edges=String.format("%.1f / %.1f / %.1f",
-                        ClientDataHolder.syncedCounter("luoheng_edge_1")/10F,
-                        ClientDataHolder.syncedCounter("luoheng_edge_2")/10F,
-                        ClientDataHolder.syncedCounter("luoheng_edge_3")/10F);
-                gui.text(font,edges,ix+28-font.width(edges)/2,iy+21,
-                        ClientDataHolder.buffTicks("luoheng_rebuild")>0?0xFFFF765C:0xFF8DEAF2);
-            }
-        } else if ("zhechuan".equals(data.characterId())) {
-            int ix = x - 9, iy = y - 39;
-            boolean corridor = ClientDataHolder.buffTicks("zhubiaowujinhuilang") > 0;
-            int cap = corridor ? 5 : 3;
-            for (int i = 0; i < 5; i++) {
-                int bx = ix + i * 14;
-                int remain = ClientDataHolder.buffTicks("zhechuan_marker_" + (i + 1));
-                int frame = i < cap ? 0xDD172630 : 0x66303840;
-                int markerFill = remain > 0 ? (corridor ? 0xFFD2A84A : 0xFF227986) : 0xFF303942;
-                gui.fill(bx - 1, iy - 1, bx + 11, iy + 12, frame);
-                gui.fill(bx, iy, bx + 10, iy + 11, markerFill);
-                gui.text(font, String.valueOf(i + 1), bx + 3, iy + 1,
-                        remain > 0 ? 0xFFF2FEFF : 0xFF79858E);
-            }
-            int retreat = ClientDataHolder.buffTicks("zhechuan_retreat");
-            if (retreat > 0) {
-                String retreatText = String.format("退标 %.1fs", retreat / 20F);
-                gui.text(font, retreatText, ix + 28 - font.width(retreatText) / 2, iy + 14, 0xFFEAFDFF);
-            }
-            int returns = Math.max(0, Math.min(3, ClientDataHolder.syncedCounter("zhechuan_return_stacks")));
-            if (corridor) {
-                String rText = "归锋 " + returns + "/3";
-                gui.text(font, rText, ix + 28 - font.width(rText) / 2, iy - 11,
-                        returns >= 3 ? 0xFFFFE080 : 0xFF9EF4F1);
-            }
         } else if ("sulan".equals(data.characterId())) {
             boolean windReady = ClientDataHolder.syncedCounter("sulan_passive_ready") > 0;
             Skill[] passives = {com.myriad.character.rework.FirstGroupSkills.selected("sulan",0,data.skillLevels())};
@@ -638,27 +456,6 @@ public class HudOverlay implements GuiLayer {
                 gui.text(font, Component.translatable(windReady ? "hud.myriad.wind_ready" : "hud.myriad.wind_charging"),
                         ix + 18, iy + 3, windReady ? 0xFF84FFE0 : 0xFF74808C);
             }
-        } else if ("guanlan".equals(data.characterId()) || "xuanjia".equals(data.characterId())) {
-            boolean guanlan = "guanlan".equals(data.characterId());
-            int cap = guanlan ? 4 : 3;
-            String buffId = guanlan ? "guanlan_passive" : "xuanjia_passive";
-            int stacks = Math.max(0, Math.min(cap, ClientDataHolder.syncedCounter(buffId)));
-            CharacterType role = guanlan ? CharacterType.GUANLAN : CharacterType.XUANJIA;
-            Skill[] passives = role.passives();
-            if (passives.length > 0) {
-                int ix = x + 11;
-                int iy = y - 31;
-                SkillIcon.drawBuff(gui, font, ix, iy, 14, passives[0]);
-                if (stacks == 0) gui.fill(ix, iy, ix + 14, iy + 14, 0xA8000000);
-                String stackText = "×" + stacks;
-                int activeColor = guanlan ? 0xFF8AD9FF : 0xFFD9B06C;
-                gui.text(font, stackText, ix + 18, iy + 3,
-                        stacks >= cap ? 0xFFFFF09A : (stacks > 0 ? activeColor : 0xFF74808C));
-                if (stacks >= cap) {
-                    gui.fill(ix - 2, iy - 2, ix + 16, iy - 1, 0xFFFFE56E);
-                    gui.fill(ix - 2, iy + 15, ix + 16, iy + 16, 0xFFFFE56E);
-                }
-            }
         }
     }
 
@@ -666,8 +463,7 @@ public class HudOverlay implements GuiLayer {
     private void renderMagicBulletBar(GuiGraphicsExtractor gui, Font font, PlayerDataPayload data) {
         String character = data.characterId();
         if (!"xuanchen".equals(character) && !"hanze".equals(character)
-                && !"qingluo".equals(character) && !"yunsheng".equals(character)
-                && !"guanlan".equals(character) && !"luoheng".equals(character) && !"mingzhu".equals(character)) return;
+                && !"qingluo".equals(character) && !"yunsheng".equals(character)) return;
         int sw = Minecraft.getInstance().getWindow().getGuiScaledWidth();
         int sh = Minecraft.getInstance().getWindow().getGuiScaledHeight();
         int width = 48, height = 5;

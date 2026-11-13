@@ -17,14 +17,6 @@ public final class ModParticles {
             DeferredRegister.create(BuiltInRegistries.PARTICLE_TYPE, Myriad.MODID);
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> ABILITY_MESH =
             PARTICLE_TYPES.register("ability_mesh", () -> new SimpleParticleType(false));
-    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> MINGZHU_RAY =
-            PARTICLE_TYPES.register("mingzhu_ray", () -> new SimpleParticleType(false));
-    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> MINGZHU_GIANT_RAY =
-            PARTICLE_TYPES.register("mingzhu_giant_ray", () -> new SimpleParticleType(false));
-    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> ZHECHUAN_BLADE =
-            PARTICLE_TYPES.register("zhechuan_blade", () -> new SimpleParticleType(false));
-    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> ZHECHUAN_RETURN =
-            PARTICLE_TYPES.register("zhechuan_return", () -> new SimpleParticleType(false));
 
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType> SULAN_BLADE_ARC =
             PARTICLE_TYPES.register("sulan_blade_arc", () -> new SimpleParticleType(false));

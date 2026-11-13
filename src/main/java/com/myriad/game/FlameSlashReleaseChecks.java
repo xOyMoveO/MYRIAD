@@ -62,9 +62,12 @@ final class FlameSlashReleaseChecks {
                     var t=h.spawn(EntityTypes.PIG,new BlockPos(45,315,110));t.setNoAi(true);t.setNoGravity(true);
                     t.getAttribute(Attributes.MAX_HEALTH).setBaseValue(1000);t.setHealth(1000);targets.add(t);
                 }
+                tickActor();
                 after(2,()->runAim(0));
             }catch(Throwable failure){cleanup();throw failure;}
         }
+        // Mock ServerPlayer is not driven by Player.doTick; local action work needs every real tick.
+        void tickActor(){after(1,()->{AbilityRuntime.tick(actor);tickActor();});}
         void after(int ticks,Runnable action){h.runAfterDelay(ticks,()->{if(ended)return;try{action.run();}catch(Throwable failure){cleanup();throw failure;}});}
         void reset(float pitch,float yaw){
             AbilityRuntime.clear(actor);actor.setPos(origin.add(0,8,0));actor.setXRot(pitch);actor.setYRot(yaw);

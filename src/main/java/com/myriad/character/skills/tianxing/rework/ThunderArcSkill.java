@@ -20,7 +20,7 @@ public final class ThunderArcSkill extends AbilitySkill {
         // One thrown arc stops at the first enemy. Only that contact fans out; no recursive chains.
         ThunderSkillPresentation.charged(c,6,com.myriad.network.ThunderSkillViewPayload.ARC_READY,
                 com.myriad.network.ThunderSkillViewPayload.ARC_FIRE,
-                ()->{ThunderAudio.play(c,ThunderAudio.Cue.CAST);c.projectile(RANGE,SPEED,.9,false,false,(target,back)->discharge(c,target));});
+                ()->{ThunderAudio.play(c,ThunderAudio.Cue.CAST);c.actionProjectile(RANGE,SPEED,.9,false,false,(target,back)->discharge(c,target));});
     }
     private static void discharge(Cast c,LivingEntity primary){
         Vec3 center=primary.position();

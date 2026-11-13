@@ -61,9 +61,6 @@ public class MyriadClient {
         modEventBus.addListener(MyriadClient::onRegisterKeyMappings);
         modEventBus.addListener(MyriadClient::onRegisterParticleProviders);
         modEventBus.addListener(com.myriad.client.particle.AbilityMeshParticle::registerGroup);
-        modEventBus.addListener((net.neoforged.neoforge.client.event.RegisterRangeSelectItemModelPropertyEvent event) ->
-                event.register(Identifier.fromNamespaceAndPath(Myriad.MODID, "lige_bow_pull"),
-                        com.myriad.client.item.LiGeBowPullProperty.MAP_CODEC));
         modEventBus.addListener((net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers event) ->
                 event.registerEntityRenderer(com.myriad.registry.ModEntities.BASE_CRYSTAL.get(),net.minecraft.client.renderer.entity.NoopRenderer::new));
         modEventBus.addListener((net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers event) ->
@@ -90,6 +87,7 @@ public class MyriadClient {
         NeoForge.EVENT_BUS.addListener(MyriadClient::onRenderLivingPre);
         // 远程使用武器显隐提示完整恢复；近战保留原版武器显示。
         NeoForge.EVENT_BUS.addListener(MyriadClient::onRenderHand);
+        NeoForge.EVENT_BUS.addListener(com.myriad.client.firstperson.KehengView::attack);
         NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingIn event) ->
                 com.myriad.client.ClientDataHolder.resetConnection());
         NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) ->
@@ -140,25 +138,15 @@ public class MyriadClient {
             }
             return;
         }
-        // 离歌由弓物品的原版右键“按住/松开”交互负责，左键不再发送自动锁定普攻。
-        if ("lige".equals(com.myriad.client.ClientDataHolder.characterId())) return;
-        if ("shenli".equals(com.myriad.client.ClientDataHolder.characterId())) {
-            if (mc.player.getMainHandItem().getItem() instanceof com.myriad.item.ShenLiGunItem
-                    && com.myriad.client.ClientDataHolder.placementType() == 0) {
-                ClientPacketDistributor.sendToServer(new NetworkSetup.BasicAttackPayload(-1));
-            }
-            event.setSwingHand(false);
-            event.setCanceled(true);
-            return;
+
+        if("yike".equals(com.myriad.client.ClientDataHolder.characterId())){
+            ClientPacketDistributor.sendToServer(new NetworkSetup.BasicAttackPayload(-1));
+            event.setSwingHand(false);event.setCanceled(true);return;
         }
         AttackRay ray = findCurrentAttackTarget(mc);
         if (ray.target != null) {
             net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(
                     new NetworkSetup.BasicAttackPayload(ray.target.getId()));
-        } else if ("wanyue".equals(com.myriad.client.ClientDataHolder.characterId())) {
-            // 绾月强化普攻按面朝方向释放，挥空也必须提交施放意图。
-            net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(
-                    new NetworkSetup.BasicAttackPayload(-1));
         }
         // 左键仅作为模组普攻媒介；无论命中或挥空都不进入原版攻击/挖掘链。
         event.setSwingHand(false);
@@ -167,13 +155,7 @@ public class MyriadClient {
 
     private static AttackRay findCurrentAttackTarget(Minecraft mc) {
         net.minecraft.client.player.LocalPlayer player = mc.player;
-        String characterId = com.myriad.client.ClientDataHolder.characterId();
-        boolean wanyue = "wanyue".equalsIgnoreCase(characterId);
-        boolean shenli = "shenli".equalsIgnoreCase(characterId);
-        // 绾月的合法普攻目标由“本体可见 + 月轮到目标不超过10格”共同决定；
-        // 客户端只负责在完整双位置范围内提交准星目标，最终射程仍由服务端按月轮位置复核。
-        double reach = wanyue ? 32.0 : shenli ? 16.0
-                : player.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE);
+        double reach = player.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE);
         net.minecraft.world.phys.Vec3 start = player.getEyePosition();
         net.minecraft.world.phys.Vec3 direction = player.getLookAngle();
         if (direction.lengthSqr() < 1.0E-6) return new AttackRay(null, false);
@@ -198,7 +180,7 @@ public class MyriadClient {
             // 不再用至多滞后 5 tick 的客户端迷雾快照阻止攻击提交。
             // 隐藏目标本身不会渲染，最终能否攻击仍由服务端 VisionSystem 权威校验。
             java.util.Optional<net.minecraft.world.phys.Vec3> contact = candidate.getBoundingBox()
-                    .inflate(wanyue ? 0.40 : shenli ? 0.42 : 0.10).clip(start, end);
+                    .inflate(0.10).clip(start, end);
             if (contact.isPresent()) {
                 double distance = start.distanceTo(contact.get());
                 if (distance <= closestDistance) {
@@ -214,14 +196,10 @@ public class MyriadClient {
 
     private static void onRegisterParticleProviders(RegisterParticleProvidersEvent event) {
         event.registerSpriteSet(ModParticles.ABILITY_MESH.get(), com.myriad.client.particle.AbilityMeshParticle.Provider::new);
-        event.registerSpriteSet(ModParticles.ZHECHUAN_BLADE.get(), sprites ->
-                new com.myriad.client.particle.ZhechuanSigilParticle.Provider(sprites, false));
-        event.registerSpriteSet(ModParticles.ZHECHUAN_RETURN.get(), sprites ->
-                new com.myriad.client.particle.ZhechuanSigilParticle.Provider(sprites, true));
+
         event.registerSpriteSet(ModParticles.SULAN_BLADE_ARC.get(), SulanBladeArcParticle.Provider::new);
         event.registerSpriteSet(ModParticles.SPIRIT_MOTE.get(), SpiritMoteParticle.Provider::new);
-        event.registerSpriteSet(ModParticles.MINGZHU_RAY.get(), sprites -> new com.myriad.client.particle.MingZhuRayParticle.Provider(sprites,false));
-        event.registerSpriteSet(ModParticles.MINGZHU_GIANT_RAY.get(), sprites -> new com.myriad.client.particle.MingZhuRayParticle.Provider(sprites,true));
+
         event.registerSpriteSet(ModParticles.RAINBOW_MOTE.get(), RainbowMoteParticle.Provider::new);
         event.registerSpriteSet(ModParticles.WIND1_LARGE.get(), sprites ->
                 new Wind1Particle.Provider(sprites, true));
@@ -256,27 +234,15 @@ public class MyriadClient {
             }
             return;
         }
-        // Only a physical press toggles aim; holding right click cannot repeatedly toggle it.
-        var gunPlayer = Minecraft.getInstance().player;
-        if (event.getButton() == org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT
-                && com.myriad.client.ClientDataHolder.modEnabled()
-                && "shenli".equals(com.myriad.client.ClientDataHolder.characterId())
-                && gunPlayer != null && gunPlayer.isAlive() && !gunPlayer.isSpectator()
-                && gunPlayer.getMainHandItem().getItem() instanceof com.myriad.item.ShenLiGunItem) {
-            event.setCanceled(true);
-            ClientPacketDistributor.sendToServer(new com.myriad.network.ToggleGunAimPayload());
-            return;
-        }
+
         // 法师（墨尘、寒泽、青萝）手持初始武器：右键发射魔法弹（墨尘指向传送阵时保留交互）
         if (event.getButton() == org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
             net.minecraft.client.player.LocalPlayer lp = Minecraft.getInstance().player;
             if (lp != null && !com.myriad.client.ClientDataHolder.characterId().isEmpty()
                     && ("xuanchen".equalsIgnoreCase(com.myriad.client.ClientDataHolder.characterId())
                             || "hanze".equalsIgnoreCase(com.myriad.client.ClientDataHolder.characterId())
-                            || "mingzhu".equalsIgnoreCase(com.myriad.client.ClientDataHolder.characterId())
                             || "qingluo".equalsIgnoreCase(com.myriad.client.ClientDataHolder.characterId())
-                            || "yunsheng".equalsIgnoreCase(com.myriad.client.ClientDataHolder.characterId())
-                            || "guanlan".equalsIgnoreCase(com.myriad.client.ClientDataHolder.characterId()))
+                            || "yunsheng".equalsIgnoreCase(com.myriad.client.ClientDataHolder.characterId()))
                     && isInitialWeaponClient(lp.getMainHandItem())) {
                 // 准星指向传送阵盔甲架（专用队伍标记）：不拦截，走原版实体交互（传送）
                 net.minecraft.world.phys.HitResult hit = Minecraft.getInstance().hitResult;
@@ -344,8 +310,10 @@ public class MyriadClient {
 
     /** 远程恢复期间隐藏第一人称专属武器；原版近战不隐藏。 */
     private static void onRenderHand(net.neoforged.neoforge.client.event.RenderHandEvent event) {
+        if (com.myriad.client.firstperson.YikeWeaponView.render(event)) return;
         if (com.myriad.client.firstperson.ShuoView.render(event)) return;
         if (com.myriad.client.firstperson.NightDaggerView.render(event)) return;
+        if (com.myriad.client.firstperson.KehengView.render(event)) return;
         if (com.myriad.client.firstperson.ThunderSwordView.render(event)) return;
         if (com.myriad.client.firstperson.FlameDaoView.render(event)) return;
         Minecraft mc = Minecraft.getInstance();
@@ -354,10 +322,7 @@ public class MyriadClient {
         // Vanilla melee weapons remain visible during their ordinary recovery animation.
         if(com.myriad.combat.VanillaMeleeAttack.usesVanilla(com.myriad.character.CharacterType.byId(
                 com.myriad.client.ClientDataHolder.characterId())))return;
-        if ("lige".equals(com.myriad.client.ClientDataHolder.characterId())
-                && mc.player.isUsingItem()
-                && mc.player.getUsedItemHand() == event.getHand()
-                && event.getItemStack().getItem() instanceof com.myriad.item.LiGeBowItem) return;
+
         if (!com.myriad.client.BasicAttackReadiness.canAttack(mc.player)) event.setCanceled(true);
     }
 
@@ -402,6 +367,7 @@ public class MyriadClient {
             com.myriad.client.firstperson.ThunderSwordView.tick();
             com.myriad.client.firstperson.FlameDaoView.tick();
             com.myriad.client.firstperson.ShuoView.tick();
+            com.myriad.client.YikeClientState.tick();
             com.myriad.client.StarPullController.tick();
             com.myriad.client.RespawnSpectatorView.enforceFirstPerson();
             lockWeaponSlot(local);
@@ -468,15 +434,7 @@ public class MyriadClient {
     /** 客户端初始武器名字与颜色（按角色区分：墨尘=墨杖黑色，夜影=影刺金色，天刑=雷霆剑蓝色） */
     private static net.minecraft.network.chat.Component clientWeaponName() {
         String charId = com.myriad.client.ClientDataHolder.characterId();
-        if ("mingzhu".equalsIgnoreCase(charId)) {
-            return net.minecraft.network.chat.Component.translatable("item.myriad.mingzhu_core")
-                    .withStyle(net.minecraft.ChatFormatting.WHITE);
-        }
-        if ("zhechuan".equalsIgnoreCase(charId)) {
-            return net.minecraft.network.chat.Component.translatable("item.myriad.zhechuan_blades")
-                    .withStyle(net.minecraft.ChatFormatting.BOLD)
-                    .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xFF5CE8EA));
-        }
+
         if ("xuanchen".equalsIgnoreCase(charId)) {
             return net.minecraft.network.chat.Component.translatable("item.myriad.zhenqi")
                     .withStyle(net.minecraft.ChatFormatting.BLACK)
@@ -522,26 +480,7 @@ public class MyriadClient {
                     .withStyle(net.minecraft.ChatFormatting.BOLD)
                     .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xFF9EFFF2));
         }
-        if ("lige".equalsIgnoreCase(charId)) {
-            return net.minecraft.network.chat.Component.translatable("item.myriad.lige_bow")
-                    .withStyle(net.minecraft.ChatFormatting.BOLD)
-                    .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xFFB48CFF));
-        }
-        if ("guanlan".equalsIgnoreCase(charId)) {
-            return net.minecraft.network.chat.Component.translatable("item.myriad.guanlan_astrolabe")
-                    .withStyle(net.minecraft.ChatFormatting.BOLD)
-                    .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xFF9D82FF));
-        }
-        if ("xuanjia".equalsIgnoreCase(charId)) {
-            return net.minecraft.network.chat.Component.translatable("item.myriad.xuanjia_gauntlet")
-                    .withStyle(net.minecraft.ChatFormatting.BOLD)
-                    .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xFFD4A84D));
-        }
-        if ("shenli".equalsIgnoreCase(charId)) {
-            return net.minecraft.network.chat.Component.translatable("item.myriad.shenli_gun")
-                    .withStyle(net.minecraft.ChatFormatting.BOLD)
-                    .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xFFD9A55A));
-        }
+
         return net.minecraft.network.chat.Component.translatable("item.myriad.yingci")
                 .withStyle(net.minecraft.ChatFormatting.GOLD)
                 .withStyle(net.minecraft.ChatFormatting.BOLD);
@@ -558,15 +497,9 @@ public class MyriadClient {
             fovCurrent = 1.0f;
             return;
         }
-        boolean aiming = "shenli".equals(com.myriad.client.ClientDataHolder.characterId())
-                && (com.myriad.client.ClientDataHolder.isTraining()
-                    || com.myriad.client.ClientDataHolder.phase() == com.myriad.game.GameManager.Phase.PLAYING)
-                && mc.player.isAlive() && !mc.player.isSpectator()
-                && mc.player.getMainHandItem().getItem() instanceof com.myriad.item.ShenLiGunItem
-                && com.myriad.client.ClientDataHolder.syncedCounter("shenli_aiming") > 0;
         fovFast = com.myriad.client.DashController.isDashing();
         // 平滑过渡（每帧逼近 25%）
-        float target = aiming ? .88f : fovFast ? 1.08f : 1.0f;
+        float target = fovFast ? 1.08f : 1.0f;
         fovCurrent += (target - fovCurrent) * 0.25f;
         if (Math.abs(fovCurrent - target) < .001f) fovCurrent = target;
         event.setFOV(event.getFOV() * fovCurrent);

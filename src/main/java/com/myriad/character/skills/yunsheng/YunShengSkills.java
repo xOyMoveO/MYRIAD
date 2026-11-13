@@ -12,7 +12,7 @@ import com.myriad.character.CharacterType;
 import com.myriad.character.Skill;
 import com.myriad.combat.DamageCalc;
 import com.myriad.combat.DamageCalc.Kind;
-import com.myriad.character.skills.sulan.FengQiangSkill;
+import com.myriad.combat.WindWallSystem;
 import com.myriad.game.Faction;
 import com.myriad.game.GameManager;
 import com.myriad.game.PlacementUtil;
@@ -47,7 +47,6 @@ public final class YunShengSkills extends Skill {
     private static final Map<UUID, BeaconState> BEACONS = new HashMap<>();
     private static final Map<UUID, PendingChorus> PENDING_CHORUS = new HashMap<>();
     private static final Map<UUID, PullState> PULLS = new HashMap<>();
-    private static final Map<UUID, Long> SILENCED_UNTIL = new HashMap<>();
     private static final Map<UUID, Long> SLOW_IMMUNITY = new HashMap<>();
     private static final Map<UUID, Long> RESONANCE = new HashMap<>();
     private static final Map<UUID, ContractSequence> CONTRACTS = new HashMap<>();
@@ -198,7 +197,6 @@ public final class YunShengSkills extends Skill {
                 SLOW_IMMUNITY.remove(player.getUUID());
             }
         }
-        SILENCED_UNTIL.entrySet().removeIf(e -> e.getValue() <= now);
         RESONANCE.entrySet().removeIf(e -> e.getValue() <= now);
         if (CharacterType.byId(data.getCharacterId()) != CharacterType.YUNSHENG) return;
         tickAura(player, level);
@@ -258,8 +256,7 @@ public final class YunShengSkills extends Skill {
             Vec3 aim = target.getBoundingBox().getCenter();
             Vec3 delta = aim.subtract(crane.pos);
             if (delta.length() <= .7 || now >= crane.arriveAt) {
-                if (FengQiangSkill.blocksProjectile(level, crane.pos, aim)
-                        || com.myriad.character.skills.feiyu.FeiYuSkills.blocksProjectile(level, owner, crane.pos, aim)) return true;
+                if (WindWallSystem.blocksProjectile(level, crane.pos, aim)) return true;
                 if (ally(owner, target)) {
                     if (target instanceof ServerPlayer allyPlayer) {
                         PlayerData targetData = PlayerDataProvider.get(allyPlayer);
@@ -286,8 +283,7 @@ public final class YunShengSkills extends Skill {
             double inv = 1.0 - progress;
             Vec3 next = crane.start.scale(inv * inv)
                     .add(control.scale(2.0 * inv * progress)).add(aim.scale(progress * progress));
-            if (FengQiangSkill.blocksProjectile(level, crane.pos, next)
-                    || com.myriad.character.skills.feiyu.FeiYuSkills.blocksProjectile(level, owner, crane.pos, next)) return true;
+            if (WindWallSystem.blocksProjectile(level, crane.pos, next)) return true;
             crane.pos = next;
             level.sendParticles(PALE, crane.pos.x, crane.pos.y, crane.pos.z, 2, .06, .06, .06, .005);
             level.sendParticles(ParticleTypes.END_ROD, crane.pos.x, crane.pos.y, crane.pos.z, 1, 0, 0, 0, 0);
@@ -335,18 +331,13 @@ public final class YunShengSkills extends Skill {
                 float heal = (float)(40 + (pending.level - 1) * 12 + pending.sp * .50);
                 float effective = Math.min(heal, target.getMaxHealth() - target.getHealth());
                 com.myriad.combat.CombatTelemetry.heal(target, heal, "yunsheng_skill");
-                
+
                 registerProtectedTarget(owner, target, now);
                 if (target != owner) pulled.add(target.getUUID());
             } else {
                 DamageCalc.dealSkillDamage(owner, target,
                         (float)(320 + (pending.level - 1) * 72 + pending.sp * 2.80), Kind.MAGIC, 3);
-                SILENCED_UNTIL.put(target.getUUID(), now + 30);
-                if (target instanceof ServerPlayer enemy) {
-                    PlayerData enemyData = PlayerDataProvider.get(enemy);
-                    enemyData.setBuff("zhongshengguizong", 30);
-                    PlayerDataProvider.syncToClient(enemy);
-                }
+                com.myriad.combat.SilenceSystem.apply(target, 30);
             }
         }
         PULLS.put(owner.getUUID(), new PullState(pending.center, now + 12, pulled));
@@ -371,12 +362,11 @@ public final class YunShengSkills extends Skill {
     }
 
     public static boolean isSilenced(ServerPlayer player) {
-        return SILENCED_UNTIL.getOrDefault(player.getUUID(), 0L) > player.level().getGameTime();
+        return com.myriad.combat.SilenceSystem.isSilenced(player);
     }
     /** Remove only this target's silence; do not clear its own fields/contracts or allied bonuses. */
     public static void cleanseSilence(ServerPlayer player) {
-        SILENCED_UNTIL.remove(player.getUUID());
-        PlayerDataProvider.get(player).setBuff("zhongshengguizong",0);
+        com.myriad.combat.SilenceSystem.cleanse(player);
     }
 
     /** 共鸣只抵消下一次有效伤害，随后立即消耗。 */
@@ -475,7 +465,7 @@ public final class YunShengSkills extends Skill {
                 if (cdr != null) cdr.removeModifier(auraId(ownerId));
             }
         }
-        SILENCED_UNTIL.remove(ownerId);
+        com.myriad.combat.SilenceSystem.clearFor(ownerId);
         SLOW_IMMUNITY.remove(ownerId);
         RESONANCE.remove(ownerId);
     }

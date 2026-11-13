@@ -161,7 +161,6 @@ public final class HudEditorScreen extends Screen {
             case OBJECTIVE -> new BaseRect(centerX - 91, 9, 182, 43);
             case ANNOUNCEMENTS -> new BaseRect(centerX - 112, height * .12F - 18, 224, 38);
             case PROMPTS -> new BaseRect(centerX - 87, centerY - 33, 174, 97);
-            case HERO_RESOURCE -> new BaseRect(width - 40, height - 52, 32, 43);
             case DPS -> new BaseRect(4, height - 21, 90, 14);
             case COMBAT_STATS -> new BaseRect(width - 162, 88, 154, 76);
             case FEEDBACK -> new BaseRect(centerX - 14, centerY - 14, 28, 28);

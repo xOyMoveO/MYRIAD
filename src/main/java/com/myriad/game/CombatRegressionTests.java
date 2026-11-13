@@ -21,7 +21,12 @@ public final class CombatRegressionTests {
     static {
         if (Boolean.getBoolean("myriad.arenaTests")) FUNCTIONS.register("arena_switch", () -> ArenaSwitchRegression::run);
         FUNCTIONS.register("combat_regression", () -> CombatRegressionTests::run);
+        FUNCTIONS.register("world_time", () -> WorldTimeChecks::run);
+        FUNCTIONS.register("keheng", () -> KehengChecks::run);
+        FUNCTIONS.register("yike", () -> YikeChecks::run);
+        FUNCTIONS.register("hero_action_time", () -> HeroActionTimeChecks::run);
         FUNCTIONS.register("first_group", () -> FirstGroupRegressionChecks::run);
+        FUNCTIONS.register("roster_delivery", () -> RosterDeliveryChecks::run);
         FUNCTIONS.register("melee_arc", () -> helper -> {
             verifyMeleeArc(helper);
             helper.succeed();
@@ -39,8 +44,8 @@ public final class CombatRegressionTests {
         ModState.setEnabled(true);
         helper.runAfterDelay(3, () -> {
             try {
-                CharacterBalanceChecks.verify(helper);
-                MingZhuRegressionChecks.verify(helper);
+                SharedControlChecks.verifyCombatContracts(helper);
+                SharedControlChecks.verifyGeometry(helper);
                 verifyMeleeArc(helper);
                 var level = helper.getLevel();
                 BlockPos a = helper.absolutePos(new BlockPos(3, 2, 3));
@@ -185,8 +190,7 @@ public final class CombatRegressionTests {
                     verifySiegeAndGrowth(helper,a);
                     verifyProgressionAndTraining(helper, player);
                     verifyRetiredCoreEffects(helper, player);
-                    verifyFeiyuFinisher(helper, player);
-                    verifyWuxiangMonsters(helper, player, a);
+
                     verifyBaseAndCrystal(helper,player,a);
                     ModState.setEnabled(false);
                     var tabEvent = new net.neoforged.neoforge.event.entity.player.PlayerEvent.TabListNameFormat(player);
@@ -228,41 +232,6 @@ public final class CombatRegressionTests {
                 "Melee must reject a small target just outside the new 80 degree sector");
     }
 
-    private static void verifyFeiyuFinisher(GameTestHelper helper, net.minecraft.server.level.ServerPlayer player)
-            throws ReflectiveOperationException {
-        var owner = com.myriad.character.skills.feiyu.FeiYuSkills.class;
-        var stateType = Class.forName(owner.getName() + "$State");
-        var ultimateType = Class.forName(owner.getName() + "$Ultimate");
-        var moveType = Class.forName(owner.getName() + "$Move");
-        var kindType = Class.forName(owner.getName() + "$MoveKind");
-        var stateCtor = stateType.getDeclaredConstructor(); stateCtor.setAccessible(true);
-        var ultimateCtor = ultimateType.getDeclaredConstructor(int.class, long.class, net.minecraft.world.phys.Vec3.class); ultimateCtor.setAccessible(true);
-        var moveCtor = moveType.getDeclaredConstructor(kindType, int.class); moveCtor.setAccessible(true);
-        var ultimateField = stateType.getDeclaredField("ultimate"); ultimateField.setAccessible(true);
-        var finish = owner.getDeclaredMethod("finishBeat", net.minecraft.server.level.ServerPlayer.class,
-                com.myriad.player.PlayerData.class, stateType, moveType, long.class); finish.setAccessible(true);
-        // No Chapters, repeated directions: only three accumulated perfect beats should matter.
-        for (int scenario = 0; scenario < 3; scenario++) {
-            Object state = stateCtor.newInstance();
-            Object ultimate = ultimateCtor.newInstance(1, player.level().getGameTime(), player.position());
-            ultimateField.set(state, ultimate);
-            for (var entry : Map.of("beats", scenario == 0 ? 2 : 4, "perfect", scenario == 2 ? 1 : 2).entrySet()) {
-                var f = ultimateType.getDeclaredField(entry.getKey()); f.setAccessible(true); f.setInt(ultimate, entry.getValue());
-            }
-            for (String name : List.of("pendingPerfect", "pendingRepeated")) {
-                var f = ultimateType.getDeclaredField(name); f.setAccessible(true); f.setBoolean(ultimate, true);
-            }
-            Object move = moveCtor.newInstance(Enum.valueOf((Class)kindType, "R"), 1);
-            ((java.util.Set<java.util.UUID>)field(moveType, move, "heroHit")).add(player.getUUID());
-            finish.invoke(null, player, com.myriad.player.PlayerDataProvider.get(player), state, move, player.level().getGameTime());
-            helper.assertTrue((field(stateType, state, "finisher") != null) == (scenario == 1),
-                    "Three perfect beats must wait for beat five without requiring Chapters; two must not trigger");
-            helper.assertTrue((ultimateField.get(state) == null) == (scenario != 0),
-                    "Reaching three perfect beats early must keep the remaining beats active");
-        }
-        com.myriad.character.skills.feiyu.FeiYuSkills.clearFor(player.getUUID());
-    }
-
     private static void verifyRetiredCoreEffects(GameTestHelper helper, net.minecraft.server.level.ServerPlayer player) {
         var data = com.myriad.player.PlayerDataProvider.get(player);
         String oldRole = data.getCharacterId();
@@ -282,48 +251,9 @@ public final class CombatRegressionTests {
         data.setLastCombatGameTime(-1); player.setHealth(oldHp);
     }
 
-    private static void verifyWuxiangMonsters(GameTestHelper helper, net.minecraft.server.level.ServerPlayer player, BlockPos a)
-            throws ReflectiveOperationException {
-        var level = helper.getLevel();
-        var skills = com.myriad.character.skills.wuxiang.WuxiangSkills.class;
-        var data = com.myriad.player.PlayerDataProvider.get(player);
-        data.setCharacterId("wuxiang");
-        player.setPos(a.getX() + 5, a.getY(), a.getZ() + 5);
-        player.setYRot(0); player.setXRot(0);
-        var beforeIds = new java.util.HashSet<>(((Map<?, ?>)field(MonsterManager.class, null, "STATES")).keySet());
-        MonsterManager.spawn(level, a.offset(5, 0, 6), MonsterType.SPRING_REEF_GUARDIAN);
-        Mob monster = null;
-        for (var entry : ((Map<?, ?>)field(MonsterManager.class, null, "STATES")).entrySet())
-            if (!beforeIds.contains(entry.getKey())) monster = (Mob)field(entry.getValue().getClass(), entry.getValue(), "entity");
-        helper.assertTrue(monster != null, "Wuxiang fixture must contain a managed jungle monster");
-        monster.setPos(player.getX(), player.getY(), player.getZ() + 1.2);
-        var q = skills.getDeclaredMethod("castQ", net.minecraft.server.level.ServerPlayer.class,
-                com.myriad.player.PlayerData.class, boolean.class); q.setAccessible(true);
-        var tick = skills.getDeclaredMethod("tickDash", net.minecraft.server.level.ServerPlayer.class,
-                com.myriad.player.PlayerData.class, net.minecraft.server.level.ServerLevel.class, long.class); tick.setAccessible(true);
-        float hp = MonsterManager.modHealth(monster);
-        q.invoke(null, player, data, true); tick.invoke(null, player, data, level, level.getGameTime());
-        helper.assertTrue(MonsterManager.modHealth(monster) < hp, "Wuxiang dash must damage jungle monsters");
-        var marks = (Map<?, ?>)field(skills, null, "MARKS");
-        helper.assertTrue(((Map<?, ?>)marks.get(player.getUUID())).containsKey(monster.getUUID()),
-                "Dash must record aspect marks on monsters");
-        var select = skills.getDeclaredMethod("lookedEnemyTarget", net.minecraft.server.level.ServerPlayer.class, double.class, boolean.class);
-        select.setAccessible(true);
-        helper.assertTrue(select.invoke(null, player, 13.0, false) == monster
-                && select.invoke(null, player, 12.0, true) == monster, "E and marked R must select the monster");
-        var e = skills.getDeclaredMethod("castE", net.minecraft.server.level.ServerPlayer.class,
-                com.myriad.player.PlayerData.class, boolean.class); e.setAccessible(true);
-        e.invoke(null, player, data, false); e.invoke(null, player, data, true);
-        helper.assertTrue(((Map<?, ?>)field(skills, null, "ARCS")).containsKey(player.getUUID()),
-                "E recast must start orbit motion around a monster");
-        com.myriad.character.skills.wuxiang.WuxiangSkills.clearFor(player.getUUID());
-        monster.discard();
-        player.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
-    }
-
     private static void verifyProgressionAndTraining(GameTestHelper helper, net.minecraft.server.level.ServerPlayer player) {
         var data = com.myriad.player.PlayerDataProvider.get(player);
-        data.setCharacterId("zhechuan"); data.setFaction(Faction.XUANXIAO);
+        data.setCharacterId("yingxiao"); data.setFaction(Faction.XUANXIAO);
         data.setLevel(1); data.setXp(0);
         com.myriad.player.PlayerHealthSystem.fill(player);
         player.setHealth(70); data.setMana(17);
@@ -363,14 +293,14 @@ public final class CombatRegressionTests {
     private static void verifyPersistence(GameTestHelper helper, net.minecraft.server.level.ServerPlayer player)
             throws ReflectiveOperationException {
         var data = com.myriad.player.PlayerDataProvider.get(player);
-        data.setCharacterId("zhechuan"); data.setLevel(9); data.setGold(1234); data.resetMatchGoldEarned(2468); data.setXp(87);
+        data.setCharacterId("yingxiao"); data.setLevel(9); data.setGold(1234); data.resetMatchGoldEarned(2468); data.setXp(87);
         data.setFaction(Faction.XUANXIAO); data.setSkillLevel("test_skill", 4); data.setCooldown("test_skill", 83);
         data.setEquipApplied("test_attribute", 15);
         var codec = com.myriad.player.PlayerData.CODEC;
         var encoded = codec.encodeStart(net.minecraft.nbt.NbtOps.INSTANCE, data).getOrThrow();
         var restored = codec.parse(net.minecraft.nbt.NbtOps.INSTANCE, encoded).getOrThrow();
         var cloned = new com.myriad.player.PlayerData(); cloned.copyStateFrom(restored);
-        helper.assertTrue("zhechuan".equals(restored.getCharacterId()) && restored.getLevel() == 9
+        helper.assertTrue("yingxiao".equals(restored.getCharacterId()) && restored.getLevel() == 9
                 && restored.getGold() == 1234 && restored.getMatchGoldEarned() == 2468
                 && restored.getXp() == 87 && restored.getFaction() == Faction.XUANXIAO,
                 "Player progression must survive persistent attachment codec roundtrip");
@@ -388,7 +318,7 @@ public final class CombatRegressionTests {
         helper.assertTrue(GameManager.get().getPhase() == GameManager.Phase.PLAYING
                 && GameManager.get().factionOf(player) == Faction.XUANXIAO, "Disconnect and world reload must preserve match and faction");
         GameManager.get().onPlayerJoin(player);
-        helper.assertTrue(data.getGold() == 1234 && "zhechuan".equals(data.getCharacterId()), "Reconnect must not reset character progression");
+        helper.assertTrue(data.getGold() == 1234 && "yingxiao".equals(data.getCharacterId()), "Reconnect must not reset character progression");
         var lanes = com.google.gson.JsonParser.parseString(MatchProgress.JSON.toJson(LaneSystem.snapshot())).getAsJsonObject();
         lanes.getAsJsonArray("units").get(0).getAsJsonObject().addProperty("health", 17);
         LaneSystem.restore(helper.getLevel(),lanes);
@@ -438,6 +368,7 @@ public final class CombatRegressionTests {
     @SuppressWarnings("unchecked")
     private static void verifyBaseAndCrystal(GameTestHelper helper,net.minecraft.server.level.ServerPlayer player,BlockPos a) throws ReflectiveOperationException {
         var level=helper.getLevel();var manager=GameManager.get();
+        var towerPoints=configureTowerFixture(a);
         BaseRules.logout(player); // Independent fixture: earlier damage tests marked this mock player in combat.
         var phase=GameManager.class.getDeclaredField("phase");phase.setAccessible(true);phase.set(manager,GameManager.Phase.PLAYING);
         var bases=(Map<Faction,BlockPos>)field(LaneSystem.class,null,"FOUNTAIN_POINTS");bases.put(Faction.XUANXIAO,a);
@@ -460,12 +391,22 @@ public final class CombatRegressionTests {
         BaseRules.combat(null,player);
         helper.assertTrue(!player.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED).hasModifier(haste),"Dealing damage immediately removes haste");
         var matchStart=GameManager.class.getDeclaredField("matchStartTime");matchStart.setAccessible(true);
-        long now=level.getGameTime();
-        matchStart.setLong(manager,now);helper.assertTrue(LaneSystem.minionReward(100,true)==100,"Opening minions keep base rewards");
-        matchStart.setLong(manager,now-2400);helper.assertTrue(LaneSystem.minionReward(100,true)==110
-                &&LaneSystem.minionReward(100,false)==27&&LaneSystem.minionReward(100,false,true)==88,
-                "Two minutes increases last-hit, shared gold, and shared experience rewards");
-        matchStart.setLong(manager,now-4800);helper.assertTrue(LaneSystem.minionReward(100,true)==120,"Four minutes adds another ten percent");
+        var overworld=level.getServer().overworld();
+        var clock=(net.minecraft.world.level.storage.ServerLevelData)overworld.getLevelData();
+        long savedTime=overworld.getGameTime(),savedStart=matchStart.getLong(manager);
+        try {
+            // A fresh test world is younger than four minutes. Negative match
+            // starts mean "not started", so use a valid clock for these checks.
+            clock.setGameTime(Math.max(savedTime,4800));
+            long now=overworld.getGameTime();
+            matchStart.setLong(manager,now);helper.assertTrue(LaneSystem.minionReward(100,true)==100,"Opening minions keep base rewards");
+            matchStart.setLong(manager,now-2400);helper.assertTrue(LaneSystem.minionReward(100,true)==110
+                    &&LaneSystem.minionReward(100,false)==27&&LaneSystem.minionReward(100,false,true)==88,
+                    "Two minutes increases last-hit, shared gold, and shared experience rewards");
+            matchStart.setLong(manager,now-4800);helper.assertTrue(LaneSystem.minionReward(100,true)==120,"Four minutes adds another ten percent");
+        } finally {
+            clock.setGameTime(savedTime);matchStart.setLong(manager,savedStart);
+        }
         var spawn=LaneSystem.class.getDeclaredMethod("spawnCrystal",net.minecraft.server.level.ServerLevel.class,Faction.class,BlockPos.class);spawn.setAccessible(true);
         spawn.invoke(null,level,Faction.YOUMING,a.offset(20,0,0));
         var units=(Map<?,?>)field(LaneSystem.class,null,"UNITS");Object state=units.values().iterator().next();
@@ -483,16 +424,33 @@ public final class CombatRegressionTests {
         NpcCombat.hit(crystal,player,50,DamageCalc.Kind.PHYSICAL);
         helper.assertTrue(manager.getPhase()==GameManager.Phase.ENDED&&manager.getWinner()==Faction.XUANXIAO,"Destroying the crystal must end the match for its enemy");
         BaseRules.logout(player);phase.set(manager,GameManager.Phase.WAITING);
+        var clear=LaneSystem.class.getDeclaredMethod("clearRuntime",net.minecraft.server.level.ServerLevel.class);clear.setAccessible(true);clear.invoke(null,level);
+        towerPoints.clear();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<Object,BlockPos> configureTowerFixture(BlockPos a) throws ReflectiveOperationException {
+        // The preceding tower-navigation fixture clears its placements. Configure
+        // both factions and every lane so locked lanes fail for intact towers,
+        // rather than for missing layout data.
+        Class<?> keyType=Class.forName("com.myriad.game.LaneSystem$TowerKey");
+        var key=keyType.getDeclaredConstructor(Faction.class,LaneSystem.Lane.class,int.class);key.setAccessible(true);
+        var points=(Map<Object,BlockPos>)field(LaneSystem.class,null,"TOWER_POINTS");points.clear();
+        for(var faction:Faction.values())for(var lane:LaneSystem.Lane.values())for(int tier=1;tier<=3;tier++)
+            points.put(key.newInstance(faction,lane,tier),a.offset(10+faction.ordinal()*50+tier*8,0,lane.ordinal()*10));
+        return points;
     }
 
     @SuppressWarnings("unchecked")
     private static void verifySiegeAndGrowth(GameTestHelper helper,BlockPos a) throws ReflectiveOperationException {
         var level=helper.getLevel();
+        var towerPoints=configureTowerFixture(a);
         var wave=LaneSystem.class.getDeclaredField("waveNumber");wave.setAccessible(true);wave.setInt(null,1);
         var start=LaneSystem.class.getDeclaredField("activeMatchStart");start.setAccessible(true);start.setLong(null,0);
         var spawn=LaneSystem.class.getDeclaredMethod("spawnWave",net.minecraft.server.level.ServerLevel.class);spawn.setAccessible(true);
         var unlocked=LaneSystem.class.getDeclaredMethod("siegeUnlocked",Faction.class,LaneSystem.Lane.class);unlocked.setAccessible(true);
         var destroyed=(java.util.Set<String>)field(LaneSystem.class,null,"DESTROYED_TOWERS");
+        destroyed.clear();
         destroyed.add("youming/top/1");destroyed.add("youming/top/2");
         helper.assertTrue(!(Boolean)unlocked.invoke(null,Faction.XUANXIAO,LaneSystem.Lane.TOP),"Two towers must not unlock siege units");
         destroyed.add("youming/top/3");
@@ -537,10 +495,10 @@ public final class CombatRegressionTests {
                 && LaneSystem.heroDamageMultiplier(1000000) == .5F,
                 "Minion hero protection must grow smoothly and cap at 50 percent");
         var clear=LaneSystem.class.getDeclaredMethod("clearRuntime",net.minecraft.server.level.ServerLevel.class);clear.setAccessible(true);clear.invoke(null,level);
+        towerPoints.clear();
     }
 
     @SuppressWarnings("unchecked")
-
 
     private static void verifyTowerAdvance(GameTestHelper helper, BlockPos a) throws ReflectiveOperationException {
         var level = helper.getLevel();

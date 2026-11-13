@@ -65,7 +65,7 @@ public final class MonsterManager {
             for(var entry:STATES.entrySet())if(!before.contains(entry.getKey())) {
                 State live=entry.getValue();live.modHealth=live.modMaxHealth*Math.max(0,Math.min(1,saved.modHealth/saved.modMaxHealth));
                 live.entity.setPos(position.x,position.y,position.z);live.returning=position.distanceToSqr(Vec3.atBottomCenterOf(saved.spawnPos))>4;
-                live.lastAttackTick=saved.lastAttackTick;CombatChunks.prepare(level,BlockPos.containing(position));
+                live.lastAttackTick=saved.lastAttackTick;live.attackRecovery=saved.attackRecovery;CombatChunks.prepare(level,BlockPos.containing(position));
             }
         }
         for(var row:root.getAsJsonArray("respawns")) {
@@ -109,6 +109,8 @@ public final class MonsterManager {
         boolean returning;
         double regenPerTick;
         long lastAttackTick;
+        double attackRecovery = 20;
+        transient long lastRecoveryTick = Long.MIN_VALUE;
         String spawnPointId;
         boolean randomBoss;
         int respawnGeneration;
@@ -390,6 +392,12 @@ public final class MonsterManager {
 
     /** Neutral camps retaliate against valid attackers, with stable threat selection and a hard leash. */
     private static void tickMonster(ServerLevel level, Mob mob, State s, long now) {
+        double cooldown=Math.max(1,Math.round(20/growthMultiplier(s.respawnGeneration)));
+        if(now>s.lastRecoveryTick){
+            s.attackRecovery=Math.min(cooldown,s.attackRecovery+
+                    com.myriad.character.skills.keheng.KehengTimeFields.managedNpcRate(mob,now));
+            s.lastRecoveryTick=now;
+        }
         mob.setDeltaMovement(0,mob.getDeltaMovement().y,0);
         Vec3 home=Vec3.atBottomCenterOf(s.spawnPos);
         s.damageTable.entrySet().removeIf(e -> !(level.getEntity(e.getKey()) instanceof LivingEntity target)
@@ -428,7 +436,8 @@ public final class MonsterManager {
         double range=s.type.getAttackRange()*growthMultiplier(s.respawnGeneration)+target.getBbWidth()*.25;
         if(mob.distanceToSqr(target)<=range*range && NpcNavigation.visible(mob,target)){
             mob.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES,target.getEyePosition());
-            if(now-s.lastAttackTick>=Math.max(1,Math.round(20/(growthMultiplier(s.respawnGeneration))))){
+            if(s.attackRecovery+1E-9>=cooldown){
+                s.attackRecovery=0;
                 s.lastAttackTick=now;
                 mob.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
                 applyNpcDamage(target,mob,(float)(s.type.getAttack()*growthMultiplier(s.respawnGeneration)));

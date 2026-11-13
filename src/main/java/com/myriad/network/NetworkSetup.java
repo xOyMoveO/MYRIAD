@@ -341,6 +341,11 @@ public final class NetworkSetup {
         }
     }
 
+    /** UI and received messages share the same ID validation as the character command. */
+    public static void handleChooseCharacter(ServerPlayer player, ChooseCharacterPayload payload) {
+        PlayerDataProvider.chooseCharacter(player, CharacterType.byId(payload.characterId()));
+    }
+
     /** 客户端选择职业请求 */
     public record ChooseCharacterPayload(String characterId) implements CustomPacketPayload {
         public static final Type<ChooseCharacterPayload> TYPE =
@@ -1235,7 +1240,8 @@ public final class NetworkSetup {
     }
 
     public static void register(RegisterPayloadHandlersEvent event) {
-        event.registrar("16")
+        event.registrar("17")
+                .playToClient(YikeStatePayload.TYPE,YikeStatePayload.CODEC,(payload,context)->com.myriad.client.YikeClientState.receive(payload))
                 .playToClient(ShuoViewPayload.TYPE,ShuoViewPayload.CODEC,
                         (payload,context)->com.myriad.client.firstperson.ShuoView.receive(payload))
                 .playToClient(FlameSkillViewPayload.TYPE,FlameSkillViewPayload.CODEC,
@@ -1290,31 +1296,13 @@ public final class NetworkSetup {
                 .playToServer(CastSkillPayload.TYPE, CastSkillPayload.STREAM_CODEC,
                         (payload, context) -> {
                             if (context.player() instanceof ServerPlayer player) {
-                                com.myriad.character.skills.lige.LiGeSkills.setRequestedDashDirection(
-                                        player, payload.moveX(), payload.moveZ());
-                                com.myriad.character.skills.mingzhu.MingZhuSkills.setRequestedDirection(
-                                        player, payload.moveX(), payload.moveZ());
-                                com.myriad.character.skills.wuxiang.WuxiangSkills.setRequestedDirection(
-                                        player, payload.moveX(), payload.moveZ());
-                                com.myriad.character.skills.feiyu.FeiYuSkills.setRequestedDirection(
-                                        player, payload.moveX(), payload.moveZ());
-                                com.myriad.character.skills.wanyue.WanyueSkills.setRequestedDirection(
-                                        player, payload.moveX(), payload.moveZ());
-                                try {
-                                    SkillSystem.cast(player, payload.slot());
-                                } finally {
-                                    com.myriad.character.skills.mingzhu.MingZhuSkills.clearRequestedDirection(player);
-                                    com.myriad.character.skills.lige.LiGeSkills.clearRequestedDashDirection(player);
-                                    com.myriad.character.skills.wuxiang.WuxiangSkills.clearRequestedDirection(player);
-                                    com.myriad.character.skills.feiyu.FeiYuSkills.clearRequestedDirection(player);
-                                    com.myriad.character.skills.wanyue.WanyueSkills.clearRequestedDirection(player);
-                                }
+                                SkillSystem.cast(player, payload.slot());
                             }
                         })
                 .playToServer(ChooseCharacterPayload.TYPE, ChooseCharacterPayload.STREAM_CODEC,
                         (payload, context) -> {
                             if (context.player() instanceof ServerPlayer player) {
-                                PlayerDataProvider.chooseCharacter(player, CharacterType.byId(payload.characterId()));
+                                handleChooseCharacter(player, payload);
                             }
                         })
                 .playToClient(DamageFloatPayload.TYPE, DamageFloatPayload.STREAM_CODEC,
@@ -1385,7 +1373,7 @@ public final class NetworkSetup {
                         })
                 .playToClient(HealFloatPayload.TYPE, HealFloatPayload.STREAM_CODEC,
                         (payload, context) -> com.myriad.client.HealFloater.add(payload.amount()))
-                
+
                 .playToClient(DashPayload.TYPE, DashPayload.STREAM_CODEC,
                         (payload, context) -> com.myriad.client.DashController.start(
                                 payload.dirX(), payload.dirY(), payload.dirZ(), payload.ticks()))
@@ -1412,7 +1400,7 @@ public final class NetworkSetup {
                 .playToClient(FrostViewPayload.TYPE, FrostViewPayload.STREAM_CODEC,
                         (payload, context) -> com.myriad.client.HanzeFrostView.start(
                                 payload.durationTicks()))
-                
+
                 .playToClient(UiFeedbackPayload.TYPE, UiFeedbackPayload.CODEC,
                         (payload, context) -> com.myriad.client.UiFeedback.receive(payload.kind()))
 
@@ -1440,14 +1428,6 @@ public final class NetworkSetup {
                                 com.myriad.combat.BasicAttackSystem.tryAttack(player, payload.targetId());
                             }
                         })
-                .playToServer(ToggleGunAimPayload.TYPE, ToggleGunAimPayload.CODEC,
-                        (payload, context) -> {
-                            if (context.player() instanceof ServerPlayer player) {
-                                com.myriad.character.skills.shenli.ShenLiSkills.toggleAim(player);
-                            }
-                        })
-                
-                
                 .playToServer(TrainActionPayload.TYPE, TrainActionPayload.STREAM_CODEC,
                         (payload, context) -> {
                             if (context.player() instanceof ServerPlayer player) {

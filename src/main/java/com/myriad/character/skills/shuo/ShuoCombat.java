@@ -19,11 +19,11 @@ import static com.myriad.network.ShuoViewPayload.*;
 public final class ShuoCombat {
     private static final WeakHashMap<ServerPlayer,State> STATES=new WeakHashMap<>();
     private static final AtomicInteger SEQUENCE=new AtomicInteger();
-    private static final class State {final ShuoBasicCombo combo=new ShuoBasicCombo();boolean drawn,charging;long sheathUntil,busyUntil,windupUntil,guardUntil,riposteUntil,lastTick=-1,bonusTick=-1;int gauge,chargeSkill=-1;float basicBonus;Object level;}
+    private static final class State {final ShuoBasicCombo combo=new ShuoBasicCombo();boolean drawn,charging;ActionTime.Progress sheath,busy;int busyTicks;long guardUntil,riposteUntil,lastTick=-1,bonusTick=-1;int gauge,chargeSkill=-1;float basicBonus;Object level;}
     private ShuoCombat(){}
     private static State state(ServerPlayer p){var s=STATES.computeIfAbsent(p,k->new State());if(s.level!=p.level()){s=new State();s.level=p.level();STATES.put(p,s);}return s;}
     public static boolean isShuo(ServerPlayer p){return "shuo".equals(PlayerDataProvider.get(p).getCharacterId());}
-    public static boolean blocked(ServerPlayer p){if(!isShuo(p))return false;var s=state(p);long now=p.level().getGameTime();return s.charging||s.sheathUntil>now||s.busyUntil>now||AbilityRuntime.moving(p);}
+    public static boolean blocked(ServerPlayer p){if(!isShuo(p))return false;var s=state(p);advance(p,s);return s.charging||s.sheath!=null||s.busy!=null||AbilityRuntime.moving(p);}
     public static boolean drawn(ServerPlayer p){return state(p).drawn;}
     public static int gauge(ServerPlayer p){return state(p).gauge;}
     public static void cue(ServerPlayer p,int action,int ticks){int token=SEQUENCE.updateAndGet(v->v==Integer.MAX_VALUE?1:v+1);PacketDistributor.sendToPlayer(p,new ShuoViewPayload(action,ticks,p.level().getGameTime(),token));}
@@ -34,23 +34,26 @@ public final class ShuoCombat {
     }
     public static void tick(ServerPlayer p){if(!isShuo(p))return;
         var s=state(p);long now=p.level().getGameTime();
-        if(s.charging&&!AbilityRuntime.channeling(p)){s.charging=false;s.windupUntil=0;s.busyUntil=0;ShuoVisuals.cancel(p,s.chargeSkill);s.chargeSkill=-1;cue(p,CANCEL,0);}
-        if(s.sheathUntil>0&&now>=s.sheathUntil){s.sheathUntil=0;s.drawn=false;s.gauge=0;ShuoAudio.play(p,"sheathe");}
+        advance(p,s);
+        if(s.charging&&!AbilityRuntime.channeling(p)){s.charging=false;s.busy=null;ShuoVisuals.cancel(p,s.chargeSkill);s.chargeSkill=-1;cue(p,CANCEL,0);}
         if(PlayerDataProvider.get(p).getBuff("g1_stun")>0){if(s.guardUntil>now)ShuoVisuals.cancel(p,3);s.guardUntil=0;s.riposteUntil=0;}
         if(s.guardUntil>now)ShuoVisuals.guard(p);
         var d=PlayerDataProvider.get(p);d.setBuff("g1_shuo_drawn",s.drawn?2:0);d.setBuff("g1_shuo_gauge",s.gauge);
         ShuoWeaponState.sync(p,s.drawn);
-        d.setBuff("g1_shuo_sheathing",(int)Math.max(0,s.sheathUntil-now));d.setBuff("g1_shuo_ready",s.riposteUntil>now?2:0);
+        d.setBuff("g1_shuo_sheathing",s.sheath==null?0:Math.max(1,(int)Math.ceil((8-s.sheath.completed())/ActionTime.multiplier(p.getUUID(),now))));d.setBuff("g1_shuo_ready",s.riposteUntil>now?2:0);
     }
+    private static void advance(ServerPlayer p,State s){long now=p.level().getGameTime();double rate=ActionTime.multiplier(p.getUUID(),now);
+        if(s.busy!=null&&s.busy.advance(now,rate,s.busyTicks))s.busy=null;
+        if(s.sheath!=null&&s.sheath.advance(now,rate,8)){s.sheath=null;s.drawn=false;s.gauge=0;ShuoAudio.play(p,"sheathe");}}
     public static void chargeEdge(ServerPlayer p){var s=state(p);long now=p.level().getGameTime();if(s.lastTick==now)return;s.lastTick=now;
         if(!s.drawn&&!blocked(p)){int old=s.gauge;s.gauge=Math.min(100,s.gauge+2);if(old<100&&s.gauge==100)ShuoVisuals.body(p,0,ShuoSkillVfx.READY,12);}
         PlayerDataProvider.get(p).setBuff("g1_shuo_gauge",s.gauge);
     }
     public static void windup(AbilityRuntime.Cast c,int ticks,Runnable fire){
-        var s=state(c.player);s.charging=true;s.windupUntil=c.now()+ticks;
+        var s=state(c.player);s.charging=true;
         s.chargeSkill=c.skill.index();ShuoVisuals.charge(c,ticks);
         cue(c.player,CHARGE,ticks);ShuoAudio.play(c.player,"charge");
-        c.later(ticks,true,()->{s.charging=false;s.windupUntil=0;s.chargeSkill=-1;ShuoVisuals.cancel(c.player,c.skill.index());fire.run();});
+        c.windup(ticks,0,()->{s.charging=false;s.chargeSkill=-1;ShuoVisuals.cancel(c.player,c.skill.index());fire.run();});
     }
     public static float draw(ServerPlayer p,int action,int ticks){
         var s=state(p);float bonus=0;int passiveIndex=-1;var d=PlayerDataProvider.get(p);long now=p.level().getGameTime();
@@ -59,7 +62,7 @@ public final class ShuoCombat {
                 if(passive.index()==0)bonus=(40+12*(r-1)+.4f*strength)*s.gauge/100;
                 else if(s.riposteUntil>now)bonus=55+15*(r-1)+.5f*strength;
             }}
-        s.drawn=true;s.charging=false;s.sheathUntil=0;s.gauge=0;s.riposteUntil=0;
+        s.drawn=true;s.charging=false;s.sheath=null;s.gauge=0;s.riposteUntil=0;
         ShuoWeaponState.sync(p,true);
         s.guardUntil=0;d.setBuff("g1_shuo_drawn",2);
         if(!basicAction(action))s.combo.reset();
@@ -80,22 +83,22 @@ public final class ShuoCombat {
         if(!AbilityRuntime.valid(p)||!isShuo(p)||blocked(p)||AbilityRuntime.channeling(p)||AbilityRuntime.moving(p)||PlayerDataProvider.get(p).getBuff("g1_stun")>0||!state(p).drawn)return false;
         sheathe(p);return true;
     }
-    public static void sheathe(ServerPlayer p){if(!AbilityRuntime.valid(p)||!isShuo(p))return;var s=state(p);s.charging=false;s.sheathUntil=p.level().getGameTime()+8;s.busyUntil=0;
+    public static void sheathe(ServerPlayer p){if(!AbilityRuntime.valid(p)||!isShuo(p))return;var s=state(p);s.charging=false;s.sheath=new ActionTime.Progress(p.level().getGameTime());s.busy=null;
         ShuoVisuals.body(p,2,ShuoSkillVfx.SHEATHING,8);
         s.combo.reset();
         cue(p,SHEATHE,8);PlayerDataProvider.get(p).setBuff("g1_shuo_sheathing",8);}
-    public static void motion(ServerPlayer p,int ticks){state(p).busyUntil=p.level().getGameTime()+ticks;cue(p,RETREAT,ticks);ShuoAudio.play(p,"draw");}
+    public static void motion(ServerPlayer p,int ticks){var s=state(p);s.busy=new ActionTime.Progress(p.level().getGameTime());s.busyTicks=ticks;cue(p,RETREAT,ticks);ShuoAudio.play(p,"draw");}
     public static void guard(AbilityRuntime.Cast c){state(c.player).guardUntil=c.now()+7;c.memory().until=0;c.buff("shuo_qiaofan_recast",0);ShuoVisuals.guard(c.player);cue(c.player,GUARD,7);}
     /** Short exposed-blade cut, not a new draw: no gauge/passive bonus is created. */
     public static void cut(AbilityRuntime.Cast c,int action,int ticks){state(c.player).combo.reset();cue(c.player,action,ticks);}
     /** Follow-ups latch even a brief control interruption; they never fire after a cancelled sequence. */
     public static void follow(AbilityRuntime.Cast c,int ticks,Runnable fire){
-        var s=state(c.player);s.busyUntil=Math.max(s.busyUntil,c.now()+ticks);
-        c.whileActive(ticks,age->{
-            if(c.data.getBuff("g1_stun")>0||c.data.getBuff("g1_root")>0||com.myriad.character.skills.yunsheng.YunShengSkills.isSilenced(c.player)){
-                s.busyUntil=0;cue(c.player,CANCEL,0);return false;
+        var s=state(c.player);s.busy=new ActionTime.Progress(c.now());s.busyTicks=ticks;
+        c.actionWhile(ticks,age->{
+            if(c.data.getBuff("g1_stun")>0||c.data.getBuff("g1_root")>0||com.myriad.combat.SilenceSystem.isSilenced(c.player)){
+                s.busy=null;cue(c.player,CANCEL,0);return false;
             }
-            if(age<ticks)return true;s.busyUntil=0;fire.run();return false;
+            if(age+1E-9<ticks)return true;s.busy=null;fire.run();return false;
         });
     }
     public static boolean parry(ServerPlayer p,DamageSource source,DamageCalc.Kind kind){
