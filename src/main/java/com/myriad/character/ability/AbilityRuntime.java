@@ -463,7 +463,8 @@ public final class AbilityRuntime {
                     var clip=player.level().clip(new ClipContext(pos,end,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,player));boolean blocked=clip.getType()!=HitResult.Type.MISS;
                     if(blocked)end=clip.getLocation();final Vec3 dest=end;
                     var targets=player.level().getEntitiesOfClass(LivingEntity.class,new AABB(pos,end).inflate(radius),t->SkillTargets.enemy(player,t)&&!hit.contains(t.getUUID())
-                        &&t.getBoundingBox().inflate(radius).clip(pos,dest).isPresent()).stream().sorted(Comparator.comparingDouble(t->t.position().distanceToSqr(pos))).toList();
+                        &&(actionId==null?t.getBoundingBox().inflate(radius).clip(pos,dest).isPresent()
+                            :AbilityTargeting.unobstructedHit(player,t.getBoundingBox(),pos,dest,radius).isPresent())).stream().sorted(Comparator.comparingDouble(t->t.position().distanceToSqr(pos))).toList();
                     for(var target:targets){hit.add(target.getUUID());
                         if(!pierce){
                             Vec3 contact=target.getBoundingBox().inflate(radius).clip(pos,dest).orElse(dest);

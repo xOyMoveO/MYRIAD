@@ -29,7 +29,7 @@ final class KehengChecks {
             ModState.setEnabled(mod);TrainingMode.setEnabled(training);TrainingMode.setNoMana(noMana);TrainingMode.setNoCooldown(noCd);};
         try {
             identity(h);
-            for(int i=0;i<38;i++)fixtures.add(fixture(h,i));
+            for(int i=0;i<42;i++)fixtures.add(fixture(h,i));
             for(int i=0;i<fixtures.size();i++){
                 var f=fixtures.get(i);var d=PlayerDataProvider.get(f.p);
                 switch(i){
@@ -44,6 +44,11 @@ final class KehengChecks {
                         f.t.getAttribute(ModAttributes.PHYSICAL_ATTACK).setBaseValue(65);
                         if(i==32||i==33||i==35)yd.setSkillLevel(FirstGroupSkills.node("yike",i==35?5:4).getId(),1);
                         if(i==34)yd.setSkillLevel(FirstGroupSkills.node("yike",7).getId(),1);
+                    }
+                    case 38,39,40,41->{
+                        if(i!=40)cover(f,h,i==38?Blocks.IRON_BARS:i==39?Blocks.GLASS_PANE:Blocks.STONE);
+                        else f.t.setPos(f.origin.add(.69,0,4));
+                        learn(f,2,1);SkillSystem.cast(f.p,0);
                     }
                     case 0->{learn(f,2,1);SkillSystem.cast(f.p,0);h.assertTrue(d.getMana()==660&&d.getCooldown("keheng_chizhen")==140,"Q charges at the normal accepted-cast boundary");}
                     case 1->{learn(f,2,5);f.t.getAttribute(ModAttributes.TENACITY).setBaseValue(60);SkillSystem.cast(f.p,0);}
@@ -100,6 +105,11 @@ final class KehengChecks {
                             hp(h,fixtures.get(2),10000,"Stun cancels an already paid Q windup without firing");rate(h,fixtures.get(20).t,1,"Control immune actor is not action slowed");
                             hp(h,fixtures.get(20),9905,"Control immunity does not remove legal skill damage");
                             h.assertTrue(Math.abs(fixtures.get(3).p.getZ()-fixtures.get(3).origin.z-4.5)<.06,"Actual W motion reaches 4.5 blocks without teleporting");}
+                        if(age==10){
+                            for(int i:new int[]{38,39,41}){hp(h,fixtures.get(i),10000,"Needle cannot hit the actual target volume behind cover: "+i);rate(h,fixtures.get(i).t,1,"Blocked needle cannot apply action slow: "+i);}
+                            hp(h,fixtures.get(40),9905,"Unobstructed target .39 beyond the centre line is within the .40 needle radius");
+                            rate(h,fixtures.get(40).t,.85,"Legal needle edge hit retains its action slow");
+                        }
                         if(age==9){
                             h.assertTrue(PlayerDataProvider.get(fixtures.get(23).p).getBuff("g1_keheng_marks")==1&&fixtures.get(23).t.getHealth()==10000,"Fully shield-absorbed Q gives exactly one effective hero mark");
                             h.assertTrue(PlayerDataProvider.get(fixtures.get(24).p).getBuff("g1_keheng_marks")==0,"Invulnerability gives no mark");
@@ -154,7 +164,7 @@ final class KehengChecks {
                         }
                         if(age==150){
                             done[0]=true;net.neoforged.neoforge.common.NeoForge.EVENT_BUS.unregister(this);cleanup.run();
-                            System.out.println("[MYRIAD-KEHENG] PASS: 38 real-cast scenarios (30 Keheng + 8 Keheng/Yike integration); identity/growth/graph/save/melee, exact Q/W/field/follow/dome/corridor/echo resources and timings, actor/flight geometry, control/cleanse and lifecycle");h.succeed();}
+                            System.out.println("[MYRIAD-KEHENG] PASS: 42 real-cast scenarios (30 Keheng + 8 integration + 4 cover/edge); identity/growth/graph/save/melee, exact Q/W/field/follow/dome/corridor/echo resources and timings, actor/flight geometry, control/cleanse and lifecycle");h.succeed();}
                     }catch(Throwable failure){done[0]=true;net.neoforged.neoforge.common.NeoForge.EVENT_BUS.unregister(this);cleanup.run();throw new IllegalStateException(failure);}
                 }
             };
@@ -220,6 +230,15 @@ final class KehengChecks {
     private static void learn(Fixture f,int index,int rank){PlayerDataProvider.get(f.p).setSkillLevel(FirstGroupSkills.node("keheng",index).getId(),rank);}
     private static void point(Fixture f,double forward){f.p.setYRot(0);f.p.setXRot((float)Math.toDegrees(Math.atan2(f.p.getEyeHeight(),forward)));}
     private static void wall(Fixture f,GameTestHelper h,int x,int y,int z){var pos=BlockPos.containing(f.origin).offset(x,y-1,z);f.blocks.putIfAbsent(pos,h.getLevel().getBlockState(pos));h.getLevel().setBlockAndUpdate(pos,Blocks.STONE.defaultBlockState());}
+    private static void cover(Fixture f,GameTestHelper h,net.minecraft.world.level.block.Block block){
+        var base=BlockPos.containing(f.origin).offset(0,0,4);
+        for(int x=-2;x<=2;x++)for(int y=0;y<3;y++){
+            var at=base.offset(x,y,0);f.blocks.putIfAbsent(at,h.getLevel().getBlockState(at));h.getLevel().setBlockAndUpdate(at,block.defaultBlockState());
+        }
+        double rear=h.getLevel().getBlockState(base).getCollisionShape(h.getLevel(),base).bounds().maxZ;
+        f.t.setPos(f.origin.x,f.origin.y,base.getZ()+rear+.01+f.t.getBbWidth()/2);
+        h.assertTrue(f.t.getBoundingBox().minZ>base.getZ()+rear,"Cover fixture target is wholly behind the collision shape");
+    }
     private static Fixture fixture(GameTestHelper h,int i){
         var f=new Fixture();var floor=h.absolutePos(new BlockPos(-100+i*24,80,-45));
         for(int x=-5;x<=5;x++)for(int z=-5;z<=14;z++)for(int y=0;y<=6;y++){

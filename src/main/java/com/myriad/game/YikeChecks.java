@@ -21,7 +21,7 @@ import java.util.*;
 
 /** Real input, real payment boundaries and actual target HP/shields; isolated fresh-world fixtures. */
 final class YikeChecks {
-    private static final int CASES=56;
+    private static final int CASES=60;
     private static final class Fixture {
         ServerPlayer p;Villager target;Vec3 origin;ServerLevel level;int index;
         final Map<BlockPos,BlockState> blocks=new HashMap<>();float paid;int shots;long lastShot=-1000;Vec3 aim;
@@ -43,11 +43,16 @@ final class YikeChecks {
                 if(i==20||i==35)wall(f,4,4);
                 if(i==30)ActionTime.apply(f.p.getUUID(),f.p.getUUID(),"slow-windup",.5,f.p.level().getGameTime()+50);
                 if(i==36)d.setSkillLevel(node(2).getId(),0);
+                if(i>=56){
+                    if(i!=58)cover(f,h,i==56?Blocks.IRON_BARS:i==57?Blocks.GLASS_PANE:Blocks.STONE);
+                    else f.target.setPos(f.origin.add(.90,0,5));
+                    d.setSkillLevel(node(6).getId(),0);d.setSkillLevel(node(7).getId(),1);
+                }
                 switch(i){
                     case 0,1,2,3,20,21,28,30,32,33,36,37,44,45,46,48 -> SkillSystem.cast(f.p,0);
                     case 4,6,7,8,9,10,11,12,23,26,27,38,39,40,41,42 -> SkillSystem.cast(f.p,2);
                     case 5 -> {d.setSkillLevel(node(4).getId(),0);d.setSkillLevel(node(5).getId(),1);SkillSystem.cast(f.p,2);}
-                    case 13,14,15,16,35,47,52 -> {d.setSkillLevel(node(6).getId(),0);d.setSkillLevel(node(7).getId(),1);SkillSystem.cast(f.p,3);}
+                    case 13,14,15,16,35,47,52,56,57,58,59 -> {d.setSkillLevel(node(6).getId(),0);d.setSkillLevel(node(7).getId(),1);SkillSystem.cast(f.p,3);}
                     case 17,18,19 -> {SkillSystem.cast(f.p,3);AbilityRuntime.confirm(f.p);}
                     case 22,31 -> YikeBasicAttack.tryFire(f.p);
                     case 34,43,49,53,54,55 -> {aimGround(f,5);SkillSystem.cast(f.p,1);AbilityRuntime.confirm(f.p);}
@@ -150,6 +155,10 @@ final class YikeChecks {
                     if(tick==28&&i==25)h.assertTrue(ModShieldSystem.value(p)==0,"Cancelled unpaid action never grants steady shield");
                     if(tick==31&&i==25)h.assertTrue(ModShieldSystem.value(p)>0,"Next successful W consumes the ready barrier");
                     if(tick==50&&(i==14||i==15))h.assertTrue(!PrismaticBeam.active(p)&&Math.abs(loss(f)-155)<.1,"Cancel/control stops the beam after two real jumps");
+                    if(tick==74&&i>=56){
+                        h.assertTrue(!PrismaticBeam.active(p),"Cover/edge beam completes its ordinary six-jump lifecycle");
+                        h.assertTrue(Math.abs(loss(f)-(i==58?465:0))<.1,"Beam keeps .625 half-width at an unobstructed .60 edge, but never damages through thin or full cover: "+i+" loss="+loss(f));
+                    }
                     if(tick==74&&(i==13||i==16))h.assertTrue(!PrismaticBeam.active(p)&&Math.abs(loss(f)-465)<.1,"Exactly six real jumps, including rooted channel");
                     if(tick==110&&i==4)h.assertTrue(f.shots==5&&!YikeStance.active(p)&&d.getMana()==455,"Fixed stance delivers five manually requested paid shells");
                     if(tick==100&&i==5)h.assertTrue(f.shots==4&&!YikeStance.active(p)&&d.getMana()==495,"Mobile stance delivers four distinct paid shells");
@@ -172,7 +181,7 @@ final class YikeChecks {
                     h.assertTrue(loss(fixtures.get(34))>0,"Committed ground warning survives stun");
                     h.assertTrue(loss(fixtures.get(53))>0,"Placed W uses centre visibility, not the caster's later obstructed sightline");
                     h.assertTrue(loss(fixtures.get(54))==0&&loss(fixtures.get(55))==0,"W cannot cross a floor or flatten its 2.5-block sphere into a vertical cylinder");
-                    System.out.println("[MYRIAD-YIKE] PASS: 56 real-input cases, unpaid commit/recheck, W cancellation, fixed five/mobile four, real muzzle deadlines, exit CD, root/stun, six-jump cancel, heavy collision, physical basic, rolling barrier, shields/marks, S230 actual chain, beam turn, 3D centre visibility and cleanup");
+                    System.out.println("[MYRIAD-YIKE] PASS: 60 real-input cases, unpaid commit/recheck, W cancellation, fixed five/mobile four, real muzzle deadlines, exit CD, root/stun, six-jump cancel, heavy collision, physical basic, rolling barrier, shields/marks, S230 actual chain, beam turn, 3D centre visibility and cleanup");
                     done[0]=true;fixtures.forEach(YikeChecks::cleanup);restore(enabled,training,nc,nm);h.succeed();
                 }
             }catch(Throwable fail){done[0]=true;fixtures.forEach(YikeChecks::cleanup);restore(enabled,training,nc,nm);throw fail;}
@@ -198,6 +207,15 @@ final class YikeChecks {
     }
     private static void aimGround(Fixture f,double distance){f.p.setYRot(0);f.p.setXRot((float)Math.toDegrees(Math.atan(f.p.getEyeHeight()/distance)));}
     private static void wall(Fixture f,int z,int height){for(int x=-3;x<=3;x++)for(int y=1;y<=height;y++){BlockPos b=BlockPos.containing(f.origin).offset(x,y-1,z);f.blocks.putIfAbsent(b,f.level.getBlockState(b));f.level.setBlockAndUpdate(b,Blocks.STONE.defaultBlockState());}}
+    private static void cover(Fixture f,GameTestHelper h,net.minecraft.world.level.block.Block block){
+        var base=BlockPos.containing(f.origin).offset(0,0,4);
+        for(int x=-2;x<=2;x++)for(int y=0;y<3;y++){
+            var at=base.offset(x,y,0);f.blocks.putIfAbsent(at,f.level.getBlockState(at));f.level.setBlockAndUpdate(at,block.defaultBlockState());
+        }
+        double rear=f.level.getBlockState(base).getCollisionShape(f.level,base).bounds().maxZ;
+        f.target.setPos(f.origin.x,f.origin.y,base.getZ()+rear+.01+f.target.getBbWidth()/2);
+        h.assertTrue(f.target.getBoundingBox().minZ>base.getZ()+rear,"Cover fixture target is wholly behind the collision shape");
+    }
     private static float loss(Fixture f){return JiarenManager.MAX_HP-JiarenManager.hp(f.target.getUUID());}
     private static void restore(boolean e,boolean t,boolean nc,boolean nm){ModState.setEnabled(e);TrainingMode.setEnabled(t);TrainingMode.setNoCooldown(nc);TrainingMode.setNoMana(nm);}
     private static void cleanup(Fixture f){AbilityRuntime.clear(f.p);ModShieldSystem.clearFor(f.p);ModShieldSystem.clearFor(f.target.getUUID());SilenceSystem.clearFor(f.p.getUUID());KnockbackBuffer.clear(f.p.getUUID());f.level.getServer().getPlayerList().getPlayersByUUID().remove(f.p.getUUID());f.target.discard();f.blocks.forEach(f.level::setBlockAndUpdate);f.p.discard();}

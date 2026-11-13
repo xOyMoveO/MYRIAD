@@ -40,7 +40,7 @@ public final class PrismaticBeam extends AbilitySkill {
         if(age>0&&age%10==0&&b.jumps<6){
             b.jumps++;
             for(var t:p.level().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,new AABB(from,to).inflate(.625),t->SkillTargets.enemy(p,t)
-                    &&t.getBoundingBox().inflate(.625).clip(from,to).isPresent())){
+                    &&AbilityTargeting.unobstructedHit(p,t.getBoundingBox(),from,to,.625).isPresent())){
                 c.damage(t,c.value(70,20,.25f),DamageCalc.Kind.MAGIC);YikeVfx.target(c,"beam_hit",t,.4f,4);
             }
             YikeAudio.play(p,"beam_tick",to,.25f,1+(b.jumps%2)*.06f);
