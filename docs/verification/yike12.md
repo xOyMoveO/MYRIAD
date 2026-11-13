@@ -17,6 +17,7 @@ JDK25：`/Library/Java/JavaVirtualMachines/jdk-25.jdk/Contents/Home`。Gradle任
 | 执行 | 真实结果 |
 |---|---|
 | `runYikeTestServer`，`yike-test-6.log` | 退出0，`MYRIAD-YIKE PASS: 52 real-input cases`，GameTest 1/1通过。涵盖Q取消／低蓝／重复提交、W取消、五炮／四炮精确22／27 tick、提交点与退出冷却、禁锢／眩晕／沉默／强制位移、六跳取消、重轰撞墙、A65左键与右键无弹、有限转向、稳态累计路程、全护盾有效虹标、死亡／换角／跨维度／重置／关闭玩法清理。S230组合真实结算2070.5/1.5、总蓝耗405。 |
+| 补充四个缺失验收点后 `runYikeTestServer`，`yike-test-7.log` | 退出0，56个真实输入场景、GameTest 1/1通过。新增实际束流逐tick最多2.25°／20tick精确45°、W使用区域中心视线而非施法者后续视线、楼板遮挡、球外高度不结算。仅扩充测试，生产代码未变化。 |
 | `build runFirstGroupTestServer`，`build-aggregate-3.log` | 退出0，`BUILD SUCCESSFUL in 10s`；GameTest 1/1通过，既有十一人聚合和26个公共施法契约场景完成。 |
 | `python tools/check_namespace.py --jar build/libs/myriad-0.1.0.jar` | 退出0；命名空间、包、JSON、发行JAR通过。 |
 | `python tools/check_retired_roster.py --jar build/libs/myriad-0.1.0.jar` | 退出0；1259个源／工具／资产文件、1382个JAR条目通过；源树与JAR各261条自有资源引用均有目标。 |
