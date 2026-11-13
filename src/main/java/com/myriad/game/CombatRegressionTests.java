@@ -363,6 +363,7 @@ public final class CombatRegressionTests {
     @SuppressWarnings("unchecked")
     private static void verifyBaseAndCrystal(GameTestHelper helper,net.minecraft.server.level.ServerPlayer player,BlockPos a) throws ReflectiveOperationException {
         var level=helper.getLevel();var manager=GameManager.get();
+        var towerPoints=configureTowerFixture(a);
         BaseRules.logout(player); // Independent fixture: earlier damage tests marked this mock player in combat.
         var phase=GameManager.class.getDeclaredField("phase");phase.setAccessible(true);phase.set(manager,GameManager.Phase.PLAYING);
         var bases=(Map<Faction,BlockPos>)field(LaneSystem.class,null,"FOUNTAIN_POINTS");bases.put(Faction.XUANXIAO,a);
@@ -385,12 +386,22 @@ public final class CombatRegressionTests {
         BaseRules.combat(null,player);
         helper.assertTrue(!player.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED).hasModifier(haste),"Dealing damage immediately removes haste");
         var matchStart=GameManager.class.getDeclaredField("matchStartTime");matchStart.setAccessible(true);
-        long now=level.getGameTime();
-        matchStart.setLong(manager,now);helper.assertTrue(LaneSystem.minionReward(100,true)==100,"Opening minions keep base rewards");
-        matchStart.setLong(manager,now-2400);helper.assertTrue(LaneSystem.minionReward(100,true)==110
-                &&LaneSystem.minionReward(100,false)==27&&LaneSystem.minionReward(100,false,true)==88,
-                "Two minutes increases last-hit, shared gold, and shared experience rewards");
-        matchStart.setLong(manager,now-4800);helper.assertTrue(LaneSystem.minionReward(100,true)==120,"Four minutes adds another ten percent");
+        var overworld=level.getServer().overworld();
+        var clock=(net.minecraft.world.level.storage.ServerLevelData)overworld.getLevelData();
+        long savedTime=overworld.getGameTime(),savedStart=matchStart.getLong(manager);
+        try {
+            // A fresh test world is younger than four minutes. Negative match
+            // starts mean "not started", so use a valid clock for these checks.
+            clock.setGameTime(Math.max(savedTime,4800));
+            long now=overworld.getGameTime();
+            matchStart.setLong(manager,now);helper.assertTrue(LaneSystem.minionReward(100,true)==100,"Opening minions keep base rewards");
+            matchStart.setLong(manager,now-2400);helper.assertTrue(LaneSystem.minionReward(100,true)==110
+                    &&LaneSystem.minionReward(100,false)==27&&LaneSystem.minionReward(100,false,true)==88,
+                    "Two minutes increases last-hit, shared gold, and shared experience rewards");
+            matchStart.setLong(manager,now-4800);helper.assertTrue(LaneSystem.minionReward(100,true)==120,"Four minutes adds another ten percent");
+        } finally {
+            clock.setGameTime(savedTime);matchStart.setLong(manager,savedStart);
+        }
         var spawn=LaneSystem.class.getDeclaredMethod("spawnCrystal",net.minecraft.server.level.ServerLevel.class,Faction.class,BlockPos.class);spawn.setAccessible(true);
         spawn.invoke(null,level,Faction.YOUMING,a.offset(20,0,0));
         var units=(Map<?,?>)field(LaneSystem.class,null,"UNITS");Object state=units.values().iterator().next();
@@ -408,16 +419,33 @@ public final class CombatRegressionTests {
         NpcCombat.hit(crystal,player,50,DamageCalc.Kind.PHYSICAL);
         helper.assertTrue(manager.getPhase()==GameManager.Phase.ENDED&&manager.getWinner()==Faction.XUANXIAO,"Destroying the crystal must end the match for its enemy");
         BaseRules.logout(player);phase.set(manager,GameManager.Phase.WAITING);
+        var clear=LaneSystem.class.getDeclaredMethod("clearRuntime",net.minecraft.server.level.ServerLevel.class);clear.setAccessible(true);clear.invoke(null,level);
+        towerPoints.clear();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<Object,BlockPos> configureTowerFixture(BlockPos a) throws ReflectiveOperationException {
+        // The preceding tower-navigation fixture clears its placements. Configure
+        // both factions and every lane so locked lanes fail for intact towers,
+        // rather than for missing layout data.
+        Class<?> keyType=Class.forName("com.myriad.game.LaneSystem$TowerKey");
+        var key=keyType.getDeclaredConstructor(Faction.class,LaneSystem.Lane.class,int.class);key.setAccessible(true);
+        var points=(Map<Object,BlockPos>)field(LaneSystem.class,null,"TOWER_POINTS");points.clear();
+        for(var faction:Faction.values())for(var lane:LaneSystem.Lane.values())for(int tier=1;tier<=3;tier++)
+            points.put(key.newInstance(faction,lane,tier),a.offset(10+faction.ordinal()*50+tier*8,0,lane.ordinal()*10));
+        return points;
     }
 
     @SuppressWarnings("unchecked")
     private static void verifySiegeAndGrowth(GameTestHelper helper,BlockPos a) throws ReflectiveOperationException {
         var level=helper.getLevel();
+        var towerPoints=configureTowerFixture(a);
         var wave=LaneSystem.class.getDeclaredField("waveNumber");wave.setAccessible(true);wave.setInt(null,1);
         var start=LaneSystem.class.getDeclaredField("activeMatchStart");start.setAccessible(true);start.setLong(null,0);
         var spawn=LaneSystem.class.getDeclaredMethod("spawnWave",net.minecraft.server.level.ServerLevel.class);spawn.setAccessible(true);
         var unlocked=LaneSystem.class.getDeclaredMethod("siegeUnlocked",Faction.class,LaneSystem.Lane.class);unlocked.setAccessible(true);
         var destroyed=(java.util.Set<String>)field(LaneSystem.class,null,"DESTROYED_TOWERS");
+        destroyed.clear();
         destroyed.add("youming/top/1");destroyed.add("youming/top/2");
         helper.assertTrue(!(Boolean)unlocked.invoke(null,Faction.XUANXIAO,LaneSystem.Lane.TOP),"Two towers must not unlock siege units");
         destroyed.add("youming/top/3");
@@ -462,6 +490,7 @@ public final class CombatRegressionTests {
                 && LaneSystem.heroDamageMultiplier(1000000) == .5F,
                 "Minion hero protection must grow smoothly and cap at 50 percent");
         var clear=LaneSystem.class.getDeclaredMethod("clearRuntime",net.minecraft.server.level.ServerLevel.class);clear.setAccessible(true);clear.invoke(null,level);
+        towerPoints.clear();
     }
 
     @SuppressWarnings("unchecked")
