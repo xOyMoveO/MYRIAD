@@ -162,7 +162,7 @@ final class FirstGroupRegressionChecks {
             FirstGroupSpatialChecks.verify(h,p,d);
             SkillChargeChecks.verify(h,p);
             SecondGroupChecks.verify(h,p);
-            System.out.println("[MYRIAD-G1-G2] PASS: 88 modules, caps, alternatives, budgets, growth, economy, persistence, cancel");
+            System.out.println("[MYRIAD-G1-G2] PASS: "+classes.size()+" independent modules across "+FirstGroupSkills.ROLES.size()+" heroes, caps, alternatives, budgets, growth, economy, persistence, cancel");
             boolean[] completed={false};
             AbilityRuntime.context(p,FirstGroupSkills.node("yingxiao",6)).later(3,true,()->{
                 h.assertTrue(!com.myriad.character.ability.SkillChargeSystem.active(p),"Charge lock is released before the follow-up action");

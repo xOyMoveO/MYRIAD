@@ -405,7 +405,6 @@ public class GameManager {
 
     /** 对称宗门选人：双方共享全部角色池，仍保持角色唯一。 */
     public boolean onPick(ServerPlayer player, com.myriad.character.CharacterType type) {
-        if(type==null||type.developmentOnly())return false;
         if (phase != Phase.PICKING || type == null || !player.getUUID().equals(currentPicker())) {
             return false;
         }
