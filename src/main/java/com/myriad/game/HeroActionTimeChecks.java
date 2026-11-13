@@ -44,7 +44,8 @@ final class HeroActionTimeChecks {
         new Scenario("fenjue",4,3,3,false,"real"),new Scenario("yunsheng",3,3,0,false,"real"),
         new Scenario("fenjue",2,3,0,false,"boundary"),new Scenario("fenjue",2,3,0,false,"cancel"),
         new Scenario("shuo",5,3,0,false,"interrupt"),new Scenario("fenjue",2,3,0,false,"needle"),
-        new Scenario("fenjue",2,3,0,false,"ally"),new Scenario("fenjue",2,3,0,false,"dot")));
+        new Scenario("fenjue",2,3,0,false,"ally"),new Scenario("fenjue",2,3,0,false,"dot"),
+        new Scenario("shuo",2,2,0,true,"dome-finish"),new Scenario("shuo",6,3,0,false,"needle-finish")));
         for(var role:List.of("yingxiao","tianxing","xuanchen","sulan","lingyuan","hanze","qingluo","chixiao","yunsheng","fenjue","shuo"))all.add(new Scenario(role,2,Set.of("xuanchen","hanze","qingluo","yunsheng").contains(role)?8:2,0,false,"basic"));
         return List.copyOf(all);
     }
@@ -66,8 +67,13 @@ final class HeroActionTimeChecks {
         try {
             for(int i=0;i<SCENARIOS.size();i++)for(int slow=0;slow<2;slow++){
                 var f=fixture(h,i,slow==1);fs.add(f);
-                if(f.slow&&!f.scenario.kind.equals("needle")){var d=PlayerDataProvider.get(f.clock);d.setSkillLevel(FirstGroupSkills.node("keheng",4).getId(),7);
-                    aim(f.clock,6);SkillSystem.cast(f.clock,2);AbilityRuntime.confirm(f.clock);}
+                if(f.slow&&f.scenario.kind.equals("dome-finish")){
+                    PlayerDataProvider.get(f.clock).setSkillLevel(FirstGroupSkills.node("keheng",6).getId(),2);
+                    aim(f.clock,6);SkillSystem.cast(f.clock,3);AbilityRuntime.confirm(f.clock);
+                } else if(f.slow&&!Set.of("needle","needle-finish").contains(f.scenario.kind)){
+                    var d=PlayerDataProvider.get(f.clock);d.setSkillLevel(FirstGroupSkills.node("keheng",4).getId(),7);
+                    aim(f.clock,6);SkillSystem.cast(f.clock,2);AbilityRuntime.confirm(f.clock);
+                }
             }
             long start=h.getLevel().getGameTime();
             java.util.function.Consumer<net.neoforged.neoforge.event.tick.ServerTickEvent.Post> listener=new java.util.function.Consumer<>(){
@@ -79,6 +85,7 @@ final class HeroActionTimeChecks {
                             if(f.scenario.kind.equals("basic")){KehengTimeFields.refreshActor(f.actor);f.actor.doTick();}
                             if(AbilityRuntime.moving(f.actor))f.actor.move(MoverType.SELF,f.actor.getDeltaMovement());
                             AbilityRuntime.tick(f.clock);AbilityRuntime.tick(f.actor);
+                            if(f.scenario.kind.endsWith("-finish")){finisherTick(h,f,age);continue;}
                             if(f.scenario.kind.equals("basic"))com.myriad.combat.MagicBullet.tickBullets(f.actor,PlayerDataProvider.get(f.actor));
                             // Mock transports have no connection tick; drive the existing real-time data consumer once.
                             if(f.scenario.kind.equals("dot")&&action>0)PlayerDataProvider.get(f.actor).tickCooldowns();
@@ -125,7 +132,7 @@ final class HeroActionTimeChecks {
                         if(action==120){
                             for(int i=0;i<fs.size();i+=2)trace(fs.get(i),fs.get(i+1));
                             for(int i=0;i<fs.size();i+=2)verify(h,fs.get(i),fs.get(i+1));
-                            System.out.println("[MYRIAD-HERO-ACTION-TIME] PASS: "+fs.size()+" actual-cast paired scenarios; 11 retained roles, actual .5 fields vs mu1, damage timelines/motion distances, private slash/draw/follow/sheathe, real-time warnings and lifecycle");
+                            System.out.println("[MYRIAD-HERO-ACTION-TIME] PASS: "+fs.size()+" actual-cast paired scenarios; 11 retained roles, actual .5 fields vs mu1, damage timelines/motion distances, private slash/draw/follow/sheathe, rank-two dome/needle-source finishers, real-time warnings and lifecycle");
                             done[0]=true;net.neoforged.neoforge.common.NeoForge.EVENT_BUS.unregister(this);cleanup.run();h.succeed();
                         }
                     }catch(Throwable failure){done[0]=true;net.neoforged.neoforge.common.NeoForge.EVENT_BUS.unregister(this);cleanup.run();throw new IllegalStateException(failure);}
@@ -133,6 +140,40 @@ final class HeroActionTimeChecks {
             };
             net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(listener);
         }catch(Throwable failure){cleanup.run();throw new IllegalStateException(failure);}
+    }
+    /** Actual dome cast and production needle-source fixture drive real terminal damage. */
+    private static void finisherTick(GameTestHelper h,Fixture f,int age){
+        boolean dome=f.scenario.kind.equals("dome-finish");int start=dome?16:12,action=age-start;
+        if(age==start){
+            f.target.setHealth(10000);f.lastHealth=f.target.getHealth();
+            if(dome){
+                double rate=ActionTime.multiplier(f.actor.getUUID(),h.getLevel().getGameTime());
+                h.assertTrue(Math.abs(rate-(f.slow?.4-.05:1))<1E-12,"Actual rank-two dome is active before the drawn after-cut");
+                ShuoCombat.draw(f.actor,com.myriad.network.ShuoViewPayload.CUT_LEFT,1);
+            }
+            cast(f,h);sample(f,0);
+        }
+        if(action>0){
+            sample(f,action);
+            if(AbilityRuntime.moving(f.actor))f.hadMotion=true;
+            else if(f.hadMotion&&f.motionEnd<0){
+                f.motionEnd=action;
+                if(!dome&&f.slow){
+                    // Source fixture, not another Q-flight acceptance: ordinary susceptibility remains in needle().
+                    PlayerDataProvider.get(f.clock).setSkillLevel(FirstGroupSkills.node("keheng",2).getId(),2);
+                    var needle=AbilityRuntime.context(f.clock,FirstGroupSkills.node("keheng",2));
+                    h.assertTrue(com.myriad.combat.SkillTargets.enemy(f.clock,f.actor),"The rank-two needle source is an actual legal enemy");
+                    KehengTimeFields.needle(needle,f.actor,1-.05*(needle.rank+2));
+                }
+            }
+            if(dome&&f.slow&&action<=20)h.assertTrue(Math.abs(ActionTime.multiplier(f.actor.getUUID(),h.getLevel().getGameTime())-(.4-.05))<1E-12,
+                    "Retreat and all twenty after-cut updates remain inside the actual rank-two dome");
+            if(!dome&&f.slow&&age>=34&&age<=43){
+                double rate=ActionTime.multiplier(f.actor.getUUID(),h.getLevel().getGameTime());
+                h.assertTrue(Math.abs(rate-.8)<1E-12,"Actual rank-two needle covers all ten finishing updates; rate="+rate+" actor="+f.actor.position().subtract(f.origin)+" hp="+f.actor.getHealth());
+                f.recasts++;
+            }
+        }
     }
     private static void cast(Fixture f,GameTestHelper h){
         var s=FirstGroupSkills.node(f.scenario.role,f.scenario.skill);var d=PlayerDataProvider.get(f.actor);d.setSkillLevel(s.getId(),1);
@@ -150,6 +191,16 @@ final class HeroActionTimeChecks {
     }
     private static void verify(GameTestHelper h,Fixture baseline,Fixture slow){
         String kind=baseline.scenario.kind;
+        if(kind.equals("dome-finish")){
+            h.assertTrue(baseline.hits.equals(List.of(0,7))&&slow.hits.equals(List.of(0,20))
+                            &&Math.abs(total(baseline)-67)<.1&&Math.abs(total(slow)-67)<.1,
+                    "Rank-two dome drawn after-cut deals its 40 percent once at update twenty, with no later replay; base="+baseline.hits+" slow="+slow.hits+" damage="+slow.damage);return;
+        }
+        if(kind.equals("needle-finish")){
+            h.assertTrue(baseline.hits.equals(List.of(29))&&slow.hits.equals(List.of(31))&&slow.motionEnd==21&&slow.recasts==10
+                            &&Math.abs(total(baseline)-368)<.1&&Math.abs(total(slow)-368)<.1,
+                    "Rank-two needle sheathed finisher deals exactly one 368 hit after ten finishing updates; base="+baseline.hits+" slow="+slow.hits+" motion="+slow.motionEnd+" updates="+slow.recasts+" damage="+slow.damage);return;
+        }
         if(kind.equals("interrupt")){h.assertTrue(baseline.hits.isEmpty()&&slow.hits.isEmpty(),"Brief control cancels private windup permanently");return;}
         if(kind.equals("forced")){h.assertTrue(baseline.hits.isEmpty()&&slow.hits.isEmpty(),"Interrupted leap never replays a landing attack");return;}
         if(kind.equals("cancel")){h.assertTrue(baseline.hits.size()==1&&slow.hits.size()==1&&Math.abs(total(slow)-total(baseline))<.1,"Clearing after first real slash cancels the outstanding second slash");return;}
@@ -179,9 +230,14 @@ final class HeroActionTimeChecks {
         var f=new Fixture();f.scenario=SCENARIOS.get(i);f.slow=slow;var floor=h.absolutePos(new BlockPos(-150+i*24,100,slow?55:10));
         for(int x=-4;x<=4;x++)for(int z=-7;z<=16;z++)for(int y=0;y<=12;y++){
             var pos=floor.offset(x,y,z);f.blocks.put(pos,h.getLevel().getBlockState(pos));h.getLevel().setBlockAndUpdate(pos,(y==0?Blocks.STONE:Blocks.AIR).defaultBlockState());}
-        f.origin=Vec3.atBottomCenterOf(floor.above());f.actor=player(h,f.origin,f.scenario.role,Set.of("basic","needle","boundary","dot").contains(f.scenario.kind));
+        f.origin=Vec3.atBottomCenterOf(floor.above());f.actor=player(h,f.origin,f.scenario.role,Set.of("basic","needle","boundary","dot","dome-finish","needle-finish").contains(f.scenario.kind));
         f.target=player(h,f.origin.add(0,0,f.scenario.distance),"shuo",true);f.clock=player(h,f.origin.add(0,0,-6),"keheng",false);
         if(f.scenario.kind.equals("ally")){PlayerDataProvider.get(f.actor).setFaction(Faction.XUANXIAO);PlayerDataProvider.get(f.clock).setFaction(Faction.XUANXIAO);}
+        if(f.scenario.kind.endsWith("-finish")){
+            PlayerDataProvider.get(f.actor).setFaction(Faction.YOUMING);
+            PlayerDataProvider.get(f.clock).setFaction(Faction.XUANXIAO);
+            PlayerDataProvider.get(f.target).setFaction(Faction.XUANXIAO);
+        }
         return f;
     }
     private static void attackTicker(ServerPlayer p,int ticks){try{var field=LivingEntity.class.getDeclaredField("attackStrengthTicker");field.setAccessible(true);field.setInt(p,ticks);}catch(ReflectiveOperationException failure){throw new IllegalStateException(failure);}}

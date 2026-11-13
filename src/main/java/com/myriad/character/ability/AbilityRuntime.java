@@ -419,8 +419,8 @@ public final class AbilityRuntime {
         public void actionWhile(int ticks,DoublePredicate action){
             if(ticks<0)throw new IllegalArgumentException("Negative action duration");
             var progress=new ActionTime.Progress(now());
-            owner.tasks.add(time->{progress.advance(time,ActionTime.multiplier(player.getUUID(),time),ticks);
-                return action.test(progress.completed())&&progress.completed()+1E-9<ticks;});
+            owner.tasks.add(time->{boolean finished=progress.advance(time,ActionTime.multiplier(player.getUUID(),time),ticks);
+                return action.test(finished?ticks:progress.completed())&&!finished;});
         }
         /** Mobile windups retain the same CC/cast-token ownership as stationary windups. */
         public void later(int ticks,boolean channel,float walkFactor,Runnable action){
