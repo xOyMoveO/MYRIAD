@@ -21,6 +21,7 @@ public final class CombatRegressionTests {
     static {
         if (Boolean.getBoolean("myriad.arenaTests")) FUNCTIONS.register("arena_switch", () -> ArenaSwitchRegression::run);
         FUNCTIONS.register("combat_regression", () -> CombatRegressionTests::run);
+        FUNCTIONS.register("world_time", () -> WorldTimeChecks::run);
         FUNCTIONS.register("keheng", () -> KehengChecks::run);
         FUNCTIONS.register("yike", () -> YikeChecks::run);
         FUNCTIONS.register("first_group", () -> FirstGroupRegressionChecks::run);
