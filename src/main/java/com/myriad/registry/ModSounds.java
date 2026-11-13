@@ -64,20 +64,6 @@ public final class ModSounds {
             FOLEY.put(family, register("foley_" + family));
     }
     public static SoundEvent foley(String family) { return FOLEY.get(family).get(); }
-    private static final java.util.Map<String, DeferredHolder<SoundEvent, SoundEvent>> MINGZHU = new java.util.HashMap<>();
-    static {
-        for (String action : new String[]{"orb_cast", "orb_hit", "mirror_place", "mirror_turn", "dash", "beam_start", "beam_body", "beam_end"})
-            MINGZHU.put(action, register("mingzhu_" + action));
-    }
-    public static SoundEvent mingzhu(String action) { return MINGZHU.get(action).get(); }
-
-    public static final DeferredHolder<SoundEvent, SoundEvent> ZHECHUAN_THROW = register("zhechuan_throw");
-    public static final DeferredHolder<SoundEvent, SoundEvent> ZHECHUAN_OUTBOUND = register("zhechuan_outbound");
-    public static final DeferredHolder<SoundEvent, SoundEvent> ZHECHUAN_RETURN = register("zhechuan_return");
-    public static final DeferredHolder<SoundEvent, SoundEvent> ZHECHUAN_PALINDROME = register("zhechuan_palindrome");
-    public static final DeferredHolder<SoundEvent, SoundEvent> ZHECHUAN_CORRIDOR = register("zhechuan_corridor");
-    public static final DeferredHolder<SoundEvent, SoundEvent> ZHECHUAN_FINISHER = register("zhechuan_finisher");
-
     private static DeferredHolder<SoundEvent, SoundEvent> register(String id) {
         return SOUND_EVENTS.register(id, () -> SoundEvent.createVariableRangeEvent(
                 Identifier.fromNamespaceAndPath(Myriad.MODID, id)));

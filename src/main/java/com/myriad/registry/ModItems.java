@@ -3,8 +3,6 @@ package com.myriad.registry;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
-import com.myriad.item.LiGeBowItem;
-import com.myriad.item.ShenLiGunItem;
 
 import com.myriad.Myriad;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -52,18 +50,6 @@ public final class ModItems {
     public static final DeferredItem<Item> CHIXIAO_BLADE = ITEMS.registerSimpleItem("chixiao_blade");
     /** 灵契·云笙初始法器：灵契玉铃。 */
     public static final DeferredItem<Item> YUNSHENG_BELL = ITEMS.registerSimpleItem("yunsheng_bell");
-    /** 影弦·离歌初始武器：影弦弓。 */
-    public static final DeferredItem<LiGeBowItem> LIGE_BOW = ITEMS.registerItem("lige_bow", LiGeBowItem::new);
-    public static final DeferredItem<Item> GUANLAN_ASTROLABE = ITEMS.registerSimpleItem("guanlan_astrolabe");
-    public static final DeferredItem<Item> XUANJIA_GAUNTLET = ITEMS.registerSimpleItem("xuanjia_gauntlet");
-    /** 月轮·绾月初始武器：月轮。 */
-    public static final DeferredItem<Item> WANYUE_RING = ITEMS.registerSimpleItem("wanyue_ring");
-    /** 天算·洛衡初始法器：星算尺。 */
-    public static final DeferredItem<Item> LUOHENG_RULER = ITEMS.registerSimpleItem("luoheng_ruler");
-    public static final DeferredItem<Item> MINGZHU_CORE = ITEMS.registerSimpleItem("mingzhu_core");
-    /** 机铳·沈砺初始武器：六爻灵铳。 */
-    public static final DeferredItem<ShenLiGunItem> SHENLI_GUN = ITEMS.registerItem("shenli_gun", ShenLiGunItem::new);
-    public static final DeferredItem<Item> ZHECHUAN_BLADES = ITEMS.registerSimpleItem("zhechuan_blades");
     /** 寒泽冰锥术的展示专用物品，仅由飞行弹体的 ItemDisplay 使用。 */
     public static final DeferredItem<Item> HANZE_ICE_SPIKE = ITEMS.registerSimpleItem("hanze_ice_spike");
 
@@ -104,9 +90,10 @@ public final class ModItems {
     /** 角色 ID 对应的专属初始武器物品，客户端与服务端共同使用，避免锁定逻辑产生不同物品。 */
     public static Item initialWeaponItem(String characterId) {
         if (characterId == null) {
-            return YINGCI.get();
+            return net.minecraft.world.item.Items.AIR;
         }
         return switch (characterId.toLowerCase(java.util.Locale.ROOT)) {
+            case "yingxiao" -> YINGCI.get();
             case "xuanchen" -> ZHENQI.get();
             case "hanze" -> SHUANGBING.get();
             case "tianxing" -> LEITINGJIAN.get();
@@ -117,17 +104,7 @@ public final class ModItems {
             case "qingluo" -> QINGLUO_STAFF.get();
             case "chixiao" -> CHIXIAO_BLADE.get();
             case "yunsheng" -> YUNSHENG_BELL.get();
-            case "lige" -> LIGE_BOW.get();
-            case "guanlan" -> GUANLAN_ASTROLABE.get();
-            case "xuanjia" -> XUANJIA_GAUNTLET.get();
-            case "wuxiang" -> net.minecraft.world.item.Items.DIAMOND_SWORD;
-            case "feiyu" -> net.minecraft.world.item.Items.DIAMOND_SWORD;
-            case "wanyue" -> WANYUE_RING.get();
-            case "luoheng" -> LUOHENG_RULER.get();
-            case "mingzhu" -> MINGZHU_CORE.get();
-            case "shenli" -> SHENLI_GUN.get();
-            case "zhechuan" -> ZHECHUAN_BLADES.get();
-            default -> YINGCI.get();
+            default -> net.minecraft.world.item.Items.AIR;
         };
     }
 
@@ -142,14 +119,6 @@ public final class ModItems {
                 || stack.is(QINGLUO_STAFF.get())
                 || stack.is(CHIXIAO_BLADE.get())
                 || stack.is(YUNSHENG_BELL.get())
-                || stack.is(LIGE_BOW.get())
-                || stack.is(GUANLAN_ASTROLABE.get())
-                || stack.is(XUANJIA_GAUNTLET.get())
-                || stack.is(WANYUE_RING.get())
-                || stack.is(LUOHENG_RULER.get())
-                || stack.is(MINGZHU_CORE.get())
-                || stack.is(SHENLI_GUN.get())
-                || stack.is(ZHECHUAN_BLADES.get())
                 || stack.is(net.minecraft.world.item.Items.DIAMOND_SWORD)
                 || stack.is(LINGYUAN_SWORD.get());
     }

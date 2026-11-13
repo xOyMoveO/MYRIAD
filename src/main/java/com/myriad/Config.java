@@ -22,11 +22,6 @@ public class Config {
             .comment("双方宗门统一等级上限")
             .defineInRange("sectMaxLevel", 15, 1, 99);
 
-    public enum EffectQuality { HIGH, LOW }
-    public static final ModConfigSpec.EnumValue<EffectQuality> FEIYU_EFFECT_QUALITY = BUILDER
-            .comment("Feiyu VFX profile: HIGH = full ornaments, LOW = reduced geometry and bursts; gameplay unchanged")
-            .defineEnum("feiyuEffectQuality", EffectQuality.HIGH);
-
     static final ModConfigSpec SPEC = BUILDER.build();
 
     private Config() {}
