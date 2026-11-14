@@ -20,7 +20,7 @@ public final class SkillTooltipDescriptions {
                 boolean recast=ClientDataHolder.buffTicks(ability.getId()+"_recast")>0;
                 form="当前招式："+com.myriad.character.skills.shuo.ShuoForms.name(ability.getId(),ClientDataHolder.syncedCounter("g1_shuo_drawn")>0,recast)+"。";
             }
-            return "Lv."+Math.max(1,rawLevel)+" / "+ability.maxRank()+" · "+form
+            return (ability.baseAvailable()?"基础可用 · 强化 "+Math.max(0,rawLevel):"Lv."+Math.max(1,rawLevel))+" / "+ability.maxRank()+" · "+form
                     +com.myriad.character.ability.AbilityFormulaText.evaluate(ability.description(),rawLevel,strength);
         }
         int lv = Math.max(1, rawLevel);

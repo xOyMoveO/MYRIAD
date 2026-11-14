@@ -108,7 +108,7 @@ final class RosterDeliveryChecks {
                                         "Lifecycle clear sends the idle state to every prior observer");
                             }
                             done[0]=true;cleanup.run();
-                            System.out.println("[MYRIAD-ROSTER13-DELIVERY] PASS: thirteen formal wire selections/104 candidates, new-role commands, draft turn/unique rules, paid formal stance/Q, actual owner/ally/enemy packets, hidden/far filtering, wire state and lifecycle clear");
+                            System.out.println("[MYRIAD-ROSTER13-DELIVERY] PASS: fourteen formal wire selections/112 candidates, new-role commands, draft turn/unique rules, paid formal stance/Q, actual owner/ally/enemy packets, hidden/far filtering, wire state and lifecycle clear");
                             h.succeed();
                         }
                     } catch(Throwable failure) {done[0]=true;cleanup.run();throw failure;}
@@ -128,10 +128,10 @@ final class RosterDeliveryChecks {
                     "Formal wire selection grants one skill point and locks the matching weapon: "+type.getId());
             candidates+=FirstGroupSkills.candidates(type.getId()).size();
         }
-        h.assertTrue(CharacterType.playableValues().length==13&&candidates==104,
-                "Formal selection exposes all thirteen complete eight-candidate heroes");
+        h.assertTrue(CharacterType.playableValues().length==14&&candidates==112,
+                "Formal selection exposes all fourteen complete eight-candidate heroes");
         try {
-            for(String id:new String[]{"keheng","yike"}) {
+            for(String id:new String[]{"keheng","yike","rivet"}) {
                 p.level().getServer().getCommands().getDispatcher().execute("myriad char "+id,p.createCommandSourceStack());
                 h.assertTrue(id.equals(PlayerDataProvider.get(p).getCharacterId()),"New role command needs no training mode: "+id);
             }

@@ -184,7 +184,9 @@ public final class ClientDataHolder {
 
     /** 单个持续状态的逐 tick 剩余时间；同步计数器请使用 {@link #syncedCounter(String)}。 */
     public static int buffTicks(String key) {
-        return buffs().getOrDefault(key, 0);
+        var values=buffs();int remaining=values.getOrDefault(key,0);
+        if(key.equals("g1_root"))for(var entry:values.entrySet())if(entry.getKey().startsWith("g1_root/"))remaining=Math.max(remaining,entry.getValue());
+        return remaining;
     }
 
     /** 不随客户端时间递减的同步计数器，例如技能充能层数。 */

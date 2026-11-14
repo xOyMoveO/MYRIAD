@@ -81,7 +81,16 @@ public class SkillIcon {
             Map.entry("wanmuchunhui", "qingluo/wanmuchunhui"),
             Map.entry("chixiao_passive", "chixiao/passive"),
             Map.entry("duanyuezhan", "chixiao/duanyuezhan"),
-                        Map.entry("yike_rainbow_mark", "yike/yike_rainbow_mark"),
+                        Map.entry("rivet_station_armor", "rivet/rivet_station_armor"),
+            Map.entry("rivet_breach_rhythm", "rivet/rivet_breach_rhythm"),
+            Map.entry("rivet_impact_hammer", "rivet/rivet_impact_hammer"),
+            Map.entry("rivet_tactical_anchor", "rivet/rivet_tactical_anchor"),
+            Map.entry("rivet_emergency_strut", "rivet/rivet_emergency_strut"),
+            Map.entry("rivet_tow_cable", "rivet/rivet_tow_cable"),
+            Map.entry("rivet_tow_cable_2", "rivet/rivet_tow_cable_2"),
+            Map.entry("rivet_hold_protocol", "rivet/rivet_hold_protocol"),
+            Map.entry("rivet_breach_charge", "rivet/rivet_breach_charge"),
+            Map.entry("yike_rainbow_mark", "yike/yike_rainbow_mark"),
             Map.entry("yike_steady_barrier", "yike/yike_steady_barrier"),
             Map.entry("yike_rainbow_shell", "yike/yike_rainbow_shell"),
             Map.entry("yike_refraction_denial", "yike/yike_refraction_denial"),
@@ -116,6 +125,7 @@ public class SkillIcon {
     /** 二段技能在服务器同步的再施放窗口内切换为独立图标。 */
     private static String displayedSkillId(String skillId) {
         String recastBuff = switch (skillId) {
+            case "rivet_tow_cable" -> "rivet_tow_cable_recast";
             case "shuo_qiaofan" -> "shuo_qiaofan_recast";
             case "shuo_canyue" -> "shuo_canyue_recast";
             default -> null;

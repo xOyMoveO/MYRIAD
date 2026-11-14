@@ -33,10 +33,9 @@ public final class ModShieldSystem {
         if (amount <= 0.0f || durationTicks <= 0) return;
         Map<String, ShieldLayer> layers = LAYERS.computeIfAbsent(player.getUUID(), id -> new HashMap<>());
         pruneExpired(player, layers);
-        float other = 0.0f;
-        for (Map.Entry<String, ShieldLayer> entry : layers.entrySet()) {
-            if (!entry.getKey().equals(source)) other += entry.getValue().remaining;
-        }
+        Map<String, ShieldLayer> otherLayers = new HashMap<>(layers);
+        otherLayers.remove(source);
+        float other = total(otherLayers);
         float contribution = Math.max(0.0f, amount - other);
         if (contribution > 0.0f) {
             layers.put(source, new ShieldLayer(contribution, player.level().getGameTime() + durationTicks));
@@ -60,16 +59,33 @@ public final class ModShieldSystem {
         while (left > 0.0f && !layers.isEmpty()) {
             String earliestKey = null;
             ShieldLayer earliest = null;
-            for (Map.Entry<String, ShieldLayer> entry : layers.entrySet()) {
+            for (Map.Entry<String, ShieldLayer> entry : effective(layers).entrySet()) {
                 if (earliest == null || entry.getValue().expiresAt < earliest.expiresAt) {
                     earliestKey = entry.getKey();
                     earliest = entry.getValue();
                 }
             }
+            if (earliest == null) break;
             float used = Math.min(left, earliest.remaining);
-            earliest.remaining -= used;
+            String group = earliest.group;
+            if (group.isEmpty()) {
+                earliest.remaining -= used;
+                if (earliest.remaining <= 0.001f) {
+                    layers.remove(earliestKey);
+                    com.myriad.character.skills.rivet.StationArmor.shieldBroken(player, earliestKey);
+                }
+            } else {
+                // A family exposes its highest remaining contribution. Damage spends the same
+                // effective amount from every owner, so removing one owner cannot uncover a reserve.
+                var iterator = layers.entrySet().iterator();
+                while (iterator.hasNext()) {
+                    var entry = iterator.next();
+                    if (!entry.getValue().group.equals(group)) continue;
+                    entry.getValue().remaining = Math.max(0, entry.getValue().remaining - used);
+                    if (entry.getValue().remaining <= 0.001f) iterator.remove();
+                }
+            }
             left -= used;
-            if (earliest.remaining <= 0.001f) layers.remove(earliestKey);
         }
         float absorbed = damage - left;
         updateValue(player, layers, absorbed > 0.0f);
@@ -91,6 +107,26 @@ public final class ModShieldSystem {
         layers.put(source, new ShieldLayer(existing == null ? amount : Math.max(amount, existing.remaining),
                 player.level().getGameTime() + durationTicks));
         updateValue(player, layers, true);
+    }
+
+    /** Source-isolated family whose simultaneous contributions use the highest remaining amount. */
+    public static void grantMaxGroup(LivingEntity entity, String source, String group, float amount, int durationTicks) {
+        if (amount <= 0 || durationTicks <= 0 || group == null || group.isBlank()) return;
+        var layers = LAYERS.computeIfAbsent(entity.getUUID(), ignored -> new HashMap<>());
+        pruneExpired(entity, layers);
+        var existing = layers.get(source);
+        layers.put(source, new ShieldLayer(existing == null ? amount : Math.max(amount, existing.remaining),
+                entity.level().getGameTime() + durationTicks, group));
+        updateValue(entity, layers, true);
+    }
+
+    /** Remaining amount of precisely one source, independent of other shield families. */
+    public static float sourceValue(LivingEntity entity, String source) {
+        var layers = LAYERS.get(entity.getUUID());
+        if (layers == null) return 0;
+        pruneExpired(entity, layers);
+        var layer = layers.get(source);
+        return layer == null ? 0 : Math.max(0, layer.remaining);
     }
 
     /** 每 tick 清除到期层，同时阻止原版吸收生命与模组护盾并存。 */
@@ -145,8 +181,7 @@ public final class ModShieldSystem {
         if (layers == null) return 0.0f;
         long now = entity.level().getGameTime();
         layers.values().removeIf(layer -> now >= layer.expiresAt);
-        float total = 0.0f;
-        for (ShieldLayer layer : layers.values()) total += Math.max(0.0f, layer.remaining);
+        float total = total(layers);
         if (layers.isEmpty()) LAYERS.remove(entity.getUUID());
         if (entity instanceof ServerPlayer player) {
             PlayerData data = PlayerDataProvider.get(player);
@@ -165,14 +200,34 @@ public final class ModShieldSystem {
     }
 
     private static void updateValue(LivingEntity player, Map<String, ShieldLayer> layers, boolean sync) {
-        float total = 0.0f;
-        for (ShieldLayer layer : layers.values()) total += Math.max(0.0f, layer.remaining);
+        float total = total(layers);
         if (layers.isEmpty()) LAYERS.remove(player.getUUID());
         if (player instanceof ServerPlayer serverPlayer) {
             PlayerData data = PlayerDataProvider.get(serverPlayer);
             if (data != null) data.setModShield(total);
             if (sync) PlayerDataProvider.syncToClient(serverPlayer);
         }
+    }
+
+    private static Map<String, ShieldLayer> effective(Map<String, ShieldLayer> layers) {
+        Map<String, ShieldLayer> result = new HashMap<>();
+        Map<String, String> groups = new HashMap<>();
+        for (var entry : layers.entrySet()) {
+            var layer = entry.getValue();
+            if (layer.group.isEmpty()) { result.put(entry.getKey(), layer); continue; }
+            String current = groups.get(layer.group);
+            if (current == null || result.get(current).remaining < layer.remaining) {
+                if (current != null) result.remove(current);
+                groups.put(layer.group, entry.getKey());
+                result.put(entry.getKey(), layer);
+            }
+        }
+        return result;
+    }
+    private static float total(Map<String, ShieldLayer> layers) {
+        float amount = 0;
+        for (var layer : effective(layers).values()) amount += Math.max(0, layer.remaining);
+        return amount;
     }
 
     private static void pruneExpired(LivingEntity entity, Map<String, ShieldLayer> layers) {
@@ -183,10 +238,13 @@ public final class ModShieldSystem {
     private static final class ShieldLayer {
         private float remaining;
         private final long expiresAt;
+        private final String group;
 
-        private ShieldLayer(float remaining, long expiresAt) {
+        private ShieldLayer(float remaining, long expiresAt) { this(remaining, expiresAt, ""); }
+        private ShieldLayer(float remaining, long expiresAt, String group) {
             this.remaining = remaining;
             this.expiresAt = expiresAt;
+            this.group = group;
         }
     }
 }

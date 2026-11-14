@@ -9,8 +9,8 @@ import java.util.List;
 public final class AbilityVfxGeometry {
     public static final int RETICLE=0,INVALID=1,SEAL=2,BURST=3,ARC=4,BEAM=5,PILLAR=6,
             SHIELD=7,TRAIL=8,FLIGHT=9,CHARGE=10,WALL=11,CANCEL=12;
-    private static final int[] BODY={0x777777,0x42BDFF,0xFF762A,0x6489AA,0x40EAC1,0x62C9E6,0x63B9F5,0x60B960,0xD76F3C,0x69CEC8,0xB7DAF5,0x42D9BD,0x5DDEFF};
-    private static final int[] EDGE={0xD8D8D8,0xF4FCFF,0xFFE0A0,0xFAE9B8,0xF0FFF9,0xF6F3D1,0xF1FCFF,0xF1F2BE,0xFFDB9D,0xFFF7CE,0xF3FCFF,0xF1C76B,0xF1FCFF};
+    private static final int[] BODY={0x777777,0x42BDFF,0xFF762A,0x6489AA,0x40EAC1,0x62C9E6,0x63B9F5,0x60B960,0xD76F3C,0x69CEC8,0xB7DAF5,0x42D9BD,0x5DDEFF,0xEBAF4C};
+    private static final int[] EDGE={0xD8D8D8,0xF4FCFF,0xFFE0A0,0xFAE9B8,0xF0FFF9,0xF6F3D1,0xF1FCFF,0xF1F2BE,0xFFDB9D,0xFFF7CE,0xF3FCFF,0xF1C76B,0xF1FCFF,0x70D8E0};
     public record Quad(Vec3 a,Vec3 b,Vec3 c,Vec3 d,int color,float alpha,int material,boolean reverseV,float startU,float endU,float startV,float endV) {
         public Quad(Vec3 a,Vec3 b,Vec3 c,Vec3 d,int color,float alpha,int material,boolean reverseV,float startU,float endU){this(a,b,c,d,color,alpha,material,reverseV,startU,endU,0,1);}
         public Quad(Vec3 a,Vec3 b,Vec3 c,Vec3 d,int color,float alpha){this(a,b,c,d,color,alpha,0,false,0,1);}
@@ -50,6 +50,7 @@ public final class AbilityVfxGeometry {
                 case 11->com.myriad.character.skills.keheng.KehengVfx.build(p,age,reduced);
                 case 10->com.myriad.character.skills.shuo.ShuoVfx.build(p,age,reduced);
                 case 12->com.myriad.character.skills.yike.YikeVfxGeometry.build(p,age,reduced);
+                case 13->com.myriad.character.skills.rivet.RivetVfx.build(p,age,reduced);
                 default->List.of();
             };
         }

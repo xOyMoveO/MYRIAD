@@ -1240,7 +1240,7 @@ public final class NetworkSetup {
     }
 
     public static void register(RegisterPayloadHandlersEvent event) {
-        event.registrar("17")
+        event.registrar("18")
                 .playToClient(YikeStatePayload.TYPE,YikeStatePayload.CODEC,(payload,context)->com.myriad.client.YikeClientState.receive(payload))
                 .playToClient(ShuoViewPayload.TYPE,ShuoViewPayload.CODEC,
                         (payload,context)->com.myriad.client.firstperson.ShuoView.receive(payload))
@@ -1367,6 +1367,9 @@ public final class NetworkSetup {
                                     payload.currentFaction(), payload.deadlineTick(),
                                     payload.countdownTick(), payload.taken().keySet());
                             net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+                            if (payload.state() == 1 && mc.gui.screen() instanceof com.myriad.client.gui.PickScreen) {
+                                mc.setScreenAndShow(null);
+                            }
                             if (payload.state() == 0 && mc.player != null && mc.gui.screen() == null) {
                                 mc.setScreenAndShow(new com.myriad.client.gui.PickScreen());
                             }

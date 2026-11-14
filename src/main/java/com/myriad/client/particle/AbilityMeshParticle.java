@@ -67,7 +67,7 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
         if(p.personal()&&p.owner()!=mc.player.getId())return;
         if(!p.personal()&&!FogOfWarClient.shouldRenderPlayer(p.owner())
                 &&!(com.myriad.character.skills.shuo.ShuoSkillVfx.owns(p)&&p.owner()==mc.player.getId())
-                &&!(p.theme()==12&&p.anchor()<0))return;
+                &&!(p.theme()==12&&p.anchor()<0)&&!com.myriad.character.skills.rivet.RivetVfx.stationary(p))return;
         if(p.anchor()!=mc.player.getId()&&mc.level.getEntity(p.anchor()) instanceof net.minecraft.world.entity.player.Player
                 &&!FogOfWarClient.shouldRenderPlayer(p.anchor()))return;
         if(mc.player.position().distanceToSqr(p.from())>Math.pow(80+p.radius(),2))return;
@@ -112,14 +112,15 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
         var mc=Minecraft.getInstance();if(mc.player==null)return;
         if(!recipe.personal()&&!FogOfWarClient.shouldRenderPlayer(recipe.owner())
                 &&!(com.myriad.character.skills.shuo.ShuoSkillVfx.owns(recipe)&&recipe.owner()==mc.player.getId())
-                &&!(recipe.theme()==12&&recipe.anchor()<0))return;
+                &&!(recipe.theme()==12&&recipe.anchor()<0)&&!com.myriad.character.skills.rivet.RivetVfx.stationary(recipe))return;
         if(recipe.anchor()!=mc.player.getId()&&level.getEntity(recipe.anchor()) instanceof net.minecraft.world.entity.player.Player
                 &&!FogOfWarClient.shouldRenderPlayer(recipe.anchor()))return;
         double distance=camera.position().distanceTo(recipe.from());
         boolean reduced=mc.options.particles().get()!=net.minecraft.server.level.ParticleStatus.ALL||distance>32;
         boolean thunderModel=com.myriad.character.skills.tianxing.rework.ThunderVfxGeometry.usesProjectileModel(recipe);
         boolean rosterModel=com.myriad.character.skills.keheng.KehengVfx.usesProjectileModel(recipe)
-                ||recipe.theme()==12&&recipe.kind()==AbilityVfxGeometry.FLIGHT;
+                ||recipe.theme()==12&&recipe.kind()==AbilityVfxGeometry.FLIGHT
+                ||com.myriad.character.skills.rivet.RivetVfx.usesModel(recipe);
         if((recipe.theme()==5||thunderModel||rosterModel||recipe.theme()==0&&recipe.kind()==AbilityVfxGeometry.FLIGHT&&recipe.variant()==2)&&!recipe.personal()){
             int budget=recipe.theme()==5?4096:thunderModel?1200:recipe.theme()==12?512:192;
             if(mesh.remaining()<(recipe.theme()==5?256:thunderModel?320:64))return;
@@ -150,7 +151,7 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
                     recipe.from().add(offset),recipe.to().add(offset),recipe.radius(),recipe.angle(),recipe.life(),recipe.started(),recipe.personal(),recipe.instance());}
         float visualAge=Math.max(0,age-1+partial);
         var geometry=AbilityVfxGeometry.build(displayed,visualAge,reduced);
-        if(recipe.theme()==11||recipe.theme()==12||com.myriad.player.LevelUpBeamGeometry.owns(recipe)
+        if(recipe.theme()==11||recipe.theme()==12||recipe.theme()==13||com.myriad.player.LevelUpBeamGeometry.owns(recipe)
                 ||com.myriad.character.skills.shuo.ShuoSkillVfx.owns(recipe))mesh.sortTranslucent();
         if((recipe.theme()==5||thunderModel||rosterModel||recipe.theme()==0&&recipe.kind()==AbilityVfxGeometry.FLIGHT&&recipe.variant()==2)&&!recipe.personal()){
             if(!mesh.addModelBatch(geometry,camera.position(),sprites,near)&&!reduced)
@@ -194,6 +195,10 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
                         &&incoming.recipe.started()<old.recipe.started()))return false;
                 particles.removeIf(old->{boolean replace=com.myriad.character.skills.shuo.ShuoSilentLineVfx.replaces(incoming.recipe,old.recipe);
                     if(replace)old.remove();return replace;});
+            }
+            if(incoming.recipe.theme()==13){
+                if(particles.stream().anyMatch(old->com.myriad.character.skills.rivet.RivetVfx.replaces(incoming.recipe,old.recipe)&&incoming.recipe.started()<old.recipe.started()))return false;
+                particles.removeIf(old->{boolean replace=com.myriad.character.skills.rivet.RivetVfx.replaces(incoming.recipe,old.recipe);if(replace)old.remove();return replace;});
             }
             if(incoming.recipe.theme()==11||incoming.recipe.theme()==12){
                 if(particles.stream().anyMatch(old->incoming.recipe.theme()==11

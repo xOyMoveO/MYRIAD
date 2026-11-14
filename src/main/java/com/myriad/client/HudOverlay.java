@@ -105,6 +105,15 @@ public class HudOverlay implements GuiLayer {
             return;
         }
         Font font = Minecraft.getInstance().font;
+        var preparation=ClientDataHolder.pickState();
+        if(preparation!=null&&preparation.state()==1&&preparation.countdownTick()>=0&&Minecraft.getInstance().level!=null){
+            int seconds=(int)Math.max(0,(preparation.countdownTick()-Minecraft.getInstance().level.getGameTime()+19)/20);
+            if(seconds>0){
+                String label=Component.translatable("rivet".equals(data.characterId())?"hud.myriad.rivet.preparation":"hud.myriad.match.preparation",seconds).getString();
+                int px=(Minecraft.getInstance().getWindow().getGuiScaledWidth()-font.width(label))/2;
+                gui.fill(px-5,18,px+font.width(label)+5,32,0xCC111C24);gui.text(font,label,px,20,0xFFEBAF4C);
+            }
+        }
         HudLayoutConfig.render(gui, HudLayoutConfig.Element.INFO, () -> {
             float s = fitScale();
             int line = (int) (LINE_HEIGHT * s);
@@ -338,6 +347,7 @@ public class HudOverlay implements GuiLayer {
         for (java.util.Map.Entry<String, Integer> entry : buffs.entrySet()) {
             if ("chixiao_passive".equals(entry.getKey()) || "sulan_passive_ready".equals(entry.getKey())
                     || entry.getKey().startsWith("skill_charge_") || entry.getKey().startsWith("g1_attribute_")
+                    || entry.getKey().startsWith("g1_root/") || entry.getKey().startsWith("g1_rivet_anchor_")
                     || entry.getKey().startsWith("g1_shuo_") || entry.getKey().startsWith("rune_") || entry.getKey().equals("g1_channel")
                     || entry.getKey().equals("hero_respawn") || entry.getKey().equals("recall") || entry.getKey().endsWith("_recast")
                     || entry.getKey().startsWith("g2_")&&entry.getKey().endsWith("_ready")) continue;
@@ -366,7 +376,8 @@ public class HudOverlay implements GuiLayer {
 
     private static final java.util.Map<String, String> BUFF_ICON_SKILLS = java.util.Map.of(
             "yufengqianli_buff", "yufengqianli",
-            "fentianhuohai_ad", "fentianhuohai");
+            "fentianhuohai_ad", "fentianhuohai",
+            "g1_rivet_rhythm", "rivet_breach_rhythm");
 
     private Skill buffSkill(CharacterType type, String buffId) {
         var ability = com.myriad.character.rework.FirstGroupSkills.byId(buffId);
@@ -413,7 +424,14 @@ public class HudOverlay implements GuiLayer {
         String label = fullReady ? "普攻" : String.format("%.1fs", cooldown / 20.0F);
         gui.text(font, label, x + (width - font.width(label)) / 2, y - 10,
                 fullReady ? 0xFF9FFFD0 : 0xFFB9ECFF);
-        if ("keheng".equals(data.characterId())) {
+        if ("rivet".equals(data.characterId())) {
+            int active=ClientDataHolder.syncedCounter("g1_rivet_anchor_active"),recovery=ClientDataHolder.buffTicks("g1_rivet_anchor_recovery");
+            var pick=ClientDataHolder.pickState();
+            boolean preparing=pick!=null&&pick.state()==1&&pick.countdownTick()>=0&&Minecraft.getInstance().level!=null&&pick.countdownTick()>Minecraft.getInstance().level.getGameTime();
+            String status=active<=0?Component.translatable("hud.myriad.rivet.no_anchor").getString():preparing?Component.translatable("hud.myriad.rivet.anchor_preparing").getString():recovery>0?Component.translatable("hud.myriad.rivet.anchor_recovery",recovery/20.0f).getString():Component.translatable("hud.myriad.rivet.anchor_ready").getString();
+            if(active>0)status=Component.translatable("hud.myriad.rivet.anchor_status",status,ClientDataHolder.buffTicks("g1_rivet_anchor_remaining")/20.0f).getString();
+            gui.text(font,status,x+width/2-font.width(status)/2,y-24,recovery>0||preparing?0xFFEBAF4C:0xFF70D8E0);
+        } else if ("keheng".equals(data.characterId())) {
             int marks=ClientDataHolder.syncedCounter("g1_keheng_marks"),icd=ClientDataHolder.buffTicks("g1_keheng_step_cd");
             String status=ClientDataHolder.buffTicks("g1_keheng_follow")>0?Component.translatable("hud.myriad.keheng.follow").getString():
                     data.skillLevels().getOrDefault("keheng_hengbu",0)>0?Component.translatable("hud.myriad.keheng.step",icd/20.0f).getString():
@@ -559,7 +577,10 @@ public class HudOverlay implements GuiLayer {
             }
             // 状态标签放在图标上方完整一行，避免与图标边框和内容重叠。
             int labelY = y - font.lineHeight - 2;
-            if (lv <= 0) {
+            if (lv <= 0 && skill instanceof com.myriad.character.ability.AbilitySkill ability && ability.baseAvailable()) {
+                String lvLabel = Component.translatable("hud.myriad.rivet.base_anchor").getString();
+                gui.text(font,lvLabel,cx+slotSize-font.width(lvLabel)-1,labelY,0xFFEBAF4C);
+            } else if (lv <= 0) {
                 String lvLabel = "未学习";
                 gui.text(font, lvLabel, cx + slotSize - font.width(lvLabel) - 1, labelY, 0xFF9E9E9E);
             } else {

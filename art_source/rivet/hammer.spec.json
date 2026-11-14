@@ -1,0 +1,238 @@
+{
+  "target": "item",
+  "archetype": "item_simple",
+  "atlas": {
+    "width": 128,
+    "height": 128,
+    "regions": [
+      {
+        "id": "steel",
+        "rect": [
+          0,
+          0,
+          128,
+          128
+        ],
+        "fill": "#5f6c70",
+        "palette": [
+          "#829399",
+          "#48565d",
+          "#adb8b7"
+        ],
+        "noise": 0.18
+      },
+      {
+        "id": "brass",
+        "rect": [
+          0,
+          40,
+          128,
+          24
+        ],
+        "fill": "#d8a54c",
+        "palette": [
+          "#a9752a",
+          "#f3cc77"
+        ],
+        "noise": 0.1
+      },
+      {
+        "id": "rubber",
+        "rect": [
+          0,
+          70,
+          128,
+          24
+        ],
+        "fill": "#263237",
+        "palette": [
+          "#37454b",
+          "#1b252a"
+        ],
+        "noise": 0.15
+      },
+      {
+        "id": "signal",
+        "rect": [
+          0,
+          100,
+          128,
+          24
+        ],
+        "fill": "#68c9d5",
+        "palette": [
+          "#cdf6ed",
+          "#47a8b7"
+        ],
+        "noise": 0.08
+      }
+    ]
+  },
+  "meta": {
+    "name": "rivet_hammer"
+  },
+  "parts": [
+    {
+      "id": "shaft",
+      "size": [
+        2,
+        18,
+        2
+      ],
+      "pos": [
+        -1,
+        0,
+        -1
+      ],
+      "uv_origin": [
+        40,
+        0
+      ]
+    },
+    {
+      "id": "grip",
+      "parent": "shaft",
+      "size": [
+        3,
+        8,
+        3
+      ],
+      "pos": [
+        -1.5,
+        1,
+        -1.5
+      ],
+      "uv_origin": [
+        0,
+        70
+      ]
+    },
+    {
+      "id": "pommel",
+      "parent": "shaft",
+      "size": [
+        4,
+        2,
+        4
+      ],
+      "pos": [
+        -2,
+        -1,
+        -2
+      ],
+      "uv_origin": [
+        0,
+        40
+      ]
+    },
+    {
+      "id": "head",
+      "parent": "shaft",
+      "size": [
+        12,
+        7,
+        6
+      ],
+      "pos": [
+        -6,
+        18,
+        -3
+      ],
+      "uv_origin": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "left_face",
+      "parent": "head",
+      "size": [
+        2,
+        8,
+        7
+      ],
+      "pos": [
+        -8,
+        17.5,
+        -3.5
+      ],
+      "uv_origin": [
+        0,
+        40
+      ]
+    },
+    {
+      "id": "right_face",
+      "parent": "head",
+      "size": [
+        2,
+        8,
+        7
+      ],
+      "pos": [
+        6,
+        17.5,
+        -3.5
+      ],
+      "uv_origin": [
+        40,
+        40
+      ]
+    },
+    {
+      "id": "piston",
+      "parent": "head",
+      "size": [
+        4,
+        3,
+        4
+      ],
+      "pos": [
+        -2,
+        25,
+        -2
+      ],
+      "uv_origin": [
+        70,
+        0
+      ]
+    },
+    {
+      "id": "front_signal",
+      "parent": "head",
+      "size": [
+        8,
+        1,
+        1
+      ],
+      "pos": [
+        -4,
+        21,
+        -4
+      ],
+      "uv_origin": [
+        0,
+        100
+      ]
+    },
+    {
+      "id": "rear_signal",
+      "parent": "head",
+      "size": [
+        8,
+        1,
+        1
+      ],
+      "pos": [
+        -4,
+        21,
+        3
+      ],
+      "uv_origin": [
+        30,
+        100
+      ]
+    }
+  ],
+  "face_details": []
+}

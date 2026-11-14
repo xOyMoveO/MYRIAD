@@ -24,6 +24,7 @@ public final class CombatRegressionTests {
         FUNCTIONS.register("world_time", () -> WorldTimeChecks::run);
         FUNCTIONS.register("keheng", () -> KehengChecks::run);
         FUNCTIONS.register("yike", () -> YikeChecks::run);
+        FUNCTIONS.register("rivet", () -> RivetChecks::run);
         FUNCTIONS.register("hero_action_time", () -> HeroActionTimeChecks::run);
         FUNCTIONS.register("first_group", () -> FirstGroupRegressionChecks::run);
         FUNCTIONS.register("roster_delivery", () -> RosterDeliveryChecks::run);
