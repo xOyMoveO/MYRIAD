@@ -54,7 +54,8 @@ public final class AbilityVfxGeometry {
             };
         }
         var g=new AbilityVfxGeometry(p,age);g.shape(p,reduced);
-        return p.theme()==10?com.myriad.character.skills.shuo.ShuoBrightness.apply(g.quads):List.copyOf(g.quads);
+        return p.theme()==10?com.myriad.character.skills.shuo.ShuoBrightness.apply(g.quads)
+                :p.theme()==11||p.theme()==12?RosterVfxTuning.brighten(g.quads):List.copyOf(g.quads);
     }
     private void quad(Vec3 a,Vec3 b,Vec3 c,Vec3 d,int rgb,float alpha) {
         if(quads.size()<192&&alpha>0)quads.add(new Quad(a,b,c,d,rgb,Math.clamp(alpha,0,1)));

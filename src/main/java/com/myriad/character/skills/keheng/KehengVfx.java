@@ -30,7 +30,7 @@ public final class KehengVfx {
     public static int modelFaces(boolean low){return MODELS.faces(low?"needle_lod":"needle");}
     public static int modelParts(boolean low){return MODELS.parts(low?"needle_lod":"needle");}
     public static AABB bounds(AbilityVfxPayload p){
-        double extent=p.kind()==FLIGHT?1.02:p.radius()+.6;
+        double extent=p.kind()==FLIGHT?1.02*RosterVfxTuning.PROJECTILE_SCALE:p.radius()+.6;
         // Frustum bounds include the full rotating sprite canvas, including its transparent corners.
         // Visible field alpha has its own exact-radius contract and is not enlarged here.
         if(p.kind()==ARC)extent=Math.max(extent,p.radius()*.94*Math.sqrt(2)+.05);
@@ -84,7 +84,7 @@ public final class KehengVfx {
         var models=new ArrayList<Quad>();double r=p.radius(),time=clock(p,age),phase=time*.035;
         switch(p.kind()){
             case FLIGHT -> {
-                var head=at.lerp(end,age);MODELS.append(models,reduced?"needle_lod":"needle",head,d,.92,KEHENG_PROJECTILE_MODEL,.98f);
+                var head=at.lerp(end,age);MODELS.append(models,reduced?"needle_lod":"needle",head,d,.92*RosterVfxTuning.PROJECTILE_SCALE,KEHENG_PROJECTILE_MODEL,.98f);
                 // Small transverse glints cannot run past the confirmed forward endpoint.
                 stamp(g,head.subtract(d.scale(.025)),s,up,.08,.08,KEHENG_HD_SPARK,.70);
                 if(!reduced)motes(g,head.subtract(d.scale(.23)),s,up,.13,time,.42);
@@ -213,6 +213,6 @@ public final class KehengVfx {
                 contact(g,p,at,d,s,up);
             }
         }
-        models.addAll(g.result());return List.copyOf(models);
+        models.addAll(g.result());return RosterVfxTuning.brighten(models);
     }
 }

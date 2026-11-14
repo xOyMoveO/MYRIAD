@@ -127,6 +127,9 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
         }
         float near=recipe.kind()==AbilityVfxGeometry.RETICLE||recipe.kind()==AbilityVfxGeometry.INVALID?1:
                 (float)Math.clamp(distance/.9,.42,1);
+        // A muzzle at the camera must not dim the entire 22-block beam to 42% opacity.
+        // Its solid core already starts outside the near plane; retain full beam visibility.
+        if(com.myriad.character.skills.yike.YikeVfxGeometry.continuousBeam(recipe))near=1;
         if(com.myriad.player.LevelUpBeamGeometry.owns(recipe)&&mc.options.getCameraType().isFirstPerson()
                 &&mc.getCameraEntity()!=null&&mc.getCameraEntity().getId()==recipe.owner())near*=.22f;
         if(recipe.theme()==1&&mc.options.getCameraType().isFirstPerson()
@@ -186,6 +189,12 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
         @Override public boolean add(Particle particle) {
             if(!(particle instanceof AbilityMeshParticle))return false;
             var incoming=(AbilityMeshParticle)particle;
+            if(com.myriad.character.skills.shuo.ShuoSilentLineVfx.owns(incoming.recipe)){
+                if(particles.stream().anyMatch(old->com.myriad.character.skills.shuo.ShuoSilentLineVfx.replaces(incoming.recipe,old.recipe)
+                        &&incoming.recipe.started()<old.recipe.started()))return false;
+                particles.removeIf(old->{boolean replace=com.myriad.character.skills.shuo.ShuoSilentLineVfx.replaces(incoming.recipe,old.recipe);
+                    if(replace)old.remove();return replace;});
+            }
             if(incoming.recipe.theme()==11||incoming.recipe.theme()==12){
                 if(particles.stream().anyMatch(old->incoming.recipe.theme()==11
                         ?com.myriad.character.skills.keheng.KehengVfx.obsolete(incoming.recipe,old.recipe)

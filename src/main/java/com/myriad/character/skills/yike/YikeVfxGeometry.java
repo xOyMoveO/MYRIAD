@@ -3,6 +3,7 @@ package com.myriad.character.skills.yike;
 import com.myriad.character.ability.AbilityVfxGeometry;
 import com.myriad.character.ability.AbilityVfxGeometry.Quad;
 import com.myriad.character.ability.RosterProjectileModels;
+import com.myriad.character.ability.RosterVfxTuning;
 import com.myriad.network.AbilityVfxPayload;
 import net.minecraft.world.phys.Vec3;
 import java.util.*;
@@ -22,13 +23,14 @@ public final class YikeVfxGeometry {
         limit=p.kind()==AbilityVfxGeometry.FLIGHT?(reduced?192:512):(reduced?96:192);
     }
     public static int signal(AbilityVfxPayload p){return (int)Math.floor(p.angle()+1E-4);}
+    public static boolean continuousBeam(AbilityVfxPayload p){return p.theme()==THEME&&p.kind()==AbilityVfxGeometry.BEAM&&(signal(p)==BEAM||signal(p)==BEAM_END);}
     /** Preparation packets carry authoritative windup progress in the fractional signal, not receipt age. */
     public static double preparation(AbilityVfxPayload p){return Math.clamp((p.angle()-signal(p))/.4,0,1);}
     public static boolean movingBody(AbilityVfxPayload p){return p.theme()==THEME&&p.kind()==AbilityVfxGeometry.FLIGHT&&p.instance()>0;}
     public static String modelKey(int signal,boolean reduced){return (signal==BASIC?"basic":signal==HEAVY?"heavy":"shell")+(reduced?"_lod":"");}
     public static int modelFaces(int signal,boolean reduced){return MODELS.faces(modelKey(signal,reduced));}
     public static int modelParts(int signal,boolean reduced){return MODELS.parts(modelKey(signal,reduced));}
-    public static double modelLength(int signal){return signal==BASIC?.22:signal==HEAVY?1.2:.62;}
+    public static double modelLength(int signal){return (signal==BASIC?.22:signal==HEAVY?1.2:.62)*RosterVfxTuning.PROJECTILE_SCALE;}
     public static AbilityVfxPayload wakeForFlight(AbilityVfxPayload p){
         if(!movingBody(p)||p.from().distanceToSqr(p.to())<1E-10)return null;
         return new AbilityVfxPayload(p.owner(),-1,THEME,p.variant(),AbilityVfxGeometry.TRAIL,p.from(),p.to(),p.radius(),p.angle(),signal(p)==BASIC?4:6,p.started(),false);
@@ -45,7 +47,7 @@ public final class YikeVfxGeometry {
     public static List<Quad> build(AbilityVfxPayload p,float age,boolean reduced){
         if(!p.valid()||p.theme()!=THEME||age<0||age>=p.life()||p.kind()==AbilityVfxGeometry.CANCEL)return List.of();
         if(p.kind()==AbilityVfxGeometry.FLIGHT&&age>=1)return List.of();
-        var g=new YikeVfxGeometry(p,age,reduced);g.draw(p);return List.copyOf(g.mesh);
+        var g=new YikeVfxGeometry(p,age,reduced);g.draw(p);return RosterVfxTuning.brighten(g.mesh);
     }
     private void face(Vec3 a,Vec3 b,Vec3 c,Vec3 d,int rgb,double alpha){
         face(a,b,c,d,rgb,alpha,YIKE_HD_VEIL);
@@ -62,6 +64,28 @@ public final class YikeVfxGeometry {
         face(center.subtract(x).subtract(y),center.add(x).subtract(y),center.add(x).add(y),center.subtract(x).add(y),CORE,alpha,material);
     }
     private static Vec3 side(Vec3 f){Vec3 s=f.cross(UP);return s.lengthSqr()<1E-8?X:s.normalize();}
+    /** Constant white texel, not a mostly transparent trail sprite: a visible volumetric beam. */
+    private void beamFace(Vec3 a,Vec3 b,Vec3 c,Vec3 d,int rgb,double alpha){
+        if(mesh.size()+2>limit||alpha<=0||b.subtract(a).cross(c.subtract(a)).lengthSqr()<1E-14)return;
+        float opacity=(float)Math.clamp(alpha*fade,0,1);if(opacity<=0)return;
+        mesh.add(new Quad(a,b,c,d,rgb,opacity,0));
+        mesh.add(c.equals(d)?new Quad(c,b,a,a,rgb,opacity,0,true)
+                :new Quad(d,c,b,a,rgb,opacity,0,true));
+    }
+    private void beamTube(Vec3 from,Vec3 to,Vec3 f,double radius,int rgb,double alpha,boolean capped){
+        if(from.distanceToSqr(to)<1E-10||radius<=0)return;
+        var s=side(f);var v=s.cross(f).normalize();
+        for(int i=0;i<6;i++){
+            double a=i*Math.PI/3,b=(i+1)*Math.PI/3;
+            Vec3 x=s.scale(Math.cos(a)*radius).add(v.scale(Math.sin(a)*radius));
+            Vec3 y=s.scale(Math.cos(b)*radius).add(v.scale(Math.sin(b)*radius));
+            beamFace(from.add(x),to.add(x),to.add(y),from.add(y),rgb,alpha);
+            if(capped){
+                beamFace(from,from.add(y),from.add(x),from.add(x),rgb,alpha);
+                beamFace(to,to.add(x),to.add(y),to.add(y),rgb,alpha);
+            }
+        }
+    }
     private void ribbon(Vec3 a,Vec3 b,Vec3 normal,double width,int color,double alpha){
         Vec3 dir=b.subtract(a);if(dir.lengthSqr()<1E-10)return;Vec3 s=dir.cross(normal);
         if(s.lengthSqr()<1E-10)s=side(dir.normalize());s=s.normalize().scale(width*.5);
@@ -231,6 +255,10 @@ public final class YikeVfxGeometry {
             case BEAM,BEAM_END -> {
                 double length=at.distanceTo(end),stop=signal==BEAM_END?Math.pow(1-progress,1.7):1;
                 Vec3 tip=at.add(f.scale(length*stop));double power=signal==BEAM_END?1-progress:1;
+                // Keep the solid start clear of the owner's near plane. End remains server-clipped.
+                Vec3 coreStart=at.add(f.scale(Math.min(.5,length*stop*.25)));
+                beamTube(coreStart,tip,f,.11*power,CORE,.96*power,true);
+                beamTube(coreStart,tip,f,.21*power,PHOTON,.52*power,false);
                 ribbon(at,tip,v,.13*power,CORE,.94*power);ribbon(at,tip,s,.10*power,CORE,.88*power);
                 ribbon(at,tip,v,.45*power,PHOTON,.52*power);
                 // The actual PNG contains substantial negative space. Let its colored
