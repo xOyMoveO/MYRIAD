@@ -25,6 +25,7 @@ final class YikeChecks {
     private static final class Fixture {
         ServerPlayer p;Villager target;Vec3 origin;ServerLevel level;int index;
         final Map<BlockPos,BlockState> blocks=new HashMap<>();float paid;int shots;long lastShot=-1000;Vec3 aim;
+        final List<com.myriad.network.AbilityVfxPayload> visuals=new ArrayList<>();
     }
     static void run(GameTestHelper h){
         boolean enabled=ModState.isEnabled(),training=TrainingMode.isEnabled(),nc=TrainingMode.isNoCooldown(),nm=TrainingMode.isNoMana();
@@ -138,7 +139,19 @@ final class YikeChecks {
                         if(committed>f.shots){h.assertTrue(committed==f.shots+1,"One input commits one shell");if(f.shots>0)h.assertTrue(tick-f.lastShot==(i==4?22:27),"Exact real muzzle interval");f.lastShot=tick;f.shots=committed;}
                     }
                     if(tick==4&&i==30)h.assertTrue(d.getMana()==700,"Slowed Q cannot commit early");
+                    if(tick==4&&i==0)h.assertTrue(visualCount(f,YikeVfx.MUZZLE)==0&&visualCount(f,YikeVfx.MUZZLE_CHARGE)>0,"Actual unpaid Q preparation emits charge frames and zero muzzle/recoil events");
                     if(tick==5&&i==0)h.assertTrue(d.getMana()==665&&d.getCooldown(node(2).getId())==120,"Normal Q commits mana/CD once at its fifth tick");
+                    if(tick==5&&i==0){
+                        h.assertTrue(visualCount(f,YikeVfx.MUZZLE)==1,"Successful actual Q release emits exactly one muzzle event");
+                        var charge=f.visuals.stream().filter(v->YikeVfxGeometry.signal(v)==YikeVfx.MUZZLE_CHARGE).reduce((a,b)->b).orElseThrow();
+                        var muzzle=f.visuals.stream().filter(v->YikeVfxGeometry.signal(v)==YikeVfx.MUZZLE).findFirst().orElseThrow();
+                        h.assertTrue(charge.instance()>0&&charge.instance()==muzzle.instance()&&YikeVfxGeometry.replaces(muzzle,charge),"Actual charge and discharge share their cast instance and discharge replaces preparation");
+                    }
+                    if(tick==7&&i==30){
+                        var frame=f.visuals.stream().filter(v->YikeVfxGeometry.signal(v)==YikeVfx.MUZZLE_CHARGE).reduce((a,b)->b).orElseThrow();
+                        h.assertTrue(frame.started()==p.level().getGameTime()&&Math.abs(YikeVfxGeometry.preparation(frame)-AbilityRuntime.winding(p).windupProgress())<1E-5&&visualCount(f,YikeVfx.MUZZLE)==0,
+                                "Beyond the original five real ticks, slowed Q still refreshes its true partial preparation without firing");
+                    }
                     if(tick==9&&i==4)h.assertTrue(d.getMana()==630&&YikeStance.shots(p)==5&&YikeStance.remaining(p)==120,"Deployment commits after nine local ticks and starts six seconds then");
                     if(tick==7&&i==5)h.assertTrue(d.getMana()==635&&YikeStance.shots(p)==4,"Mobile deployment owns its own seven-tick payment");
                     if(tick==10&&i==30)h.assertTrue(d.getMana()==665,"Half-time Q ends at ten real ticks");
@@ -166,6 +179,18 @@ final class YikeChecks {
                     d.tickCooldowns();ModShieldSystem.tick(p);
                 }
                 if(tick==150){
+                    for(int i:new int[]{0,30,37})h.assertTrue(visualCount(fixtures.get(i),YikeVfx.MUZZLE)==1,"Normal/slowed/repeated-input Q has exactly one actual muzzle event: "+i);
+                    h.assertTrue(visualCount(fixtures.get(2),YikeVfx.MUZZLE)==0,"Cancelled unpaid Q has zero muzzle/recoil events");
+                    h.assertTrue(visualCount(fixtures.get(47),YikeVfx.BEAM_END)==0,"Full gameplay cleanup creates no fresh beam-tail effect after owner cancellation");
+                    for(int i:new int[]{13,14}){
+                        var events=fixtures.get(i).visuals;var hits=events.stream().filter(v->YikeVfxGeometry.signal(v)==YikeVfx.BEAM_HIT&&v.kind()!=AbilityVfxGeometry.CANCEL).toList();
+                        h.assertTrue(hits.size()==(i==13?6:2),"Only actual half-second damage opportunities emit beam contact accents: "+i);
+                        for(int j=1;j<hits.size();j++)h.assertTrue(hits.get(j).started()-hits.get(j-1).started()==10,"Beam contact accents follow real 0.5s jumps");
+                        var end=events.stream().filter(v->YikeVfxGeometry.signal(v)==YikeVfx.BEAM_END).findFirst().orElseThrow();
+                        h.assertTrue(end.life()==4&&events.stream().noneMatch(v->v.started()>end.started()&&(YikeVfxGeometry.signal(v)==YikeVfx.BEAM||YikeVfxGeometry.signal(v)==YikeVfx.BEAM_HIT)),"End/cancel emits finite contraction and no later beam/contact events");
+                    }
+                    var warnings=fixtures.get(17).visuals.stream().filter(v->YikeVfxGeometry.signal(v)==YikeVfx.HEAVY_WARNING).toList();
+                    h.assertTrue(!warnings.isEmpty()&&warnings.getLast().started()+warnings.getLast().life()-warnings.getFirst().started()>=20,"Real charge plus actual heavy flight keeps at least one second of landing warning");
                     for(int i:new int[]{1,2,18,19,20,28,29,32,33,35,36,38,39,42,43,44,45,46,48})h.assertTrue(Math.abs(loss(fixtures.get(i)))<.1,"Invalid/unpaid/collision/lifecycle case has no deferred damage: "+i);
                     h.assertTrue(Math.abs(loss(fixtures.get(0))-111.5)<.1,"Normal Q actual chain has no hidden multiplier and actor-only slow does not slow emitted flight");
                     h.assertTrue(Math.abs(loss(fixtures.get(17))-284.5)<.1,"Real heavy arc lands once after charge and flight");
@@ -195,8 +220,12 @@ final class YikeChecks {
         }
         f.p=(ServerPlayer)h.makeMockServerPlayer(GameType.SURVIVAL);var connection=new net.minecraft.network.Connection(net.minecraft.network.protocol.PacketFlow.SERVERBOUND);new io.netty.channel.embedded.EmbeddedChannel(connection);
         f.p.connection=new net.minecraft.server.network.ServerGamePacketListenerImpl(f.level.getServer(),connection,f.p,net.minecraft.server.network.CommonListenerCookie.createInitial(f.p.getGameProfile(),false)){
-            @Override public void send(net.minecraft.network.protocol.Packet<?> packet){}
+            @Override public void send(net.minecraft.network.protocol.Packet<?> packet){
+                if(packet instanceof net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket custom
+                        &&custom.payload() instanceof com.myriad.network.AbilityVfxPayload visual&&visual.owner()==f.p.getId())f.visuals.add(visual);
+            }
         };f.p.connection.markClientLoaded();f.level.getServer().getPlayerList().getPlayersByUUID().put(f.p.getUUID(),f.p);
+        if(Set.of(0,2,13,14,17,30,37,47).contains(i))f.level.players().add(f.p);
         f.origin=Vec3.atBottomCenterOf(at.above());f.p.setPos(f.origin);f.p.setYRot(0);f.p.setXRot(0);f.p.setNoGravity(true);
         var d=PlayerDataProvider.get(f.p);d.setCharacterId("yike");d.setLevel(20);
         CharacterType.applyInitialAttributes(f.p,CharacterType.YIKE);FirstGroupGrowth.initialize(f.p,d);PlayerHealthSystem.fill(f.p);
@@ -217,6 +246,7 @@ final class YikeChecks {
         h.assertTrue(f.target.getBoundingBox().minZ>base.getZ()+rear,"Cover fixture target is wholly behind the collision shape");
     }
     private static float loss(Fixture f){return JiarenManager.MAX_HP-JiarenManager.hp(f.target.getUUID());}
+    private static long visualCount(Fixture f,int signal){return f.visuals.stream().filter(v->v.kind()!=AbilityVfxGeometry.CANCEL&&YikeVfxGeometry.signal(v)==signal).count();}
     private static void restore(boolean e,boolean t,boolean nc,boolean nm){ModState.setEnabled(e);TrainingMode.setEnabled(t);TrainingMode.setNoCooldown(nc);TrainingMode.setNoMana(nm);}
-    private static void cleanup(Fixture f){AbilityRuntime.clear(f.p);ModShieldSystem.clearFor(f.p);ModShieldSystem.clearFor(f.target.getUUID());SilenceSystem.clearFor(f.p.getUUID());KnockbackBuffer.clear(f.p.getUUID());f.level.getServer().getPlayerList().getPlayersByUUID().remove(f.p.getUUID());f.target.discard();f.blocks.forEach(f.level::setBlockAndUpdate);f.p.discard();}
+    private static void cleanup(Fixture f){AbilityRuntime.clear(f.p);ModShieldSystem.clearFor(f.p);ModShieldSystem.clearFor(f.target.getUUID());SilenceSystem.clearFor(f.p.getUUID());KnockbackBuffer.clear(f.p.getUUID());f.level.players().remove(f.p);f.level.getServer().getPlayerList().getPlayersByUUID().remove(f.p.getUUID());f.target.discard();f.blocks.forEach(f.level::setBlockAndUpdate);f.p.discard();}
 }

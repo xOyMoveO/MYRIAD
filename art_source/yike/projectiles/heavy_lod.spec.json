@@ -1,0 +1,1094 @@
+{
+  "meta": {
+    "name": "yike_heavy_lod",
+    "schema_version": 1,
+    "description": "Original future-tech photon projectile: local +Y tip=64. White ceramic shell, graphite joints, cobalt capacitors and embedded ice-blue bus. Actual textured cuboids, not billboard geometry."
+  },
+  "target": "entity",
+  "atlas": {
+    "width": 256,
+    "height": 256,
+    "regions": [
+      {
+        "id": "grip_insulator",
+        "rect": [
+          0,
+          0,
+          64,
+          64
+        ],
+        "fill": "#15222E",
+        "palette": [
+          "#0A141E",
+          "#2C4254"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "cobalt_panel",
+        "rect": [
+          64,
+          0,
+          64,
+          64
+        ],
+        "fill": "#18456B",
+        "palette": [
+          "#0D2A43",
+          "#33739F"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "ceramic_armor",
+        "rect": [
+          128,
+          0,
+          64,
+          64
+        ],
+        "fill": "#DCE8F0",
+        "palette": [
+          "#8FA9BA",
+          "#F1FCFF"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "graphite_frame",
+        "rect": [
+          192,
+          0,
+          64,
+          64
+        ],
+        "fill": "#15222E",
+        "palette": [
+          "#0B141E",
+          "#3A5366"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "industrial_joint",
+        "rect": [
+          0,
+          64,
+          64,
+          64
+        ],
+        "fill": "#3B5468",
+        "palette": [
+          "#1C2C3A",
+          "#7A95AA"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "cool_white_core",
+        "rect": [
+          64,
+          64,
+          64,
+          64
+        ],
+        "fill": "#F1FCFF",
+        "palette": [
+          "#8ECADE",
+          "#FFFFFF"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "cyan_circuit",
+        "rect": [
+          128,
+          64,
+          64,
+          64
+        ],
+        "fill": "#5DDEFF",
+        "palette": [
+          "#2386AE",
+          "#ABF3FF"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "violet_signal",
+        "rect": [
+          192,
+          64,
+          64,
+          64
+        ],
+        "fill": "#A88AFF",
+        "palette": [
+          "#504A8F",
+          "#C5B7FF"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "magenta_indicator",
+        "rect": [
+          0,
+          128,
+          64,
+          64
+        ],
+        "fill": "#FF6AAE",
+        "palette": [
+          "#963E6C",
+          "#FFC2DE"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "recess_vent",
+        "rect": [
+          64,
+          128,
+          64,
+          64
+        ],
+        "fill": "#0A121C",
+        "palette": [
+          "#060B11",
+          "#1B3548"
+        ],
+        "noise": 0
+      }
+    ]
+  },
+  "parts": [
+    {
+      "id": "spine",
+      "pos": [
+        -3,
+        4,
+        -3
+      ],
+      "size": [
+        6,
+        50,
+        6
+      ],
+      "pivot": [
+        0,
+        0,
+        0
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            220.76,
+            5.0,
+            227.24,
+            59.0
+          ],
+          "region": "graphite_frame"
+        },
+        "south": {
+          "uv": [
+            220.76,
+            5.0,
+            227.24,
+            59.0
+          ],
+          "region": "graphite_frame"
+        },
+        "east": {
+          "uv": [
+            220.76,
+            5.0,
+            227.24,
+            59.0
+          ],
+          "region": "graphite_frame"
+        },
+        "west": {
+          "uv": [
+            220.76,
+            5.0,
+            227.24,
+            59.0
+          ],
+          "region": "graphite_frame"
+        },
+        "up": {
+          "uv": [
+            197.0,
+            5.0,
+            251.0,
+            59.0
+          ],
+          "region": "graphite_frame"
+        },
+        "down": {
+          "uv": [
+            197.0,
+            5.0,
+            251.0,
+            59.0
+          ],
+          "region": "graphite_frame"
+        }
+      }
+    },
+    {
+      "id": "lower_module",
+      "pos": [
+        -3,
+        14,
+        -3
+      ],
+      "size": [
+        6,
+        12,
+        6
+      ],
+      "pivot": [
+        0,
+        0,
+        0
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            146.5,
+            69.0,
+            173.5,
+            123.0
+          ],
+          "region": "cyan_circuit"
+        },
+        "south": {
+          "uv": [
+            146.5,
+            69.0,
+            173.5,
+            123.0
+          ],
+          "region": "cyan_circuit"
+        },
+        "east": {
+          "uv": [
+            146.5,
+            69.0,
+            173.5,
+            123.0
+          ],
+          "region": "cyan_circuit"
+        },
+        "west": {
+          "uv": [
+            146.5,
+            69.0,
+            173.5,
+            123.0
+          ],
+          "region": "cyan_circuit"
+        },
+        "up": {
+          "uv": [
+            133.0,
+            69.0,
+            187.0,
+            123.0
+          ],
+          "region": "cyan_circuit"
+        },
+        "down": {
+          "uv": [
+            133.0,
+            69.0,
+            187.0,
+            123.0
+          ],
+          "region": "cyan_circuit"
+        }
+      }
+    },
+    {
+      "id": "upper_module",
+      "pos": [
+        -2.5,
+        34,
+        -2.5
+      ],
+      "size": [
+        5,
+        14,
+        5
+      ],
+      "pivot": [
+        0,
+        0,
+        0
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            86.3571,
+            69.0,
+            105.6429,
+            123.0
+          ],
+          "region": "cool_white_core"
+        },
+        "south": {
+          "uv": [
+            86.3571,
+            69.0,
+            105.6429,
+            123.0
+          ],
+          "region": "cool_white_core"
+        },
+        "east": {
+          "uv": [
+            86.3571,
+            69.0,
+            105.6429,
+            123.0
+          ],
+          "region": "cool_white_core"
+        },
+        "west": {
+          "uv": [
+            86.3571,
+            69.0,
+            105.6429,
+            123.0
+          ],
+          "region": "cool_white_core"
+        },
+        "up": {
+          "uv": [
+            69.0,
+            69.0,
+            123.0,
+            123.0
+          ],
+          "region": "cool_white_core"
+        },
+        "down": {
+          "uv": [
+            69.0,
+            69.0,
+            123.0,
+            123.0
+          ],
+          "region": "cool_white_core"
+        }
+      }
+    },
+    {
+      "id": "nose_base",
+      "pos": [
+        -2,
+        48,
+        -2
+      ],
+      "size": [
+        4,
+        12,
+        4
+      ],
+      "pivot": [
+        0,
+        0,
+        0
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            87.0,
+            69.0,
+            105.0,
+            123.0
+          ],
+          "region": "cool_white_core"
+        },
+        "south": {
+          "uv": [
+            87.0,
+            69.0,
+            105.0,
+            123.0
+          ],
+          "region": "cool_white_core"
+        },
+        "east": {
+          "uv": [
+            87.0,
+            69.0,
+            105.0,
+            123.0
+          ],
+          "region": "cool_white_core"
+        },
+        "west": {
+          "uv": [
+            87.0,
+            69.0,
+            105.0,
+            123.0
+          ],
+          "region": "cool_white_core"
+        },
+        "up": {
+          "uv": [
+            69.0,
+            69.0,
+            123.0,
+            123.0
+          ],
+          "region": "cool_white_core"
+        },
+        "down": {
+          "uv": [
+            69.0,
+            69.0,
+            123.0,
+            123.0
+          ],
+          "region": "cool_white_core"
+        }
+      }
+    },
+    {
+      "id": "nose",
+      "pos": [
+        -1,
+        60,
+        -1
+      ],
+      "size": [
+        2,
+        4,
+        2
+      ],
+      "pivot": [
+        0,
+        0,
+        0
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            82.5,
+            69.0,
+            109.5,
+            123.0
+          ],
+          "region": "cool_white_core"
+        },
+        "south": {
+          "uv": [
+            82.5,
+            69.0,
+            109.5,
+            123.0
+          ],
+          "region": "cool_white_core"
+        },
+        "east": {
+          "uv": [
+            82.5,
+            69.0,
+            109.5,
+            123.0
+          ],
+          "region": "cool_white_core"
+        },
+        "west": {
+          "uv": [
+            82.5,
+            69.0,
+            109.5,
+            123.0
+          ],
+          "region": "cool_white_core"
+        },
+        "up": {
+          "uv": [
+            69.0,
+            69.0,
+            123.0,
+            123.0
+          ],
+          "region": "cool_white_core"
+        },
+        "down": {
+          "uv": [
+            69.0,
+            69.0,
+            123.0,
+            123.0
+          ],
+          "region": "cool_white_core"
+        }
+      }
+    },
+    {
+      "id": "rear_power_unit",
+      "pos": [
+        -5,
+        5,
+        -5
+      ],
+      "size": [
+        10,
+        8,
+        10
+      ],
+      "pivot": [
+        0,
+        0,
+        0
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            69.0,
+            10.4,
+            123.0,
+            53.6
+          ],
+          "region": "cobalt_panel"
+        },
+        "south": {
+          "uv": [
+            69.0,
+            10.4,
+            123.0,
+            53.6
+          ],
+          "region": "cobalt_panel"
+        },
+        "east": {
+          "uv": [
+            69.0,
+            10.4,
+            123.0,
+            53.6
+          ],
+          "region": "cobalt_panel"
+        },
+        "west": {
+          "uv": [
+            69.0,
+            10.4,
+            123.0,
+            53.6
+          ],
+          "region": "cobalt_panel"
+        },
+        "up": {
+          "uv": [
+            69.0,
+            5.0,
+            123.0,
+            59.0
+          ],
+          "region": "cobalt_panel"
+        },
+        "down": {
+          "uv": [
+            69.0,
+            5.0,
+            123.0,
+            59.0
+          ],
+          "region": "cobalt_panel"
+        }
+      }
+    },
+    {
+      "id": "lower_armor_wing_0",
+      "pos": [
+        -3,
+        12,
+        5
+      ],
+      "size": [
+        6,
+        20,
+        2
+      ],
+      "pivot": [
+        0,
+        0,
+        0
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            151.9,
+            5.0,
+            168.1,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "south": {
+          "uv": [
+            151.9,
+            5.0,
+            168.1,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "east": {
+          "uv": [
+            157.3,
+            5.0,
+            162.7,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "west": {
+          "uv": [
+            157.3,
+            5.0,
+            162.7,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "up": {
+          "uv": [
+            133.0,
+            23.0,
+            187.0,
+            41.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "down": {
+          "uv": [
+            133.0,
+            23.0,
+            187.0,
+            41.0
+          ],
+          "region": "ceramic_armor"
+        }
+      }
+    },
+    {
+      "id": "upper_armor_wing_0",
+      "pos": [
+        -2.5,
+        33,
+        4.5
+      ],
+      "size": [
+        5,
+        16,
+        2
+      ],
+      "pivot": [
+        0,
+        0,
+        0
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            151.5625,
+            5.0,
+            168.4375,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "south": {
+          "uv": [
+            151.5625,
+            5.0,
+            168.4375,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "east": {
+          "uv": [
+            156.625,
+            5.0,
+            163.375,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "west": {
+          "uv": [
+            156.625,
+            5.0,
+            163.375,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "up": {
+          "uv": [
+            133.0,
+            21.2,
+            187.0,
+            42.8
+          ],
+          "region": "ceramic_armor"
+        },
+        "down": {
+          "uv": [
+            133.0,
+            21.2,
+            187.0,
+            42.8
+          ],
+          "region": "ceramic_armor"
+        }
+      }
+    },
+    {
+      "id": "lower_armor_wing_1",
+      "pos": [
+        -3,
+        12,
+        5
+      ],
+      "size": [
+        6,
+        20,
+        2
+      ],
+      "pivot": [
+        0,
+        0,
+        0
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            151.9,
+            5.0,
+            168.1,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "south": {
+          "uv": [
+            151.9,
+            5.0,
+            168.1,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "east": {
+          "uv": [
+            157.3,
+            5.0,
+            162.7,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "west": {
+          "uv": [
+            157.3,
+            5.0,
+            162.7,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "up": {
+          "uv": [
+            133.0,
+            23.0,
+            187.0,
+            41.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "down": {
+          "uv": [
+            133.0,
+            23.0,
+            187.0,
+            41.0
+          ],
+          "region": "ceramic_armor"
+        }
+      },
+      "rot": [
+        0,
+        120,
+        0
+      ]
+    },
+    {
+      "id": "upper_armor_wing_1",
+      "pos": [
+        -2.5,
+        33,
+        4.5
+      ],
+      "size": [
+        5,
+        16,
+        2
+      ],
+      "pivot": [
+        0,
+        0,
+        0
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            151.5625,
+            5.0,
+            168.4375,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "south": {
+          "uv": [
+            151.5625,
+            5.0,
+            168.4375,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "east": {
+          "uv": [
+            156.625,
+            5.0,
+            163.375,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "west": {
+          "uv": [
+            156.625,
+            5.0,
+            163.375,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "up": {
+          "uv": [
+            133.0,
+            21.2,
+            187.0,
+            42.8
+          ],
+          "region": "ceramic_armor"
+        },
+        "down": {
+          "uv": [
+            133.0,
+            21.2,
+            187.0,
+            42.8
+          ],
+          "region": "ceramic_armor"
+        }
+      },
+      "rot": [
+        0,
+        120,
+        0
+      ]
+    },
+    {
+      "id": "lower_armor_wing_2",
+      "pos": [
+        -3,
+        12,
+        5
+      ],
+      "size": [
+        6,
+        20,
+        2
+      ],
+      "pivot": [
+        0,
+        0,
+        0
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            151.9,
+            5.0,
+            168.1,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "south": {
+          "uv": [
+            151.9,
+            5.0,
+            168.1,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "east": {
+          "uv": [
+            157.3,
+            5.0,
+            162.7,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "west": {
+          "uv": [
+            157.3,
+            5.0,
+            162.7,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "up": {
+          "uv": [
+            133.0,
+            23.0,
+            187.0,
+            41.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "down": {
+          "uv": [
+            133.0,
+            23.0,
+            187.0,
+            41.0
+          ],
+          "region": "ceramic_armor"
+        }
+      },
+      "rot": [
+        0,
+        240,
+        0
+      ]
+    },
+    {
+      "id": "upper_armor_wing_2",
+      "pos": [
+        -2.5,
+        33,
+        4.5
+      ],
+      "size": [
+        5,
+        16,
+        2
+      ],
+      "pivot": [
+        0,
+        0,
+        0
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            151.5625,
+            5.0,
+            168.4375,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "south": {
+          "uv": [
+            151.5625,
+            5.0,
+            168.4375,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "east": {
+          "uv": [
+            156.625,
+            5.0,
+            163.375,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "west": {
+          "uv": [
+            156.625,
+            5.0,
+            163.375,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "up": {
+          "uv": [
+            133.0,
+            21.2,
+            187.0,
+            42.8
+          ],
+          "region": "ceramic_armor"
+        },
+        "down": {
+          "uv": [
+            133.0,
+            21.2,
+            187.0,
+            42.8
+          ],
+          "region": "ceramic_armor"
+        }
+      },
+      "rot": [
+        0,
+        240,
+        0
+      ]
+    }
+  ],
+  "face_details": [
+    {
+      "id": "leading_optic",
+      "part": "nose",
+      "kind": "geometry",
+      "note": "Visible +Y forward tip; map this end to the real 3D velocity."
+    }
+  ]
+}

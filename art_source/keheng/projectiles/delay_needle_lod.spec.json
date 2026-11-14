@@ -1,0 +1,901 @@
+{
+  "meta": {
+    "name": "keheng_delay_needle_lod",
+    "schema_version": 1,
+    "description": "Original chronometric flying needle. Local +Y leads; front tip at Y64, thin physical silver blade, ink spine, amber microticks and teal inlays. Runtime binds tip to each real movement endpoint."
+  },
+  "target": "entity",
+  "atlas": {
+    "width": 128,
+    "height": 128,
+    "regions": [
+      {
+        "id": "material_0",
+        "rect": [
+          0,
+          0,
+          16,
+          128
+        ],
+        "fill": "#D9E9E7"
+      },
+      {
+        "id": "material_1",
+        "rect": [
+          16,
+          0,
+          16,
+          128
+        ],
+        "fill": "#93AFB1"
+      },
+      {
+        "id": "material_2",
+        "rect": [
+          32,
+          0,
+          16,
+          128
+        ],
+        "fill": "#1C2C35"
+      },
+      {
+        "id": "material_3",
+        "rect": [
+          48,
+          0,
+          16,
+          128
+        ],
+        "fill": "#42D9BD"
+      },
+      {
+        "id": "material_4",
+        "rect": [
+          64,
+          0,
+          16,
+          128
+        ],
+        "fill": "#F1C76B"
+      },
+      {
+        "id": "material_5",
+        "rect": [
+          80,
+          0,
+          16,
+          128
+        ],
+        "fill": "#8C7CA6"
+      },
+      {
+        "id": "edge_0",
+        "rect": [
+          0,
+          0,
+          2,
+          128
+        ],
+        "fill": "#859FA6"
+      },
+      {
+        "id": "glint_0",
+        "rect": [
+          4,
+          0,
+          2,
+          128
+        ],
+        "fill": "#F2F6EA"
+      },
+      {
+        "id": "grain_0_12",
+        "rect": [
+          9,
+          12,
+          4,
+          1
+        ],
+        "fill": "#F2F6EA"
+      },
+      {
+        "id": "grain_0_39",
+        "rect": [
+          9,
+          39,
+          4,
+          1
+        ],
+        "fill": "#F2F6EA"
+      },
+      {
+        "id": "grain_0_76",
+        "rect": [
+          9,
+          76,
+          4,
+          1
+        ],
+        "fill": "#F2F6EA"
+      },
+      {
+        "id": "grain_0_105",
+        "rect": [
+          9,
+          105,
+          4,
+          1
+        ],
+        "fill": "#F2F6EA"
+      },
+      {
+        "id": "edge_1",
+        "rect": [
+          16,
+          0,
+          2,
+          128
+        ],
+        "fill": "#567983"
+      },
+      {
+        "id": "glint_1",
+        "rect": [
+          20,
+          0,
+          2,
+          128
+        ],
+        "fill": "#C7DEE0"
+      },
+      {
+        "id": "grain_1_12",
+        "rect": [
+          25,
+          12,
+          4,
+          1
+        ],
+        "fill": "#C7DEE0"
+      },
+      {
+        "id": "grain_1_39",
+        "rect": [
+          25,
+          39,
+          4,
+          1
+        ],
+        "fill": "#C7DEE0"
+      },
+      {
+        "id": "grain_1_76",
+        "rect": [
+          25,
+          76,
+          4,
+          1
+        ],
+        "fill": "#C7DEE0"
+      },
+      {
+        "id": "grain_1_105",
+        "rect": [
+          25,
+          105,
+          4,
+          1
+        ],
+        "fill": "#C7DEE0"
+      },
+      {
+        "id": "edge_2",
+        "rect": [
+          32,
+          0,
+          2,
+          128
+        ],
+        "fill": "#102229"
+      },
+      {
+        "id": "glint_2",
+        "rect": [
+          36,
+          0,
+          2,
+          128
+        ],
+        "fill": "#36555B"
+      },
+      {
+        "id": "grain_2_12",
+        "rect": [
+          41,
+          12,
+          4,
+          1
+        ],
+        "fill": "#36555B"
+      },
+      {
+        "id": "grain_2_39",
+        "rect": [
+          41,
+          39,
+          4,
+          1
+        ],
+        "fill": "#36555B"
+      },
+      {
+        "id": "grain_2_76",
+        "rect": [
+          41,
+          76,
+          4,
+          1
+        ],
+        "fill": "#36555B"
+      },
+      {
+        "id": "grain_2_105",
+        "rect": [
+          41,
+          105,
+          4,
+          1
+        ],
+        "fill": "#36555B"
+      },
+      {
+        "id": "edge_3",
+        "rect": [
+          48,
+          0,
+          2,
+          128
+        ],
+        "fill": "#227F79"
+      },
+      {
+        "id": "glint_3",
+        "rect": [
+          52,
+          0,
+          2,
+          128
+        ],
+        "fill": "#A0F7D8"
+      },
+      {
+        "id": "grain_3_12",
+        "rect": [
+          57,
+          12,
+          4,
+          1
+        ],
+        "fill": "#A0F7D8"
+      },
+      {
+        "id": "grain_3_39",
+        "rect": [
+          57,
+          39,
+          4,
+          1
+        ],
+        "fill": "#A0F7D8"
+      },
+      {
+        "id": "grain_3_76",
+        "rect": [
+          57,
+          76,
+          4,
+          1
+        ],
+        "fill": "#A0F7D8"
+      },
+      {
+        "id": "grain_3_105",
+        "rect": [
+          57,
+          105,
+          4,
+          1
+        ],
+        "fill": "#A0F7D8"
+      },
+      {
+        "id": "edge_4",
+        "rect": [
+          64,
+          0,
+          2,
+          128
+        ],
+        "fill": "#92632F"
+      },
+      {
+        "id": "glint_4",
+        "rect": [
+          68,
+          0,
+          2,
+          128
+        ],
+        "fill": "#FFE4A0"
+      },
+      {
+        "id": "grain_4_12",
+        "rect": [
+          73,
+          12,
+          4,
+          1
+        ],
+        "fill": "#FFE4A0"
+      },
+      {
+        "id": "grain_4_39",
+        "rect": [
+          73,
+          39,
+          4,
+          1
+        ],
+        "fill": "#FFE4A0"
+      },
+      {
+        "id": "grain_4_76",
+        "rect": [
+          73,
+          76,
+          4,
+          1
+        ],
+        "fill": "#FFE4A0"
+      },
+      {
+        "id": "grain_4_105",
+        "rect": [
+          73,
+          105,
+          4,
+          1
+        ],
+        "fill": "#FFE4A0"
+      },
+      {
+        "id": "edge_5",
+        "rect": [
+          80,
+          0,
+          2,
+          128
+        ],
+        "fill": "#554B69"
+      },
+      {
+        "id": "glint_5",
+        "rect": [
+          84,
+          0,
+          2,
+          128
+        ],
+        "fill": "#B6ACCB"
+      },
+      {
+        "id": "grain_5_12",
+        "rect": [
+          89,
+          12,
+          4,
+          1
+        ],
+        "fill": "#B6ACCB"
+      },
+      {
+        "id": "grain_5_39",
+        "rect": [
+          89,
+          39,
+          4,
+          1
+        ],
+        "fill": "#B6ACCB"
+      },
+      {
+        "id": "grain_5_76",
+        "rect": [
+          89,
+          76,
+          4,
+          1
+        ],
+        "fill": "#B6ACCB"
+      },
+      {
+        "id": "grain_5_105",
+        "rect": [
+          89,
+          105,
+          4,
+          1
+        ],
+        "fill": "#B6ACCB"
+      }
+    ]
+  },
+  "parts": [
+    {
+      "id": "silver_needle",
+      "pos": [
+        -1.25,
+        8,
+        -0.6
+      ],
+      "size": [
+        2.5,
+        48,
+        1.2
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            1,
+            1,
+            15,
+            127
+          ]
+        },
+        "south": {
+          "uv": [
+            1,
+            1,
+            15,
+            127
+          ]
+        },
+        "east": {
+          "uv": [
+            17,
+            1,
+            31,
+            127
+          ]
+        },
+        "west": {
+          "uv": [
+            17,
+            1,
+            31,
+            127
+          ]
+        },
+        "up": {
+          "uv": [
+            3,
+            3,
+            13,
+            13
+          ]
+        },
+        "down": {
+          "uv": [
+            3,
+            3,
+            13,
+            13
+          ]
+        }
+      }
+    },
+    {
+      "id": "ink_spine",
+      "pos": [
+        -0.5,
+        6,
+        -0.85
+      ],
+      "size": [
+        1,
+        52,
+        0.25
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            33,
+            1,
+            47,
+            127
+          ]
+        },
+        "south": {
+          "uv": [
+            33,
+            1,
+            47,
+            127
+          ]
+        },
+        "east": {
+          "uv": [
+            33,
+            1,
+            47,
+            127
+          ]
+        },
+        "west": {
+          "uv": [
+            33,
+            1,
+            47,
+            127
+          ]
+        },
+        "up": {
+          "uv": [
+            35,
+            3,
+            45,
+            13
+          ]
+        },
+        "down": {
+          "uv": [
+            35,
+            3,
+            45,
+            13
+          ]
+        }
+      },
+      "parent": "silver_needle"
+    },
+    {
+      "id": "tip_shoulder",
+      "pos": [
+        -1,
+        56,
+        -0.5
+      ],
+      "size": [
+        2,
+        3,
+        1
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            1,
+            1,
+            15,
+            127
+          ]
+        },
+        "south": {
+          "uv": [
+            1,
+            1,
+            15,
+            127
+          ]
+        },
+        "east": {
+          "uv": [
+            17,
+            1,
+            31,
+            127
+          ]
+        },
+        "west": {
+          "uv": [
+            17,
+            1,
+            31,
+            127
+          ]
+        },
+        "up": {
+          "uv": [
+            3,
+            3,
+            13,
+            13
+          ]
+        },
+        "down": {
+          "uv": [
+            3,
+            3,
+            13,
+            13
+          ]
+        }
+      },
+      "parent": "silver_needle"
+    },
+    {
+      "id": "tip_taper",
+      "pos": [
+        -0.5,
+        59,
+        -0.375
+      ],
+      "size": [
+        1,
+        3,
+        0.75
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            1,
+            1,
+            15,
+            127
+          ]
+        },
+        "south": {
+          "uv": [
+            1,
+            1,
+            15,
+            127
+          ]
+        },
+        "east": {
+          "uv": [
+            17,
+            1,
+            31,
+            127
+          ]
+        },
+        "west": {
+          "uv": [
+            17,
+            1,
+            31,
+            127
+          ]
+        },
+        "up": {
+          "uv": [
+            3,
+            3,
+            13,
+            13
+          ]
+        },
+        "down": {
+          "uv": [
+            3,
+            3,
+            13,
+            13
+          ]
+        }
+      },
+      "parent": "silver_needle"
+    },
+    {
+      "id": "tip_point",
+      "pos": [
+        -0.25,
+        62,
+        -0.25
+      ],
+      "size": [
+        0.5,
+        2,
+        0.5
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            1,
+            1,
+            15,
+            127
+          ]
+        },
+        "south": {
+          "uv": [
+            1,
+            1,
+            15,
+            127
+          ]
+        },
+        "east": {
+          "uv": [
+            17,
+            1,
+            31,
+            127
+          ]
+        },
+        "west": {
+          "uv": [
+            17,
+            1,
+            31,
+            127
+          ]
+        },
+        "up": {
+          "uv": [
+            3,
+            3,
+            13,
+            13
+          ]
+        },
+        "down": {
+          "uv": [
+            3,
+            3,
+            13,
+            13
+          ]
+        }
+      },
+      "parent": "silver_needle"
+    },
+    {
+      "id": "escapement_collar",
+      "pos": [
+        -1.75,
+        2,
+        -1.1
+      ],
+      "size": [
+        3.5,
+        6,
+        2.2
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            33,
+            1,
+            47,
+            127
+          ]
+        },
+        "south": {
+          "uv": [
+            33,
+            1,
+            47,
+            127
+          ]
+        },
+        "east": {
+          "uv": [
+            33,
+            1,
+            47,
+            127
+          ]
+        },
+        "west": {
+          "uv": [
+            33,
+            1,
+            47,
+            127
+          ]
+        },
+        "up": {
+          "uv": [
+            35,
+            3,
+            45,
+            13
+          ]
+        },
+        "down": {
+          "uv": [
+            35,
+            3,
+            45,
+            13
+          ]
+        }
+      }
+    },
+    {
+      "id": "amber_tail_cap",
+      "pos": [
+        -1.2,
+        0,
+        -0.8
+      ],
+      "size": [
+        2.4,
+        2,
+        1.6
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            65,
+            1,
+            79,
+            127
+          ]
+        },
+        "south": {
+          "uv": [
+            65,
+            1,
+            79,
+            127
+          ]
+        },
+        "east": {
+          "uv": [
+            65,
+            1,
+            79,
+            127
+          ]
+        },
+        "west": {
+          "uv": [
+            65,
+            1,
+            79,
+            127
+          ]
+        },
+        "up": {
+          "uv": [
+            67,
+            3,
+            77,
+            13
+          ]
+        },
+        "down": {
+          "uv": [
+            67,
+            3,
+            77,
+            13
+          ]
+        }
+      },
+      "parent": "escapement_collar"
+    }
+  ],
+  "face_details": [
+    {
+      "id": "needle_core",
+      "part": "silver_needle",
+      "kind": "geometry"
+    },
+    {
+      "id": "needle_tip",
+      "part": "tip_point",
+      "kind": "geometry"
+    }
+  ]
+}

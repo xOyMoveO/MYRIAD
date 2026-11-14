@@ -33,7 +33,9 @@ final class AbilityMeshState extends QuadParticleRenderState {
         if(mesh.size()<16384){mesh.add(new Entry(q,camera,u0,u1,v0,v1,nearAlpha,dx*dx+dy*dy+dz*dz,light,flame));
             hasGround|=flame&&com.myriad.character.ability.AbilityVfxMaterials.flameGround(q.material());
             hasFlame|=flame&&!com.myriad.character.ability.AbilityVfxMaterials.flameGround(q.material());hasOrdinary|=!flame;
-            hasModels|=q.material()==com.myriad.character.ability.AbilityVfxMaterials.LINGYUAN_PIXEL_MODEL
+            hasModels|=q.material()>=com.myriad.character.ability.AbilityVfxMaterials.KEHENG_HD_RING
+                    &&q.material()<=com.myriad.character.ability.AbilityVfxMaterials.YIKE_PROJECTILE_MODEL
+                    ||q.material()==com.myriad.character.ability.AbilityVfxMaterials.LINGYUAN_PIXEL_MODEL
                     ||q.material()==com.myriad.character.ability.AbilityVfxMaterials.NIGHT_NEEDLE_MODEL
                     ||q.material()>=com.myriad.character.ability.AbilityVfxMaterials.NIGHT_GRAY_BLADE
                     &&q.material()<=com.myriad.character.ability.AbilityVfxMaterials.NIGHT_GRAY_IMPACT
@@ -55,7 +57,9 @@ final class AbilityMeshState extends QuadParticleRenderState {
     private static boolean modelFaceVisible(Quad q,Vec3 camera){
         if(q.material()!=com.myriad.character.ability.AbilityVfxMaterials.LINGYUAN_PIXEL_MODEL
                 &&q.material()!=com.myriad.character.ability.AbilityVfxMaterials.NIGHT_NEEDLE_MODEL
-                &&q.material()!=com.myriad.character.ability.AbilityVfxMaterials.THUNDER_PROJECTILE_MODEL)return true;
+                &&q.material()!=com.myriad.character.ability.AbilityVfxMaterials.THUNDER_PROJECTILE_MODEL
+                &&q.material()!=com.myriad.character.ability.AbilityVfxMaterials.KEHENG_PROJECTILE_MODEL
+                &&q.material()!=com.myriad.character.ability.AbilityVfxMaterials.YIKE_PROJECTILE_MODEL)return true;
         return q.b().subtract(q.a()).cross(q.c().subtract(q.a())).dot(camera.subtract(q.a()))>1E-10;
     }
     @Override public void clear(){super.clear();mesh.clear();hasModels=hasFlame=hasGround=hasOrdinary=false;}

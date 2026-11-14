@@ -1,0 +1,3 @@
+interface:
+  display_name: "万象音效接入"
+  short_description: "接入并验证万象模组音效、声音事件与播放逻辑"

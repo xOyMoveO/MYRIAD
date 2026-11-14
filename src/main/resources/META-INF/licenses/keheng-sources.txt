@@ -5,10 +5,32 @@ role emblem, chronometric procedural VFX and eight synthesized mechanical/air/me
 were authored specifically for this project from the confirmed Keheng design contract.
 No third-party source image, recording, font or stock model is incorporated.
 
-Editable source: art_source/keheng/hengke.bbmodel, hengke_texture.png,
-hengke_orthographic.svg and tools/build_keheng_assets.py.
+Editable weapon source: art_source/keheng/hengke.spec.json, hengke.bbmodel,
+hengke_texture.png and tools/assets/generate_keheng_weapon.py.
+The weapon uses the project Blockbench asset-spec generator, with the existing
+fine geometry precision retained. Model previews are rendered from the actual model.
 The native item JSON is also editable. The first-person arm uses the existing vanilla
 player skin/mesh path already used by the project's other weapon rigs.
+
+The eight candidate skill icons were refreshed with the built-in image generation
+tool from the confirmed original skill descriptions and palette. Source sheet:
+art_source/keheng/icon_source.png. Each measured panel is cropped and exported as
+an opaque 64x64 PNG. The earlier procedural icon drawings are no longer generated.
+
+Layered VFX revision:
+Six 256x256 HD RGBA components and two 64x64 pixel accents were generated with
+the built-in image generator for Keheng's teal/amber chronometric theme.
+Source sheet and exact export processing: art_source/keheng/vfx/hd/hd_source.png
+and export_hd.py. Export clears only alpha <= 8/255 and keeps remaining partial
+alpha, with transparent padding; the game uses ordinary translucent composition.
+The user's example illustrates the model/texture layering technique only; its
+screen graphics, symbols and lightning design were not copied into these assets.
+
+The textured delay-needle body and its LOD are original editable asset specs and
+Blockbench models under art_source/keheng/projectiles/. Runtime faces are compiled
+from those models into assets/myriad/vfx/keheng_projectiles_mesh.json, with the
+separate keheng_projectiles_atlas.png. The model supplies the flying solid body;
+the new 2D textures supply finite trails, fields, shields, impact and pixel accents.
 
 Synthesized audio uses Python standard-library oscillators/noise and FFmpeg's native
 Vorbis encoder; no source recording or sampled third-party instrument is embedded.

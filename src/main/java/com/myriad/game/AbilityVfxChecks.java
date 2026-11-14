@@ -53,6 +53,10 @@ final class AbilityVfxChecks {
         }finally{buffer.release();}
         nightChecks(h);
         ElementVfxChecks.verify(h);
+        KehengVisualChecks.verify(h);
+        YikeVisualChecks.verify(h);
+        RosterVfxTuningChecks.verify(h);
+        YikeWeaponAnimationChecks.run(h);
         System.out.println("[MYRIAD-VFX] PASS: "+count+" role/branch/shape recipes, budget, expiry, volume, short-life visibility, vertical/zero vectors, wire");
     }
     private static void nightChecks(GameTestHelper h){

@@ -9,8 +9,8 @@ import java.util.List;
 public final class AbilityVfxGeometry {
     public static final int RETICLE=0,INVALID=1,SEAL=2,BURST=3,ARC=4,BEAM=5,PILLAR=6,
             SHIELD=7,TRAIL=8,FLIGHT=9,CHARGE=10,WALL=11,CANCEL=12;
-    private static final int[] BODY={0x777777,0x42BDFF,0xFF762A,0x6489AA,0x40EAC1,0x62C9E6,0x63B9F5,0x60B960,0xD76F3C,0x69CEC8,0xB7DAF5,0x42D9BD,0xFF6C78};
-    private static final int[] EDGE={0xD8D8D8,0xF4FCFF,0xFFE0A0,0xFAE9B8,0xF0FFF9,0xF6F3D1,0xF1FCFF,0xF1F2BE,0xFFDB9D,0xFFF7CE,0xF3FCFF,0xF1C76B,0xFFF3DC};
+    private static final int[] BODY={0x777777,0x42BDFF,0xFF762A,0x6489AA,0x40EAC1,0x62C9E6,0x63B9F5,0x60B960,0xD76F3C,0x69CEC8,0xB7DAF5,0x42D9BD,0x5DDEFF};
+    private static final int[] EDGE={0xD8D8D8,0xF4FCFF,0xFFE0A0,0xFAE9B8,0xF0FFF9,0xF6F3D1,0xF1FCFF,0xF1F2BE,0xFFDB9D,0xFFF7CE,0xF3FCFF,0xF1C76B,0xF1FCFF};
     public record Quad(Vec3 a,Vec3 b,Vec3 c,Vec3 d,int color,float alpha,int material,boolean reverseV,float startU,float endU,float startV,float endV) {
         public Quad(Vec3 a,Vec3 b,Vec3 c,Vec3 d,int color,float alpha,int material,boolean reverseV,float startU,float endU){this(a,b,c,d,color,alpha,material,reverseV,startU,endU,0,1);}
         public Quad(Vec3 a,Vec3 b,Vec3 c,Vec3 d,int color,float alpha){this(a,b,c,d,color,alpha,0,false,0,1);}
@@ -19,7 +19,8 @@ public final class AbilityVfxGeometry {
     }
     /** Complex closed models have their own budget; other role recipes stay at 192. */
     public static int maxQuads(AbilityVfxPayload p) {
-        return p.theme()==5&&p.kind()!=RETICLE&&p.kind()!=INVALID&&p.kind()!=CANCEL?4096:192;
+        return p.theme()==5&&p.kind()!=RETICLE&&p.kind()!=INVALID&&p.kind()!=CANCEL?4096
+                :p.theme()==12&&p.kind()==FLIGHT?512:192;
     }
     private final List<Quad> quads=new ArrayList<>();
     private final int theme,variant,color,bright;private final float fade;private final double time;
@@ -53,7 +54,8 @@ public final class AbilityVfxGeometry {
             };
         }
         var g=new AbilityVfxGeometry(p,age);g.shape(p,reduced);
-        return p.theme()==10?com.myriad.character.skills.shuo.ShuoBrightness.apply(g.quads):List.copyOf(g.quads);
+        return p.theme()==10?com.myriad.character.skills.shuo.ShuoBrightness.apply(g.quads)
+                :p.theme()==11||p.theme()==12?RosterVfxTuning.brighten(g.quads):List.copyOf(g.quads);
     }
     private void quad(Vec3 a,Vec3 b,Vec3 c,Vec3 d,int rgb,float alpha) {
         if(quads.size()<192&&alpha>0)quads.add(new Quad(a,b,c,d,rgb,Math.clamp(alpha,0,1)));

@@ -241,6 +241,7 @@ public final class AbilityRuntime {
         // Post-hit runs after health deduction. A lethal hit still earns attack resources,
         // while damage(target,...) independently refuses extra damage to an already dead unit.
         if(!valid(p)||damage<=0||!direct||SkillTargets.ally(p,target)||target instanceof DefenseTowerEntity)return;
+        if(basic)com.myriad.character.skills.keheng.KehengBasic.contact(p,target);
         if(basic){p.removeEffect(MobEffects.INVISIBILITY);PlayerDataProvider.get(p).setStealthBonus(false);}
         var passive=passive(p);if(passive!=null)passive.onHit(new Hit(p,target,damage,basic,source,direct,
                 kind==2?DamageCalc.Kind.TRUE:kind==1?DamageCalc.Kind.MAGIC:DamageCalc.Kind.PHYSICAL));

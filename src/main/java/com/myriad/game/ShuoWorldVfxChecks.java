@@ -81,6 +81,7 @@ final class ShuoWorldVfxChecks {
     }
     static void verify(GameTestHelper h){
         ShuoDashChecks.verify(h);
+        ShuoSilentLineChecks.verify(h);
         int samples=0;var materials=new HashSet<Integer>();
         for(int signal=301;signal<=316;signal++)for(int index=0;index<8;index++)for(var forward:List.of(new Vec3(0,0,3),new Vec3(2,.4,2),new Vec3(0,1,0),Vec3.ZERO)){
             var at=new Vec3(10,20,-15);var p=ShuoVisuals.recipe(1,-1,index,signal,at,at.add(forward),5,12,0);

@@ -210,6 +210,7 @@ final class ShuoChecks {
         ShuoMiniReworkChecks.start(h);
         ShuoWeaponStateChecks.start(h);
         ShuoDashChecks.start(h);
+        ShuoSilentLineChecks.start(h);
         var fixtures=new ArrayList<Fixture>();
         for(int i=0;i<8;i++){
             var at=Vec3.atBottomCenterOf(h.absolutePos(new BlockPos(45,130+i*6,5)));var cues=new ArrayList<ShuoViewPayload>();

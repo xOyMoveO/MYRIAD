@@ -18,6 +18,7 @@ public final class YikeState {
         if(beamCharging(p)&&!SkillChargeSystem.active(p))BEAM_CHARGE.remove(p.getUUID());
         int mode=PrismaticBeam.active(p)?3:YikeStance.active(p)?YikeStance.mobile(p)?2:1:0;
         var winding=AbilityRuntime.winding(p);var skill=winding==null?null:winding.skill;
+        YikeVfx.preparingFrame(winding);
         int windup=skill==null?-1:skill.index();
         if(beamCharging(p))windup=7;
         var packet=new YikeStatePayload(p.getId(),mode,YikeStance.shots(p),mode==3?PrismaticBeam.remaining(p):YikeStance.remaining(p),

@@ -1,22 +1,43 @@
 MYRIAD original Yike / Prismatic Array assets, 2026-11-13.
 
 Weapon meshes and painted texture atlas:
-  Authoring source: tools/assets/generate_yike_assets.py
+  Authoring source: art_source/yike/hong_lie*.spec.json and
+    tools/assets/generate_yike_weapon.py
   Editable Blockbench parts: art_source/yike/hong_lie*.bbmodel
   Texture source: art_source/yike/hong_lie_atlas.png
-  Original cuboid geometry and deterministic palette/engraving, created for this project.
+  Original cuboid geometry and deterministic pixel-painted paneling, created for this project.
+  Embedded atlas, face-bound materials and connected focusing rings were refined
+  for the static-asset pass. Previews are rendered from the actual model parts.
+  The user-requested future-tech revision uses ceramic armor, graphite structure,
+  cobalt lining, ice-blue optical rails and restrained violet/magenta accents.
+  Technical panel seams, vents and emitter modules replace the former ornamental finish.
   No third-party weapon mesh, texture, icon or audio sample is included.
 
-Concept reference:
+Historical concept reference (superseded by the future-tech revision):
   art_source/yike/hong_lie_concept.png
   Generated with the built-in image generation tool from the project's confirmed
   original three-petal, dark-violet/coral/pale-gold arcane-staff brief.
   The complete prompt is retained in art_source/yike/README.md.
-  The concept image is an authoring reference, not a game texture or model.
+  The concept image is retained as historical reference, not the current design,
+  a game texture or a model. Current previews are rendered from the actual assets.
 
 Skill icons, visual geometry, sounds:
-  Icons: authored geometric drawings from the same generator.
-  VFX: YikeVfxGeometry.java, original faceted crystals, open petals and ribbons.
+  Icons: eight new candidates generated with the built-in image generation tool
+    from the confirmed original skill descriptions and the current future-tech palette. Source sheet:
+    art_source/yike/icon_source.png. Measured individual panels are cropped and
+    exported as opaque 64x64 PNGs, replacing the earlier geometric drawings.
+  VFX: YikeVfxGeometry.java, original photon projectiles, segmented electronic
+    targeting shapes, energy panels and continuous optical trails.
+    Layered HD revision: six 256x256 RGBA components and two 64x64 pixel accents
+    generated with the built-in image generator for the future-tech photon theme.
+    Source sheet and exact processing are in art_source/yike/vfx/hd/hd_source.png
+    and export_hd.py. Only alpha <= 8/255 is cleared; other partial alpha is kept
+    with transparent padding for the existing translucent renderer.
+    The user's example supplies the broad layering technique, not copied screen
+    pixels, symbols, lightning forms or scene layout.
+    Basic, shell and heavy flying bodies plus LODs are original editable specs
+    and Blockbench models under art_source/yike/projectiles/. Runtime faces use
+    assets/myriad/vfx/yike_projectiles_mesh.json and yike_projectiles_atlas.png.
   Audio: original oscillator/noise synthesis in the generator, then mono
   Ogg Vorbis encoding with libsndfile via soundfile. No sampled audio, voices,
   musical recordings, commercial libraries or other game's sound effects.

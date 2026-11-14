@@ -1,0 +1,549 @@
+{
+  "meta": {
+    "name": "yike_basic_lod",
+    "schema_version": 1,
+    "description": "Original future-tech photon projectile: local +Y tip=64. White ceramic shell, graphite joints, cobalt capacitors and embedded ice-blue bus. Actual textured cuboids, not billboard geometry."
+  },
+  "target": "entity",
+  "atlas": {
+    "width": 256,
+    "height": 256,
+    "regions": [
+      {
+        "id": "grip_insulator",
+        "rect": [
+          0,
+          0,
+          64,
+          64
+        ],
+        "fill": "#15222E",
+        "palette": [
+          "#0A141E",
+          "#2C4254"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "cobalt_panel",
+        "rect": [
+          64,
+          0,
+          64,
+          64
+        ],
+        "fill": "#18456B",
+        "palette": [
+          "#0D2A43",
+          "#33739F"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "ceramic_armor",
+        "rect": [
+          128,
+          0,
+          64,
+          64
+        ],
+        "fill": "#DCE8F0",
+        "palette": [
+          "#8FA9BA",
+          "#F1FCFF"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "graphite_frame",
+        "rect": [
+          192,
+          0,
+          64,
+          64
+        ],
+        "fill": "#15222E",
+        "palette": [
+          "#0B141E",
+          "#3A5366"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "industrial_joint",
+        "rect": [
+          0,
+          64,
+          64,
+          64
+        ],
+        "fill": "#3B5468",
+        "palette": [
+          "#1C2C3A",
+          "#7A95AA"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "cool_white_core",
+        "rect": [
+          64,
+          64,
+          64,
+          64
+        ],
+        "fill": "#F1FCFF",
+        "palette": [
+          "#8ECADE",
+          "#FFFFFF"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "cyan_circuit",
+        "rect": [
+          128,
+          64,
+          64,
+          64
+        ],
+        "fill": "#5DDEFF",
+        "palette": [
+          "#2386AE",
+          "#ABF3FF"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "violet_signal",
+        "rect": [
+          192,
+          64,
+          64,
+          64
+        ],
+        "fill": "#A88AFF",
+        "palette": [
+          "#504A8F",
+          "#C5B7FF"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "magenta_indicator",
+        "rect": [
+          0,
+          128,
+          64,
+          64
+        ],
+        "fill": "#FF6AAE",
+        "palette": [
+          "#963E6C",
+          "#FFC2DE"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "recess_vent",
+        "rect": [
+          64,
+          128,
+          64,
+          64
+        ],
+        "fill": "#0A121C",
+        "palette": [
+          "#060B11",
+          "#1B3548"
+        ],
+        "noise": 0
+      }
+    ]
+  },
+  "parts": [
+    {
+      "id": "spine",
+      "pos": [
+        -1.5,
+        8,
+        -1.5
+      ],
+      "size": [
+        3,
+        44,
+        3
+      ],
+      "pivot": [
+        0,
+        0,
+        0
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            222.1591,
+            5.0,
+            225.8409,
+            59.0
+          ],
+          "region": "graphite_frame"
+        },
+        "south": {
+          "uv": [
+            222.1591,
+            5.0,
+            225.8409,
+            59.0
+          ],
+          "region": "graphite_frame"
+        },
+        "east": {
+          "uv": [
+            222.1591,
+            5.0,
+            225.8409,
+            59.0
+          ],
+          "region": "graphite_frame"
+        },
+        "west": {
+          "uv": [
+            222.1591,
+            5.0,
+            225.8409,
+            59.0
+          ],
+          "region": "graphite_frame"
+        },
+        "up": {
+          "uv": [
+            197.0,
+            5.0,
+            251.0,
+            59.0
+          ],
+          "region": "graphite_frame"
+        },
+        "down": {
+          "uv": [
+            197.0,
+            5.0,
+            251.0,
+            59.0
+          ],
+          "region": "graphite_frame"
+        }
+      }
+    },
+    {
+      "id": "rear_shell",
+      "pos": [
+        -3,
+        12,
+        -2.5
+      ],
+      "size": [
+        6,
+        18,
+        5
+      ],
+      "pivot": [
+        0,
+        0,
+        0
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            151.0,
+            5.0,
+            169.0,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "south": {
+          "uv": [
+            151.0,
+            5.0,
+            169.0,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "east": {
+          "uv": [
+            152.5,
+            5.0,
+            167.5,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "west": {
+          "uv": [
+            152.5,
+            5.0,
+            167.5,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "up": {
+          "uv": [
+            133.0,
+            9.5,
+            187.0,
+            54.5
+          ],
+          "region": "ceramic_armor"
+        },
+        "down": {
+          "uv": [
+            133.0,
+            9.5,
+            187.0,
+            54.5
+          ],
+          "region": "ceramic_armor"
+        }
+      }
+    },
+    {
+      "id": "front_shell",
+      "pos": [
+        -2.5,
+        31,
+        -2
+      ],
+      "size": [
+        5,
+        18,
+        4
+      ],
+      "pivot": [
+        0,
+        0,
+        0
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            152.5,
+            5.0,
+            167.5,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "south": {
+          "uv": [
+            152.5,
+            5.0,
+            167.5,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "east": {
+          "uv": [
+            154.0,
+            5.0,
+            166.0,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "west": {
+          "uv": [
+            154.0,
+            5.0,
+            166.0,
+            59.0
+          ],
+          "region": "ceramic_armor"
+        },
+        "up": {
+          "uv": [
+            133.0,
+            10.4,
+            187.0,
+            53.6
+          ],
+          "region": "ceramic_armor"
+        },
+        "down": {
+          "uv": [
+            133.0,
+            10.4,
+            187.0,
+            53.6
+          ],
+          "region": "ceramic_armor"
+        }
+      }
+    },
+    {
+      "id": "front_optic",
+      "pos": [
+        -1.5,
+        49,
+        -1.5
+      ],
+      "size": [
+        3,
+        11,
+        3
+      ],
+      "pivot": [
+        0,
+        0,
+        0
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            88.6364,
+            69.0,
+            103.3636,
+            123.0
+          ],
+          "region": "cool_white_core"
+        },
+        "south": {
+          "uv": [
+            88.6364,
+            69.0,
+            103.3636,
+            123.0
+          ],
+          "region": "cool_white_core"
+        },
+        "east": {
+          "uv": [
+            88.6364,
+            69.0,
+            103.3636,
+            123.0
+          ],
+          "region": "cool_white_core"
+        },
+        "west": {
+          "uv": [
+            88.6364,
+            69.0,
+            103.3636,
+            123.0
+          ],
+          "region": "cool_white_core"
+        },
+        "up": {
+          "uv": [
+            69.0,
+            69.0,
+            123.0,
+            123.0
+          ],
+          "region": "cool_white_core"
+        },
+        "down": {
+          "uv": [
+            69.0,
+            69.0,
+            123.0,
+            123.0
+          ],
+          "region": "cool_white_core"
+        }
+      }
+    },
+    {
+      "id": "nose",
+      "pos": [
+        -0.75,
+        60,
+        -0.75
+      ],
+      "size": [
+        1.5,
+        4,
+        1.5
+      ],
+      "pivot": [
+        0,
+        0,
+        0
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            85.875,
+            69.0,
+            106.125,
+            123.0
+          ],
+          "region": "cool_white_core"
+        },
+        "south": {
+          "uv": [
+            85.875,
+            69.0,
+            106.125,
+            123.0
+          ],
+          "region": "cool_white_core"
+        },
+        "east": {
+          "uv": [
+            85.875,
+            69.0,
+            106.125,
+            123.0
+          ],
+          "region": "cool_white_core"
+        },
+        "west": {
+          "uv": [
+            85.875,
+            69.0,
+            106.125,
+            123.0
+          ],
+          "region": "cool_white_core"
+        },
+        "up": {
+          "uv": [
+            69.0,
+            69.0,
+            123.0,
+            123.0
+          ],
+          "region": "cool_white_core"
+        },
+        "down": {
+          "uv": [
+            69.0,
+            69.0,
+            123.0,
+            123.0
+          ],
+          "region": "cool_white_core"
+        }
+      }
+    }
+  ],
+  "face_details": [
+    {
+      "id": "leading_optic",
+      "part": "nose",
+      "kind": "geometry",
+      "note": "Visible +Y forward tip; map this end to the real 3D velocity."
+    }
+  ]
+}

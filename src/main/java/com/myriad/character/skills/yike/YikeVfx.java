@@ -14,21 +14,38 @@ public final class YikeVfx {
     public static final int THEME=12;
     public static final int BASIC=1,IMPACT=2,DENIAL_WARNING=3,DENIAL_BURST=4,FIXED=5,MOBILE=6,
         MUZZLE=7,HEAVY=8,HEAVY_WARNING=9,HEAVY_IMPACT=10,BEAM=11,BEAM_HIT=12,BEAM_CHARGE=13,
-        MARK1=14,MARK2=15,MARK_BURST=16,BARRIER=17,DEPLOY=18,EXIT=19,DISSIPATE=20,LAST_MUZZLE=21;
+        MARK1=14,MARK2=15,MARK_BURST=16,BARRIER=17,DEPLOY=18,EXIT=19,DISSIPATE=20,LAST_MUZZLE=21,
+        BASIC_HIT=22,MUZZLE_CHARGE=23,BEAM_END=24;
     private YikeVfx(){}
     private static int signal(String name){return switch(name){
-        case "basic_muzzle","basic_hit"->BASIC;case "impact"->IMPACT;case "denial_warning"->DENIAL_WARNING;case "denial_burst"->DENIAL_BURST;
+        case "basic_muzzle"->BASIC;case "basic_hit"->BASIC_HIT;case "muzzle_charge"->MUZZLE_CHARGE;
+        case "impact"->IMPACT;case "denial_warning"->DENIAL_WARNING;case "denial_burst"->DENIAL_BURST;
         case "fixed"->FIXED;case "mobile"->MOBILE;case "muzzle"->MUZZLE;case "last_muzzle"->LAST_MUZZLE;
         case "heavy"->HEAVY;case "heavy_warning"->HEAVY_WARNING;case "heavy_impact"->HEAVY_IMPACT;
-        case "beam"->BEAM;case "beam_hit"->BEAM_HIT;case "beam_charge"->BEAM_CHARGE;
+        case "beam"->BEAM;case "beam_hit"->BEAM_HIT;case "beam_charge"->BEAM_CHARGE;case "beam_end"->BEAM_END;
         case "mark_1"->MARK1;case "mark_2"->MARK2;case "mark_burst"->MARK_BURST;case "barrier"->BARRIER;
         case "deploy"->DEPLOY;case "exit"->EXIT;default->DISSIPATE;};}
     public static void event(AbilityRuntime.Cast c,String name,Vec3 from,Vec3 to,float radius,int life){
         int signal=signal(name);if(signal==EXIT){cancel(c.player,c.skill.index());YikeAudio.play(c.player,"close",from,.4f,1);return;}
-        int kind=signal==BEAM?AbilityVfxGeometry.BEAM:signal==DENIAL_WARNING||signal==HEAVY_WARNING?SEAL:signal==BARRIER?SHIELD:BURST;
-        send(c.player,new AbilityVfxPayload(c.player.getId(),-1,THEME,c.skill.index(),kind,from,to,radius,signal,Math.clamp(life,1,120),c.now(),false));
+        boolean preparing=signal==MUZZLE_CHARGE||signal==BEAM_CHARGE||signal==DEPLOY;
+        int kind=signal==BEAM||signal==BEAM_END?AbilityVfxGeometry.BEAM:preparing?CHARGE:signal==DENIAL_WARNING||signal==HEAVY_WARNING?SEAL:signal==BARRIER?SHIELD:BURST;
+        int anchor=-1;
+        if(signal==FIXED||signal==MOBILE){Vec3 direction=to.subtract(from);from=c.player.position().add(0,.055,0);to=from.add(direction);anchor=c.player.getId();}
+        int instance=preparing||signal==MUZZLE||signal==LAST_MUZZLE||signal==BEAM||signal==BEAM_END||signal==HEAVY_WARNING?Math.max(1,c.castId()):0;
+        send(c.player,new AbilityVfxPayload(c.player.getId(),anchor,THEME,c.skill.index(),kind,from,to,radius,signal,preparing?3:Math.clamp(life,1,120),c.now(),false,instance));
         if(signal==FIXED||signal==MOBILE)YikeAudio.play(c.player,"deploy",from,.5f,signal==MOBILE?1.1f:1);
     }
+    /** Called by the existing state sync: the server's local-action progress owns every preparation frame. */
+    public static void preparingFrame(AbilityRuntime.Cast c){
+        if(c==null||c.phase()!=AbilityRuntime.Phase.WINDUP)return;
+        int signal=switch(c.skill.index()){case 2->MUZZLE_CHARGE;case 4,5->DEPLOY;case 7->BEAM_CHARGE;default->0;};
+        if(signal==0)return;
+        Vec3 from=c.player.getEyePosition(),direction=YikeStance.active(c.player)?YikeStance.aim(c.player):c.player.getLookAngle();
+        float phase=signal+.4f*Math.clamp(c.windupProgress(),0,1);
+        send(c.player,new AbilityVfxPayload(c.player.getId(),-1,THEME,c.skill.index(),CHARGE,from,from.add(direction),signal==BEAM_CHARGE?.625f:.35f,phase,3,c.now(),false,Math.max(1,c.castId())));
+    }
+    /** A visual-only four-tick contraction follows the cancellation; it never emits a hit accent. */
+    public static void beamEnd(AbilityRuntime.Cast c,Vec3 from,Vec3 to){event(c,"beam_end",from,to,.625f,4);}
     public static void target(AbilityRuntime.Cast c,String name,LivingEntity target,float radius,int life){
         var from=target.position().add(0,target.getBbHeight()*.55,0);
         send(c.player,new AbilityVfxPayload(c.player.getId(),target.getId(),THEME,c.skill.index(),SHIELD,from,from.add(c.player.getLookAngle()),radius,signal(name),life,c.now(),false));

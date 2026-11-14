@@ -18,15 +18,10 @@ public final class YikeRework {
     public static AbilitySkill q(ServerPlayer p){return FirstGroupSkills.node("yike",2);}
     public static void tick(ServerPlayer p){
         if(!"yike".equals(PlayerDataProvider.get(p).getCharacterId()))return;
-        var winding=AbilityRuntime.winding(p);
-        if(winding!=null&&winding.skill.role().equals("yike")){
-            String stage=winding.skill.index()==2?"muzzle":winding.skill.index()<6?"deploy":"beam_charge";
-            YikeVfx.event(winding,stage,p.getEyePosition(),p.getEyePosition().add(p.getLookAngle()),.3f,2);
-        }
         YikeStance.tick(p);YikeBasicAttack.tick(p);PrismaticBeam.tick(p);DistantBombardment.tick(p);YikeState.sync(p);
     }
     public static void clear(ServerPlayer p){
-        DistantBombardment.clear(p);YikeStance.clear(p);YikeBasicAttack.clear(p);PrismaticBeam.clear(p);
+        DistantBombardment.clear(p);YikeStance.clear(p);YikeBasicAttack.clear(p);PrismaticBeam.clear(p,false);
         RainbowCalibration.clear(p);SteadyBarrier.clear(p);YikeState.clear(p);
     }
 }

@@ -29,6 +29,11 @@ public final class AbilityVfxMaterials {
     public static final int FENJUE_HIT=74;
     public static final int SHUO_SLASH=75;
     public static final int SHUO_GUARD=76,SHUO_STREAM=77,SHUO_IMPACT=78;
-    public static final int MAX=SHUO_IMPACT;
+    public static final int KEHENG_HD_RING=79,KEHENG_HD_ARC=80,KEHENG_HD_STREAM=81,KEHENG_HD_IMPACT=82,
+            KEHENG_HD_VEIL=83,KEHENG_HD_SHIELD=84,KEHENG_HD_MOTES=85,KEHENG_HD_SPARK=86;
+    public static final int YIKE_HD_RING=87,YIKE_HD_ARC=88,YIKE_HD_STREAM=89,YIKE_HD_IMPACT=90,
+            YIKE_HD_VEIL=91,YIKE_HD_SHIELD=92,YIKE_HD_MOTES=93,YIKE_HD_SPARK=94;
+    public static final int KEHENG_PROJECTILE_MODEL=95,YIKE_PROJECTILE_MODEL=96;
+    public static final int MAX=YIKE_PROJECTILE_MODEL;
     public static boolean flameGround(int material){return material==FENJUE_GROUND||material==FENJUE_FLOW_RING||material==FENJUE_FLOW_FIELD;}
 }

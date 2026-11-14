@@ -8,7 +8,7 @@ import java.util.*;
 
 /** Charge follows local action time; the six damage opportunities use real ticks only. */
 public final class PrismaticBeam extends AbilitySkill {
-    private static final class Beam {AbilityRuntime.Cast cast;Vec3 direction,origin;long start,last,impulse;int jumps;}
+    private static final class Beam {AbilityRuntime.Cast cast;Vec3 direction,origin,visualFrom,visualTo;long start,last,impulse;int jumps;}
     private static final Map<UUID,Beam> BEAMS=new HashMap<>();
     public PrismaticBeam(Definition d){super(d);}
     @Override public boolean hasOwnCastSound(){return true;}
@@ -36,6 +36,7 @@ public final class PrismaticBeam extends AbilitySkill {
                 ||KnockbackBuffer.impulseToken(p)!=b.impulse||p.position().subtract(b.origin).lengthSqr()>.64){clear(p);return;}
         if(now<=b.last)return;b.last=now;b.direction=YikeGeometry.rotate(b.direction,p.getLookAngle(),Math.toRadians(45.0/20));
         Vec3 from=p.getEyePosition(),to=YikeGeometry.end(c,from,b.direction,22);long age=now-b.start;
+        b.visualFrom=from;b.visualTo=to;
         if(age>60){clear(p);return;}
         if(age>0&&age%10==0&&b.jumps<6){
             b.jumps++;
@@ -48,8 +49,11 @@ public final class PrismaticBeam extends AbilitySkill {
         YikeVfx.event(c,"beam",from,to,.625f,2);
         if(age==60)clear(p);
     }
-    public static void clear(ServerPlayer p){
+    public static void clear(ServerPlayer p){clear(p,true);}
+    public static void clear(ServerPlayer p,boolean visualTail){
         var old=BEAMS.remove(p.getUUID());boolean charge=YikeState.beamCharging(p);YikeState.chargingBeam(p,false);
-        if(old!=null||charge){SkillChargeSystem.clear(p);YikeVfx.cancel(p,7);YikeAudio.loop(p,false);if(old!=null)YikeAudio.play(p,"beam_end",p.position(),.25f,1);}
+        if(old!=null||charge){SkillChargeSystem.clear(p);YikeVfx.cancel(p,7);
+            if(visualTail&&old!=null&&old.visualFrom!=null&&old.visualTo!=null)YikeVfx.beamEnd(old.cast,old.visualFrom,old.visualTo);
+            YikeAudio.loop(p,false);if(old!=null)YikeAudio.play(p,"beam_end",p.position(),.25f,1);}
     }
 }

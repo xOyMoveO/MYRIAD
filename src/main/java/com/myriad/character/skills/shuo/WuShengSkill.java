@@ -18,19 +18,23 @@ public final class WuShengSkill extends AbilitySkill {
         ShuoCombat.windup(c,14,()->{
         float damage=c.value(320,100,1.6f)+ShuoCombat.draw(c.player,com.myriad.network.ShuoViewPayload.FLASH,10);
         var targets=new HashSet<java.util.UUID>();
+        var line=new ShuoSilentLineVisuals(c);
         c.actionDash(c.forward(12),7,1.3,(t,first)->{targets.add(t.getUUID());ShuoVisuals.mark(c,t);},()->{
-            if(c.data.getBuff("g1_stun")>0||c.data.getBuff("g1_root")>0){ShuoVisuals.cancel(c.player,index());return;}
+            if(c.data.getBuff("g1_stun")>0||c.data.getBuff("g1_root")>0){line.stop();ShuoVisuals.cancel(c.player,index());return;}
+            line.hold();
             ShuoCombat.sheathe(c.player);
             c.actionWhile(8,age->{
-                if(c.data.getBuff("g1_stun")>0||c.data.getBuff("g1_root")>0){ShuoVisuals.cancel(c.player,index());return false;}
+                if(c.data.getBuff("g1_stun")>0||c.data.getBuff("g1_root")>0){line.stop();ShuoVisuals.cancel(c.player,index());return false;}
                 if(age<8)return true;
                 ShuoVisuals.cancel(c.player,index());
+                line.cut();
                 for(var id:targets)if(c.player.level().getEntity(id) instanceof net.minecraft.world.entity.LivingEntity t&&c.enemy(t)){
                     if(ShuoCombat.physicalHit(c,t,damage*executionScale(t.getHealth(),t.getMaxHealth())))ShuoVisuals.contact(c.player,index(),t,1.1f);
                 }
                 return false;
             });
         },false,false);
+        line.start();
         ShuoVisuals.trackMotion(c,false);
     });}
     /** A capped finisher bonus, never target-max-health damage or an instant-kill threshold. */

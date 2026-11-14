@@ -78,6 +78,24 @@
     "myriad:vfx/shuo_basic_hd",
     "myriad:vfx/shuo_guard_hd",
     "myriad:vfx/shuo_stream_hd",
-    "myriad:vfx/shuo_impact_hd"
+    "myriad:vfx/shuo_impact_hd",
+    "myriad:vfx/keheng_hd_ring",
+    "myriad:vfx/keheng_hd_arc",
+    "myriad:vfx/keheng_hd_stream",
+    "myriad:vfx/keheng_hd_impact",
+    "myriad:vfx/keheng_hd_veil",
+    "myriad:vfx/keheng_hd_shield",
+    "myriad:vfx/keheng_hd_motes",
+    "myriad:vfx/keheng_hd_spark",
+    "myriad:vfx/yike_hd_ring",
+    "myriad:vfx/yike_hd_arc",
+    "myriad:vfx/yike_hd_stream",
+    "myriad:vfx/yike_hd_impact",
+    "myriad:vfx/yike_hd_veil",
+    "myriad:vfx/yike_hd_shield",
+    "myriad:vfx/yike_hd_motes",
+    "myriad:vfx/yike_hd_spark",
+    "myriad:vfx/keheng_projectiles_atlas",
+    "myriad:vfx/yike_projectiles_atlas"
   ]
 }
