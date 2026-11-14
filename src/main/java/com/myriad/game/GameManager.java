@@ -54,6 +54,8 @@ public class GameManager {
     private final Map<UUID, Faction> factions = new HashMap<>();
     private final List<UUID> joinOrder = new ArrayList<>();
     private final java.util.Set<UUID> pendingRoundReset = new java.util.HashSet<>();
+    /** Participants who were offline when preparation moved the match to its bases. */
+    private final java.util.Set<UUID> pendingPreparationBase = new java.util.HashSet<>();
     private Phase phase = Phase.WAITING;
     private Faction winner = null;
     private int xuanxiaoScore = 0;
@@ -238,7 +240,16 @@ public class GameManager {
         if (data != null && faction != null) {
             data.setFaction(faction);
             player.refreshTabListName();
+            if ((phase == Phase.PLAYING || phase == Phase.PICKING && pickCountdownEndTick >= 0)
+                    && pendingPreparationBase.remove(player.getUUID())) {
+                LaneSystem.teleportPlayersToBases(server.overworld(), List.of(player));
+                player.setGameMode(GameType.ADVENTURE);
+                // An offline participant also missed finishPicking's starting purse.
+                if (phase == Phase.PLAYING) { data.setGold(500); data.resetMatchGoldEarned(500); }
+            }
         }
+        // Connection-local pick state is empty after reconnect; resend without restarting the countdown.
+        if (phase == Phase.PICKING) broadcastPickState();
     }
 
     public void onPlayerQuit(ServerPlayer player) {
@@ -363,6 +374,7 @@ public class GameManager {
             PlayerDataProvider.get(player).setFaction(team);
         }
         pickOrder.clear();
+        pendingPreparationBase.clear();
         List<UUID> youming = new ArrayList<>();
         List<UUID> xuanxiao = new ArrayList<>();
         for (UUID uid : joinOrder) {
@@ -434,11 +446,33 @@ public class GameManager {
     private void advancePick(MinecraftServer server) {
         pickIndex++;
         if (pickIndex >= pickOrder.size()) {
-            // 全部选择完成：10 秒倒计时后正式开局（选人界面同步显示倒计时）
+            // 全部选择完成即在泉水准备；复用原有十秒，不再次延长或开战重传送。
+            preparePlayers(server);
             pickCountdownEndTick = server.overworld().getGameTime() + PICK_COUNTDOWN_TICKS;
             broadcast(Component.translatable("message.myriad.pick_all_done", PICK_COUNTDOWN_TICKS / 20));
         } else {
             pickDeadlineTick = server.overworld().getGameTime() + PICK_TICKS;
+        }
+    }
+
+    /** Countdown is still PICKING so ordinary combat and economy remain disabled. */
+    public boolean preparationFor(ServerPlayer player) {
+        return preservesPreparedState(player) && server != null
+                && server.overworld().getGameTime() < pickCountdownEndTick;
+    }
+    /** Player ticks may precede the match tick at the deadline; retain accepted state until PLAYING is set. */
+    public boolean preservesPreparedState(ServerPlayer player) {
+        return phase == Phase.PICKING && pickCountdownEndTick >= 0
+                && "rivet".equals(PlayerDataProvider.get(player).getCharacterId())
+                && factions.containsKey(player.getUUID());
+    }
+    private void preparePlayers(MinecraftServer server) {
+        List<ServerPlayer> players=new ArrayList<>(server.getPlayerList().getPlayers());
+        pendingPreparationBase.addAll(factions.keySet());
+        LaneSystem.teleportPlayersToBases(server.overworld(),players);
+        for(ServerPlayer player:players){
+            pendingPreparationBase.remove(player.getUUID());
+            if(player.gameMode.getGameModeForPlayer()!=GameType.ADVENTURE)player.setGameMode(GameType.ADVENTURE);
         }
     }
 
@@ -574,10 +608,9 @@ public class GameManager {
             broadcast(Component.translatable("message.myriad.vein_will_open", 60));
         }
         List<ServerPlayer> players = new ArrayList<>(server.getPlayerList().getPlayers());
-        // 阵营和角色已经确定，正式进入对局时把所有玩家统一送回本方泉水。
-        // 这样不会继承选人阶段或上一局结束时的站位，也能让首波兵线从
-        // 明确的双方基地出发。
-        LaneSystem.teleportPlayersToBases(server.overworld(), players);
+        // 正常选角已在准备期开始时传送，开战保留这十秒内的站位和锚点。
+        // 无选角顺序的极端开局仍沿用直接就位。
+        if (pickOrder.isEmpty()) LaneSystem.teleportPlayersToBases(server.overworld(), players);
         for (ServerPlayer player : players) {
             PlayerData data = PlayerDataProvider.get(player);
             data.setGold(500);
@@ -635,7 +668,7 @@ public class GameManager {
             Faction myF = factions.get(p.getUUID());
             net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p,
                     new com.myriad.network.NetworkSetup.PickStatePayload(
-                            0,
+                            pickCountdownEndTick >= 0 ? 1 : 0,
                             myF == null ? "" : myF.getName(),
                             curName,
                             curFaction,
@@ -1145,7 +1178,7 @@ public class GameManager {
         LaneSystem.tick(server.overworld());
         ModEntityTracker.clearGenerated(server);
         BaseRules.clear();
-        pickOrder.clear(); charPicks.clear(); heroDamage.clear(); damageTaken.clear(); healingReceived.clear();
+        pickOrder.clear(); pendingPreparationBase.clear(); charPicks.clear(); heroDamage.clear(); damageTaken.clear(); healingReceived.clear();
         pickIndex = 0; pickDeadlineTick = -1; pickCountdownEndTick = -1;
         matchStartTime = -1; matchEndTime = -1; xuanxiaoScore = 0; youmingScore = 0;
         pendingRoundReset.addAll(joinOrder);

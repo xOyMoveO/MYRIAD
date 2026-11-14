@@ -138,13 +138,13 @@ public final class FirstGroupScreen extends Screen {
             card(g,b,rank>0,locked,l.canHit(b,mx,my));
             SkillIcon.draw(g,font,b.x()+8,b.y()+8,26,skill,skill.isUltimate(),!locked,"");
             fitText(g,skill.displayName(),b.x()+42,b.y()+9,b.w()-50,locked?MUTED:GOLD);
-            fitText(g,text(rank>0?"screen.myriad.g1.learned_rank":"screen.myriad.g1.unlearned_rank",rank,skill.maxRank()),
+            fitText(g,skill.baseAvailable()?text("screen.myriad.rivet.anchor_rank",rank,skill.maxRank()):text(rank>0?"screen.myriad.g1.learned_rank":"screen.myriad.g1.unlearned_rank",rank,skill.maxRank()),
                     b.x()+42,b.y()+23,b.w()-50,locked?MUTED:JADE);
             String summary=AbilityFormulaText.evaluate(skill.description(),Math.max(1,rank),ClientDataHolder.attrValue(ModAttributes.SPELL_POWER.value().getDescriptionId()));
             var lines=font.split(Component.literal(summary),b.w()-16);int shown=b.h()>=104?2:1;
             for(int i=0;i<Math.min(shown,lines.size());i++)g.text(font,lines.get(i),b.x()+8,b.y()+38+i*10,locked?MUTED:0xFFC5D5D2);
             String resources=skill.isPassive()?text("screen.myriad.g1.passive_cost"):
-                    text("screen.myriad.g1.compact_resource",Math.round(skill.getManaCost()),String.format(Locale.ROOT,"%.1f",skill.getCooldownTicks(Math.max(1,rank))/20.0));
+                    text("screen.myriad.g1.compact_resource",Math.round(skill.getManaCost()),String.format(Locale.ROOT,"%.1f",skill.getCooldownTicks(skill.baseAvailable()?rank:Math.max(1,rank))/20.0));
             fitText(g,resources,b.x()+8,b.bottom()-38,b.w()-16,0xFF9DC2D0);
             String action=locked?text("screen.myriad.g1.locked"):rank>=skill.maxRank()?text("screen.myriad.g1.maxed"):
                     text(rank==0&&opposite>=0?"screen.myriad.g1.choose":"screen.myriad.g1.upgrade");
@@ -156,13 +156,13 @@ public final class FirstGroupScreen extends Screen {
     private void skillTooltip(GuiGraphicsExtractor g,AbilitySkill skill,int rank,String error,int mx,int my){
         var data=ClientDataHolder.get();var font=Minecraft.getInstance().font;var tooltip=new ArrayList<Component>();
         tooltip.add(Component.literal(skill.displayName()));
-        for(String line:SkillTooltipDescriptions.describeLines(skill,Math.max(1,rank)))tooltip.add(Component.literal(line));
+        for(String line:SkillTooltipDescriptions.describeLines(skill,skill.baseAvailable()?rank:Math.max(1,rank)))tooltip.add(Component.literal(line));
         tooltip.add(Component.translatable("screen.myriad.g1.strength",Math.round(ClientDataHolder.attrValue(ModAttributes.SPELL_POWER.value().getDescriptionId()))));
         if(!skill.isPassive()){
             double reduction=Math.clamp(ClientDataHolder.attrValue(ModAttributes.COOLDOWN_REDUCTION.value().getDescriptionId()),0,60);
-            double cooldown=data.training()&&data.noCooldown()?0:skill.getCooldownTicks(Math.max(1,rank))*(1-reduction/100)/20;
+            double cooldown=data.training()&&data.noCooldown()?0:skill.getCooldownTicks(skill.baseAvailable()?rank:Math.max(1,rank))*(1-reduction/100)/20;
             tooltip.add(Component.translatable("screen.myriad.g1.current_cost",Math.round(skill.getManaCost()),
-                    String.format(Locale.ROOT,"%.1f",cooldown),String.format(Locale.ROOT,"%.1f",rank>0?ClientDataHolder.cooldownTicks(skill.slot())/20.0:0)));
+                    String.format(Locale.ROOT,"%.1f",cooldown),String.format(Locale.ROOT,"%.1f",rank>0||skill.baseAvailable()?ClientDataHolder.cooldownTicks(skill.slot())/20.0:0)));
         }
         if(error!=null)tooltip.add(Component.translatable(error));
         g.setComponentTooltipForNextFrame(font,tooltip,mx,my);

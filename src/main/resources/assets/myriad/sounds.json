@@ -689,5 +689,105 @@
       }
     ],
     "subtitle": "subtitle.myriad.yike_beam_end"
+  },
+  "rivet_hammer_lift": {
+    "subtitle": "subtitle.myriad.rivet_hammer_lift",
+    "sounds": [
+      {
+        "name": "myriad:foley/blade_1",
+        "pitch": 0.78,
+        "volume": 0.6
+      }
+    ]
+  },
+  "rivet_hammer_swing": {
+    "subtitle": "subtitle.myriad.rivet_hammer_swing",
+    "sounds": [
+      {
+        "name": "myriad:foley/stone_1",
+        "pitch": 0.95,
+        "volume": 1
+      }
+    ]
+  },
+  "rivet_anchor": {
+    "subtitle": "subtitle.myriad.rivet_anchor",
+    "sounds": [
+      {
+        "name": "myriad:foley/shot_1",
+        "pitch": 0.75,
+        "volume": 0.6
+      }
+    ]
+  },
+  "rivet_wall_hit": {
+    "subtitle": "subtitle.myriad.rivet_wall_hit",
+    "sounds": [
+      {
+        "name": "myriad:foley/stone_2",
+        "pitch": 0.8,
+        "volume": 1
+      }
+    ]
+  },
+  "rivet_anchor_hit": {
+    "subtitle": "subtitle.myriad.rivet_anchor_hit",
+    "sounds": [
+      {
+        "name": "myriad:foley/stone_1",
+        "pitch": 1.15,
+        "volume": 1
+      }
+    ]
+  },
+  "rivet_strut": {
+    "subtitle": "subtitle.myriad.rivet_strut",
+    "sounds": [
+      {
+        "name": "myriad:foley/blade_2",
+        "pitch": 0.7,
+        "volume": 0.7
+      }
+    ]
+  },
+  "rivet_cable": {
+    "subtitle": "subtitle.myriad.rivet_cable",
+    "sounds": [
+      {
+        "name": "myriad:foley/blade_1",
+        "pitch": 1.15,
+        "volume": 0.55
+      }
+    ]
+  },
+  "rivet_protocol": {
+    "subtitle": "subtitle.myriad.rivet_protocol",
+    "sounds": [
+      {
+        "name": "myriad:foley/stone_1",
+        "pitch": 0.6,
+        "volume": 0.7
+      }
+    ]
+  },
+  "rivet_charge": {
+    "subtitle": "subtitle.myriad.rivet_charge",
+    "sounds": [
+      {
+        "name": "myriad:foley/stone_2",
+        "pitch": 0.55,
+        "volume": 0.7
+      }
+    ]
+  },
+  "rivet_charge_release": {
+    "subtitle": "subtitle.myriad.rivet_charge_release",
+    "sounds": [
+      {
+        "name": "myriad:foley/stone_1",
+        "pitch": 0.8,
+        "volume": 1
+      }
+    ]
   }
 }

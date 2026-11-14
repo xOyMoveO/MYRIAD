@@ -60,6 +60,9 @@ public final class ModSounds {
     private static final java.util.Map<String,DeferredHolder<SoundEvent,SoundEvent>> YIKE=new java.util.HashMap<>();
     static {for(String cue:new String[]{"basic","shot_0","shot_1","shot_2","impact","warning","mark","barrier","deploy","close","heavy_charge","heavy_flight","heavy_impact","beam_charge","beam_loop","beam_tick","beam_end"})YIKE.put(cue,register("yike_"+cue));}
     public static SoundEvent yike(String cue){return YIKE.get(cue).get();}
+    private static final java.util.Map<String,DeferredHolder<SoundEvent,SoundEvent>> RIVET=new java.util.HashMap<>();
+    static {for(String cue:new String[]{"hammer_lift","hammer_swing","anchor","wall_hit","anchor_hit","strut","cable","protocol","charge","charge_release"})RIVET.put(cue,register("rivet_"+cue));}
+    public static SoundEvent rivet(String cue){return RIVET.get(cue).get();}
     private ModSounds() { }
     private static final java.util.Map<String,DeferredHolder<SoundEvent,SoundEvent>> SHUO=new java.util.HashMap<>();
     static {for(String cue:new String[]{"draw","sheathe","slash","parry","charge"})SHUO.put(cue,register("shuo_"+cue));}

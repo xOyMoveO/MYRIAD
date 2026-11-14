@@ -36,6 +36,7 @@ public final class ModItems {
     public static final DeferredItem<Item> LINGYUAN_SWORD = ITEMS.registerSimpleItem("lingyuan_sword");
 
     /** 六名既有角色的专属初始武器；战斗属性仍由模组角色系统接管。 */
+    public static final DeferredItem<Item> RIVET_HAMMER=ITEMS.registerSimpleItem("rivet_hammer");
     public static final DeferredItem<Item> HENGKE=ITEMS.registerSimpleItem("hengke");
     public static final DeferredItem<Item> YINGCI = ITEMS.registerSimpleItem("yingci");
     public static final DeferredItem<Item> LEITINGJIAN = ITEMS.registerSimpleItem("leitingjian");
@@ -102,6 +103,7 @@ public final class ModItems {
             case "xuanchen" -> ZHENQI.get();
             case "hanze" -> SHUANGBING.get();
             case "tianxing" -> LEITINGJIAN.get();
+            case "rivet" -> RIVET_HAMMER.get();
             case "keheng" -> HENGKE.get();
             case "yike" -> HONG_LIE.get();
             case "shuo" -> SHUO_SWORD.get();
@@ -116,7 +118,7 @@ public final class ModItems {
     }
 
     public static boolean isInitialWeaponItem(ItemStack stack) {
-        return stack.is(HENGKE.get()) || stack.is(HONG_LIE.get()) || stack.is(YINGCI.get())
+        return stack.is(RIVET_HAMMER.get()) || stack.is(HENGKE.get()) || stack.is(HONG_LIE.get()) || stack.is(YINGCI.get())
                 || stack.is(SHUO_SWORD.get())
                 || stack.is(LEITINGJIAN.get())
                 || stack.is(LIEYANJIAN.get())

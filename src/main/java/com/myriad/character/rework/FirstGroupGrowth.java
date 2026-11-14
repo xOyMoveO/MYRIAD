@@ -18,6 +18,7 @@ public final class FirstGroupGrowth {
     public static int price(int rank){return 180+40*Math.clamp(rank,0,9);}
     public static double health(String role,int level){
         int[] pair=switch(role){
+            case "rivet"->new int[]{700,110};
             case "keheng"->new int[]{600,85};
             case "yike"->new int[]{550,75};
             case "shuo"->new int[]{640,100};

@@ -298,7 +298,8 @@ public final class PlayerDataProvider {
         }
         if (com.myriad.character.rework.FirstGroupSkills.active(data.getCharacterId())) {
             if (!com.myriad.game.TrainingMode.isEnabled()
-                    && (GameManager.get() == null || GameManager.get().getPhase() != GameManager.Phase.PLAYING)) return;
+                    && (GameManager.get() == null || GameManager.get().getPhase() != GameManager.Phase.PLAYING
+                        && !GameManager.get().preparationFor(player))) return;
             String error = com.myriad.character.rework.FirstGroupSkills.learnError(
                     data.getCharacterId(), data.getSkillLevels(), data.getSkillPoints(), data.getLevel(), skillId);
             if (error != null) { player.sendSystemMessage(Component.translatable(error)); return; }
@@ -915,6 +916,7 @@ public final class PlayerDataProvider {
 
     /** 初始武器名字与颜色（按角色区分：墨尘=墨杖黑色，夜影=影刺金色，天刑=雷霆剑蓝色） */
     private static net.minecraft.network.chat.Component initialWeaponName(String characterId) {
+        if("rivet".equalsIgnoreCase(characterId))return Component.translatable("item.myriad.rivet_hammer").withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xEBAF4C));
         if("keheng".equalsIgnoreCase(characterId))return Component.translatable("item.myriad.hengke").withStyle(net.minecraft.ChatFormatting.BOLD)
                 .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0x42D9BD));
 
@@ -1326,6 +1328,12 @@ public final class PlayerDataProvider {
         PlayerData victim = get(entity);
         if (victim != null && victim.getCharacterId() != null) {
             victim.setLastCombatGameTime(gameTime);
+        }
+        if (!(entity instanceof ServerPlayer)) {
+            var context = com.myriad.combat.DamageCalc.peekSkillHit(entity);
+            if (context == null || context.kind() != com.myriad.combat.DamageCalc.Kind.TRUE)
+                event.getContainer().setNewDamage((float) (event.getAmount()
+                        * com.myriad.character.skills.rivet.HoldProtocol.incoming(entity)));
         }
         if (entity instanceof ServerPlayer victimPlayer) {
             // 青萝【万木回春】：首次低血量保护的一秒无敌优先于其他减伤结算。
