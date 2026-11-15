@@ -45,6 +45,7 @@ final class ShuoChecks {
         finally{DamageCalc.clearSkillHit(p);}
     }
     static void verify(GameTestHelper h){
+        ShuoSheathedGripChecks.verify(h);
         for(boolean slim:new boolean[]{false,true})for(boolean left:new boolean[]{false,true}){
             var hand=ShuoArmModel.bake(slim,left);int[] cubes={0};
             hand.visit(new com.mojang.blaze3d.vertex.PoseStack(),(pose,path,index,cube)->{

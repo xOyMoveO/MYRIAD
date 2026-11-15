@@ -69,6 +69,7 @@ final class FirstGroupRegressionChecks {
             NightSkillViewChecks.verify(h);
             NightSkillReleaseChecks.verify(h);
             SkillChoiceUiChecks.verify(h);
+            CharacterChoiceUiChecks.verify(h);
             ShuoChecks.verify(h);
             var classes = new HashSet<Class<?>>();
             h.assertTrue(com.myriad.character.ability.AbilityFormulaText.evaluate("45＋15(r－1)＋55%S",3,100).equals("130"),

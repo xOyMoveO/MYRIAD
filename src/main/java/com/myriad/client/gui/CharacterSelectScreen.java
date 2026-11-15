@@ -1,267 +1,145 @@
 package com.myriad.client.gui;
 
-import java.util.List;
-
+import com.myriad.character.CharacterType;
+import com.myriad.character.rework.FirstGroupSkills;
+import com.myriad.client.*;
+import com.myriad.network.NetworkSetup;
+import com.myriad.registry.ModItems;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import java.util.*;
+import static com.myriad.client.gui.SkillChoiceTheme.*;
 
-import com.myriad.character.CharacterType;
-import com.myriad.character.Skill;
-import com.myriad.client.ClientDataHolder;
-import com.myriad.network.NetworkSetup;
-
-/**
- * 职业选择界面（/myriad choose 打开）：
- * 左侧为可选职业列表（被其他玩家选中的置灰），右侧为所选职业的介绍；
- * 每个职业仅一人可选（服务端校验）。点击「确认选择」生效。
- */
-public class CharacterSelectScreen extends Screen {
-    private static final int LIST_W = 170;
-    private static final int ROW_H = 26;
-    private static final int CONFIRM_W = 120;
-    private static final int TEXT_COLOR = 0xFFE0E0E0;
-    private static final int SECTION_COLOR = 0xFF55FFFF;
-    private static final int HIGHLIGHT_COLOR = 0xFFFFFF55;
-    private static final int TAKEN_COLOR = 0xFF808080;
-    private static final int TITLE_COLOR = 0xFFFFFFFF;
-
-    private String selectedId = null;
-    private Button confirmButton;
-    private int scrollRow = 0;
-    private int visibleRows = 1;
-    private int listX;
-    private int listTop;
-    private int listBottom;
-
-    public CharacterSelectScreen() {
+/** /myriad choose: portrait cards and scrollable skill preview, without historical role factions. */
+public final class CharacterSelectScreen extends Screen {
+    private String selectedId;
+    private int scrollRow,detailScroll,detailMaximum;
+    private Map<String,Boolean> taken=Map.of();
+    private String current="";
+    private CharacterChoiceLayout layout;
+    private Button confirm;
+    public CharacterSelectScreen(){
         super(Component.translatable("screen.myriad.choose.title"));
+        ClientPacketDistributor.sendToServer(new NetworkSetup.RequestSyncPayload());
     }
-
-    @Override
-    public boolean isPauseScreen() {
-        return false;
+    @Override public boolean isPauseScreen(){return false;}
+    private boolean available(String id){return CharacterType.byId(id)!=null&&CharacterChoiceLayout.available(id,ClientDataHolder.characterId(),ClientDataHolder.takenCharacters());}
+    @Override protected void init(){
+        var roles=CharacterType.playableValues();
+        current=ClientDataHolder.characterId();taken=Map.copyOf(ClientDataHolder.takenCharacters());
+        boolean first=selectedId==null;
+        if(CharacterType.byId(selectedId)==null)selectedId=CharacterType.byId(current)!=null?current:
+                Arrays.stream(roles).filter(r->available(r.getId())).findFirst().orElse(roles[0]).getId();
+        layout=CharacterChoiceLayout.create(width,height,roles.length,scrollRow);
+        if(first){
+            int index=0;for(int i=0;i<roles.length;i++)if(roles[i].getId().equals(selectedId))index=i;
+            layout=CharacterChoiceLayout.create(width,height,roles.length,index/layout.columns());
+        }
+        scrollRow=layout.scrollRow();
+        for(int i=0;i<roles.length;i++)if(layout.visible(i))addRenderableWidget(new RoleCard(roles[i],layout.card(i)));
+        addRenderableWidget(new PanelButton(layout.previous(),Component.literal("‹"),b->scrollBy(-1))).active=scrollRow>0;
+        addRenderableWidget(new PanelButton(layout.next(),Component.literal("›"),b->scrollBy(1))).active=scrollRow<layout.maxScroll();
+        addRenderableWidget(new PanelButton(layout.guide(),Component.translatable("hero.guide.open"),b->{
+            var role=CharacterType.byId(selectedId);if(role!=null)Minecraft.getInstance().setScreenAndShow(new CharacterGuideScreen(this,role));
+        }));
+        confirm=addRenderableWidget(new PanelButton(layout.confirm(),Component.translatable("screen.myriad.choose.confirm"),b->{
+            // Read the latest sync again, never a map captured when the window opened.
+            if(!available(selectedId))return;
+            ClientPacketDistributor.sendToServer(new NetworkSetup.ChooseCharacterPayload(selectedId));onClose();
+        }));
+        confirm.active=available(selectedId);
+        addRenderableWidget(new PanelButton(layout.close(),Component.literal("×"),b->onClose()));
     }
-
-
-    @Override
-    protected void init() {
-        CharacterType[] types = CharacterType.playableValues();
-        String current = ClientDataHolder.characterId();
-        boolean firstOpen = selectedId == null;
-        if (selectedId == null) {
-            selectedId = current.isEmpty() ? types[0].getId() : current;
-        }
-        java.util.Map<String, Boolean> taken = ClientDataHolder.takenCharacters();
-
-        listX = this.width / 2 - LIST_W - 60;
-        if (listX < 10) {
-            listX = 10;
-        }
-        listTop = 34;
-        listBottom = Math.max(listTop + ROW_H, this.height - 18);
-        visibleRows = Math.max(1, (listBottom - listTop) / ROW_H);
-        int maxScroll = Math.max(0, types.length - visibleRows);
-        if (firstOpen) {
-            int selectedIndex = 0;
-            for (int i = 0; i < types.length; i++) {
-                if (types[i].getId().equals(selectedId)) {
-                    selectedIndex = i;
-                    break;
-                }
+    @Override public void tick(){
+        if(!ClientDataHolder.modEnabled()){onClose();return;}
+        if(!current.equals(ClientDataHolder.characterId())||!taken.equals(ClientDataHolder.takenCharacters()))rebuild();
+        if(confirm!=null)confirm.active=available(selectedId);
+    }
+    private void rebuild(){clearWidgets();init();}
+    private void select(String id){selectedId=id;detailScroll=detailMaximum=0;if(confirm!=null)confirm.active=available(id);}
+    private void scrollBy(int delta){
+        int next=Math.clamp(scrollRow+delta,0,layout.maxScroll());
+        if(next!=scrollRow){scrollRow=next;rebuild();}
+    }
+    @Override public boolean mouseScrolled(double x,double y,double dx,double dy){
+        if(layout.grid().contains(x,y)&&dy!=0){scrollBy(dy>0?-1:1);return true;}
+        if(layout.details().contains(x,y)&&dy!=0){detailScroll=Math.clamp(detailScroll-(int)Math.round(dy*24),0,detailMaximum);return true;}
+        return super.mouseScrolled(x,y,dx,dy);
+    }
+    private void fit(GuiGraphicsExtractor g,String value,int x,int y,int w,int color){
+        String label=font.width(value)>w?font.plainSubstrByWidth(value,Math.max(1,w-font.width("…")))+"…":value;
+        g.text(font,label,x,y,color);
+    }
+    @Override public void extractRenderState(GuiGraphicsExtractor g,int mx,int my,float partial){
+        if(layout==null)return;
+        XianxiaUiSkin.pickBackground(g,width,height);g.fill(0,0,width,height,0xA5051019);
+        var p=layout.panel();plate(g,p,0xFF7D9589,0xEF0A1C24);
+        fit(g,title.getString(),p.x()+12,p.y()+11,p.w()-48,GOLD);
+        var grid=layout.grid();var details=layout.details();
+        plate(g,new SkillChoiceLayout.Box(grid.x()-4,grid.y()-4,grid.w()+8,grid.h()+8),0xFF304D55,0x9909151E);
+        plate(g,details,0xFF4A6D70,0xC70B202A);
+        var role=CharacterType.byId(selectedId);if(role!=null)drawDetails(g,role,details,mx,my);
+        int first=scrollRow*layout.columns()+1,last=Math.min(CharacterType.playableValues().length,(scrollRow+layout.rows())*layout.columns());
+        var page=Component.translatable("screen.myriad.choose.range",first,last,CharacterType.playableValues().length);
+        g.text(font,page,grid.x()+(grid.w()-font.width(page))/2,layout.previous().y()+7,MUTED);
+        super.extractRenderState(g,mx,my,partial);
+    }
+    private void drawDetails(GuiGraphicsExtractor g,CharacterType role,SkillChoiceLayout.Box b,int mx,int my){
+        fit(g,Component.translatable(role.nameKey()).getString(),b.x()+9,b.y()+10,b.w()-18,GOLD);
+        String state=role.getId().equals(current)?"screen.myriad.choose.current":available(role.getId())?"screen.myriad.choose.preview":"screen.myriad.choose.occupied";
+        fit(g,Component.translatable(state).getString(),b.x()+9,b.y()+25,b.w()-18,available(role.getId())?JADE:MUTED);
+        g.fill(b.x()+8,b.y()+39,b.right()-8,b.y()+40,0xFF385C65);
+        var v=layout.skillViewport();if(v.h()<=0)return;
+        detailScroll=Math.clamp(detailScroll,0,detailMaximum);int y=v.y()+3-detailScroll;
+        g.enableScissor(v.x(),v.y(),v.right(),v.bottom());
+        String[] categories={"passive_a","passive_b","regular_a","regular_b","main_a","main_b","ultimate_a","ultimate_b"};
+        for(var skill:FirstGroupSkills.candidates(role.getId())){
+            var heading=Component.translatable("screen.myriad.choose."+categories[skill.index()]).append(" · ").append(skill.displayName());
+            for(var line:font.split(heading,v.w()-8)){g.text(font,line,v.x()+3,y,GOLD);y+=11;}
+            int headingEnd=y;
+            for(var line:font.split(Component.literal(SkillTooltipDescriptions.describeLines(skill,1).stream().findFirst().orElse("")),v.w()-8)){
+                g.text(font,line,v.x()+3,y,0xFFBFCED6);y+=10;
             }
-            scrollRow = Math.max(0, Math.min(maxScroll, selectedIndex - visibleRows / 2));
-        } else {
-            scrollRow = Math.max(0, Math.min(maxScroll, scrollRow));
-        }
-        int shown = Math.min(visibleRows, types.length - scrollRow);
-        for (int row = 0; row < shown; row++) {
-            CharacterType type = types[scrollRow + row];
-            boolean isTaken = taken.getOrDefault(type.getId(), false) && !type.getId().equals(current);
-            boolean selected = type.getId().equals(selectedId);
-            String name = Component.translatable(type.nameKey()).getString()
-                    + "（" + Component.translatable("faction.myriad." + type.getFaction().getName()).getString() + "）";
-            if (isTaken) {
-                name += " ⚑";
-            } else if (selected) {
-                name += " ✓";
+            if(mx>=v.x()&&mx<v.right()&&my>=Math.max(v.y(),headingEnd-22)&&my<Math.min(v.bottom(),y)){
+                var lines=new ArrayList<Component>();for(String line:SkillTooltipDescriptions.describeLines(skill,1))lines.add(Component.literal(line));
+                g.setComponentTooltipForNextFrame(font,lines,mx,my);
             }
-            Component label = Component.literal(name).withStyle(net.minecraft.ChatFormatting.BOLD)
-                    .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(isTaken ? 0xFF808080 : 0xFFFFFFFF));
-            addRenderableWidget(Button.builder(label, btn -> {
-                        if (isTaken) {
-                            return;
-                        }
-                        selectedId = type.getId();
-                        rebuild();
-                    })
-                    .bounds(listX, listTop + row * ROW_H, LIST_W, 22)
-                    .build());
+            y+=10;
         }
-
-        if (maxScroll > 0) {
-            Button up = addRenderableWidget(Button.builder(Component.literal("▲"), btn -> scrollBy(-1))
-                    .bounds(listX + LIST_W + 3, listTop, 18, 18)
-                    .build());
-            up.active = scrollRow > 0;
-            Button down = addRenderableWidget(Button.builder(Component.literal("▼"), btn -> scrollBy(1))
-                    .bounds(listX + LIST_W + 3, listTop + visibleRows * ROW_H - 18, 18, 18)
-                    .build());
-            down.active = scrollRow < maxScroll;
-        }
-
-        // 确认选择按钮（右侧底部）
-        addRenderableWidget(Button.builder(Component.translatable("hero.guide.open"), b -> {
-            var chosen = CharacterType.byId(selectedId);
-            if(chosen!=null) net.minecraft.client.Minecraft.getInstance().setScreenAndShow(new CharacterGuideScreen(this, chosen));
-        }).bounds(width-116,8,108,20).build());
-        int rightX = listX + LIST_W + 24;
-        confirmButton = addRenderableWidget(Button.builder(
-                        Component.translatable("screen.myriad.choose.confirm"), btn -> {
-                            if (selectedId == null || taken.getOrDefault(selectedId, false)) {
-                                return;
-                            }
-                            ClientPacketDistributor.sendToServer(
-                                    new NetworkSetup.ChooseCharacterPayload(selectedId));
-                            this.onClose();
-                        })
-                .bounds(rightX, this.height - 44, CONFIRM_W, 22)
-                .build());
-        // 所选角色已被他人占用时禁用确认
-        confirmButton.active = !(taken.getOrDefault(selectedId, false) && !selectedId.equals(current));
-    }
-
-    /** 重建界面（切换选中角色后刷新按钮状态） */
-    private void rebuild() {
-        clearWidgets();
-        init();
-    }
-
-    private void scrollBy(int rows) {
-        int maxScroll = Math.max(0, CharacterType.playableValues().length - visibleRows);
-        int next = Math.max(0, Math.min(maxScroll, scrollRow + rows));
-        if (next != scrollRow) {
-            scrollRow = next;
-            rebuild();
+        detailMaximum=Math.max(0,y+detailScroll-v.bottom());g.disableScissor();
+        if(detailMaximum>0){
+            int h=Math.max(8,v.h()*v.h()/(v.h()+detailMaximum));
+            scrollbar(g,new SkillChoiceLayout.Box(b.right()-5,v.y(),2,v.h()),new SkillChoiceLayout.Box(b.right()-5,v.y()+(v.h()-h)*detailScroll/detailMaximum,2,h));
         }
     }
-
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
-        if (mouseX >= listX && mouseX <= listX + LIST_W + 22
-                && mouseY >= listTop && mouseY <= listBottom
-                && Math.abs(deltaY) > 0.0) {
-            scrollBy(deltaY > 0 ? -1 : 1);
-            return true;
+    private class PanelButton extends Button {
+        PanelButton(SkillChoiceLayout.Box b,Component label,OnPress press){super(b.x(),b.y(),b.w(),b.h(),label,press,DEFAULT_NARRATION);}
+        @Override protected void extractContents(GuiGraphicsExtractor g,int mx,int my,float partial){
+            SkillChoiceTheme.button(g,font,new SkillChoiceLayout.Box(getX(),getY(),getWidth(),getHeight()),getMessage().getString(),active,isHoveredOrFocused(),false);
         }
-        return super.mouseScrolled(mouseX, mouseY, deltaX, deltaY);
     }
-
-    @Override
-    public void extractRenderState(net.minecraft.client.gui.GuiGraphicsExtractor gui,
-            int mouseX, int mouseY, float partialTick) {
-        super.extractRenderState(gui, mouseX, mouseY, partialTick);
-        int total = CharacterType.playableValues().length;
-        int maxScroll = Math.max(0, total - visibleRows);
-        if (maxScroll > 0) {
-            int trackX = listX + LIST_W + 1;
-            int trackTop = listTop + 20;
-            int trackBottom = listTop + visibleRows * ROW_H - 20;
-            int trackH = Math.max(8, trackBottom - trackTop);
-            int thumbH = Math.max(8, trackH * visibleRows / total);
-            int thumbY = trackTop + (trackH - thumbH) * scrollRow / maxScroll;
-            gui.fill(trackX, trackTop, trackX + 2, trackTop + trackH, 0x663C4654);
-            gui.fill(trackX, thumbY, trackX + 2, thumbY + thumbH, 0xFF55FFFF);
+    private final class RoleCard extends Button {
+        private final CharacterType role;
+        RoleCard(CharacterType role,SkillChoiceLayout.Box b){
+            super(b.x(),b.y(),b.w(),b.h(),Component.translatable(role.nameKey()),button->select(role.getId()),DEFAULT_NARRATION);this.role=role;
+            setTooltip(Tooltip.create(Component.translatable(role.nameKey())));
         }
-        // 右侧介绍区（适配界面尺寸）
-        float s = Math.min(1.0f, this.width / 427.0f);
-        gui.pose().pushMatrix();
-        gui.pose().scale(s);
-        CharacterType type = CharacterType.byId(selectedId);
-        if (type == null) {
-            gui.pose().popMatrix();
-            return;
-        }
-        net.minecraft.client.gui.Font font = Minecraft_font();
-        int rightX = (int) ((this.width / 2 + 10) / s);
-        int y = (int) (34 / s);
-        gui.text(font, Component.translatable(type.nameKey()).withStyle(net.minecraft.ChatFormatting.BOLD),
-                rightX, y, TITLE_COLOR);
-        y += 14;
-        gui.text(font, Component.literal("阵营: ").append(Component.translatable(
-                        "faction.myriad." + type.getFaction().getName()))
-                        .withStyle(net.minecraft.ChatFormatting.BOLD),
-                rightX, y, HIGHLIGHT_COLOR);
-        y += 14;
-        int descWidth = Math.max(80, (int) ((this.width - rightX - 12) * s) - 12);
-        if (com.myriad.character.rework.FirstGroupSkills.active(type.getId())) {
-            String[] labels={"被动A","被动B","常规①","常规②","主要A","主要B","终极A","终极B"};
-            for(var skill:com.myriad.character.rework.FirstGroupSkills.candidates(type.getId())) {
-                gui.text(font,labels[skill.index()]+"  "+skill.displayName()+" / "+skill.maxRank(),rightX,y,TEXT_COLOR);
-                if(mouseX/s>=rightX&&mouseX/s<=rightX+descWidth&&mouseY/s>=y&&mouseY/s<y+15){
-                    var lines=new java.util.ArrayList<Component>();
-                    for(String line:com.myriad.client.SkillTooltipDescriptions.describeLines(skill,1))lines.add(Component.literal(line));
-                    gui.setComponentTooltipForNextFrame(font,lines,(int)(mouseX/s),(int)(mouseY/s));
-                }
-                y+=16;
+        @Override protected void extractContents(GuiGraphicsExtractor g,int mx,int my,float partial){
+            var b=new SkillChoiceLayout.Box(getX(),getY(),getWidth(),getHeight());
+            boolean selected=role.getId().equals(selectedId),free=available(role.getId());card(g,b,selected,!free,isHoveredOrFocused());
+            int size=Math.min(46,b.h()-23),x=b.x()+(b.w()-size)/2,y=b.y()+4;
+            if(!CharacterPortrait.draw(g,role,x,y,size,free?1:.38f)){
+                plate(g,new SkillChoiceLayout.Box(x,y,size,size),0xFF476773,0xD0152935);
+                g.item(new ItemStack(ModItems.initialWeaponItem(role.getId())),x+(size-16)/2,y+(size-16)/2);
             }
-            gui.text(font,"被动、主要、终极各二选一",rightX,y,SECTION_COLOR);
-            gui.pose().popMatrix();
-            return;
+            fit(g,Component.translatable(role.nameKey()).getString(),b.x()+4,b.bottom()-14,b.w()-8,free?GOLD:MUTED);
+            if(selected||!free)g.text(font,selected?"◆":"×",b.right()-10,b.y()+3,free?JADE:MUTED);
         }
-        // 被动技能
-        for (Skill passive : type.passives()) {
-            gui.text(font, Component.literal("── 被动 ── ").withStyle(net.minecraft.ChatFormatting.BOLD)
-                            .append(Component.translatable(passive.nameKey())
-                                    .withStyle(net.minecraft.ChatFormatting.BOLD)),
-                    rightX, y, SECTION_COLOR);
-            y += 12;
-            List<net.minecraft.util.FormattedCharSequence> lines = font.split(
-                    Component.literal(com.myriad.client.SkillTooltipDescriptions.describe(passive, 1)), descWidth);
-            int shown = Math.min(lines.size(), 3);
-            for (int i = 0; i < shown; i++) {
-                gui.text(font, lines.get(i), rightX + 10, y, 0xFFAAAAAA);
-                y += 10;
-            }
-            y += 4;
-        }
-        gui.text(font, Component.literal("── 技能 ──").withStyle(net.minecraft.ChatFormatting.BOLD),
-                rightX, y, SECTION_COLOR);
-        y += 12;
-        String[] keyLabels = { "Q", "W", "E", "R", "F" };
-        for (int slot = 0; slot < CharacterType.SKILL_SLOTS; slot++) {
-            Skill skill = type.skill(slot);
-            if (skill == null) {
-                continue;
-            }
-            gui.text(font, Component.literal(keyLabels[slot] + " ")
-                            .append(Component.translatable(skill.nameKey())
-                                    .withStyle(net.minecraft.ChatFormatting.BOLD)),
-                    rightX, y, TEXT_COLOR);
-            y += 10;
-            List<net.minecraft.util.FormattedCharSequence> lines = font.split(
-                    Component.literal(com.myriad.client.SkillTooltipDescriptions.describe(skill, 1)), descWidth);
-            int shown = Math.min(lines.size(), 2);
-            for (int i = 0; i < shown; i++) {
-                gui.text(font, lines.get(i), rightX + 10, y, 0xFFAAAAAA);
-                y += 10;
-            }
-            y += 4;
-        }
-        gui.pose().popMatrix();
-    }
-
-    private static net.minecraft.client.gui.Font Minecraft_font() {
-        return net.minecraft.client.Minecraft.getInstance().font;
-    }
-
-    @Override
-    public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
-        if (event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
-            onClose();
-            return true;
-        }
-        return super.keyPressed(event);
     }
 }
