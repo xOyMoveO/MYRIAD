@@ -35,6 +35,7 @@ public final class AbilityVfxMaterials {
             YIKE_HD_VEIL=91,YIKE_HD_SHIELD=92,YIKE_HD_MOTES=93,YIKE_HD_SPARK=94;
     public static final int KEHENG_PROJECTILE_MODEL=95,YIKE_PROJECTILE_MODEL=96;
     public static final int RIVET_MODEL=97;
-    public static final int MAX=RIVET_MODEL;
+    public static final int RIVET_HD_COMPRESSION=98,RIVET_HD_FRICTION=99;
+    public static final int MAX=RIVET_HD_FRICTION;
     public static boolean flameGround(int material){return material==FENJUE_GROUND||material==FENJUE_FLOW_RING||material==FENJUE_FLOW_FIELD;}
 }

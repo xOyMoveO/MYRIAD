@@ -30,6 +30,7 @@ public final class BreachRhythm extends RivetSkill {
         c.buff("g1_rivet_rhythm", 0);
         // direct=false selects the uncritical skill path and cannot dispatch this passive again.
         c.damage(hit.target(), c.value(22.5f, 8, .25f), DamageCalc.Kind.PHYSICAL, false);
+        RivetVfx.rhythmHit(c, hit.target());
         var major = FirstGroupSkills.resolve(CharacterType.byId(c.data.getCharacterId()), 2, c.data.getSkillLevels());
         if (major != null) c.data.setCooldown(major.getId(), Math.max(0, c.data.getCooldown(major.getId()) - 40));
         PlayerDataProvider.syncToClient(c.player);

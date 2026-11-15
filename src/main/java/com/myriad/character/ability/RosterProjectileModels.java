@@ -38,13 +38,26 @@ public final class RosterProjectileModels {
     }
     public int faces(String key){return meshes.get(key).faces.size();}
     public int parts(String key){return meshes.get(key).parts;}
+    /** Distance from the source y=0 plane to the +Y tip after scaling, for wall attachments. */
+    public double tipOffset(String key,double length){return meshes.get(key).tip*length/sourceLength;}
     public void append(List<Quad> out,String key,Vec3 tip,Vec3 direction,double length,int material,float alpha){append(out,key,tip,direction,length,length,material,alpha);}
     /** Independent transverse length permits a long penetration needle without broadening its blade. */
     public void append(List<Quad> out,String key,Vec3 tip,Vec3 direction,double length,double transverseLength,int material,float alpha){
         if(alpha<=0||length<=0||transverseLength<=0)return;
         Vec3 forward=direction.lengthSqr()<1E-10?new Vec3(0,0,1):direction.normalize();
         Vec3 side=forward.cross(new Vec3(0,1,0));side=side.lengthSqr()<1E-10?new Vec3(1,0,0):side.normalize();
-        Vec3 up=side.cross(forward).normalize();var mesh=meshes.get(key);
+        appendFrame(out,key,tip,forward,side,side.cross(forward).normalize(),length,transverseLength,material,alpha);
+    }
+    /** Explicit transverse axis for an upright weapon whose striking face must follow a horizontal sweep. */
+    public void appendOriented(List<Quad> out,String key,Vec3 tip,Vec3 direction,Vec3 sourceX,double length,int material,float alpha){
+        if(alpha<=0||length<=0)return;
+        Vec3 forward=direction.lengthSqr()<1E-10?new Vec3(0,1,0):direction.normalize();
+        Vec3 side=sourceX.subtract(forward.scale(sourceX.dot(forward)));
+        side=side.lengthSqr()<1E-10?AbilityMeshBuilder.side(forward):side.normalize();
+        appendFrame(out,key,tip,forward,side,side.cross(forward).normalize(),length,length,material,alpha);
+    }
+    private void appendFrame(List<Quad> out,String key,Vec3 tip,Vec3 forward,Vec3 side,Vec3 up,double length,double transverseLength,int material,float alpha){
+        var mesh=meshes.get(key);
         for(var face:mesh.faces)out.add(new Quad(world(face.a,tip,forward,side,up,mesh.tip,length,transverseLength),world(face.b,tip,forward,side,up,mesh.tip,length,transverseLength),
                 world(face.c,tip,forward,side,up,mesh.tip,length,transverseLength),world(face.d,tip,forward,side,up,mesh.tip,length,transverseLength),face.shade,alpha,material,false,face.u0,face.u1,face.v0,face.v1));
     }

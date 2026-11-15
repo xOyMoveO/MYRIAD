@@ -15,6 +15,7 @@ public final class TowCable extends RivetSkill {
         c.memory().until = 0;
         c.data.setBuff("rivet_tow_cable_recast", 0);
         c.stopMotion();
+        RivetVfx.cableEnd(c);
     }
     private Vec3 destination(AbilityRuntime.Cast c) {
         var anchor = TacticalAnchor.anchor(c.player);
@@ -56,6 +57,7 @@ public final class TowCable extends RivetSkill {
         c.data.setBuff("rivet_tow_cable_recast", AbilityRuntime.motionRemaining(c.player));
         c.whileActive(2400, age -> {
             if (c.memory().until <= c.now() || !AbilityRuntime.moving(c.player)) {
+                RivetVfx.cableEnd(c);
                 c.memory().until = 0;
                 c.data.setBuff("rivet_tow_cable_recast", 0);
                 return false;

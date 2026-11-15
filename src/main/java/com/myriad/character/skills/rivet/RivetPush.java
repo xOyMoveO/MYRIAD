@@ -85,7 +85,7 @@ public final class RivetPush {
                     LAST_WALL.put(target.getUUID(), new LastWall(target.level(), c.now()));
                     root(c, target, duration);
                     if (hammer) BreachRhythm.wallHit(c.player);
-                    RivetVfx.wall(c, contact, anchored);
+                    RivetVfx.wall(c, contact, flat, anchored);
                 }
                 finish.run(); return false;
             }

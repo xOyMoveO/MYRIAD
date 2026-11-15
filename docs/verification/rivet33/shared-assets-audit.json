@@ -1,0 +1,17 @@
+{
+  "root": "~/.local/share/minecraft/assets",
+  "compatibilityLink": "~/.local/share/minecraft/assets",
+  "manifest": "~/.gradle/caches/neoformruntime/artifacts/minecraft_26.2_version_manifest.json",
+  "version": "26.2",
+  "assetIndex": {
+    "id": "32",
+    "expectedSHA1": "941b1ea6afb4a472d164c0d12e3e3272bf3435f8",
+    "actualSHA1": "941b1ea6afb4a472d164c0d12e3e3272bf3435f8",
+    "expectedSize": 586566,
+    "actualSize": 586566
+  },
+  "objects": 5059,
+  "bytes": 484155050,
+  "problems": [],
+  "pathNotation": "~表示运行者用户目录，以上为本机路径简写；完整原始路径记录保留于本地证据目录。"
+}

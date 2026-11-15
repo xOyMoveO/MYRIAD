@@ -56,6 +56,7 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
     public static void receive(AbilityVfxPayload p) {
         var mc=Minecraft.getInstance();
         if(!p.valid())return;
+        com.myriad.client.firstperson.RivetWeaponView.receive(p);
         if(p.kind()==AbilityVfxGeometry.CANCEL){
             com.myriad.client.firstperson.ShuoHeldLight.receive(p);
             if(p.angle()==2)FLIGHTS.end(p,mc.level==null?p.started():mc.level.getGameTime());
@@ -91,7 +92,7 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
             mc.particleEngine.add(new AbilityMeshParticle(mc.level,rainbowWake));
         mc.particleEngine.add(new AbilityMeshParticle(mc.level,p));
     }
-    public static void reset(){epoch++;OWNER_EPOCHS.clear();SKILL_EPOCHS.clear();FLIGHTS.clear();com.myriad.client.firstperson.ShuoHeldLight.reset();com.myriad.client.YikeClientState.reset();}
+    public static void reset(){epoch++;OWNER_EPOCHS.clear();SKILL_EPOCHS.clear();FLIGHTS.clear();com.myriad.client.firstperson.ShuoHeldLight.reset();com.myriad.client.YikeClientState.reset();com.myriad.client.firstperson.RivetWeaponView.reset();}
     public static void registerGroup(RegisterParticleGroupsEvent event){event.register(GROUP,Group::new);}
     @Override public ParticleRenderType getGroup(){return GROUP;}
     @Override protected Layer getLayer(){return Layer.TRANSLUCENT;}
@@ -104,7 +105,8 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
         if(recipe.anchor()>=0){if(anchor==null||!anchor.isAlive()){remove();return;}
             setBoundingBox(visualBounds(recipe)
                     .move(anchor.position().subtract(anchorOrigin)));}
-        if(age++>=lifetime||epoch!=bornEpoch||bornOwnerEpoch!=OWNER_EPOCHS.getOrDefault(recipe.owner(),0)||bornSkillEpoch!=SKILL_EPOCHS.getOrDefault(skillKey(recipe),0)||!ClientDataHolder.modEnabled()||owner==null||!owner.isAlive())remove();
+        if(age++>=lifetime||epoch!=bornEpoch||bornOwnerEpoch!=OWNER_EPOCHS.getOrDefault(recipe.owner(),0)||bornSkillEpoch!=SKILL_EPOCHS.getOrDefault(skillKey(recipe),0)||!ClientDataHolder.modEnabled()
+                ||!com.myriad.character.skills.rivet.RivetVfx.survivesOwner(recipe,owner!=null,owner!=null&&owner.isAlive()))remove();
     }
     @Override public void extract(QuadParticleRenderState state,Camera camera,float partial) {
         if(!(state instanceof AbilityMeshState mesh)||bornEpoch!=epoch||bornOwnerEpoch!=OWNER_EPOCHS.getOrDefault(recipe.owner(),0)||bornSkillEpoch!=SKILL_EPOCHS.getOrDefault(skillKey(recipe),0)||!ClientDataHolder.modEnabled())return;
@@ -151,11 +153,19 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
                     recipe.from().add(offset),recipe.to().add(offset),recipe.radius(),recipe.angle(),recipe.life(),recipe.started(),recipe.personal(),recipe.instance());}
         float visualAge=Math.max(0,age-1+partial);
         var geometry=AbilityVfxGeometry.build(displayed,visualAge,reduced);
+        boolean heldRivet=recipe.theme()==13&&mc.options.getCameraType().isFirstPerson()&&mc.getCameraEntity()==mc.player
+                &&mc.player.getId()==recipe.owner()&&"rivet".equals(ClientDataHolder.characterId())
+                &&mc.player.getMainHandItem().is(com.myriad.registry.ModItems.RIVET_HAMMER.get());
+        if(heldRivet)
+            geometry=com.myriad.character.skills.rivet.RivetVfx.firstPerson(recipe,geometry);
         if(recipe.theme()==11||recipe.theme()==12||recipe.theme()==13||com.myriad.player.LevelUpBeamGeometry.owns(recipe)
                 ||com.myriad.character.skills.shuo.ShuoSkillVfx.owns(recipe))mesh.sortTranslucent();
         if((recipe.theme()==5||thunderModel||rosterModel||recipe.theme()==0&&recipe.kind()==AbilityVfxGeometry.FLIGHT&&recipe.variant()==2)&&!recipe.personal()){
-            if(!mesh.addModelBatch(geometry,camera.position(),sprites,near)&&!reduced)
-                mesh.addModelBatch(AbilityVfxGeometry.build(displayed,visualAge,true),camera.position(),sprites,near);
+            if(!mesh.addModelBatch(geometry,camera.position(),sprites,near)&&!reduced){
+                var fallback=AbilityVfxGeometry.build(displayed,visualAge,true);
+                if(heldRivet)fallback=com.myriad.character.skills.rivet.RivetVfx.firstPerson(recipe,fallback);
+                mesh.addModelBatch(fallback,camera.position(),sprites,near);
+            }
             return;
         }
         boolean majorFlame=com.myriad.character.skills.fenjue.rework.FlameMajorVfx.owns(recipe);

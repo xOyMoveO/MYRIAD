@@ -97,6 +97,8 @@
     "myriad:vfx/yike_hd_spark",
     "myriad:vfx/keheng_projectiles_atlas",
     "myriad:vfx/yike_projectiles_atlas",
-    "myriad:vfx/rivet_metal"
+    "myriad:vfx/rivet_metal",
+    "myriad:vfx/rivet_hd_compression",
+    "myriad:vfx/rivet_hd_friction"
   ]
 }

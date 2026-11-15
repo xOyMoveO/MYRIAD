@@ -15,7 +15,7 @@ public final class BreachCharge extends RivetSkill {
         var direction = c.forward(1);
         c.actionDashFirst(direction.scale(5), 10, .45, target -> {
             boolean effective = c.damage(target, c.value(147.5f, 55, .75f), DamageCalc.Kind.PHYSICAL);
-            RivetVfx.chargeHit(c, target);
+            RivetVfx.chargeHit(c, target, direction);
             if (effective && target.isAlive()) RivetPush.start(c, target, direction, 2, c.value(37.5f, 15, .25f), 16, 20, false);
         }, () -> { });
         RivetVfx.chargeStart(c);

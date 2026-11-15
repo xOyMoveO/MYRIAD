@@ -310,6 +310,7 @@ public class MyriadClient {
 
     /** 远程恢复期间隐藏第一人称专属武器；原版近战不隐藏。 */
     private static void onRenderHand(net.neoforged.neoforge.client.event.RenderHandEvent event) {
+        if (com.myriad.client.firstperson.RivetWeaponView.render(event)) return;
         if (com.myriad.client.firstperson.YikeWeaponView.render(event)) return;
         if (com.myriad.client.firstperson.ShuoView.render(event)) return;
         if (com.myriad.client.firstperson.NightDaggerView.render(event)) return;

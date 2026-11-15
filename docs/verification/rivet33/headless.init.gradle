@@ -1,0 +1,11 @@
+allprojects {
+ afterEvaluate {
+  [rivetTestServer:'rivet',firstGroupTestServer:'first_group'].each { runName,testId ->
+   neoForge.runs.named(runName) {
+    gameDirectory=project.file('run-pr33-'+testId+'-test')
+    programArguments.set(['--tests','myriad:'+testId,'--universe','myriad-pr33-polish-'+testId,'--report',project.file('build/reports/pr33-'+testId+'.xml').absolutePath])
+    logLevel=org.slf4j.event.Level.INFO
+   }
+  }
+ }
+}

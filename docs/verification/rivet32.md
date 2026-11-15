@@ -53,3 +53,52 @@ JAR：`myriad-0.1.0-rivet32.jar`，27016212字节。
 SHA256：`b6d2cea4bab8c8325c68ad91f0f436cd458d54ebb9c9f389e7f8c6ed22388f61`
 
 未做依赖外部地图fixture的竞技场专项，未做图形客户端、视觉/听感/手感或实战平衡验收。多人验证使用服务端玩家/实体与生产发包捕获，不包含公网延迟测量。复现入口为仓库 `runRivetTestServer` 及证据包中的最终隔离init脚本；源码指纹见`rivet32-source-snapshot.json`。
+
+
+## PR #33 表现精修复核（2026-11-15）
+
+本节只记录本轮最终源码的无图形验证。按用户后续要求，第一／第三人称视角、实际遮挡、听感、手感、帧率与实战平衡留待人工。此前的隔离客户端启动准备仅到菜单即正常退出，未进世界、未截图；不计入实机验收。未安装正式实例、未加载用户存档。
+
+### 最终命令与结果
+
+在独立工作区使用 Java 25.0.3、Gradle 9.7.0、Minecraft 26.2／NeoForge 26.2.0.59，复用上次完整缓存的隔离副本。命令为：
+
+```sh
+python docs/verification/rivet33/verify_shared_assets.py
+JAVA_HOME=<本机JDK25> GRADLE_USER_HOME=<隔离缓存> bash ./gradlew \
+  --offline --no-daemon --no-parallel --max-workers=1 --console=plain \
+  --no-configuration-cache -I docs/verification/rivet33/headless.init.gradle \
+  build runRivetTestServer runFirstGroupTestServer -x downloadAssets
+```
+
+[共享资源预检脚本](rivet33/verify_shared_assets.py)固定检查本轮26.2／32号索引，完整校验后写入Gradle所需的生成路径属性；不会下载或修改共享库。上面的路径占位符需替换为运行者自己的JDK25和完整隔离缓存。仓库内的[隔离 init](rivet33/headless.init.gradle)只设置两个服务端专项的新测试目录、测试名、报告位置和日志级别，不改变测试断言或产品行为。共享资源先完整核验再跳过下载：32号索引的大小／SHA1与26.2清单吻合；5059对象、484155050字节逐一核对大小与SHA1，0缺失、0损坏。兼容链接与隔离缓存链接均指向 `~/.local/share/minecraft/assets`；没有补下载游戏资源。详细见[共享资源审计](rivet33/shared-assets-audit.json)。
+
+| 检查 | 最终实际结果 | 证据 |
+|---|---|---|
+| 发行构建与两个专项组合命令 | 退出0，24秒，`BUILD SUCCESSFUL` | [关键输出摘录](rivet33/headless-validation.txt) |
+| 铆钉专项 | 1/1；原71真实输入场景＋2名正式选角／准备玩家；伤害、费用、控制、生命周期预期保留 | [XML](rivet33/rivet-gametest.xml)及关键输出摘录 |
+| 新版聚合 | 1/1；14角色／112候选、成长、分支、经济、持久化、取消及现有技能／通用表现检查 | [XML](rivet33/first-group-gametest.xml)及关键输出摘录 |
+| 铆钉生产网格 | 每项专项均通过原1024阶段／细节帧及新增84接触阶段帧；有限顶点、材质、192面预算、到期、wire、九图标 | 关键输出摘录中的 `RIVET-ASSETS`／`RIVET-POLISH` |
+| 新增纯几何／状态检查 | 四向墙装在墙外；Q起手／横扫完整与LOD逐顶点90°旋转等价；独立撞墙／锚击阶段；权威进度、乱序、取消与超时；位置授权锚／阵地在owner缺跟踪时保留，已知死亡与TTL仍清除；非定点效果仍要求owner | 同上；不等于客户端视角验收 |
+| 发行审计 | 命名空间／JSON通过；1802源文件、1529个JAR非目录条目；294条源码与294条JAR自有资源引用通过 | [命名空间](rivet33/namespace-audit.txt)、[退役引用与资源](rivet33/retired-audit.txt) |
+| 包内一致性 | 17个铆钉运行资源与源码逐字节一致；CRC通过；八项既定排除fixture、BBModel与临时测试桥未进入包 | [JAR审计](rivet33/package-audit.json) |
+
+公开的构建／测试记录明确为关键输出摘录，完整日志本地保留；JSON中的`~`和仓库相对路径均已注明简写。
+
+最终验证前后1190个运行源码／资源文件SHA256一致，0修改、0新增。测试计数以实际服务端“All 1 required tests passed”和场景完成标记为准。本轮没有重跑竞技场、刻衡、伊珂、战场缓时、保留角色行动时间及旧战斗的独立专项；以上历史验证保持原日期，不延用为本轮新结果。
+
+### 模型与离线检查
+
+[模型静态审计](rivet33/model-audit.json)确认锤／锚分别为26／24立方体、130／117有效缓存面；LOD为22／13立方体、110／68面。四模型沿用 `source_length=28`，锤／锚前端27.5／8.5；三份256×256材质同SHA256，BBModel内嵌PNG同字节。GUI变换投影在图标边界内，仅为数值检查。
+
+已查看批准参考、源模型离线预览及真实生产网格的明暗背景分阶段图，能辨认锤砧、活塞笼、通风盒、四角夹爪与中空索环，以及撞墙／锚击和展开／松索的不同阶段。[模型前后对照](rivet33/models-before-after.png)与[接触阶段动图](rivet33/contact-stages.gif)均为离线投影，不是游戏截图；对应源文件与命令见 `art_source/rivet/README.md` 及 `art_source/rivet/vfx/`。
+
+### 基线及交付边界
+
+修改前 `3c7a95d` 独立快照构建出的JAR与原交付SHA256完全一致。铆钉专项首轮在 `RivetChecks.dummy:289` 查询新造假人时失败；不改源码或断言原样复跑后1/1通过，71场景及1024网格帧通过。初次失败日志保留在本地证据目录，不把复跑通过表述为从未失败。两轮中间集成通过后，又分别补齐Q锤横轴和owner缺跟踪修正，因此只有上表第三轮作为最终结果。
+
+最终JAR为 `myriad-0.1.0.jar`，27062934字节，SHA256：
+
+`64723589b55f0d7117503bdbdefdca3809f6016e8a5a779bcde94a6e34136fd9`
+
+已复制到原项目被Git忽略的 `outputs/rivet-pr33-visual-20261115/myriad-0.1.0.jar`，并与最终 `build/libs` SHA256复核一致，仅供人工体验。未安装、未部署；视角、声音、手感与性能继续待人工验收。本地完整证据位于 `/private/tmp/myriad-pr33-evidence/`。

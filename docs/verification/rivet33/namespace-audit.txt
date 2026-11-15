@@ -1,0 +1,3 @@
+最终审计工具的完整短输出；完整构建日志另行本地保留。
+
+PASS: MYRIAD namespace, packages, JSON resources and release JAR

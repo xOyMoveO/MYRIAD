@@ -1,0 +1,45 @@
+{
+  "source_length": 28,
+  "forward_axis": "+Y",
+  "models": {
+    "hammer": {
+      "parts": 26,
+      "faces": 130,
+      "tip_y": 27.5,
+      "source_sha256": "eb67595f473b769f498a85d92b970f1af23743e93a44a37886dd713d20e014ce"
+    },
+    "anchor": {
+      "parts": 24,
+      "faces": 117,
+      "tip_y": 8.5,
+      "source_sha256": "4542651217196df40831cbb6c647b34b477f3ab10fc6e53be787560d53a3d897"
+    },
+    "hammer_lod": {
+      "parts": 22,
+      "faces": 110,
+      "tip_y": 27.5,
+      "source_sha256": "1f901930b9ed35850478b23bf4586bd8518e9367244603658fbd07c549096a46"
+    },
+    "anchor_lod": {
+      "parts": 13,
+      "faces": 68,
+      "tip_y": 8.5,
+      "source_sha256": "fc4b8fff61e8e81736c9c0e07d4d313f0fa4618ee78e410286b5947ac238cf7e"
+    }
+  },
+  "gui_projected_bounds": [
+    [
+      -4.03493,
+      6.66683
+    ],
+    [
+      -5.47654,
+      7.20646
+    ]
+  ],
+  "atlas_sha256": "740e170e913a1233266accb8c43c4955d05beccc7033ae99460396eb707f1d9f",
+  "atlas_size": [
+    256,
+    256
+  ]
+}
