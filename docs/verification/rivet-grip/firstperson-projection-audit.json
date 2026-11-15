@@ -1,0 +1,26 @@
+{
+  "baseline": "485ddca",
+  "provenance": "Baseline: actual ShuoArmModel cropped skin geometry and original production motion. Final: actual RivetArmModel skin/fist mesh, bounded 8-to-10-pixel proximal continuation, production Rig and Motion. Actual item geometry/UVs in both. CPU depth projection only; no game/client launched.",
+  "viewport": [
+    960,
+    540
+  ],
+  "casesPerRevision": 48,
+  "maxActualPalmGripErrorBlocks": 2.4575624e-07,
+  "minItemDeterminant": 0.216,
+  "minHandDeterminant": 0.55136794,
+  "maxVisibleShoulderCapPixels": 0,
+  "allForearmsReachViewportEdge": true,
+  "shoulderCapDefinition": "Only the outer proximal skin/sleeve caps; internal Y=6 fist/forearm seam is excluded. Depth-visible cap pixels are compared against actual hand/item union.",
+  "nearestWeaponZBlocks": -0.55714506,
+  "worldFovSamples": [
+    40,
+    70,
+    110
+  ],
+  "normalHandHudFov": 70,
+  "additionalHandHudFovSample": 60,
+  "normalFovPanelBodySHA256": "58b13e5a3ddc428c7fb7b76f4c316a48369501a48515205323f7ebfd3a114023",
+  "wristLimitDegreesAssertedByGameTest": 35,
+  "limitations": "Illustrative lighting and opaque depth raster; no actual client lighting, GPU face-culling, camera bob, HUD configuration, latency or feel acceptance."
+}
