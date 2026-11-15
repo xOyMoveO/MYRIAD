@@ -5,17 +5,32 @@ import static com.myriad.character.ability.AbilityVfxGeometry.*;
 
 /** Cosmetic palm-space poses. Preparation is sampled from authoritative progress, never a local timer. */
 public final class RivetWeaponMotion {
-    public record Pose(double x,double y,double z,double pitch,double yaw,double roll,double support) {
+    public record Pose(double x,double y,double z,double pitch,double yaw,double roll) {
         private Pose blend(Pose to,double value){double t=Math.clamp(value,0,1);return new Pose(
                 x+(to.x-x)*t,y+(to.y-y)*t,z+(to.z-z)*t,pitch+(to.pitch-pitch)*t,
-                yaw+(to.yaw-yaw)*t,roll+(to.roll-roll)*t,support+(to.support-support)*t);}
+                yaw+(to.yaw-yaw)*t,roll+(to.roll-roll)*t);}
     }
-    public static final Pose IDLE=new Pose(.51,-.72,-1.12,-34,-18,-12,0);
+    public static final Pose IDLE=new Pose(.56,-.56,-1.28,-16,-84,-28);
+    private static final Pose LIFT=new Pose(.64,-.42,-1.35,-2,-92,-43);
+    private static final Pose STRIKE=new Pose(.53,-.56,-1.15,-65,-55,-5);
+    private static final Pose FOLLOW=new Pose(.51,-.61,-1.17,-78,-50,8);
     private static final int NONE=0,HAMMER_READY=1,HAMMER_SWING=2,ANCHOR=3,BRACE=4,TOW=5,
             TOW_RELEASE=6,PROTOCOL=7,CHARGE_READY=8,CHARGE_RUN=9,RHYTHM=10;
     private int action,variant=-1;private long newest=Long.MIN_VALUE;private double start=-100,received=-100,progress;
     private double impact=-100;
     private static double smooth(double value){double t=Math.clamp(value,0,1);return t*t*(3-2*t);}
+    private static double falling(double value){double t=Math.clamp(value,0,1);return t*t;}
+    private static Pose basicStroke(double progress){
+        if(progress<.24)return IDLE.blend(LIFT,smooth(progress/.24));
+        if(progress<.50)return LIFT.blend(STRIKE,falling((progress-.24)/.26));
+        if(progress<.65)return STRIKE.blend(FOLLOW,smooth((progress-.50)/.15));
+        return FOLLOW.blend(IDLE,smooth((progress-.65)/.35));
+    }
+    private static Pose heavyStroke(double age){
+        if(age<2.6)return LIFT.blend(STRIKE,falling(age/2.6));
+        if(age<4)return STRIKE.blend(FOLLOW,smooth((age-2.6)/1.4));
+        return FOLLOW.blend(IDLE,smooth((age-4)/6.5));
+    }
     public void reset(){action=NONE;variant=-1;newest=Long.MIN_VALUE;start=received=impact=-100;progress=0;}
     public void accept(AbilityVfxPayload p,double now){
         if(!p.valid())return;
@@ -41,27 +56,23 @@ public final class RivetWeaponMotion {
         Pose idle=IDLE;
         if(basic>0&&basic<1){
             // The vanilla attack still owns its attack/cooldown. Only its visible palm is reshaped.
-            double load=smooth(basic/.18),hit=smooth((basic-.18)/.28),recover=smooth((basic-.54)/.46);
-            Pose cocked=new Pose(.66,-.57,-1.04,-17,-35,-36,0);
-            Pose struck=new Pose(.26,-.76,-1.36,-68,12,42,0);
-            idle=IDLE.blend(cocked,load).blend(struck,hit).blend(IDLE,recover);
+            idle=basicStroke(basic);
         }
-        if(rhythmReady)idle=idle.blend(new Pose(.48,-.68,-1.09,-31,-18,-9,.10),.35);
+        if(rhythmReady)idle=idle.blend(new Pose(.56,-.54,-1.28,-14,-72,-30),.35);
         double age=Math.max(0,now-start),fresh=now-received;Pose pose=idle;double blend=0;
         switch(action){
-            case HAMMER_READY->{pose=new Pose(.68,-.54,-.98,-12-12*progress,-36,-35-13*progress,.75);blend=1;}
+            case HAMMER_READY->{pose=IDLE.blend(LIFT,smooth(progress));blend=smooth(age/2);}
             case HAMMER_SWING->{
-                Pose lifted=new Pose(.68,-.54,-.98,-24,-36,-48,.75),struck=new Pose(.12,-.78,-1.40,-66,26,48,.6);
-                pose=lifted.blend(struck,smooth(age/3.5)).blend(IDLE,smooth((age-4)/5));blend=age<9?1:0;
+                pose=heavyStroke(age);blend=age<10.5?1:0;
             }
-            case ANCHOR->{pose=new Pose(.40,-.61,-1.32,-54,6,13,.2);blend=Math.sin(Math.PI*Math.clamp(age/9,0,1));}
-            case BRACE->{pose=new Pose(.34,-.60,-1.04,-16,-8,38,.8);blend=smooth(age/2)*(1-smooth((age-6)/6));}
-            case TOW->{pose=new Pose(.62,-.68,-.98,-45,-24,-27,.5);blend=1;}
-            case TOW_RELEASE->{pose=new Pose(.62,-.76,-.98,-42,-25,-22,.25);blend=1-smooth(age/6);}
-            case PROTOCOL->{pose=new Pose(.30,-.64,-1.20,-51,3,33,.8);blend=smooth(age/2)*(1-smooth((age-5)/7));}
-            case CHARGE_READY->{pose=new Pose(.38,-.60,-1.14,-27,-2,44,.9);blend=.45+.55*progress;}
-            case CHARGE_RUN->{pose=new Pose(.35,-.65,-1.24,-42,4,46,.9);blend=1;}
-            case RHYTHM->{pose=new Pose(.30,-.76,-1.34,-63,18,39,.2);blend=1-smooth(age/7);}
+            case ANCHOR->{pose=new Pose(.52,-.55,-1.16,-28,-75,-22);blend=Math.sin(Math.PI*Math.clamp(age/9,0,1));}
+            case BRACE->{pose=new Pose(.52,-.49,-1.25,-20,-60,-22);blend=smooth(age/2)*(1-smooth((age-6)/6));}
+            case TOW->{pose=new Pose(.55,-.57,-1.20,-24,-72,-28);blend=smooth(age/2);}
+            case TOW_RELEASE->{pose=new Pose(.55,-.58,-1.24,-20,-72,-28);blend=1-smooth(age/6);}
+            case PROTOCOL->{pose=new Pose(.51,-.60,-1.18,-60,-60,-2);blend=smooth(age/2)*(1-smooth((age-5)/7));}
+            case CHARGE_READY->{pose=new Pose(.63,-.48,-1.27,-18,-80,-38);blend=(.45+.55*progress)*smooth(age/2);}
+            case CHARGE_RUN->{pose=new Pose(.62,-.56,-1.23,-15,-75,-35);blend=1;}
+            case RHYTHM->{pose=STRIKE.blend(FOLLOW,smooth(age/2));blend=1-smooth((age-2)/6);}
             default->{}
         }
         // Missed end packets and interrupted preparation return to rest without playing a release.
@@ -69,6 +80,6 @@ public final class RivetWeaponMotion {
         Pose result=idle.blend(pose,blend);
         double kick=now-impact;double bump=kick>=0&&kick<4?Math.sin(Math.PI*kick/4):0;
         return new Pose(result.x,result.y-.018*bump,result.z+.045*bump,result.pitch+3*bump,
-                result.yaw,result.roll,result.support);
+                result.yaw,result.roll);
     }
 }

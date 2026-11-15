@@ -1,0 +1,7 @@
+PASS: fourteen formal roles / 112 unique candidates, eight per role
+PASS: retired-character source/tool/asset scan (1806 files) and release JAR scan (1532 entries)
+PASS: owned model/texture/particle/sound references (294 source edges, 294 JAR edges)
+Allowed records: audit vocabulary: 1
+Allowed records: retired-ID rejection assertions: 2
+Shared shop equipment wuxiangjianxia / 无相剑匣 and monster 玄甲地龟 are preserved.
+Pair this audit with the retired-ID entry tests and retained-character GameTests.
