@@ -3,6 +3,7 @@ package com.myriad.tools;
 import com.myriad.character.ability.AbilityVfxGeometry;
 import com.myriad.character.ability.AbilityVfxGeometry.Quad;
 import com.myriad.character.skills.rivet.RivetVfx;
+import com.myriad.character.skills.rivet.BreachCharge;
 import com.myriad.network.AbilityVfxPayload;
 import net.minecraft.world.phys.Vec3;
 import java.nio.file.*;
@@ -53,7 +54,7 @@ public final class PreviewRivetVfx {
         for(float stage:new float[]{0,8,60,112})out.add(new PreviewRoleMeshes.Panel("固守协议 / 固定4格球形边界 tick "+stage,
                 mesh(6,SEAL,4,stage,6,1,Vec3.ZERO,new Vec3(0,1,0)),31,Vec3.ZERO));
         for(float progress:new float[]{.2f,.9f})out.add(new PreviewRoleMeshes.Panel("破城冲击 / 分段压缩预警 "+progress,
-                mesh(7,CHARGE,.7f,progress,3,1,Vec3.ZERO,new Vec3(0,0,5)),50,new Vec3(0,.4,2)));
+                mesh(7,CHARGE,.7f,progress,3,1,Vec3.ZERO,new Vec3(0,0,BreachCharge.DISTANCE)),28,new Vec3(0,.4,BreachCharge.DISTANCE*.45)));
         out.add(new PreviewRoleMeshes.Panel("破城冲击 / 双轨实际运动残迹",
                 mesh(7,TRAIL,.8f,0,7,2,new Vec3(0,.3,-1),new Vec3(0,.3,2)),95,new Vec3(0,.3,.5)));
         out.add(panel("破城冲击 / 首敌实体接触",7,BURST,RivetVfx.CHARGE_HIT,10,2,120));

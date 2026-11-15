@@ -87,12 +87,12 @@ public final class RivetVfx {
     public static void chargeWindup(Cast c){
         RivetAudio.play(c.player,"charge");
         c.whileActive(2400,age->{if(!AbilityRuntime.preparingSkill(c.player).equals(c.skill.getId()))return false;
-            if(age%2==0)action(c,CHARGE,c.player.position(),c.player.position().add(c.forward(5)),.7,c.windupProgress(),3);return true;});
+            if(age%2==0)action(c,CHARGE,c.player.position(),c.player.position().add(c.forward(BreachCharge.DISTANCE)),.7,c.windupProgress(),3);return true;});
     }
     /** Called at committed launch, after the private movement lease has been created. */
     public static void chargeStart(Cast c){
         RivetAudio.play(c.player,"charge_release");
-        action(c,CHARGE,c.player.position(),c.player.position().add(c.forward(5)),.7,2,3);
+        action(c,CHARGE,c.player.position(),c.player.position().add(c.forward(BreachCharge.DISTANCE)),.7,2,3);
         final Vec3[] previous={c.player.position()};
         c.whileActive(2400,age->{if(!AbilityRuntime.moving(c.player))return false;
             chargeTrail(c,previous[0],c.player.position());previous[0]=c.player.position();return true;});
@@ -120,6 +120,15 @@ public final class RivetVfx {
         }
     }
     private static double smooth(double value){double t=Math.clamp(value,0,1);return t*t*(3-2*t);}
+    public static float brightAlpha(float alpha){return (float)(1-Math.pow(1-Math.clamp(alpha,0,1),2));}
+    private static Quad brighten(Quad q){
+        if(q.material()==RIVET_MODEL)return q;
+        int color=0;
+        // Lift the luminous layers, retaining dark steel/dent contrast and the original model texture.
+        double gain=q.color()==DARK?1.08:1.25;
+        for(int shift:new int[]{0,8,16})color|=(int)Math.min(255,Math.round(((q.color()>>shift)&255)*gain))<<shift;
+        return new Quad(q.a(),q.b(),q.c(),q.d(),color,brightAlpha(q.alpha()),q.material(),q.reverseV(),q.startU(),q.endU(),q.startV(),q.endV());
+    }
     /** First-person has its own gripped hammer. Keep the world arc, suppress only the duplicate solid. */
     public static List<Quad> firstPerson(AbilityVfxPayload p,List<Quad> mesh){
         if(p.kind()==ARC||p.kind()==CHARGE&&p.variant()==2)return mesh.stream().filter(q->q.material()!=RIVET_MODEL).toList();
@@ -294,6 +303,6 @@ public final class RivetVfx {
             }
             default->{}
         }
-        solids.addAll(g.result());return List.copyOf(solids);
+        solids.addAll(g.result());return solids.stream().map(RivetVfx::brighten).toList();
     }
 }

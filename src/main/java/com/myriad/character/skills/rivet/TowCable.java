@@ -7,6 +7,7 @@ import net.minecraft.world.phys.Vec3;
 
 /** Self-only pull; the destination is shortened to the nearest body-safe point in front of the wall. */
 public final class TowCable extends RivetSkill {
+    public static final double RANGE = 15;
     public TowCable(Definition definition) { super(definition); }
     @Override public boolean recastWhileMoving() { return true; }
     @Override public boolean recastWhileRooted() { return true; }
@@ -19,14 +20,14 @@ public final class TowCable extends RivetSkill {
     }
     private Vec3 destination(AbilityRuntime.Cast c) {
         var anchor = TacticalAnchor.anchor(c.player);
-        if (anchor == null || anchor.point().distanceToSqr(c.player.position()) > 100.0001) return null;
+        if (anchor == null || anchor.point().distanceToSqr(c.player.position()) > RANGE * RANGE + .0001) return null;
         var hit = TacticalAnchor.loadedBlocks(c.player.level()).clip(new ClipContext(c.player.getEyePosition(), anchor.point(),
                 ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, c.player));
         if (hit.getType() != HitResult.Type.MISS && hit.getLocation().distanceToSqr(anchor.point()) > .01) return null;
         // Align the actor's chest with the attachment rather than putting their feet into its wall.
         Vec3 delta = anchor.point().add(Vec3.atLowerCornerOf(anchor.normal().getUnitVec3i()).scale(.45))
                 .add(0, -c.player.getBbHeight() * .55, 0).subtract(c.player.position());
-        double length = Math.min(5, delta.length());
+        double length = delta.length();
         if (length < .1) return null;
         Vec3 travel = delta.normalize().scale(length);
         int pieces = Math.max(1, (int) Math.ceil(length / .2));
@@ -56,6 +57,7 @@ public final class TowCable extends RivetSkill {
                 }, false, false);
         c.data.setBuff("rivet_tow_cable_recast", AbilityRuntime.motionRemaining(c.player));
         c.whileActive(2400, age -> {
+            if (TacticalAnchor.anchor(c.player) != anchor && AbilityRuntime.moving(c.player)) c.stopMotion();
             if (c.memory().until <= c.now() || !AbilityRuntime.moving(c.player)) {
                 RivetVfx.cableEnd(c);
                 c.memory().until = 0;
