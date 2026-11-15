@@ -1,0 +1,1 @@
+PASS: MYRIAD namespace, packages, JSON resources and release JAR

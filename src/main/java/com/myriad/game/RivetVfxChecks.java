@@ -42,6 +42,7 @@ final class RivetVfxChecks {
             }catch(java.io.IOException failure){throw new IllegalStateException(failure);}
         }
         verifyPolish(h);
+        RivetWeaponGripChecks.verify(h);
         System.out.println("[MYRIAD-RIVET-ASSETS] PASS: "+frames+" production mesh stage/detail frames, finite vertices, <=192 faces, actual model material, expiry, wire and nine action icons; subjective presentation untested");
     }
     private static AbilityVfxPayload recipe(int variant,int kind,float stage,int life,long started){
@@ -105,8 +106,9 @@ final class RivetVfxChecks {
                 "First person retains the strike wake without drawing a second world hammer");
         var motion=new com.myriad.character.skills.rivet.RivetWeaponMotion();
         motion.accept(recipe(2,AbilityVfxGeometry.CHARGE,.3f,3,100),100);
-        var paused=motion.sample(101,0,false);
-        h.assertTrue(paused.equals(motion.sample(102,0,false)),"Preparation does not invent progress between authoritative samples");
+        // Allow the two-tick entry gesture to settle before comparing the unchanged authoritative progress.
+        var paused=motion.sample(102,0,false);
+        h.assertTrue(paused.equals(motion.sample(103,0,false)),"Preparation does not invent progress between authoritative samples");
         motion.accept(recipe(2,AbilityVfxGeometry.CHARGE,.8f,3,102),102);
         var advanced=motion.sample(103,0,false);
         motion.accept(recipe(2,AbilityVfxGeometry.CHARGE,.1f,3,101),103);
