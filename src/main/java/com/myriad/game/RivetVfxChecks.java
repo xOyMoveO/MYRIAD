@@ -9,6 +9,12 @@ import java.util.List;
 /** Production mesh/data validity only; no subjective visual or sound acceptance. */
 final class RivetVfxChecks {
     static void verify(GameTestHelper h) {
+        for(int i=0;i<=1000;i++){
+            float a=i/1000f,b=com.myriad.character.skills.rivet.RivetVfx.brightAlpha(a);
+            h.assertTrue(Float.isFinite(b)&&b>=a-1E-6&&b<=1,"Rivet alpha lift is finite, brighter and bounded");
+        }
+        h.assertTrue(com.myriad.character.skills.rivet.RivetVfx.brightAlpha(0)==0
+                &&com.myriad.character.skills.rivet.RivetVfx.brightAlpha(1)==1,"Lift preserves invisible and opaque endpoints");
         int frames=0;
         for(int branch=0;branch<8;branch++)for(int kind:List.of(AbilityVfxGeometry.WALL,AbilityVfxGeometry.CHARGE,
                 AbilityVfxGeometry.ARC,AbilityVfxGeometry.BEAM,AbilityVfxGeometry.SHIELD,AbilityVfxGeometry.SEAL,

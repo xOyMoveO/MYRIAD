@@ -76,16 +76,7 @@ public final class RivetPush {
             // including diagonal walls where the other axis could otherwise keep sliding along the wall.
             if (step.wall() && touchingSide) {
                 if (c.now() - start <= 8) {
-                    Vec3 contact = wallPoint(target, flat);
-                    boolean anchored = TacticalAnchor.consumeStrike(c.player, contact);
-                    c.damage(target, wallDamage, DamageCalc.Kind.PHYSICAL, false);
-                    LastWall last = LAST_WALL.get(target.getUUID());
-                    int duration = anchored ? anchorRootTicks : rootTicks;
-                    if (last != null && last.level() == target.level() && c.now() - last.time() < 60) duration = Math.max(1, duration / 2);
-                    LAST_WALL.put(target.getUUID(), new LastWall(target.level(), c.now()));
-                    root(c, target, duration);
-                    if (hammer) BreachRhythm.wallHit(c.player);
-                    RivetVfx.wall(c, contact, flat, anchored);
+                    wallHit(c, target, flat, wallDamage, rootTicks, anchorRootTicks, hammer);
                 }
                 finish.run(); return false;
             }
@@ -101,6 +92,66 @@ public final class RivetPush {
             if (c.now() <= start) return true;
             return update.test(age);
         }, finish);
+    }
+
+    /** One lease for the whole charge, not a new impulse, damage or control every tick. */
+    static AbilityRuntime.DashEscort escort(AbilityRuntime.Cast c, LivingEntity target, Vec3 direction,
+                                            float wallDamage, int rootTicks, int anchorRootTicks) {
+        if (!SkillTargets.enemy(c.player, target) || target.level() != c.player.level()) return null;
+        Vec3 flat = direction.multiply(1, 0, 1).normalize();
+        var lease = new Push(c, target, KnockbackBuffer.beginIndependent(target));
+        PUSHES.put(target.getUUID(), lease);
+        Vec3 separation = target.position().subtract(c.player.position());
+        return new AbilityRuntime.DashEscort() {
+            boolean finished;
+            boolean valid() {
+                return !finished && PUSHES.get(target.getUUID()) == lease && target.isAlive() && !target.isRemoved()
+                        && target.level() == c.player.level() && SkillTargets.enemy(c.player, target)
+                        && KnockbackBuffer.impulseToken(target) == lease.token()
+                        && target.position().subtract(c.player.position()).subtract(separation).lengthSqr() < 4;
+            }
+            @Override public Vec3 limit(Vec3 requested) {
+                if (!valid()) return null;
+                Step step = sweep(target, requested);
+                if (!step.valid()) return null;
+                double fraction = 1;
+                if (Math.abs(requested.x) > 1E-7) fraction = Math.min(fraction, Math.abs(step.velocity().x / requested.x));
+                if (Math.abs(requested.z) > 1E-7) fraction = Math.min(fraction, Math.abs(step.velocity().z / requested.z));
+                return requested.scale(Math.clamp(fraction, 0, 1) * EmergencyStrut.knockbackMultiplier(target));
+            }
+            @Override public void move(Vec3 movement) {
+                Step step = sweep(target, movement);
+                Vec3 v = step.velocity();
+                if (Math.abs(v.y) < .00001) v = new Vec3(v.x, target.getDeltaMovement().y, v.z);
+                send(target, v, target.position().add(v));
+            }
+            @Override public void finish(boolean contactAllowed) {
+                if (finished) return;
+                boolean live = valid();finished = true;
+                if (!PUSHES.remove(target.getUUID(), lease)) return;
+                // A final probe catches a wall at the exact distance boundary, never a floor/landing.
+                Step probe = live && contactAllowed ? sweep(target, flat.scale(.02)) : null;
+                if (probe != null && probe.valid() && probe.wall()
+                        && (Math.abs(flat.x) > .01 && Math.abs(probe.velocity().x) < .005
+                        || Math.abs(flat.z) > .01 && Math.abs(probe.velocity().z) < .005))
+                    wallHit(c, target, flat, wallDamage, rootTicks, anchorRootTicks, false);
+                if (KnockbackBuffer.impulseToken(target) == lease.token()) stop(target);
+            }
+        };
+    }
+
+    private static void wallHit(AbilityRuntime.Cast c, LivingEntity target, Vec3 flat, float damage,
+                                int rootTicks, int anchorRootTicks, boolean hammer) {
+        Vec3 contact = wallPoint(target, flat);
+        boolean anchored = TacticalAnchor.consumeStrike(c.player, contact);
+        c.damage(target, damage, DamageCalc.Kind.PHYSICAL, false);
+        LastWall last = LAST_WALL.get(target.getUUID());
+        int duration = anchored ? anchorRootTicks : rootTicks;
+        if (last != null && last.level() == target.level() && c.now() - last.time() < 60) duration = Math.max(1, duration / 2);
+        LAST_WALL.put(target.getUUID(), new LastWall(target.level(), c.now()));
+        root(c, target, duration);
+        if (hammer) BreachRhythm.wallHit(c.player);
+        RivetVfx.wall(c, contact, flat, anchored);
     }
 
     private static Vec3 wallPoint(LivingEntity target, Vec3 direction) {

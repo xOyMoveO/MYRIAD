@@ -25,10 +25,10 @@ import java.util.*;
 
 /** Actual selection, point spending, casts, damage, movement, shields and production packets. */
 final class RivetChecks {
-    private static final int CASES=71;
+    private static final int CASES=87;
     private static final class Fixture {
         ServerLevel level;ServerPlayer p,ally,other;BlockPos anchorBlock;LivingEntity target,rear;Vec3 origin;
-        int index;double initialZ,maxZ;float before,shieldAbsorbed,npcAbsorbed,firstBasicLoss,plainBasicLoss;int maxRoot,previousRoot,continuousRoot,maxContinuousRoot,continuousControl,maxContinuousControl;boolean sawRoot,sawBonus;final List<Integer> roots=new ArrayList<>();
+        int index;double initialZ,maxZ;Vec3 stoppedCarrier,stoppedTarget;float before,shieldAbsorbed,npcAbsorbed,firstBasicLoss,plainBasicLoss;int maxRoot,previousRoot,continuousRoot,maxContinuousRoot,continuousControl,maxContinuousControl;boolean sawRoot,sawBonus;final List<Integer> roots=new ArrayList<>();
         final Map<BlockPos,BlockState> blocks=new LinkedHashMap<>();
         final List<CustomPacketPayload> packets=new ArrayList<>();
         final Map<UUID,List<CustomPacketPayload>> mailboxes=new HashMap<>();
@@ -47,8 +47,8 @@ final class RivetChecks {
             GameManager.create();var manager=GameManager.get();manager.setServer(h.getLevel().getServer());
             for(int col=0;col<8;col++)CombatChunks.prepare(h.getLevel(),h.absolutePos(new BlockPos(-80+col*20,12,-30)));
             CombatChunks.prepare(h.getLevel(),h.absolutePos(new BlockPos(1024,12,-30)));
-            var prep=fixture(h,80);fixtures.add(prep);
-            var noWall=fixture(h,81);fixtures.add(noWall);
+            var prep=fixture(h,CASES+10);fixtures.add(prep);
+            var noWall=fixture(h,CASES+11);fixtures.add(noWall);
             @SuppressWarnings("unchecked") var factions=(Map<UUID,Faction>)field(GameManager.class,manager,"factions");
             factions.put(prep.p.getUUID(),Faction.XUANXIAO);factions.put(noWall.p.getUUID(),Faction.YOUMING);
             fountains.put(Faction.XUANXIAO,BlockPos.containing(prep.origin).below());
@@ -102,8 +102,8 @@ final class RivetChecks {
         // Ordinary formal selection is exercised above; per-scene initialization uses the same authoritative provider.
         PlayerDataProvider.chooseCharacter(f.p,CharacterType.byId("rivet"));d.setLevel(20);d.refundAllSkillPointsForTraining();
         int passive=i<8?(i&1):i==18||i==38||i==39||i==47||i==52||i==53||i==65||i==68||i==70?1:0;
-        int major=i<8?4+((i>>1)&1):Set.of(24,31,32,33,34,48,49,67,68,69).contains(i)?5:4;
-        int ultimate=i<8?6+((i>>2)&1):Set.of(20,35,36,37,38,39,50,51,53,55).contains(i)?7:6;
+        int major=i<8?4+((i>>1)&1):Set.of(24,31,32,33,34,48,49,67,68,69,75,76,77,78,86).contains(i)?5:4;
+        int ultimate=i<8?6+((i>>2)&1):Set.of(20,35,36,37,38,39,50,51,53,55,71,72,73,74,79,80,81,82,83,84,85).contains(i)?7:6;
         for(int nodeIndex:new int[]{passive,2,major,ultimate})PlayerDataProvider.upgradeSkill(f.p,node(nodeIndex).getId());
         h.assertTrue(d.skillLevel(node(passive).getId())==1&&d.skillLevel(node(major).getId())==1&&d.skillLevel(node(ultimate).getId())==1,"Normal point spending installs the selected branch combination "+i);
         int points=d.getSkillPoints();PlayerDataProvider.upgradeSkill(f.p,node(1-passive).getId());PlayerDataProvider.upgradeSkill(f.p,node(major==4?5:4).getId());PlayerDataProvider.upgradeSkill(f.p,node(ultimate==6?7:6).getId());
@@ -141,7 +141,7 @@ final class RivetChecks {
         if(i==64||i==66)clearWall(f,4);
         if(i>=64&&i<=66)ActionTime.apply(f.target.getUUID(),f.p.getUUID(),"rivet_push_slow",.25,f.level.getGameTime()+200);
         if(i==67)block(f,0,0,3,Blocks.STONE);
-        if(i==68){clearWall(f,4);f.target.setPos(f.origin.add(1.8,0,3.5));for(int z=1;z<=4;z++)for(int y=0;y<3;y++)block(f,3,y,z,Blocks.STONE);}
+        if(i==68){clearWall(f,4);f.target.setPos(f.origin.add(1.8,0,5));for(int z=1;z<=6;z++)for(int y=0;y<3;y++)block(f,3,y,z,Blocks.STONE);}
         if(i==26){f.p.setXRot(-90);SkillSystem.cast(f.p,1);h.assertTrue(TacticalAnchor.anchor(f.p)==null&&d.getMana()==700,"W rejects top/bottom and missing side faces without payment");f.p.setXRot(0);}
         if(i==27){wall(f,9,3);SkillSystem.cast(f.p,1);h.assertTrue(TacticalAnchor.anchor(f.p)==null&&d.getMana()==700,"W rejects a side wall beyond eight blocks without payment");}
         if(i==31||i==32){if(i==32){wall(f,7,3);SkillSystem.cast(f.p,1);wall(f,3,3);}float before=d.getMana();SkillSystem.cast(f.p,2);h.assertTrue(d.getMana()==before&&d.getCooldown(node(5).getId())==0,"Tow without a visible valid path leaves mana and cooldown unchanged: "+i);}
@@ -151,6 +151,24 @@ final class RivetChecks {
         if(i==45){f.other=player(h,f,f.origin.add(.5,0,0));PlayerDataProvider.chooseCharacter(f.other,CharacterType.byId("rivet"));var od=PlayerDataProvider.get(f.other);od.setFaction(Faction.XUANXIAO);od.setLevel(20);od.refundAllSkillPointsForTraining();for(int rank=0;rank<2;rank++)PlayerDataProvider.upgradeSkill(f.other,node(4).getId());factions.put(f.other.getUUID(),Faction.XUANXIAO);}
         if(i==39){f.other=player(h,f,f.origin);PlayerDataProvider.chooseCharacter(f.other,CharacterType.byId("rivet"));var od=PlayerDataProvider.get(f.other);od.setFaction(Faction.XUANXIAO);od.setLevel(20);od.refundAllSkillPointsForTraining();PlayerDataProvider.upgradeSkill(f.other,node(2).getId());factions.put(f.other.getUUID(),Faction.XUANXIAO);}
         if(i==52||i==53){f.target.discard();var pos=BlockPos.containing(f.origin.add(0,0,2));MonsterManager.spawn(f.level,pos,MonsterType.OBSIDIAN_TORTOISE_WARDEN);f.target=f.level.getEntitiesOfClass(Mob.class,new AABB(pos).inflate(2),MonsterManager::isMonster).getFirst();((Mob)f.target).setNoAi(true);f.target.setNoGravity(true);f.target.setPos(f.origin.add(0,0,2));h.assertTrue(com.myriad.character.skills.keheng.KehengTimeFields.managedNpcRate(f.target,f.level.getGameTime())==1,"A real managed large boss remains immune to local slow");}
+        if(i>=71){
+            clearWall(f,4);
+            if(i==71||Set.of(75,76,77,78,86).contains(i))f.target.setPos(f.origin.add(5,0,2));
+            if(i==73)wall(f,10,3);
+            if(Set.of(75,76,77,78,86).contains(i)){
+                int wallZ=i==76?17:15;wall(f,wallZ,3);f.p.setPos(f.origin.add(0,0,wallZ-7));
+                SkillSystem.cast(f.p,1);h.assertTrue(TacticalAnchor.anchor(f.p)!=null,"Long tow begins with a real W placed from within eight blocks: "+i);
+                f.anchorBlock=TacticalAnchor.anchor(f.p).block();f.p.setPos(f.origin);
+            }
+            if(i==82){
+                f.target.discard();f.other=player(h,f,f.origin.add(0,0,2.35));
+                PlayerDataProvider.chooseCharacter(f.other,CharacterType.byId("rivet"));
+                PlayerDataProvider.get(f.other).setFaction(Faction.YOUMING);factions.put(f.other.getUUID(),Faction.YOUMING);
+                FirstGroupGrowth.initialize(f.other,PlayerDataProvider.get(f.other));PlayerHealthSystem.fill(f.other);
+                f.level.players().remove(f.other);f.level.addNewPlayer(f.other);f.target=f.other;
+            }
+            if(i==84){f.p.setYRot(-45);f.target.setPos(f.origin.add(1.5,0,1.5));for(int x=-2;x<=12;x++)for(int y=0;y<3;y++)block(f,x,y,8,Blocks.STONE);}
+        }
         f.initialZ=f.target.getZ();f.maxZ=f.initialZ;f.before=hp(f.target);
     }
     private static void runScenes(GameTestHelper h,List<Fixture> fixtures,boolean[] done,Runnable cleanup) {
@@ -161,6 +179,7 @@ final class RivetChecks {
                 for(var f:fixtures){var p=f.p;var d=PlayerDataProvider.get(p);int i=f.index;p.setOnGround(true);if(tick%20==0&&i!=69)CombatChunks.hold(f.level,BlockPos.containing(f.origin));
                     // Keep mock player physics faithful to the actual server motion, without teleporting a dash.
                     if(AbilityRuntime.moving(p))p.move(MoverType.SELF,p.getDeltaMovement());
+                    if(i==82&&RivetPush.autonomousMovementBlocked(f.target))f.target.move(MoverType.SELF,f.target.getDeltaMovement());
                     if(tick==1){
                         if(i==69)p.setPos(Vec3.atBottomCenterOf(h.absolutePos(new BlockPos(-120,13,-30))));
                         if(i==65)h.assertTrue(TacticalAnchor.anchor(p)!=null,"The late-impact test begins with a valid live anchor");
@@ -168,7 +187,20 @@ final class RivetChecks {
                         if(Set.of(20,35,36,37,50,51,53,55).contains(i))SkillSystem.cast(p,3);
                         if(Set.of(22,24,33,34,44,45,46,48,49,54,68).contains(i))SkillSystem.cast(p,2);
                         if(i==23)SkillSystem.cast(p,3);
+                        if(Set.of(71,72,73,74,79,80,81,82,83,84,85).contains(i))SkillSystem.cast(p,3);
+                        if(Set.of(75,77,78,86).contains(i))SkillSystem.cast(p,2);
+                        if(i==76){float mana=d.getMana();SkillSystem.cast(p,2);h.assertTrue(d.getMana()==mana&&d.getCooldown(node(5).getId())==0,"A real anchor beyond fifteen blocks fails without payment");}
                     }
+                    if(tick==3&&i==77)wall(f,5,3);
+                    if(tick==3&&i==78)f.level.setBlockAndUpdate(f.anchorBlock,Blocks.AIR.defaultBlockState());
+                    if(tick==3&&i==86)SkillSystem.cast(p,2);
+                    if(tick==22&&i==74)d.setBuff("g1_stun",8);
+                    if(tick==22&&i==79)AbilityRuntime.clear(p);
+                    if(tick==22&&i==80)RivetPush.cleanse(f.target);
+                    if(tick==22&&i==81)KnockbackBuffer.beginIndependent(f.target);
+                    if(tick==22&&i==83)ActionTime.apply(p.getUUID(),p.getUUID(),"rivet_carry_slow",.5,f.level.getGameTime()+100);
+                    if(tick==22&&i==85){KnockbackBuffer.beginIndependent(p);p.setDeltaMovement(Vec3.ZERO);}
+                    if(tick==26&&Set.of(74,79,80,81,85).contains(i)){f.stoppedCarrier=p.position();f.stoppedTarget=f.target.position();}
                     if(tick==5&&i==0){AbilityRuntime.tick(p);PlayerDataProvider.syncToClient(p);var hud=f.mailboxes.get(p.getUUID()).stream().filter(NetworkSetup.PlayerDataPayload.class::isInstance).map(NetworkSetup.PlayerDataPayload.class::cast).reduce((a,b)->b).orElseThrow();h.assertTrue(hud.characterId().equals("rivet")&&!hud.training()&&hud.skillLevels().getOrDefault(node(3).getId(),0)==0&&hud.cdW()==160&&hud.buffs().getOrDefault("g1_rivet_anchor_active",0)==1,"Actual owner HUD reports free unranked W cooldown and the live anchor");var wire=new FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());try{NetworkSetup.PlayerDataPayload.STREAM_CODEC.encode(wire,hud);h.assertTrue(NetworkSetup.PlayerDataPayload.STREAM_CODEC.decode(wire).equals(hud),"Rivet owner state survives the production wire codec");}finally{wire.release();}for(var observer:new ServerPlayer[]{f.ally,f.other})h.assertTrue(f.mailboxes.get(observer.getUUID()).stream().filter(AbilityVfxPayload.class::isInstance).map(AbilityVfxPayload.class::cast).anyMatch(packet->packet.theme()==13&&packet.kind()==AbilityVfxGeometry.WALL),"A nearby ally and visible enemy both receive the actual anchor-state packet");}
                     if(tick==2&&i==67){float mana=d.getMana();SkillSystem.cast(p,2);h.assertTrue(d.getMana()==mana&&d.getCooldown(node(5).getId())==0,"Tow rejects a low body obstacle even when its eye ray is clear");}
                     if(tick==2&&i==28){for(int y=0;y<3;y++)block(f,0,y,4,Blocks.AIR);}
@@ -250,6 +282,20 @@ final class RivetChecks {
         });}
     }
     private static void verifyCombat(GameTestHelper h,Fixture f){int i=f.index;
+        if(i==71)near(h,f.p.getZ()-f.origin.z,10,"Empty charge covers exactly twice the former five-block range");
+        if(i==72||i==83){near(h,loss(f),170,"Sustained carry damages once, including a slowed carrier");near(h,f.p.getZ()-f.origin.z,10,"Carry retains the full ten-block budget");h.assertTrue(f.maxZ-f.initialZ>7&&!f.sawRoot,"The enemy is pushed through the remainder rather than released after two blocks");}
+        if(i==73){near(h,loss(f),215,"A wall reached late in the longer carry adds exactly one unchanged wall bonus");h.assertTrue(f.maxRoot==16&&f.target.getZ()<f.origin.z+10&&!AbilityRuntime.moving(f.p),"Late wall stops both bodies and grants ordinary R root");}
+        if(Set.of(74,79,80,81,85).contains(i)){
+            near(h,loss(f),170,"Interrupted carry has one contact hit and no invented wall reward: "+i);
+            h.assertTrue(!AbilityRuntime.moving(f.p)&&!RivetPush.autonomousMovementBlocked(f.target)
+                    &&f.p.position().distanceToSqr(f.stoppedCarrier)<.001&&f.target.position().distanceToSqr(f.stoppedTarget)<.001,
+                    "Control, lifecycle, cleanse or replacement impulse releases both bodies without a stale task: "+i);
+        }
+        if(i==75){h.assertTrue(f.p.getZ()>f.origin.z+13.5&&f.p.getZ()<f.origin.z+15&&f.level.noCollision(f.p,f.p.getBoundingBox()),"Fifteen-block tow reaches the real wall-front endpoint, not a five-block truncation");near(h,PlayerDataProvider.get(f.p).getMana(),620,"Long tow still charges W30 and E50 once");}
+        if(i==76)h.assertTrue(f.p.position().distanceToSqr(f.origin)<.001,"Out-of-range anchor never starts motion");
+        if(i==77||i==78||i==86)h.assertTrue(f.p.getZ()<f.origin.z+5&&!AbilityRuntime.moving(f.p),"Long tow stops on dynamic obstruction, destroyed anchor or recast: "+i);
+        if(i==82){h.assertTrue(loss(f)>0&&f.target.getZ()-f.initialZ>7&&!RivetPush.autonomousMovementBlocked(f.target),"Real player passenger receives sustained motion and is released at the end: damage="+loss(f)+", travel="+(f.target.getZ()-f.initialZ)+", active="+RivetPush.autonomousMovementBlocked(f.target));h.assertTrue(f.mailboxes.get(f.other.getUUID()).stream().anyMatch(AbilityMotionPayload.class::isInstance),"Actual passenger receives bounded motion packets");}
+        if(i==84){near(h,loss(f),215,"Diagonal carry hits the real wall once");h.assertTrue(f.sawRoot&&f.level.noCollision(f.target,f.target.getBoundingBox())&&f.level.noCollision(f.p,f.p.getBoundingBox()),"Diagonal carried bodies remain outside wall collision shapes");}
         if(i==8) {near(h,loss(f),90,"Flat ground Q is 90 direct physical damage without wall bonus");h.assertTrue(f.maxZ-f.initialZ>1.8&&!f.sawRoot,"Flat push covers approximately two blocks with no root");}
         if(i==9||i==10){near(h,loss(f),90,"A passable slab/stair is not a wall: "+i);h.assertTrue(!f.sawRoot&&f.maxZ-f.initialZ>1.5,"A passable slab/stair allows forward movement: "+i);}
         if(i==11||i==12||i==13){near(h,loss(f),125,"A real pillar/corner/tunnel side collision grants one wall bonus: "+i);h.assertTrue(f.maxRoot==10,"Ordinary Q wall root remains exactly half a second: "+i);}
@@ -264,14 +310,14 @@ final class RivetChecks {
         if(i==23)h.assertTrue(ModShieldSystem.sourceValue(f.p,"rivet_hold_protocol/"+f.p.getUUID())==0,"Hold shield expires with its real six-second zone");
         if(i==28)h.assertTrue(TacticalAnchor.anchor(f.p)==null,"Breaking the attached block deactivates W");
         if(i==33)h.assertTrue(f.p.getZ()<f.origin.z+2,"A dynamic obstacle halts tow before the wall");
-        if(i==34)h.assertTrue(f.p.getZ()<f.origin.z+4,"Early tow release stops short of the full five blocks");
+        if(i==34)h.assertTrue(f.p.getZ()<f.origin.z+4,"Early tow release stops short of the actual anchor endpoint");
         if(i==35)h.assertTrue(loss(f)==0&&f.target.getZ()==f.initialZ,"A target sidestepping during the visible R2 windup escapes damage and push");
-        if(i==36)h.assertTrue(loss(f)>0&&hp(f.rear)==JiarenManager.MAX_HP,"R2 stops on its first enemy and protects the rear target");
+        if(i==36)h.assertTrue(loss(f)>0&&f.maxZ-f.initialZ>7&&hp(f.rear)==JiarenManager.MAX_HP,"R2 carries only its first enemy and does not repeat contact damage on the rear target");
         if(i==37)h.assertTrue(loss(f)==0&&f.p.getZ()<f.origin.z+1,"R2 caster wall collision prevents hitting a target beyond the obstruction");
         if(i==38)h.assertTrue(loss(f)>=340&&f.roots.contains(16)&&f.roots.contains(8),"Q into R2 retains actual damage and does not suppress the second push");
         if(i==39)h.assertTrue(loss(f)>=250,"Two Rivets share the target root record while both still deal their wall hits");
         if(i==50||i==51)h.assertTrue(loss(f)==0,"Stun/silence cancels a not-yet-committed R2 charge: "+i);
-        if(i==68){near(h,loss(f),125,"A real self-pull followed from its actual endpoint by an aimed Q hits and wall-collides");h.assertTrue(f.p.position().subtract(f.origin).horizontalDistance()>4.8&&f.sawRoot,"Tow-to-Q success includes actual completed movement and target control");}
+        if(i==68){near(h,loss(f),125,"A real self-pull followed from its actual endpoint by an aimed Q hits and wall-collides");h.assertTrue(f.p.position().subtract(f.origin).horizontalDistance()>6&&f.sawRoot,"Tow-to-Q success includes the full anchor distance and target control");}
         if(i==64||i==66){near(h,loss(f),90,"Slowed flat Q retains direct damage without invented wall bonus: "+i);h.assertTrue(f.maxZ-f.initialZ>1.85&&!f.sawRoot,"Slowed or rate-changing push preserves completed work and its two-block budget: "+i);}
         if(i==65){near(h,loss(f),90,"A late slowed wall contact awards no damage outside the eight-real-tick window");h.assertTrue(f.maxZ-f.initialZ>1.7&&!f.sawRoot&&TacticalAnchor.recovery(f.p)==0&&PlayerDataProvider.get(f.p).getBuff("g1_rivet_rhythm")==0,"Late slowed wall contact only stops motion, without anchor, root or P2 rewards");}
         if(i==52||i==53)h.assertTrue(f.maxZ>f.initialZ&&f.sawRoot&&hp(f.target)<f.before,"A real managed large boss accepts push, wall damage and root: "+i);
@@ -280,8 +326,8 @@ final class RivetChecks {
     private static AbilitySkill node(int i){return FirstGroupSkills.node("rivet",i);}
     private static void rank(Fixture f,int index,int rank){var d=PlayerDataProvider.get(f.p);for(int r=d.skillLevel(node(index).getId());r<rank;r++)PlayerDataProvider.upgradeSkill(f.p,node(index).getId());}
     private static Fixture fixture(GameTestHelper h,int i){var f=new Fixture();f.index=i;f.level=h.getLevel();var at=h.absolutePos(i==69?new BlockPos(1024,12,-30):new BlockPos(-80+(i%8)*20,12+(i/8)*7,-30));
-        f.origin=Vec3.atBottomCenterOf(at.above());for(int x=-7;x<=7;x++)for(int z=-4;z<=11;z++)for(int y=-1;y<4;y++)block(f,x,y,z,y==-1?Blocks.STONE:Blocks.AIR);
-        f.p=player(h,f,f.origin);f.p.setYRot(0);f.p.setXRot(0);if(i<80)f.target=dummy(f,f.origin.add(0,0,2.35));return f;}
+        f.origin=Vec3.atBottomCenterOf(at.above());for(int x=-7;x<=7;x++)for(int z=-4;z<=18;z++)for(int y=-1;y<4;y++)block(f,x,y,z,y==-1?Blocks.STONE:Blocks.AIR);
+        f.p=player(h,f,f.origin);f.p.setYRot(0);f.p.setXRot(0);if(i<CASES)f.target=dummy(f,f.origin.add(0,0,2.35));return f;}
     private static ServerPlayer player(GameTestHelper h,Fixture f,Vec3 at){var p=(ServerPlayer)h.makeMockServerPlayer(GameType.SURVIVAL);var c=new net.minecraft.network.Connection(net.minecraft.network.protocol.PacketFlow.SERVERBOUND);new io.netty.channel.embedded.EmbeddedChannel(c);
         p.connection=new net.minecraft.server.network.ServerGamePacketListenerImpl(f.level.getServer(),c,p,net.minecraft.server.network.CommonListenerCookie.createInitial(p.getGameProfile(),false)){
             @Override public void send(net.minecraft.network.protocol.Packet<?> packet){if(packet instanceof ClientboundCustomPayloadPacket custom){f.packets.add(custom.payload());f.mailboxes.computeIfAbsent(p.getUUID(),ignored->new ArrayList<>()).add(custom.payload());}}};

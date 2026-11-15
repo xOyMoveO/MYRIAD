@@ -38,6 +38,12 @@ public final class AbilityRuntime {
     public static boolean sourceDirect(){var s=SOURCE.get();return s==null||s.direct;}
     public static int sourceCast(){var s=SOURCE.get();return s==null?0:s.cast;}
     private interface Task {boolean tick(long now);default void cancel(){}}
+    /** Skill-owned passenger physics; null limits interrupt, zero limits stop at real contact. */
+    public interface DashEscort {
+        Vec3 limit(Vec3 step);
+        void move(Vec3 step);
+        void finish(boolean contactAllowed);
+    }
     private static final class Owner {
         final ServerPlayer player;final String role;final ServerLevel level;
         final List<Task> tasks=new ArrayList<>();final Map<String,Memory> memory=new HashMap<>();
@@ -575,6 +581,69 @@ public final class AbilityRuntime {
                 public void cancel(){if(token==owner.motionToken)finish();}
             }
             var task=new FirstDash();if(task.step(ActionTime.multiplier(player.getUUID(),start)))owner.tasks.add(task);
+        }
+        /** Captures only the first enemy, then advances both bodies through independently checked sweeps. */
+        public void actionDashCarrying(Vec3 delta,int ticks,double radius,Function<LivingEntity,DashEscort> capture,Runnable end){
+            if(ticks<=0||delta.lengthSqr()<.0025||data.getBuff("g1_root")>0||data.getBuff("g1_stun")>0)return;
+            final int token=++owner.motionToken;final long start=now(),impulse=KnockbackBuffer.impulseToken(player);
+            final Vec3 direction=delta.normalize();owner.motionUntil=start+ticks+4;
+            final class CarryDash implements Task {
+                Vec3 last=player.position();double moved,age;long previous=start;boolean ended,captured;DashEscort escort;
+                LivingEntity first(Vec3 from,Vec3 to){
+                    Vec3 a=from.add(0,.9,0),b=to.add(0,.9,0);
+                    return DashHitbox.targets(player,from,to,radius,Set.of()).stream().filter(t->SkillTargets.enemy(player,t))
+                        .min(Comparator.comparingDouble(t->contact(t,a,b).distanceToSqr(a))).orElse(null);
+                }
+                Vec3 contact(LivingEntity target,Vec3 a,Vec3 b){
+                    var box=target.getBoundingBox().inflate(radius+.25,.5,radius+.25);
+                    return box.contains(a)?a:box.clip(a,b).orElse(b);
+                }
+                boolean attach(LivingEntity target){captured=true;escort=capture.apply(target);return escort!=null;}
+                public boolean tick(long time){
+                    if(ended)return false;
+                    if(token!=owner.motionToken){finish(false,true);return false;}
+                    if(time<=previous)return true;previous=time;
+                    if(KnockbackBuffer.impulseToken(player)!=impulse){finish(false,true);return false;}
+                    Vec3 pos=player.position();moved+=Math.max(0,pos.subtract(last).dot(direction));
+                    var touched=captured?null:first(last,pos);AbilityVisuals.motionTrail(Cast.this,last,pos);last=pos;
+                    if(touched!=null&&!attach(touched)){finish(false,false);return false;}
+                    if(data.getBuff("g1_root")>0||data.getBuff("g1_stun")>0){finish(false,false);return false;}
+                    double rate=ActionTime.multiplier(player.getUUID(),time);age+=rate;
+                    if(moved>=delta.length()-.04||age>=ticks+4){finish(true,false);return false;}
+                    owner.motionUntil=time+Math.max(2,(int)Math.ceil((ticks+4-age)/rate));return step(rate);
+                }
+                boolean step(double rate){
+                    Vec3 pos=player.position(),velocity=direction.scale(Math.min(delta.length()/ticks*rate,Math.max(0,delta.length()-moved)));
+                    if(!captured){
+                        var target=first(pos,pos.add(velocity));
+                        if(target!=null){
+                            Vec3 a=pos.add(0,.9,0);double distance=a.distanceTo(contact(target,a,a.add(velocity)));
+                            if(distance<1E-5){if(!attach(target)){finish(false,false);return false;}}
+                            else velocity=direction.scale(Math.min(velocity.length(),distance));
+                        }
+                    }
+                    if(!AbilityTargeting.clearSweep(player,velocity)){finish(true,false);return false;}
+                    if(escort!=null){
+                        Vec3 limited=escort.limit(velocity);
+                        if(limited==null){finish(false,false);return false;}
+                        if(!AbilityTargeting.finite(limited)||limited.dot(direction)<-.0001||limited.lengthSqr()>velocity.lengthSqr()+1E-7){finish(false,false);return false;}
+                        if(limited.lengthSqr()<1E-10){finish(true,false);return false;}
+                        if(!AbilityTargeting.clearSweep(player,limited)){finish(true,false);return false;}
+                        velocity=limited;escort.move(velocity);
+                    }
+                    sendMotion(velocity,pos.add(velocity));return true;
+                }
+                void finish(boolean allowed,boolean preserveMotion){
+                    if(ended)return;ended=true;
+                    if(escort!=null)escort.finish(allowed);
+                    if(token==owner.motionToken){owner.motionUntil=0;
+                        if(!preserveMotion){player.setDeltaMovement(Vec3.ZERO);player.hurtMarked=true;player.resetFallDistance();}
+                        Vec3 v=player.getDeltaMovement();PacketDistributor.sendToPlayer(player,new NetworkSetup.DashPayload((float)v.x,(float)v.y,(float)v.z,-1));}
+                    end.run();
+                }
+                public void cancel(){finish(false,token!=owner.motionToken);}
+            }
+            var task=new CarryDash();if(task.step(ActionTime.multiplier(player.getUUID(),start)))owner.tasks.add(task);
         }
         public void actionDash(Vec3 delta,int ticks,double radius,BiConsumer<LivingEntity,Boolean> impact,Runnable end,boolean turn,boolean stopAtHero){
             dash(delta,ticks,radius,impact,end,turn,stopAtHero,true);
