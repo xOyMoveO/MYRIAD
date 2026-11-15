@@ -1,0 +1,96 @@
+{
+  "jar": "build/libs/myriad-0.1.0.jar",
+  "size": 27062934,
+  "sha256": "64723589b55f0d7117503bdbdefdca3809f6016e8a5a779bcde94a6e34136fd9",
+  "crcError": null,
+  "entries": 1637,
+  "rivetResources": [
+    {
+      "path": "assets/myriad/vfx/rivet_models_mesh.json",
+      "bytes": 46331,
+      "match": true
+    },
+    {
+      "path": "assets/myriad/items/rivet_hammer.json",
+      "bytes": 92,
+      "match": true
+    },
+    {
+      "path": "assets/myriad/models/item/rivet_hammer.json",
+      "bytes": 28155,
+      "match": true
+    },
+    {
+      "path": "assets/myriad/textures/item/rivet_metal.png",
+      "bytes": 3080,
+      "match": true
+    },
+    {
+      "path": "assets/myriad/textures/particle/vfx/rivet_hd_friction.png",
+      "bytes": 6287,
+      "match": true
+    },
+    {
+      "path": "assets/myriad/textures/particle/vfx/rivet_hd_compression.png",
+      "bytes": 27440,
+      "match": true
+    },
+    {
+      "path": "assets/myriad/textures/particle/vfx/rivet_metal.png",
+      "bytes": 3080,
+      "match": true
+    },
+    {
+      "path": "assets/myriad/textures/gui/sprites/skill_icons/generated/rivet/rivet_breach_rhythm.png",
+      "bytes": 9741,
+      "match": true
+    },
+    {
+      "path": "assets/myriad/textures/gui/sprites/skill_icons/generated/rivet/rivet_emergency_strut.png",
+      "bytes": 9658,
+      "match": true
+    },
+    {
+      "path": "assets/myriad/textures/gui/sprites/skill_icons/generated/rivet/rivet_tow_cable.png",
+      "bytes": 9695,
+      "match": true
+    },
+    {
+      "path": "assets/myriad/textures/gui/sprites/skill_icons/generated/rivet/rivet_impact_hammer.png",
+      "bytes": 9741,
+      "match": true
+    },
+    {
+      "path": "assets/myriad/textures/gui/sprites/skill_icons/generated/rivet/rivet_hold_protocol.png",
+      "bytes": 9796,
+      "match": true
+    },
+    {
+      "path": "assets/myriad/textures/gui/sprites/skill_icons/generated/rivet/rivet_tow_cable_2.png",
+      "bytes": 9520,
+      "match": true
+    },
+    {
+      "path": "assets/myriad/textures/gui/sprites/skill_icons/generated/rivet/rivet_station_armor.png",
+      "bytes": 9808,
+      "match": true
+    },
+    {
+      "path": "assets/myriad/textures/gui/sprites/skill_icons/generated/rivet/rivet_breach_charge.png",
+      "bytes": 10171,
+      "match": true
+    },
+    {
+      "path": "assets/myriad/textures/gui/sprites/skill_icons/generated/rivet/rivet_tactical_anchor.png",
+      "bytes": 9680,
+      "match": true
+    },
+    {
+      "path": "data/myriad/role_rework/rivet.json",
+      "bytes": 4012,
+      "match": true
+    }
+  ],
+  "forbiddenDevelopmentEntries": [],
+  "pathNotation": "jar及rivetResources.path为仓库相对路径；完整本机原始审计保留于本地证据目录。"
+}

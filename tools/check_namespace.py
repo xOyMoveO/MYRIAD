@@ -37,7 +37,7 @@ if args.jar:
         names = jar.namelist()
         for required in ("com/myriad/Myriad.class", "com/myriad/MyriadClient.class",
                          "myriad.mixins.json", "assets/myriad/lang/zh_cn.json",
-                         "data/myriad/role_rework/shuo.json"):
+                         "data/myriad/role_rework/shuo.json", "data/myriad/role_rework/rivet.json"):
             if required not in names:
                 errors.append("Missing JAR entry: " + required)
         for name in names:
@@ -50,7 +50,8 @@ if args.jar:
         if 'modId="myriad"' not in metadata:
             errors.append("Wrong JAR modId")
         if any("data/myriad/test_instance/" + n + ".json" in names
-               for n in ("first_group", "combat_regression")):
+               for n in ("first_group", "combat_regression", "keheng", "yike", "rivet",
+                         "roster_delivery", "world_time", "hero_action_time")):
             errors.append("Development-only test instance in release JAR")
 if errors:
     raise SystemExit("\n".join(errors))

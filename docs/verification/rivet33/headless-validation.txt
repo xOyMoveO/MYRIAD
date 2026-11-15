@@ -1,0 +1,20 @@
+铆钉 PR #33 最终无图形验证关键输出摘录
+
+这是2026-11-15第三轮最终日志的逐行摘录，不是完整日志。
+完整原始日志保留在本地 /private/tmp/myriad-pr33-evidence/final-headless-validation-3.log。
+所用临时工作区和缓存路径在复现命令中写为占位符；正式复现入口及共享资源预检见同目录 headless.init.gradle 与 verify_shared_assets.py。
+
+> Task :compileJava
+> Task :build
+> Task :runRivetTestServer
+[MYRIAD-RIVET-POLISH] PASS: 84 extra real contact stage/detail frames; four wall-normal attachments, real LOD, distinct wall/anchor stages, duplicate-solid suppression and authoritative pose lifecycle; no graphical acceptance
+[MYRIAD-RIVET-ASSETS] PASS: 1024 production mesh stage/detail frames, finite vertices, <=192 faces, actual model material, expiry, wire and nine action icons; subjective presentation untested
+[MYRIAD-RIVET32] PASS: 71 real-input scenes + 2 formal draft/preparation players; combinations=8, Q-wall=8/8; actual NPC shield absorption=150.0; tow-then-Q hits=1/1; maximum observed consecutive rooted ticks=20; maximum consecutive forced-movement-or-root ticks=24; visual/audio/feel acceptance excluded
+[14:11:05] [Server thread/INFO] [minecraft/GameTestServer]: All 1 required tests passed :)
+> Task :runFirstGroupTestServer
+[MYRIAD-RIVET-POLISH] PASS: 84 extra real contact stage/detail frames; four wall-normal attachments, real LOD, distinct wall/anchor stages, duplicate-solid suppression and authoritative pose lifecycle; no graphical acceptance
+[MYRIAD-RIVET-ASSETS] PASS: 1024 production mesh stage/detail frames, finite vertices, <=192 faces, actual model material, expiry, wire and nine action icons; subjective presentation untested
+[MYRIAD-G1-G2] PASS: 112 independent modules across 14 heroes, caps, alternatives, budgets, growth, economy, persistence, cancel
+[14:11:15] [Server thread/INFO] [minecraft/GameTestServer]: All 1 required tests passed :)
+BUILD SUCCESSFUL in 24s
+9 actionable tasks: 4 executed, 5 up-to-date

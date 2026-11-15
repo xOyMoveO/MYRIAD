@@ -139,6 +139,16 @@ neoForge {
             logLevel = org.slf4j.event.Level.INFO
         }
 
+        rivetTestServer {
+            type = "gameTestServer"
+            gameDirectory = project.file('run-rivet-test')
+            systemProperty 'myriad.combatTests', 'true'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            programArguments.addAll '--tests', 'myriad:rivet', '--universe', 'myriad-rivet32-new-world',
+                    '--report', project.file('build/reports/rivet-gametest.xml').absolutePath
+            logLevel = org.slf4j.event.Level.INFO
+        }
+
         rosterDeliveryTestServer {
             type = "gameTestServer"
             gameDirectory = project.file('run-roster-delivery-test')
@@ -185,7 +195,7 @@ neoForge {
 }
 
 // GameTest's XML reporter does not create its parent directory after a clean build.
-tasks.matching { it.name in ['runFirstGroupTestServer', 'runArenaTestServer', 'runKehengTestServer', 'runYikeTestServer', 'runRosterDeliveryTestServer', 'runWorldTimeTestServer', 'runHeroActionTimeTestServer'] }.configureEach {
+tasks.matching { it.name in ['runRivetTestServer', 'runFirstGroupTestServer', 'runArenaTestServer', 'runKehengTestServer', 'runYikeTestServer', 'runRosterDeliveryTestServer', 'runWorldTimeTestServer', 'runHeroActionTimeTestServer'] }.configureEach {
     def reportDirectory = layout.buildDirectory.dir('reports')
     doFirst { reportDirectory.get().asFile.mkdirs() }
 }
@@ -199,6 +209,7 @@ tasks.named('jar') {
     exclude 'data/myriad/test_instance/keheng.json'
     exclude 'data/myriad/test_instance/world_time.json'
     exclude 'data/myriad/test_instance/yike.json'
+    exclude 'data/myriad/test_instance/rivet.json'
     exclude 'data/myriad/test_instance/roster_delivery.json'
     exclude 'data/myriad/test_instance/hero_action_time.json'
     exclude 'data/myriad/structure/combat_test_empty.nbt'

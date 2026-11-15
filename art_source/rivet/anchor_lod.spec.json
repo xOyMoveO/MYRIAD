@@ -1,0 +1,1220 @@
+{
+  "meta": {
+    "name": "rivet_anchor_lod",
+    "schema_version": 1,
+    "description": "Approved rivet-model-reference-v1.png: exposed ram cage, broad striking die, four diagonal wall clamps, true square tow aperture."
+  },
+  "target": "item",
+  "atlas": {
+    "width": 256,
+    "height": 256,
+    "regions": [
+      {
+        "id": "frame",
+        "rect": [
+          0,
+          0,
+          64,
+          64
+        ],
+        "fill": "#2e363d",
+        "palette": [
+          "#1b232c",
+          "#56656c"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "steel",
+        "rect": [
+          64,
+          0,
+          64,
+          64
+        ],
+        "fill": "#6e797d",
+        "palette": [
+          "#444f57",
+          "#a3afb0"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "strike",
+        "rect": [
+          128,
+          0,
+          64,
+          64
+        ],
+        "fill": "#a6b4b1",
+        "palette": [
+          "#586d72",
+          "#d2dbd3"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "yellow",
+        "rect": [
+          192,
+          0,
+          64,
+          64
+        ],
+        "fill": "#cda14b",
+        "palette": [
+          "#7c623b",
+          "#f0cf78"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "rubber",
+        "rect": [
+          0,
+          64,
+          64,
+          64
+        ],
+        "fill": "#23353b",
+        "palette": [
+          "#14252d",
+          "#4a6065"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "vent",
+        "rect": [
+          64,
+          64,
+          64,
+          64
+        ],
+        "fill": "#1c2e36",
+        "palette": [
+          "#10212a",
+          "#51676c"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "cyan",
+        "rect": [
+          128,
+          64,
+          64,
+          64
+        ],
+        "fill": "#51b8c5",
+        "palette": [
+          "#247c8d",
+          "#bdede7"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "hazard",
+        "rect": [
+          192,
+          64,
+          64,
+          64
+        ],
+        "fill": "#cda14b",
+        "palette": [
+          "#273b44",
+          "#edd289"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "fastener",
+        "rect": [
+          0,
+          128,
+          64,
+          64
+        ],
+        "fill": "#728b91",
+        "palette": [
+          "#304951",
+          "#b1c7c7"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "piston",
+        "rect": [
+          64,
+          128,
+          64,
+          64
+        ],
+        "fill": "#bac6c3",
+        "palette": [
+          "#5a6f77",
+          "#e1e7dc"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "panel",
+        "rect": [
+          128,
+          128,
+          64,
+          64
+        ],
+        "fill": "#3e4a50",
+        "palette": [
+          "#222f38",
+          "#8c9a9d"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "recess",
+        "rect": [
+          192,
+          128,
+          64,
+          64
+        ],
+        "fill": "#152831",
+        "palette": [
+          "#0d1b23",
+          "#3a535e"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "brass",
+        "rect": [
+          0,
+          192,
+          64,
+          64
+        ],
+        "fill": "#9c7844",
+        "palette": [
+          "#5e513b",
+          "#d9b66b"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "white",
+        "rect": [
+          64,
+          192,
+          64,
+          64
+        ],
+        "fill": "#9caeae",
+        "palette": [
+          "#667b83",
+          "#d2ded5"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "amber",
+        "rect": [
+          128,
+          192,
+          64,
+          64
+        ],
+        "fill": "#ddac4d",
+        "palette": [
+          "#9d6934",
+          "#f5dfa1"
+        ],
+        "noise": 0
+      },
+      {
+        "id": "plate",
+        "rect": [
+          192,
+          192,
+          64,
+          64
+        ],
+        "fill": "#454f57",
+        "palette": [
+          "#263139",
+          "#87979b"
+        ],
+        "noise": 0
+      }
+    ]
+  },
+  "parts": [
+    {
+      "id": "backplate",
+      "size": [
+        12,
+        1,
+        12
+      ],
+      "pos": [
+        -6,
+        0,
+        -6
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            194,
+            194,
+            254,
+            254
+          ]
+        },
+        "south": {
+          "uv": [
+            194,
+            194,
+            254,
+            254
+          ]
+        },
+        "east": {
+          "uv": [
+            194,
+            194,
+            254,
+            254
+          ]
+        },
+        "west": {
+          "uv": [
+            194,
+            194,
+            254,
+            254
+          ]
+        },
+        "up": {
+          "uv": [
+            2,
+            130,
+            62,
+            190
+          ]
+        },
+        "down": {
+          "uv": [
+            194,
+            194,
+            254,
+            254
+          ]
+        }
+      }
+    },
+    {
+      "id": "load_plate",
+      "size": [
+        9,
+        2,
+        9
+      ],
+      "pos": [
+        -4.5,
+        1,
+        -4.5
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            66,
+            66,
+            126,
+            126
+          ]
+        },
+        "south": {
+          "uv": [
+            66,
+            66,
+            126,
+            126
+          ]
+        },
+        "east": {
+          "uv": [
+            66,
+            66,
+            126,
+            126
+          ]
+        },
+        "west": {
+          "uv": [
+            66,
+            66,
+            126,
+            126
+          ]
+        },
+        "up": {
+          "uv": [
+            194,
+            194,
+            254,
+            254
+          ]
+        },
+        "down": {
+          "uv": [
+            2,
+            2,
+            62,
+            62
+          ]
+        }
+      },
+      "parent": "backplate"
+    },
+    {
+      "id": "socket_core",
+      "size": [
+        7,
+        2,
+        7
+      ],
+      "pos": [
+        -3.5,
+        3,
+        -3.5
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            2,
+            2,
+            62,
+            62
+          ]
+        },
+        "south": {
+          "uv": [
+            2,
+            2,
+            62,
+            62
+          ]
+        },
+        "east": {
+          "uv": [
+            2,
+            2,
+            62,
+            62
+          ]
+        },
+        "west": {
+          "uv": [
+            2,
+            2,
+            62,
+            62
+          ]
+        },
+        "up": {
+          "uv": [
+            130,
+            130,
+            190,
+            190
+          ]
+        },
+        "down": {
+          "uv": [
+            2,
+            2,
+            62,
+            62
+          ]
+        }
+      },
+      "parent": "load_plate"
+    },
+    {
+      "id": "tow_eye_left",
+      "size": [
+        1.5,
+        3.5,
+        6
+      ],
+      "pos": [
+        -3,
+        5,
+        -3
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            66,
+            2,
+            126,
+            62
+          ]
+        },
+        "south": {
+          "uv": [
+            66,
+            2,
+            126,
+            62
+          ]
+        },
+        "east": {
+          "uv": [
+            66,
+            2,
+            126,
+            62
+          ]
+        },
+        "west": {
+          "uv": [
+            66,
+            2,
+            126,
+            62
+          ]
+        },
+        "up": {
+          "uv": [
+            66,
+            194,
+            126,
+            254
+          ]
+        },
+        "down": {
+          "uv": [
+            66,
+            2,
+            126,
+            62
+          ]
+        }
+      },
+      "parent": "socket_core"
+    },
+    {
+      "id": "tow_eye_right",
+      "size": [
+        1.5,
+        3.5,
+        6
+      ],
+      "pos": [
+        1.5,
+        5,
+        -3
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            66,
+            2,
+            126,
+            62
+          ]
+        },
+        "south": {
+          "uv": [
+            66,
+            2,
+            126,
+            62
+          ]
+        },
+        "east": {
+          "uv": [
+            66,
+            2,
+            126,
+            62
+          ]
+        },
+        "west": {
+          "uv": [
+            66,
+            2,
+            126,
+            62
+          ]
+        },
+        "up": {
+          "uv": [
+            66,
+            194,
+            126,
+            254
+          ]
+        },
+        "down": {
+          "uv": [
+            66,
+            2,
+            126,
+            62
+          ]
+        }
+      },
+      "parent": "socket_core"
+    },
+    {
+      "id": "tow_eye_north",
+      "size": [
+        3,
+        3.5,
+        1.5
+      ],
+      "pos": [
+        -1.5,
+        5,
+        -3
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            66,
+            2,
+            126,
+            62
+          ]
+        },
+        "south": {
+          "uv": [
+            66,
+            2,
+            126,
+            62
+          ]
+        },
+        "east": {
+          "uv": [
+            66,
+            2,
+            126,
+            62
+          ]
+        },
+        "west": {
+          "uv": [
+            66,
+            2,
+            126,
+            62
+          ]
+        },
+        "up": {
+          "uv": [
+            66,
+            194,
+            126,
+            254
+          ]
+        },
+        "down": {
+          "uv": [
+            66,
+            2,
+            126,
+            62
+          ]
+        }
+      },
+      "parent": "socket_core"
+    },
+    {
+      "id": "tow_eye_south",
+      "size": [
+        3,
+        3.5,
+        1.5
+      ],
+      "pos": [
+        -1.5,
+        5,
+        1.5
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            66,
+            2,
+            126,
+            62
+          ]
+        },
+        "south": {
+          "uv": [
+            66,
+            2,
+            126,
+            62
+          ]
+        },
+        "east": {
+          "uv": [
+            66,
+            2,
+            126,
+            62
+          ]
+        },
+        "west": {
+          "uv": [
+            66,
+            2,
+            126,
+            62
+          ]
+        },
+        "up": {
+          "uv": [
+            66,
+            194,
+            126,
+            254
+          ]
+        },
+        "down": {
+          "uv": [
+            66,
+            2,
+            126,
+            62
+          ]
+        }
+      },
+      "parent": "socket_core"
+    },
+    {
+      "id": "clamp_nw",
+      "size": [
+        3,
+        2,
+        3
+      ],
+      "pos": [
+        -6.0,
+        1,
+        -6.0
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            194,
+            2,
+            254,
+            62
+          ]
+        },
+        "south": {
+          "uv": [
+            194,
+            2,
+            254,
+            62
+          ]
+        },
+        "east": {
+          "uv": [
+            194,
+            2,
+            254,
+            62
+          ]
+        },
+        "west": {
+          "uv": [
+            194,
+            2,
+            254,
+            62
+          ]
+        },
+        "up": {
+          "uv": [
+            194,
+            2,
+            254,
+            62
+          ]
+        },
+        "down": {
+          "uv": [
+            194,
+            2,
+            254,
+            62
+          ]
+        }
+      },
+      "parent": "backplate",
+      "rot": [
+        0,
+        45,
+        0
+      ],
+      "pivot": [
+        -4.5,
+        2,
+        -4.5
+      ]
+    },
+    {
+      "id": "clamp_ne",
+      "size": [
+        3,
+        2,
+        3
+      ],
+      "pos": [
+        3.0,
+        1,
+        -6.0
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            194,
+            2,
+            254,
+            62
+          ]
+        },
+        "south": {
+          "uv": [
+            194,
+            2,
+            254,
+            62
+          ]
+        },
+        "east": {
+          "uv": [
+            194,
+            2,
+            254,
+            62
+          ]
+        },
+        "west": {
+          "uv": [
+            194,
+            2,
+            254,
+            62
+          ]
+        },
+        "up": {
+          "uv": [
+            194,
+            2,
+            254,
+            62
+          ]
+        },
+        "down": {
+          "uv": [
+            194,
+            2,
+            254,
+            62
+          ]
+        }
+      },
+      "parent": "backplate",
+      "rot": [
+        0,
+        45,
+        0
+      ],
+      "pivot": [
+        4.5,
+        2,
+        -4.5
+      ]
+    },
+    {
+      "id": "clamp_sw",
+      "size": [
+        3,
+        2,
+        3
+      ],
+      "pos": [
+        -6.0,
+        1,
+        3.0
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            194,
+            2,
+            254,
+            62
+          ]
+        },
+        "south": {
+          "uv": [
+            194,
+            2,
+            254,
+            62
+          ]
+        },
+        "east": {
+          "uv": [
+            194,
+            2,
+            254,
+            62
+          ]
+        },
+        "west": {
+          "uv": [
+            194,
+            2,
+            254,
+            62
+          ]
+        },
+        "up": {
+          "uv": [
+            194,
+            2,
+            254,
+            62
+          ]
+        },
+        "down": {
+          "uv": [
+            194,
+            2,
+            254,
+            62
+          ]
+        }
+      },
+      "parent": "backplate",
+      "rot": [
+        0,
+        45,
+        0
+      ],
+      "pivot": [
+        -4.5,
+        2,
+        4.5
+      ]
+    },
+    {
+      "id": "clamp_se",
+      "size": [
+        3,
+        2,
+        3
+      ],
+      "pos": [
+        3.0,
+        1,
+        3.0
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            194,
+            2,
+            254,
+            62
+          ]
+        },
+        "south": {
+          "uv": [
+            194,
+            2,
+            254,
+            62
+          ]
+        },
+        "east": {
+          "uv": [
+            194,
+            2,
+            254,
+            62
+          ]
+        },
+        "west": {
+          "uv": [
+            194,
+            2,
+            254,
+            62
+          ]
+        },
+        "up": {
+          "uv": [
+            194,
+            2,
+            254,
+            62
+          ]
+        },
+        "down": {
+          "uv": [
+            194,
+            2,
+            254,
+            62
+          ]
+        }
+      },
+      "parent": "backplate",
+      "rot": [
+        0,
+        45,
+        0
+      ],
+      "pivot": [
+        4.5,
+        2,
+        4.5
+      ]
+    },
+    {
+      "id": "status_north",
+      "size": [
+        3,
+        0.5,
+        0.5
+      ],
+      "pos": [
+        -1.5,
+        5,
+        -4
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            130,
+            66,
+            190,
+            126
+          ]
+        },
+        "south": {
+          "uv": [
+            130,
+            66,
+            190,
+            126
+          ]
+        },
+        "east": {
+          "uv": [
+            130,
+            66,
+            190,
+            126
+          ]
+        },
+        "west": {
+          "uv": [
+            130,
+            66,
+            190,
+            126
+          ]
+        },
+        "up": {
+          "uv": [
+            130,
+            66,
+            190,
+            126
+          ]
+        },
+        "down": {
+          "uv": [
+            130,
+            66,
+            190,
+            126
+          ]
+        }
+      },
+      "parent": "socket_core"
+    },
+    {
+      "id": "status_south",
+      "size": [
+        3,
+        0.5,
+        0.5
+      ],
+      "pos": [
+        -1.5,
+        5,
+        3.5
+      ],
+      "uv_mode": "per_face",
+      "faces": {
+        "north": {
+          "uv": [
+            130,
+            66,
+            190,
+            126
+          ]
+        },
+        "south": {
+          "uv": [
+            130,
+            66,
+            190,
+            126
+          ]
+        },
+        "east": {
+          "uv": [
+            130,
+            66,
+            190,
+            126
+          ]
+        },
+        "west": {
+          "uv": [
+            130,
+            66,
+            190,
+            126
+          ]
+        },
+        "up": {
+          "uv": [
+            130,
+            66,
+            190,
+            126
+          ]
+        },
+        "down": {
+          "uv": [
+            130,
+            66,
+            190,
+            126
+          ]
+        }
+      },
+      "parent": "socket_core"
+    }
+  ],
+  "face_details": [
+    {
+      "id": "backplate_form",
+      "part": "backplate",
+      "kind": "geometry",
+      "note": "Approved industrial mechanical form; material is bound per face."
+    },
+    {
+      "id": "load_plate_form",
+      "part": "load_plate",
+      "kind": "geometry",
+      "note": "Approved industrial mechanical form; material is bound per face."
+    },
+    {
+      "id": "socket_core_form",
+      "part": "socket_core",
+      "kind": "geometry",
+      "note": "Approved industrial mechanical form; material is bound per face."
+    },
+    {
+      "id": "tow_eye_left_form",
+      "part": "tow_eye_left",
+      "kind": "geometry",
+      "note": "Approved industrial mechanical form; material is bound per face."
+    },
+    {
+      "id": "tow_eye_right_form",
+      "part": "tow_eye_right",
+      "kind": "geometry",
+      "note": "Approved industrial mechanical form; material is bound per face."
+    },
+    {
+      "id": "tow_eye_north_form",
+      "part": "tow_eye_north",
+      "kind": "geometry",
+      "note": "Approved industrial mechanical form; material is bound per face."
+    },
+    {
+      "id": "tow_eye_south_form",
+      "part": "tow_eye_south",
+      "kind": "geometry",
+      "note": "Approved industrial mechanical form; material is bound per face."
+    },
+    {
+      "id": "clamp_nw_form",
+      "part": "clamp_nw",
+      "kind": "geometry",
+      "note": "Approved industrial mechanical form; material is bound per face."
+    },
+    {
+      "id": "clamp_ne_form",
+      "part": "clamp_ne",
+      "kind": "geometry",
+      "note": "Approved industrial mechanical form; material is bound per face."
+    },
+    {
+      "id": "clamp_sw_form",
+      "part": "clamp_sw",
+      "kind": "geometry",
+      "note": "Approved industrial mechanical form; material is bound per face."
+    },
+    {
+      "id": "clamp_se_form",
+      "part": "clamp_se",
+      "kind": "geometry",
+      "note": "Approved industrial mechanical form; material is bound per face."
+    },
+    {
+      "id": "status_north_form",
+      "part": "status_north",
+      "kind": "geometry",
+      "note": "Approved industrial mechanical form; material is bound per face."
+    },
+    {
+      "id": "status_south_form",
+      "part": "status_south",
+      "kind": "geometry",
+      "note": "Approved industrial mechanical form; material is bound per face."
+    }
+  ]
+}

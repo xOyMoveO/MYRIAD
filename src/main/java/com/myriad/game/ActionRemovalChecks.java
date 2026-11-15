@@ -43,6 +43,6 @@ final class ActionRemovalChecks {
                     "Removing actions must not reroute specialized ranged attacks: " + role.getId());
         }
         h.assertTrue(!VanillaMeleeAttack.usesVanilla(null), "Unselected players remain vanilla, without a mod attack route");
-        System.out.println("[MYRIAD-ACTION-REMOVAL] PASS: no retired player-action classes/assets/mixins, all thirteen attack routes preserved; new Night Shadow local first-person view is separate");
+        System.out.println("[MYRIAD-ACTION-REMOVAL] PASS: no retired player-action classes/assets/mixins, all fourteen attack routes preserved; new Night Shadow local first-person view is separate");
     }
 }

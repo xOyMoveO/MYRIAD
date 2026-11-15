@@ -1,0 +1,119 @@
+{
+  "skills": [
+    {
+      "role": "rivet",
+      "id": "rivet_station_armor",
+      "index": 0,
+      "maxRank": 5,
+      "mana": 0,
+      "cooldowns": [
+        0
+      ],
+      "name": "驻地装甲",
+      "description": "自身锚点4格内接地累计2秒获 68+18(r-1)+0.40S 护盾（S=30时80）。离区2秒清残盾，回阵接地2秒补至动态满盾20%；破盾至少10秒，持续守阵可满额恢复。",
+      "iconAlias": "rivet_station_armor"
+    },
+    {
+      "role": "rivet",
+      "id": "rivet_breach_rhythm",
+      "index": 1,
+      "maxRank": 5,
+      "mana": 0,
+      "cooldowns": [
+        0
+      ],
+      "name": "破阵节拍",
+      "description": "Q实际撞墙后强化下次普攻4秒，5秒触发间隔。命中追加 22.5+8(r-1)+0.25S 物理伤害并返还E剩余冷却2秒；附伤不暴击、不自触发，不增普攻距离。",
+      "iconAlias": "rivet_breach_rhythm"
+    },
+    {
+      "role": "rivet",
+      "id": "rivet_impact_hammer",
+      "index": 2,
+      "maxRank": 5,
+      "mana": 55,
+      "cooldowns": [
+        140
+      ],
+      "name": "冲击锤",
+      "description": "短暂抬锤后挥击前方3格敌人，造成 75+20(r-1)+0.50S 物理伤害。仅准星附近首敌沿施法方向前推2格；0.4秒内撞墙追加 29+8(r-1)+0.20S，定身0.5秒，锚击0.8秒。",
+      "iconAlias": "rivet_impact_hammer"
+    },
+    {
+      "role": "rivet",
+      "id": "rivet_tactical_anchor",
+      "index": 3,
+      "maxRank": 5,
+      "mana": 30,
+      "cooldowns": [
+        160,
+        152,
+        144,
+        136,
+        128,
+        120
+      ],
+      "name": "战术锚点",
+      "description": "零投入即能布点，8格内实体方块侧面安装一个锚点，持续18秒，重放替换。锚击范围1.5格，恢复5秒且换锚不刷新。破坏依附方块移除，未加载区块停用；准备期免费且禁锚击。每点强化使基础8秒冷却减少0.4秒，五点6秒。",
+      "iconAlias": "rivet_tactical_anchor"
+    },
+    {
+      "role": "rivet",
+      "id": "rivet_emergency_strut",
+      "index": 4,
+      "maxRank": 7,
+      "mana": 75,
+      "cooldowns": [
+        260
+      ],
+      "name": "应急撑架",
+      "description": "瞬间为自身及3格内队友提供 95+22(r-1)+0.50S 护盾2秒；自身同期受击退减少50%。距自身锚点4格内释放，返还W剩余冷却2秒。同类撑架护盾取较高剩余值。",
+      "iconAlias": "rivet_emergency_strut"
+    },
+    {
+      "role": "rivet",
+      "id": "rivet_tow_cable",
+      "index": 5,
+      "maxRank": 7,
+      "mana": 50,
+      "cooldowns": [
+        200,
+        190,
+        180,
+        170,
+        160,
+        150,
+        140
+      ],
+      "name": "牵引索",
+      "description": "要求10格内自身锚点可见且路径合法，沿直线只牵引自己最多5格，遇障碍停在墙前；移动中再按E松索。无伤害、不控制敌人；失败不扣蓝、不进冷却。",
+      "iconAlias": "rivet_tow_cable"
+    },
+    {
+      "role": "rivet",
+      "id": "rivet_hold_protocol",
+      "index": 6,
+      "maxRank": 3,
+      "mana": 140,
+      "cooldowns": [
+        1100
+      ],
+      "name": "固守协议",
+      "description": "以10格内有效锚点锁定半径4格区域6秒；区内自身与友方减伤15%。自身首次入区获 142+50(r-1)+0.60S 护盾至区域结束。区内敌人受Q击退距离+25%，定身不延长。换锚或依附方块破坏不改变区域。",
+      "iconAlias": "rivet_hold_protocol"
+    },
+    {
+      "role": "rivet",
+      "id": "rivet_breach_charge",
+      "index": 7,
+      "maxRank": 3,
+      "mana": 150,
+      "cooldowns": [
+        1000
+      ],
+      "name": "破城冲击",
+      "description": "明显声光蓄力0.7秒后沿前方冲锋最多5格，自身碰墙或命中首敌即停。对首敌造成 147.5+55(r-1)+0.75S 物理伤害并前推2格；0.4秒内撞墙追加 37.5+15(r-1)+0.25S，定身0.8秒，锚击1秒。",
+      "iconAlias": "rivet_breach_charge"
+    }
+  ]
+}

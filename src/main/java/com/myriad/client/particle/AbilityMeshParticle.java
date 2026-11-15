@@ -56,6 +56,7 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
     public static void receive(AbilityVfxPayload p) {
         var mc=Minecraft.getInstance();
         if(!p.valid())return;
+        com.myriad.client.firstperson.RivetWeaponView.receive(p);
         if(p.kind()==AbilityVfxGeometry.CANCEL){
             com.myriad.client.firstperson.ShuoHeldLight.receive(p);
             if(p.angle()==2)FLIGHTS.end(p,mc.level==null?p.started():mc.level.getGameTime());
@@ -67,7 +68,7 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
         if(p.personal()&&p.owner()!=mc.player.getId())return;
         if(!p.personal()&&!FogOfWarClient.shouldRenderPlayer(p.owner())
                 &&!(com.myriad.character.skills.shuo.ShuoSkillVfx.owns(p)&&p.owner()==mc.player.getId())
-                &&!(p.theme()==12&&p.anchor()<0))return;
+                &&!(p.theme()==12&&p.anchor()<0)&&!com.myriad.character.skills.rivet.RivetVfx.stationary(p))return;
         if(p.anchor()!=mc.player.getId()&&mc.level.getEntity(p.anchor()) instanceof net.minecraft.world.entity.player.Player
                 &&!FogOfWarClient.shouldRenderPlayer(p.anchor()))return;
         if(mc.player.position().distanceToSqr(p.from())>Math.pow(80+p.radius(),2))return;
@@ -91,7 +92,7 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
             mc.particleEngine.add(new AbilityMeshParticle(mc.level,rainbowWake));
         mc.particleEngine.add(new AbilityMeshParticle(mc.level,p));
     }
-    public static void reset(){epoch++;OWNER_EPOCHS.clear();SKILL_EPOCHS.clear();FLIGHTS.clear();com.myriad.client.firstperson.ShuoHeldLight.reset();com.myriad.client.YikeClientState.reset();}
+    public static void reset(){epoch++;OWNER_EPOCHS.clear();SKILL_EPOCHS.clear();FLIGHTS.clear();com.myriad.client.firstperson.ShuoHeldLight.reset();com.myriad.client.YikeClientState.reset();com.myriad.client.firstperson.RivetWeaponView.reset();}
     public static void registerGroup(RegisterParticleGroupsEvent event){event.register(GROUP,Group::new);}
     @Override public ParticleRenderType getGroup(){return GROUP;}
     @Override protected Layer getLayer(){return Layer.TRANSLUCENT;}
@@ -104,7 +105,8 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
         if(recipe.anchor()>=0){if(anchor==null||!anchor.isAlive()){remove();return;}
             setBoundingBox(visualBounds(recipe)
                     .move(anchor.position().subtract(anchorOrigin)));}
-        if(age++>=lifetime||epoch!=bornEpoch||bornOwnerEpoch!=OWNER_EPOCHS.getOrDefault(recipe.owner(),0)||bornSkillEpoch!=SKILL_EPOCHS.getOrDefault(skillKey(recipe),0)||!ClientDataHolder.modEnabled()||owner==null||!owner.isAlive())remove();
+        if(age++>=lifetime||epoch!=bornEpoch||bornOwnerEpoch!=OWNER_EPOCHS.getOrDefault(recipe.owner(),0)||bornSkillEpoch!=SKILL_EPOCHS.getOrDefault(skillKey(recipe),0)||!ClientDataHolder.modEnabled()
+                ||!com.myriad.character.skills.rivet.RivetVfx.survivesOwner(recipe,owner!=null,owner!=null&&owner.isAlive()))remove();
     }
     @Override public void extract(QuadParticleRenderState state,Camera camera,float partial) {
         if(!(state instanceof AbilityMeshState mesh)||bornEpoch!=epoch||bornOwnerEpoch!=OWNER_EPOCHS.getOrDefault(recipe.owner(),0)||bornSkillEpoch!=SKILL_EPOCHS.getOrDefault(skillKey(recipe),0)||!ClientDataHolder.modEnabled())return;
@@ -112,14 +114,15 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
         var mc=Minecraft.getInstance();if(mc.player==null)return;
         if(!recipe.personal()&&!FogOfWarClient.shouldRenderPlayer(recipe.owner())
                 &&!(com.myriad.character.skills.shuo.ShuoSkillVfx.owns(recipe)&&recipe.owner()==mc.player.getId())
-                &&!(recipe.theme()==12&&recipe.anchor()<0))return;
+                &&!(recipe.theme()==12&&recipe.anchor()<0)&&!com.myriad.character.skills.rivet.RivetVfx.stationary(recipe))return;
         if(recipe.anchor()!=mc.player.getId()&&level.getEntity(recipe.anchor()) instanceof net.minecraft.world.entity.player.Player
                 &&!FogOfWarClient.shouldRenderPlayer(recipe.anchor()))return;
         double distance=camera.position().distanceTo(recipe.from());
         boolean reduced=mc.options.particles().get()!=net.minecraft.server.level.ParticleStatus.ALL||distance>32;
         boolean thunderModel=com.myriad.character.skills.tianxing.rework.ThunderVfxGeometry.usesProjectileModel(recipe);
         boolean rosterModel=com.myriad.character.skills.keheng.KehengVfx.usesProjectileModel(recipe)
-                ||recipe.theme()==12&&recipe.kind()==AbilityVfxGeometry.FLIGHT;
+                ||recipe.theme()==12&&recipe.kind()==AbilityVfxGeometry.FLIGHT
+                ||com.myriad.character.skills.rivet.RivetVfx.usesModel(recipe);
         if((recipe.theme()==5||thunderModel||rosterModel||recipe.theme()==0&&recipe.kind()==AbilityVfxGeometry.FLIGHT&&recipe.variant()==2)&&!recipe.personal()){
             int budget=recipe.theme()==5?4096:thunderModel?1200:recipe.theme()==12?512:192;
             if(mesh.remaining()<(recipe.theme()==5?256:thunderModel?320:64))return;
@@ -150,11 +153,19 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
                     recipe.from().add(offset),recipe.to().add(offset),recipe.radius(),recipe.angle(),recipe.life(),recipe.started(),recipe.personal(),recipe.instance());}
         float visualAge=Math.max(0,age-1+partial);
         var geometry=AbilityVfxGeometry.build(displayed,visualAge,reduced);
-        if(recipe.theme()==11||recipe.theme()==12||com.myriad.player.LevelUpBeamGeometry.owns(recipe)
+        boolean heldRivet=recipe.theme()==13&&mc.options.getCameraType().isFirstPerson()&&mc.getCameraEntity()==mc.player
+                &&mc.player.getId()==recipe.owner()&&"rivet".equals(ClientDataHolder.characterId())
+                &&mc.player.getMainHandItem().is(com.myriad.registry.ModItems.RIVET_HAMMER.get());
+        if(heldRivet)
+            geometry=com.myriad.character.skills.rivet.RivetVfx.firstPerson(recipe,geometry);
+        if(recipe.theme()==11||recipe.theme()==12||recipe.theme()==13||com.myriad.player.LevelUpBeamGeometry.owns(recipe)
                 ||com.myriad.character.skills.shuo.ShuoSkillVfx.owns(recipe))mesh.sortTranslucent();
         if((recipe.theme()==5||thunderModel||rosterModel||recipe.theme()==0&&recipe.kind()==AbilityVfxGeometry.FLIGHT&&recipe.variant()==2)&&!recipe.personal()){
-            if(!mesh.addModelBatch(geometry,camera.position(),sprites,near)&&!reduced)
-                mesh.addModelBatch(AbilityVfxGeometry.build(displayed,visualAge,true),camera.position(),sprites,near);
+            if(!mesh.addModelBatch(geometry,camera.position(),sprites,near)&&!reduced){
+                var fallback=AbilityVfxGeometry.build(displayed,visualAge,true);
+                if(heldRivet)fallback=com.myriad.character.skills.rivet.RivetVfx.firstPerson(recipe,fallback);
+                mesh.addModelBatch(fallback,camera.position(),sprites,near);
+            }
             return;
         }
         boolean majorFlame=com.myriad.character.skills.fenjue.rework.FlameMajorVfx.owns(recipe);
@@ -194,6 +205,10 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
                         &&incoming.recipe.started()<old.recipe.started()))return false;
                 particles.removeIf(old->{boolean replace=com.myriad.character.skills.shuo.ShuoSilentLineVfx.replaces(incoming.recipe,old.recipe);
                     if(replace)old.remove();return replace;});
+            }
+            if(incoming.recipe.theme()==13){
+                if(particles.stream().anyMatch(old->com.myriad.character.skills.rivet.RivetVfx.replaces(incoming.recipe,old.recipe)&&incoming.recipe.started()<old.recipe.started()))return false;
+                particles.removeIf(old->{boolean replace=com.myriad.character.skills.rivet.RivetVfx.replaces(incoming.recipe,old.recipe);if(replace)old.remove();return replace;});
             }
             if(incoming.recipe.theme()==11||incoming.recipe.theme()==12){
                 if(particles.stream().anyMatch(old->incoming.recipe.theme()==11

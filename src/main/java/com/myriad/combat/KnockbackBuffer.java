@@ -11,6 +11,7 @@ import net.minecraft.world.phys.Vec3;
 public final class KnockbackBuffer {
     public static final int BUFFER_TICKS = 20;
     private static final Map<UUID, Long> NEXT_ALLOWED = new HashMap<>();
+    private static final Map<UUID, Long> IMPULSES = new HashMap<>();
 
     private KnockbackBuffer() { }
 
@@ -21,22 +22,32 @@ public final class KnockbackBuffer {
         long next = NEXT_ALLOWED.getOrDefault(target.getUUID(), Long.MIN_VALUE);
         if (now < next) return false;
         NEXT_ALLOWED.put(target.getUUID(), now + BUFFER_TICKS);
+        IMPULSES.merge(target.getUUID(), 1L, Long::sum);
         return true;
     }
 
     /** 供技能直接施加击退速度时使用。 */
     public static boolean apply(LivingEntity target, Vec3 motion) {
         if (!allow(target)) return false;
-        target.setDeltaMovement(motion);
+        target.setDeltaMovement(motion.scale(com.myriad.character.skills.rivet.EmergencyStrut.knockbackMultiplier(target)));
+        target.hurtMarked = true;
         return true;
+    }
+
+    /** Skill-owned pushes can explicitly replace a prior impulse while preserving interruption identity. */
+    public static long beginIndependent(LivingEntity target) {
+        NEXT_ALLOWED.put(target.getUUID(), target.level().getGameTime() + BUFFER_TICKS);
+        return IMPULSES.merge(target.getUUID(), 1L, Long::sum);
     }
 
     public static void clear(UUID targetId) {
         NEXT_ALLOWED.remove(targetId);
+        IMPULSES.remove(targetId);
     }
 
     public static void clearAll() {
         NEXT_ALLOWED.clear();
+        IMPULSES.clear();
     }
 
     public static boolean recentlyForced(LivingEntity target) {
@@ -44,6 +55,6 @@ public final class KnockbackBuffer {
     }
     /** Identifies a newly accepted explicit impulse, independently of ordinary gravity/landing. */
     public static long impulseToken(LivingEntity target) {
-        return NEXT_ALLOWED.getOrDefault(target.getUUID(), Long.MIN_VALUE);
+        return IMPULSES.getOrDefault(target.getUUID(), Long.MIN_VALUE);
     }
 }
