@@ -1,0 +1,1 @@
+{"stage":"read","dedicated":true,"passed":true,"checks":["3v3: actual dedicated restart restores selected arena, enabled flag and PLAYING checkpoint","3v3: actual restart restores the active map facilities and monsters exactly once","3v3: reconnected fixture identities retain their new match factions","3v3: off after restart removes restored map runtime"]}

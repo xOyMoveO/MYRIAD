@@ -1,0 +1,25 @@
+{
+  "points": [
+    {
+      "x": 80,
+      "y": 64,
+      "z": 36,
+      "id": "5_small",
+      "type": "frost_hare"
+    },
+    {
+      "x": 80,
+      "y": 64,
+      "z": 88,
+      "id": "5_medium",
+      "type": "frost_web_matriarch"
+    },
+    {
+      "x": 80,
+      "y": 64,
+      "z": 112,
+      "id": "5_boss",
+      "type": "large_random"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # Fabric 26.3 开发与复现
 
-本目录记录 #40 的平台接合与朔「一闪」试点；全量迁移完成条件仍属于 #39。[保留清单与公共契约](retention-and-contracts.md) 区分保留内容、试点与后续专项。
+本目录记录 #40 的平台接合与朔「一闪」试点，以及 #43 的[双模式合成地图与生命周期复现](arena-fixture.md)；全量迁移完成条件仍属于 #39。[保留清单与公共契约](retention-and-contracts.md) 区分保留内容、试点与后续专项。
 
 固定工具：Minecraft 26.3 正式、Fabric Loader 0.20.1、Fabric API 0.166.2+26.3、Loom 1.18.4、Gradle Wrapper 9.7.0、Java 25。构建依赖按 `gradle.properties` 固定，首次缺项时正常联网；已有缓存不清空。官方来源为 [Fabric 26.3示例](https://github.com/FabricMC/fabric-example-mod/tree/26.3) 与 [Loom1.18.4元数据](https://maven.fabricmc.net/net/fabricmc/fabric-loom/1.18.4/fabric-loom-1.18.4.module)，实际执行结果另见[验证报告](verification-20261116.md)。
 
@@ -13,7 +13,7 @@ bash ./gradlew runGameTestServer -PmyriadGameTests -PgameTestFilter=myriad:shuo_
 bash ./gradlew runGameTestClient -PmyriadGameTests
 ```
 
-`build` 编译主源码和所有保留GameTest源。测试mod仅在 `-PmyriadGameTests` 启用，独立目录 `run-fabric-gametest`，XML报告为 `build/reports/fabric-gametest.xml`。筛选项来自 Fabric 的 `fabric-api.gametest.filter`；默认只运行隔离的`myriad:first_group`。旧专项会修改共同训练/对局状态，逐专项显式filter、在新进程运行，不能并发聚合后宣称等价覆盖。物理客户端`runGameTestClient`启动后运行原管线/模型客观断言，报告`build/reports/fabric-client-checks.json`，不产生视觉通过结论。`arena_switch` 保留历史人工fixture入口并标为manual_only；按用户补充，实际地图及原地图整局由人验收。技术侧只在测试世界验证，不索取或加载原地图。
+`build` 编译主源码和所有保留GameTest源。测试mod仅在 `-PmyriadGameTests` 启用，独立目录 `run-fabric-gametest`，XML报告为 `build/reports/fabric-gametest.xml`。筛选项来自 Fabric 的 `fabric-api.gametest.filter`；默认只运行隔离的`myriad:first_group`。旧专项会修改共同训练/对局状态，逐专项显式filter、在新进程运行，不能并发聚合后宣称等价覆盖。物理客户端`runGameTestClient`启动后运行原管线/模型客观断言，报告`build/reports/fabric-client-checks.json`，不产生视觉通过结论。`arena_switch` 保留历史人工fixture入口并标为manual_only；按用户补充，实际地图及原地图整局由人验收。技术侧使用仓库内 `arena_fixture`、`arena_tower_5v5`、`arena_tower_3v3` 合成专项与独立服务器重启入口验证两模式，不索取或加载原地图。详见[双模式复现说明](arena-fixture.md)。
 
 ## 已有资源与隔离运行
 

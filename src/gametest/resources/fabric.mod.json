@@ -6,7 +6,8 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "com.myriad.game.MyriadGameTests"
+      "com.myriad.game.MyriadGameTests",
+      "com.myriad.game.ArenaFixtureChecks"
     ],
     "client": [
       "com.myriad.game.MyriadClientChecks"

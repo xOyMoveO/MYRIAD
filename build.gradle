@@ -51,6 +51,15 @@ loom {
             vmArg '-Dfabric-api.gametest.report-file=' + project.file('build/reports/fabric-gametest.xml').absolutePath
             vmArg '-Dmyriad.combatTests=true'
         }
+        arenaFixtureServer {
+            server()
+            source sourceSets.gametest
+            name 'Synthetic arena dedicated restart checks'
+            runDir 'run-fabric-arena-fixture'
+            programArg '--nogui'
+            vmArg '-Dmyriad.arenaFixtureStage=' + providers.gradleProperty('arenaFixtureStage').getOrElse('')
+            vmArg '-Dmyriad.arenaFixtureMode=' + providers.gradleProperty('arenaFixtureMode').getOrElse('3v3')
+        }
     }
 }
 java {

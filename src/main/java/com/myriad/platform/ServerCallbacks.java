@@ -12,6 +12,7 @@ public final class ServerCallbacks {
     private ServerCallbacks() { }
     public static void initialize() {
         ServerLifecycleEvents.SERVER_STARTING.register(PlayerDataProvider::onServerStarting);
+        ServerLifecycleEvents.SERVER_STARTED.register(PlayerDataProvider::onServerStarted);
         ServerLifecycleEvents.SERVER_STOPPING.register(PlayerDataProvider::onServerStopping);
         ServerLifecycleEvents.SERVER_STOPPED.register(PlayerDataProvider::onServerStopped);
         ServerTickEvents.START_SERVER_TICK.register(com.myriad.character.skills.keheng.KehengTimeFields::clock);
