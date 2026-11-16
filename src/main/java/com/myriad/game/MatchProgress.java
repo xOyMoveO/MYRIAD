@@ -9,10 +9,10 @@ import java.nio.file.StandardCopyOption;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.storage.LevelResource;
 
-/** World-local checkpoint; player progression uses NeoForge's persistent attachment. */
+/** World-local checkpoint; player progression uses Fabric's persistent attachment. */
 public final class MatchProgress {
     public static final Gson JSON = new GsonBuilder().enableComplexMapKeySerialization().create();
-    private static Path path(MinecraftServer s) { return s.getWorldPath(LevelResource.ROOT).resolve("myriad_match.json"); }
+    private static Path path(MinecraftServer s) { return s.getWorldPath(LevelResource.ROOT).resolve("myriad_fabric_match.json"); }
     public static void save(MinecraftServer server) {
         if (GameManager.get()==null || Boolean.getBoolean("myriad.combatTests")) return;
         try {
@@ -65,7 +65,7 @@ public final class MatchProgress {
                 MonsterManager.restore(server.overworld(),root.getAsJsonObject("monsters"));
                 HeroRespawnSystem.restore(root.get("respawns"));
             }
-        } catch(Exception e) { throw new IllegalStateException("Failed to restore myriad_match.json; preserve the checkpoint before retrying",e); }
+        } catch(Exception e) { throw new IllegalStateException("Failed to restore myriad_fabric_match.json; preserve the checkpoint before retrying",e); }
     }
 
     /** Host leaving a local/LAN world ends the session before the final checkpoint. */

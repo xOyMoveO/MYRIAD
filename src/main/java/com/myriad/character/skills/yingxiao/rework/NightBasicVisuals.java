@@ -8,7 +8,7 @@ import com.myriad.registry.ModItems;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.myriad.network.Packets;
 import java.util.UUID;
 import java.util.WeakHashMap;
 import static com.myriad.character.ability.AbilityVfxGeometry.*;
@@ -57,7 +57,7 @@ public final class NightBasicVisuals {
             if(viewer.position().distanceToSqr(packet.from())>64*64)continue;
             if(viewer!=owner&&!VisionSystem.canSee(viewer,owner))continue;
             if(target!=null&&!VisionSystem.canSee(viewer,target))continue;
-            PacketDistributor.sendToPlayer(viewer,packet);
+            Packets.sendToPlayer(viewer,packet);
         }
     }
     public static void clear(UUID id){CHAINS.keySet().removeIf(p->p.getUUID().equals(id));}

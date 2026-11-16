@@ -39,7 +39,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.myriad.network.Packets;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -95,7 +95,7 @@ public class FenTianHuoHaiSkill extends Skill {
       data.setBuff("fentianhuohai", 30);
       player.setDeltaMovement(0.0, 1.0, 0.0);
       player.resetFallDistance();
-      PacketDistributor.sendToPlayer(player, new DashPayload(0.0F, 1.0F, 0.0F, 10), new CustomPacketPayload[0]);
+      Packets.sendToPlayer(player, new DashPayload(0.0F, 1.0F, 0.0F, 10), new CustomPacketPayload[0]);
       double x = player.getX();
       double z = player.getZ();
       level.sendParticles(ParticleTypes.FLAME, x, info.startY - 1.0, z, 30, 0.5, 0.2, 0.5, 0.12);

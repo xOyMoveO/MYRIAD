@@ -18,12 +18,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 /** Server-owned artillery state. Deadlines use world ticks, never local action progress. */
-@EventBusSubscriber(modid = Myriad.MODID)
 public final class YikeStance {
     private static final Identifier MOVEMENT = Identifier.fromNamespaceAndPath("myriad", "yike_stance_movement");
     private static final Identifier CHARGE = Identifier.fromNamespaceAndPath("myriad", "skill_charge_lock");
@@ -187,12 +183,12 @@ public final class YikeStance {
                 && !KnockbackBuffer.recentlyForced(p)) {
             Vec3 velocity = p.getDeltaMovement();
             p.setDeltaMovement(0, Math.min(0, velocity.y), 0);
-            p.hurtMarked = true;
+            p.syncVelocity=true;
         }
     }
 
-    @SubscribeEvent public static void beforeMove(PlayerTickEvent.Pre event) {
-        if (event.getEntity() instanceof ServerPlayer p) {
+    public static void beforeMove(net.minecraft.world.entity.player.Player subject) {
+        if (subject instanceof ServerPlayer p) {
             var s = STATES.get(p.getUUID());
             if (s != null && usable(p, s)) refreshMovement(p);
         }

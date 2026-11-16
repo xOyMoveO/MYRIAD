@@ -18,6 +18,6 @@ public final class GuideBook {
         ItemStack book = new ItemStack(Items.WRITTEN_BOOK);
         book.set(DataComponents.CUSTOM_NAME, Component.translatable("guide.myriad.title"));
         book.set(DataComponents.WRITTEN_BOOK_CONTENT, new WrittenBookContent(Filterable.passThrough("MYRIAD Guide"), "MYRIAD", 0, pages, true));
-        if (!player.getInventory().add(book)) player.drop(book, false);
+        if (!player.getInventory().add(book)) player.drop(book, false, net.minecraft.util.Prediction.SERVER_ONLY);
     }
 }

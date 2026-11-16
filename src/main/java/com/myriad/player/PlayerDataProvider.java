@@ -24,21 +24,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.attachment.AttachmentType;
-import net.neoforged.neoforge.attachment.IAttachmentHolder;
-import net.neoforged.neoforge.event.RegisterCommandsEvent;
-import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
-import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
-import net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.event.server.ServerStartingEvent;
-import net.neoforged.neoforge.event.server.ServerStoppedEvent;
-import net.neoforged.neoforge.event.tick.PlayerTickEvent;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
-import net.neoforged.neoforge.registries.NeoForgeRegistries;
+import com.myriad.combat.DamageContext;
 
 import com.myriad.Myriad;
 import com.myriad.character.CharacterType;
@@ -51,19 +37,17 @@ import com.myriad.network.NetworkSetup;
 import com.myriad.registry.ModAttributes;
 
 /**
- * 玩家数据 Attachment 注册与全部游戏事件（NeoForge 事件总线）。
- * 数据以 Attachment 形式附加在玩家实体上（getData 自动创建并缓存同一实例）。
+ * 玩家持久状态与游戏回调；Fabric attachments 负责新数据保存。
+ * getAttachedOrCreate 将状态绑定到实体，生命周期由 ServerCallbacks 显式接合。
  */
-@EventBusSubscriber(modid = Myriad.MODID)
 public final class PlayerDataProvider {
+    /** Registers saved/synced types before any world or entity data is decoded. */
+    public static void initialize() { }
+
     private PlayerDataProvider() {}
 
-    /** 玩家数据 Attachment（跟随实体，getData 首次自动创建并缓存） */
-    public static final DeferredRegister<AttachmentType<?>> ATTACHMENTS =
-            DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, Myriad.MODID);
-
-    public static final DeferredHolder<AttachmentType<?>, AttachmentType<PlayerData>> PLAYER_DATA =
-            ATTACHMENTS.register("player_data", () -> AttachmentType.builder(() -> new PlayerData()).serialize(PlayerData.CODEC.fieldOf("state")).build());
+    public static final net.fabricmc.fabric.api.attachment.v1.AttachmentType<PlayerData> PLAYER_DATA =
+            net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry.create(Identifier.parse("myriad:player_data"), b -> b.initializer(PlayerData::new).persistent(PlayerData.CODEC));
 
     /** Incoming 阶段记录颜色/暴击，Post 阶段按真正生命损失发送飘字。队列兼容伤害事件内的嵌套伤害。 */
     private static final java.util.Map<UUID, java.util.ArrayDeque<PendingDamageFloat>> PENDING_DAMAGE_FLOATS =
@@ -92,8 +76,8 @@ public final class PlayerDataProvider {
         if(target instanceof ServerPlayer victim && attacker!=victim && GameManager.get()!=null
                 && GameManager.get().factionOf(attacker)!=null
                 && GameManager.get().factionOf(attacker)!=GameManager.get().factionOf(victim)) {
-            victim.getPersistentData().putString("myriad_last_hero",attacker.getUUID().toString());
-            victim.getPersistentData().putLong("myriad_last_hero_at",level.getGameTime());
+            com.myriad.player.EntityState.data(victim).putString("myriad_last_hero",attacker.getUUID().toString());
+            com.myriad.player.EntityState.data(victim).putLong("myriad_last_hero_at",level.getGameTime());
             com.myriad.game.LaneSystem.onHeroAttacked(victim, attacker);
         }
         com.myriad.combat.LifestealSystem.onActualDamage(attacker, target, actualDamage, pending.type(), pending.skill());
@@ -102,19 +86,23 @@ public final class PlayerDataProvider {
         com.myriad.character.SkillPresentation.hit(attacker, target, pending.crit());
         if (GameManager.get() != null) GameManager.get().recordDamage(attacker, target, actualDamage);
         long hitNow = level.getGameTime();
-        if (hitNow - attacker.getPersistentData().getLongOr("myriad_hit_feedback", -10) >= 2) {
-            attacker.getPersistentData().putLong("myriad_hit_feedback", hitNow);
-            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(attacker,
+        if (hitNow - com.myriad.player.EntityState.data(attacker).getLongOr("myriad_hit_feedback", -10) >= 2) {
+            com.myriad.player.EntityState.data(attacker).putLong("myriad_hit_feedback", hitNow);
+            com.myriad.network.Packets.sendToPlayer(attacker,
                     new com.myriad.network.UiFeedbackPayload(pending.crit() ? 6 : 5));
         }
-        net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(attacker,
+        com.myriad.network.Packets.sendToPlayer(attacker,
                 new NetworkSetup.DamageFloatPayload(pending.type(), Math.max(1, Math.round(actualDamage)), pending.crit(),
                         target.getX(), target.getY() + target.getBbHeight() * .8, target.getZ()));
     }
 
     /** 获取玩家数据（自动创建并缓存，同一实体始终同一实例） */
     public static PlayerData get(LivingEntity player) {
-        return ((IAttachmentHolder) player).getData(PLAYER_DATA);
+        return ((net.fabricmc.fabric.api.attachment.v1.AttachmentTarget) player).getAttachedOrCreate(PLAYER_DATA);
+    }
+
+    public static void set(LivingEntity player, PlayerData state) {
+        ((net.fabricmc.fabric.api.attachment.v1.AttachmentTarget) player).setAttached(PLAYER_DATA, state);
     }
 
     /** 将玩家数据与对局状态同步到客户端 */
@@ -457,10 +445,10 @@ public final class PlayerDataProvider {
     private static net.minecraft.world.entity.Entity creditedKiller(ServerPlayer victim, net.minecraft.world.entity.Entity source) {
         if (!(source instanceof com.myriad.game.LaneMinionEntity)
                 && !(source instanceof com.myriad.game.DefenseTowerEntity)) return source;
-        long age=victim.level().getGameTime()-victim.getPersistentData().getLongOr("myriad_last_hero_at",-1000);
+        long age=victim.level().getGameTime()-com.myriad.player.EntityState.data(victim).getLongOr("myriad_last_hero_at",-1000);
         if(age<0||age>200)return source;
         try {
-            var p=victim.level().getServer().getPlayerList().getPlayer(UUID.fromString(victim.getPersistentData().getStringOr("myriad_last_hero","")));
+            var p=victim.level().getServer().getPlayerList().getPlayer(UUID.fromString(com.myriad.player.EntityState.data(victim).getStringOr("myriad_last_hero","")));
             var m=GameManager.get();
             return p!=null&&p.level()==victim.level()&&m!=null&&m.factionOf(p)!=null
                     &&m.factionOf(p)!=m.factionOf(victim)?p:source;
@@ -469,26 +457,23 @@ public final class PlayerDataProvider {
 
     // ---- 对局生命周期 ----
 
-    @SubscribeEvent
-    public static void onServerStarting(ServerStartingEvent event) {
+    public static void onServerStarting(MinecraftServer server) {
         SESSION_PLAYERS.clear();
         GameManager.create();
-        com.myriad.game.MatchArena.initialize(event.getServer());
-        GameManager.get().setServer(event.getServer());
-        com.myriad.game.MonsterManager.initialize(event.getServer());
-        com.myriad.game.LaneSystem.initialize(event.getServer());
-        com.myriad.game.VisionSystem.initialize(event.getServer());
-        com.myriad.game.MapSystem.initialize(event.getServer());
-        com.myriad.game.MatchProgress.load(event.getServer());
+        com.myriad.game.MatchArena.initialize(server);
+        GameManager.get().setServer(server);
+        com.myriad.game.MonsterManager.initialize(server);
+        com.myriad.game.LaneSystem.initialize(server);
+        com.myriad.game.VisionSystem.initialize(server);
+        com.myriad.game.MapSystem.initialize(server);
+        com.myriad.game.MatchProgress.load(server);
     }
 
-    @SubscribeEvent
-    public static void onServerStopping(net.neoforged.neoforge.event.server.ServerStoppingEvent event) {
-        com.myriad.game.MatchProgress.onServerStopping(event.getServer());
+    public static void onServerStopping(MinecraftServer server) {
+        com.myriad.game.MatchProgress.onServerStopping(server);
     }
 
-    @SubscribeEvent
-    public static void onServerStopped(ServerStoppedEvent event) {
+    public static void onServerStopped(MinecraftServer server) {
         com.myriad.character.ability.AbilityRuntime.clearAll();
         com.myriad.game.VanillaSession.clear();
         com.myriad.game.BaseRules.clear();
@@ -511,39 +496,37 @@ public final class PlayerDataProvider {
     }
 
     /** 服务端每 tick：对局状态、选人轮次与野怪重生。 */
-    @SubscribeEvent
-    public static void onServerTick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event) {
+    public static void onServerTick(MinecraftServer server) {
         com.myriad.character.ability.AbilityRuntime.cleanup();
-        if (event.getServer().overworld().getGameTime() % 20 == 0) com.myriad.game.MatchTeams.sync(event.getServer());
-        var distances = event.getServer().getPlayerList();
+        if (server.overworld().getGameTime() % 20 == 0) com.myriad.game.MatchTeams.sync(server);
+        var distances = server.getPlayerList();
         if (com.myriad.game.ModState.isEnabled()) {
             if (distances.getViewDistance() != 10) distances.setViewDistance(10);
             if (distances.getSimulationDistance() != 8) distances.setSimulationDistance(8);
         }
-        for(ServerPlayer player:event.getServer().getPlayerList().getPlayers())com.myriad.game.BaseRules.tick(player);
+        for(ServerPlayer player:server.getPlayerList().getPlayers())com.myriad.game.BaseRules.tick(player);
         GameManager manager = GameManager.get();
         if (manager != null && com.myriad.game.ModState.isEnabled()) {
-            com.myriad.network.MatchTabPayload.sync(event.getServer());
-            manager.tick(event.getServer(), event.getServer().overworld().getGameTime());
-            manager.checkTimeout(event.getServer().overworld().getGameTime());
-            com.myriad.game.MonsterManager.tick(event.getServer().overworld());
-            com.myriad.game.LaneSystem.tick(event.getServer().overworld());
-            com.myriad.game.MapSystem.tick(event.getServer().overworld());
-            com.myriad.game.TacticalSupplySystem.tick(event.getServer().overworld());
+            com.myriad.network.MatchTabPayload.sync(server);
+            manager.tick(server, server.overworld().getGameTime());
+            manager.checkTimeout(server.overworld().getGameTime());
+            com.myriad.game.MonsterManager.tick(server.overworld());
+            com.myriad.game.LaneSystem.tick(server.overworld());
+            com.myriad.game.MapSystem.tick(server.overworld());
+            com.myriad.game.TacticalSupplySystem.tick(server.overworld());
         }
         // 即使模组刚被关闭也要继续发送一次“关闭迷雾”，避免客户端保留旧可见列表。
-        if (manager != null) com.myriad.game.VisionSystem.tick(event.getServer().overworld());
-        if (event.getServer().overworld().getGameTime() % 200 == 0) com.myriad.game.MatchProgress.save(event.getServer());
+        if (manager != null) com.myriad.game.VisionSystem.tick(server.overworld());
+        if (server.overworld().getGameTime() % 200 == 0) com.myriad.game.MatchProgress.save(server);
     }
 
     // ---- Tab 列表：阵营前缀 + K/D + 当局进行时间 ----
 
-    @SubscribeEvent
-    public static void onTabListNameFormat(PlayerEvent.TabListNameFormat event) {
+    public static Component tabListName(Player subject) {
         // A null custom name lets vanilla apply the current scoreboard team's color/prefix.
-        if (!com.myriad.game.ModState.isEnabled()) return;
-        if (!(event.getEntity() instanceof ServerPlayer player)) {
-            return;
+        if (!com.myriad.game.ModState.isEnabled()) return null;
+        if (!(subject instanceof ServerPlayer player)) {
+            return null;
         }
         PlayerData data = get(player);
         Faction faction = data == null ? null : data.getFaction();
@@ -572,7 +555,7 @@ public final class PlayerDataProvider {
             display.append(Component.literal("  " + manager.killsOf(player) + "/" + manager.deathsOf(player))
                     .withStyle(net.minecraft.ChatFormatting.GRAY));
         }
-        event.setDisplayName(display);
+        return display;
     }
 
     // ---- 玩家加入/离开 ----
@@ -581,15 +564,15 @@ public final class PlayerDataProvider {
 
     /** Reset every participant once per hosted world session, including late joiners. */
     public static void resetForHostSession(ServerPlayer player) {
-        player.getPersistentData().remove("myriad_deaths_without_kill");
-        player.getPersistentData().remove("myriad_last_hero");
-        player.getPersistentData().remove("myriad_last_hero_at");
+        com.myriad.player.EntityState.data(player).remove("myriad_deaths_without_kill");
+        com.myriad.player.EntityState.data(player).remove("myriad_last_hero");
+        com.myriad.player.EntityState.data(player).remove("myriad_last_hero_at");
 
-        player.getPersistentData().remove("myriad_hawk_ready");
-        player.getPersistentData().remove("myriad_chill_until");
-        player.getPersistentData().remove("myriad_corrode_until");
-        player.getPersistentData().remove("myriad_fear_until");
-        player.setData(PLAYER_DATA, new PlayerData());
+        com.myriad.player.EntityState.data(player).remove("myriad_hawk_ready");
+        com.myriad.player.EntityState.data(player).remove("myriad_chill_until");
+        com.myriad.player.EntityState.data(player).remove("myriad_corrode_until");
+        com.myriad.player.EntityState.data(player).remove("myriad_fear_until");
+        set(player, new PlayerData());
         player.getInventory().clearContent();
         player.containerMenu.setCarried(net.minecraft.world.item.ItemStack.EMPTY);
         player.removeAllEffects();
@@ -604,14 +587,13 @@ public final class PlayerDataProvider {
         player.setHealth(player.getMaxHealth());
         player.getFoodData().setFoodLevel(20);
         player.getFoodData().setSaturation(5);
-        player.refreshTabListName();
+        com.myriad.player.PlayerNames.refresh(player);
     }
 
-    @SubscribeEvent
-    public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
+    public static void onPlayerLoggedIn(Player subject) {
         Myriad.LOGGER.info("[login] PlayerLoggedInEvent fired for {}",
-                event.getEntity().getName().getString());
-        if (event.getEntity() instanceof ServerPlayer player) {
+                subject.getName().getString());
+        if (subject instanceof ServerPlayer player) {
             LAST_PLAYER_DEATH_EVENT.remove(player.getUUID());
             RetiredRuneCleanup.clean(player);
             if (!com.myriad.game.ModState.isEnabled()) {
@@ -706,9 +688,8 @@ public final class PlayerDataProvider {
         }
     }
 
-    @SubscribeEvent
-    public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
+    public static void onPlayerLoggedOut(Player subject) {
+        if (subject instanceof ServerPlayer player) {
             com.myriad.character.ability.AbilityRuntime.clear(player);
             LAST_PLAYER_DEATH_EVENT.remove(player.getUUID());
             com.myriad.game.BaseRules.logout(player);
@@ -789,10 +770,7 @@ public final class PlayerDataProvider {
     }
 
     /** 玩家重生（实体克隆）时复制全部数据（装备/技能等级/冷却等），并重建属性加成 */
-    @SubscribeEvent
-    public static void onPlayerClone(PlayerEvent.Clone event) {
-        Player original = event.getOriginal();
-        Player newPlayer = event.getEntity();
+    public static void onPlayerClone(Player original, Player newPlayer) {
         PlayerData oldData = get(original);
         PlayerData newData = get(newPlayer);
         if (oldData == null || newData == null) {
@@ -816,7 +794,7 @@ public final class PlayerDataProvider {
                 CharacterType.applyVanillaAttributes(serverPlayer);
             }
             syncToClient(serverPlayer);
-            serverPlayer.refreshTabListName();
+            com.myriad.player.PlayerNames.refresh(serverPlayer);
         }
     }
 
@@ -872,7 +850,7 @@ public final class PlayerDataProvider {
             // 替换品放回背包；背包满则掉落在地（可见，不消失）
             if (!slot0.isEmpty()) {
                 if (!player.getInventory().add(slot0)) {
-                    player.drop(slot0, false);
+                    player.drop(slot0, false, net.minecraft.util.Prediction.SERVER_ONLY);
                 }
             }
             player.getInventory().setItem(0, weapon);
@@ -897,7 +875,7 @@ public final class PlayerDataProvider {
         net.minecraft.world.item.ItemStack map = new net.minecraft.world.item.ItemStack(
                 com.myriad.registry.ModItems.TACTICAL_MAP.get());
         if (inv.getItem(8).isEmpty()) inv.setItem(8, map);
-        else if (!inv.add(map)) player.drop(map, false);
+        else if (!inv.add(map)) player.drop(map, false, net.minecraft.util.Prediction.SERVER_ONLY);
     }
 
     /** 专属初始武器模型，无法破坏；名字/颜色按角色区分。 */
@@ -985,17 +963,17 @@ public final class PlayerDataProvider {
     }
 
     /** 锁定初始武器：禁止 Q 键/扔出（打开物品栏或热键均无法丢弃） */
-    @SubscribeEvent
-    public static void onItemToss(net.neoforged.neoforge.event.entity.item.ItemTossEvent event) {
+    public static boolean onItemToss(Player actor, net.minecraft.world.entity.item.ItemEntity item) {
+        boolean cancelled=false;
         if (!com.myriad.game.ModState.isEnabled()) {
-            return;
+            return cancelled;
         }
-        net.minecraft.world.item.ItemStack stack = event.getEntity().getItem();
+        net.minecraft.world.item.ItemStack stack = item.getItem();
         if (stack.is(com.myriad.registry.ModItems.TACTICAL_MAP.get())) {
-            event.setCanceled(true);
-            event.getEntity().discard();
-            net.minecraft.world.entity.player.Inventory inv = event.getPlayer().getInventory();
-            boolean alreadyHasMap = event.getPlayer().getOffhandItem().is(
+            cancelled=true;
+            item.discard();
+            net.minecraft.world.entity.player.Inventory inv = actor.getInventory();
+            boolean alreadyHasMap = actor.getOffhandItem().is(
                     com.myriad.registry.ModItems.TACTICAL_MAP.get());
             for (int i = 0; i < inv.getContainerSize() && !alreadyHasMap; i++) {
                 alreadyHasMap = inv.getItem(i).is(com.myriad.registry.ModItems.TACTICAL_MAP.get());
@@ -1005,38 +983,41 @@ public final class PlayerDataProvider {
                 else if (!inv.add(stack)) {
                     net.minecraft.world.item.ItemStack displaced = inv.getItem(8);
                     inv.setItem(8, stack);
-                    event.getPlayer().drop(displaced, false);
+                    actor.drop(displaced, false, net.minecraft.util.Prediction.SERVER_ONLY);
                 }
             }
-            return;
+            return cancelled;
         }
         if (!isInitialWeapon(stack)) {
-            return;
+            return cancelled;
         }
-        event.setCanceled(true);
-        event.getEntity().discard();
-        net.minecraft.world.entity.player.Player player = event.getPlayer();
+        cancelled=true;
+        item.discard();
+        net.minecraft.world.entity.player.Player player = actor;
         net.minecraft.world.entity.player.Inventory inv = player.getInventory();
         net.minecraft.world.item.ItemStack slot0 = inv.getItem(0);
         if (!slot0.isEmpty() && !isInitialWeapon(slot0)) {
             if (!inv.add(slot0)) {
-                player.drop(slot0, false);
+                player.drop(slot0, false, net.minecraft.util.Prediction.SERVER_ONLY);
             }
         }
         inv.setItem(0, stack);
+
+        return cancelled;
     }
 
     /** F 键交换前由服务端拦截：专属初始武器不可进入副手。 */
-    @SubscribeEvent
-    public static void onSwapHands(
-            net.neoforged.neoforge.event.entity.living.LivingSwapItemsEvent.Hands event) {
+    public static boolean onSwapHands(LivingEntity subject, net.minecraft.world.item.ItemStack toOffhand) {
+        boolean cancelled=false;
         if (!com.myriad.game.ModState.isEnabled()
-                || !(event.getEntity() instanceof ServerPlayer)) {
-            return;
+                || !(subject instanceof ServerPlayer)) {
+            return cancelled;
         }
-        if (isInitialWeapon(event.getItemSwappedToOffHand())) {
-            event.setCanceled(true);
+        if (isInitialWeapon(toOffhand)) {
+            cancelled=true;
         }
+
+        return cancelled;
     }
 
     /** 是否为已注册的专属初始武器。 */
@@ -1061,9 +1042,8 @@ public final class PlayerDataProvider {
         }
     }
 
-    @SubscribeEvent
-    public static void onPlayerTick(PlayerTickEvent.Post event) {
-        if (!(event.getEntity() instanceof ServerPlayer player)) {
+    public static void onPlayerTick(Player subject) {
+        if (!(subject instanceof ServerPlayer player)) {
             return;
         }
         if (!com.myriad.game.ModState.isEnabled()) return;
@@ -1138,7 +1118,7 @@ public final class PlayerDataProvider {
             com.myriad.combat.CombatTelemetry.heal(player,
                     Math.min(pulse, player.getMaxHealth() - before), "regeneration");
             int actual = Math.max(0, (int)Math.ceil(player.getHealth() - before));
-            if (actual > 0) net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+            if (actual > 0) com.myriad.network.Packets.sendToPlayer(player,
                     new NetworkSetup.HealFloatPayload(actual));
         }
         }
@@ -1154,7 +1134,7 @@ public final class PlayerDataProvider {
         }
         // Tab 原版名称无需逐 tick 重建；自定义 HUD 数据在本方法末尾逐 tick 同步。
         if (player.tickCount % 20 == 0) {
-            player.refreshTabListName();
+            com.myriad.player.PlayerNames.refresh(player);
         }
         // 初始武器锁定（每 tick 强制恢复，无法移动/丢弃）
         applyWeaponLock(player, data);
@@ -1219,65 +1199,65 @@ public final class PlayerDataProvider {
     // ---- 传送阵交互（墨尘 W：队友右键传送） ----
 
     /** 右键隐形盔甲架 = 墨尘传送阵：传送至另一个传送阵或己方基地传送门 */
-    @SubscribeEvent
-    public static void onEntityInteract(
-            net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.EntityInteract event) {
-        if (event.getEntity().level().isClientSide()) {
-            return;
+    public static boolean onEntityInteract(Player subject, net.minecraft.world.entity.Entity target) {
+        boolean cancelled=false;
+        if (subject.level().isClientSide()) {
+            return cancelled;
         }
-        if (!(event.getEntity() instanceof ServerPlayer player)) {
-            return;
+        if (!(subject instanceof ServerPlayer player)) {
+            return cancelled;
         }
-        if (event.getTarget() instanceof LivingEntity living
+        if (target instanceof LivingEntity living
                 && com.myriad.game.JiarenManager.isJiaren(living.getUUID())) {
-            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+            com.myriad.network.Packets.sendToPlayer(player,
                     new NetworkSetup.OpenJiarenSettingsPayload(living.getId(),
                             (float) com.myriad.game.JiarenManager.physicalDefense(living),
                             (float) com.myriad.game.JiarenManager.magicDefense(living)));
-            event.setCanceled(true);
-            return;
+            cancelled=true;
+            return cancelled;
         }
-        if (!(event.getTarget() instanceof net.minecraft.world.entity.decoration.ArmorStand stand)) {
-            return;
+        if (!(target instanceof net.minecraft.world.entity.decoration.ArmorStand stand)) {
+            return cancelled;
         }
         com.myriad.character.skills.xuanchen.ChuanSongZhenSkill.onInteract(player, stand);
+
+        return cancelled;
     }
 
     /** 法师手持初始武器右键：向前发射魔法弹（伤害 = 法术强度×0.5，射程 10 格，攻速决定发射间隔） */
-    @SubscribeEvent
-    public static void onRightClickItem(
-            net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickItem event) {
-        if (event.getEntity().level().isClientSide()) {
+    public static void onRightClickItem(Player subject, net.minecraft.world.item.ItemStack stack) {
+        if (subject.level().isClientSide()) {
             return;
         }
-        if (!(event.getEntity() instanceof ServerPlayer player)) {
+        if (!(subject instanceof ServerPlayer player)) {
             return;
         }
         if (!com.myriad.game.ModState.isEnabled()) {
             return;
         }
-        if (com.myriad.game.TacticalSupplySystem.tryUse(player, event.getItemStack())) {
+        if (com.myriad.game.TacticalSupplySystem.tryUse(player, stack)) {
             return;
         }
         if (player.isUsingItem()) {
             return;
         }
-        com.myriad.combat.MagicBullet.tryFire(player, event.getItemStack());
+        com.myriad.combat.MagicBullet.tryFire(player, stack);
     }
 
     /** 准星指向方块时仍允许侦灵图腾按选点规则放置，并阻止方块交互吞掉右键。 */
-    @SubscribeEvent
-    public static void onRightClickBlock(
-            net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickBlock event) {
-        if (event.getEntity().level().isClientSide()
-                || !(event.getEntity() instanceof ServerPlayer player)
+    public static boolean onRightClickBlock(Player subject, net.minecraft.world.item.ItemStack stack) {
+        boolean cancelled=false;
+        if (subject.level().isClientSide()
+                || !(subject instanceof ServerPlayer player)
                 || !com.myriad.game.ModState.isEnabled()
-                || !event.getItemStack().is(com.myriad.registry.ModItems.SCOUT_TOTEM.get())) {
-            return;
+                || !stack.is(com.myriad.registry.ModItems.SCOUT_TOTEM.get())) {
+            return cancelled;
         }
-        if (com.myriad.game.TacticalSupplySystem.tryUse(player, event.getItemStack())) {
-            event.setCanceled(true);
+        if (com.myriad.game.TacticalSupplySystem.tryUse(player, stack)) {
+            cancelled=true;
         }
+
+        return cancelled;
     }
 
     // ---- 伤害：打断汲取 + 影刹被动挂钩 ----
@@ -1285,17 +1265,18 @@ public final class PlayerDataProvider {
     // ---- 攻击/伤害事件 ----
 
     /** 近战允许原版点选攻击，远程仍禁止原版近战包绕过各自的弹体与冷却。 */
-    @SubscribeEvent
-    public static void onPlayerAttack(net.neoforged.neoforge.event.entity.player.AttackEntityEvent event) {
+    public static boolean onPlayerAttack(Player subject, net.minecraft.world.entity.Entity target) {
+        boolean cancelled=false;
         if (!com.myriad.game.ModState.isEnabled()) {
-            return;
+            return cancelled;
         }
-        if (event.getEntity() instanceof ServerPlayer player
-                &&!com.myriad.combat.VanillaMeleeAttack.prepare(player,event.getTarget()))event.setCanceled(true);
+        if (subject instanceof ServerPlayer player
+                &&!com.myriad.combat.VanillaMeleeAttack.prepare(player,target))cancelled=true;
+
+        return cancelled;
     }
 
-    @SubscribeEvent
-    public static void onIncomingDamage(LivingIncomingDamageEvent event) {
+    public static void onIncomingDamage(DamageContext event) {
         if (event.getEntity().level().isClientSide()) {
             return;
         }
@@ -1319,7 +1300,7 @@ public final class PlayerDataProvider {
                 com.myriad.game.MonsterManager.typeOf(entity))
                 && (event.getSource().is(net.minecraft.world.damagesource.DamageTypes.ON_FIRE)
                         || event.getSource().is(net.minecraft.world.damagesource.DamageTypes.IN_FIRE))) {
-            event.getContainer().setNewDamage(0.0f);
+            event.setAmount(0.0f);
             entity.clearFire();
             return;
         }
@@ -1332,7 +1313,7 @@ public final class PlayerDataProvider {
         if (!(entity instanceof ServerPlayer)) {
             var context = com.myriad.combat.DamageCalc.peekSkillHit(entity);
             if (context == null || context.kind() != com.myriad.combat.DamageCalc.Kind.TRUE)
-                event.getContainer().setNewDamage((float) (event.getAmount()
+                event.setAmount((float) (event.getAmount()
                         * com.myriad.character.skills.rivet.HoldProtocol.incoming(entity)));
         }
         if (entity instanceof ServerPlayer victimPlayer) {
@@ -1357,12 +1338,12 @@ public final class PlayerDataProvider {
                     && swordVictim.getBuff("huaxingweijian") > 0 && event.getAmount() > 0) {
                 com.myriad.character.skills.lingyuan.LingYuanSkills.onSwordFormBlocked(
                         victimPlayer, event.getSource().getEntity());
-                event.getContainer().setNewDamage(0.0F);
+                event.setAmount(0.0F);
             }
             var incomingContext = com.myriad.combat.DamageCalc.peekSkillHit(entity);
             if(event.getAmount()>0&&com.myriad.character.skills.shuo.ShuoCombat.parry(victimPlayer,event.getSource(),incomingContext==null?null:incomingContext.kind()))
-                event.getContainer().setNewDamage(0);
-            event.getContainer().setNewDamage((float) (event.getAmount()
+                event.setAmount(0);
+            event.setAmount((float) (event.getAmount()
                     * com.myriad.character.ability.AbilityRuntime.incoming(victimPlayer,
                     incomingContext == null ? null : incomingContext.kind())));
 
@@ -1383,15 +1364,15 @@ public final class PlayerDataProvider {
             }
             // 天刑【天雷护体】：护体期间减伤 20%
             if (victimData != null && victimData.getBuff("tianleihuti") > 0 && event.getAmount() > 0) {
-                event.getContainer().setNewDamage(event.getAmount() * 0.8f);
+                event.setAmount(event.getAmount() * 0.8f);
             }
             // 墨尘【墨灵护阵】/【周天覆阵】：友方阵内减伤 30% / 25%
             if (event.getAmount() > 0
                     && com.myriad.character.skills.xuanchen.MoYangHuZhenSkill.inAllyZone(victimPlayer)) {
-                event.getContainer().setNewDamage(event.getAmount() * 0.7f);
+                event.setAmount(event.getAmount() * 0.7f);
             } else if (event.getAmount() > 0
                     && com.myriad.character.skills.xuanchen.ZhouTianFuZhenSkill.inAllyZone(victimPlayer)) {
-                event.getContainer().setNewDamage(event.getAmount() * 0.75f);
+                event.setAmount(event.getAmount() * 0.75f);
             }
         }
         // 野怪受伤：按伤害量累计仇恨（仇恨 = 玩家造成的伤害）
@@ -1455,15 +1436,15 @@ public final class PlayerDataProvider {
                 finalBasic = com.myriad.combat.DamageCalc.applyMitigation(attacker, entity, finalBasic,
                         com.myriad.combat.DamageCalc.Kind.PHYSICAL);
                 finalBasic = com.myriad.combat.DamageCalc.applyMonsterCritReduction(entity, finalBasic, crit);
-                event.getContainer().setNewDamage(Math.max(1.0f, finalBasic) * targetMitigationScale);
+                event.setAmount(Math.max(1.0f, finalBasic) * targetMitigationScale);
                 PlayerData basicAttackerData = get(attacker);
 
                 // Preserve explicit ranged falloff/skill multipliers; weak-release scaling is retired.
                 if (customBasicAttack && basicAttackMultiplier < 1.0F) {
-                    event.getContainer().setNewDamage(event.getAmount() * basicAttackMultiplier);
+                    event.setAmount(event.getAmount() * basicAttackMultiplier);
                 }
             }
-            event.getContainer().setNewDamage((float) (event.getAmount()
+            event.setAmount((float) (event.getAmount()
                     * com.myriad.character.ability.AbilityRuntime.modifyDamage(attacker, entity,
                     event.getAmount(), customBasicAttack || !skillHit,
                     com.myriad.character.ability.AbilityRuntime.sourceSkill(),
@@ -1485,7 +1466,7 @@ public final class PlayerDataProvider {
                     if (event.getAmount() > 0
                             && !(entity instanceof com.myriad.game.DefenseTowerEntity)
                             && !isAlly(attacker, entity) && isBehind(attacker, entity)) {
-                        event.getContainer().setNewDamage(event.getAmount() * 1.30f);
+                        event.setAmount(event.getAmount() * 1.30f);
                     }
                     // 保留化影命中破隐，但移除旧被动的150%破隐增伤。
                     if (attackerData.isStealthBonus() && attacker.hasEffect(MobEffects.INVISIBILITY)) {
@@ -1557,7 +1538,7 @@ public final class PlayerDataProvider {
                 if (CharacterType.byId(attackerData.getCharacterId()) == CharacterType.HANZE
                         && !com.myriad.character.rework.FirstGroupSkills.active(attackerData.getCharacterId())
                         && event.getAmount() > 0 && entity.isAlive()) {
-                    event.getContainer().setNewDamage(event.getAmount()
+                    event.setAmount(event.getAmount()
                             * com.myriad.character.skills.hanze.HanzeSkills.onFrostDomainDamage(attacker, entity));
                 }
                 // 凌渊【剑心通明】：普通攻击获得剑罡；【破绽】使凌渊伤害提高 15%。
@@ -1570,7 +1551,7 @@ public final class PlayerDataProvider {
                                 event.getAmount());
                     }
                     if (com.myriad.character.skills.lingyuan.LingYuanSkills.isFlawed(entity)) {
-                        event.getContainer().setNewDamage(event.getAmount() * 1.15F);
+                        event.setAmount(event.getAmount() * 1.15F);
                     }
                 }
                 // 赤霄【破阵战意】：对同一敌方英雄的连续有效伤害叠层。
@@ -1584,7 +1565,7 @@ public final class PlayerDataProvider {
             // 素岚【灵风标记】：目标受到伤害 +10%（普攻与技能均生效）
             if (event.getAmount() > 0
                     && com.myriad.character.skills.sulan.LingFengBiaoJiSkill.isMarked(entity)) {
-                event.getContainer().setNewDamage(event.getAmount() * 1.1f);
+                event.setAmount(event.getAmount() * 1.1f);
             }
             // 伤害飘字（仅对攻击者可见）：物理=红 / 法术=蓝 / 真实=白
             int type = com.myriad.client.DamageFloater.TYPE_PHYSICAL;
@@ -1607,7 +1588,7 @@ public final class PlayerDataProvider {
                     com.myriad.character.ability.AbilityRuntime.sourceDirect() );
             // 攻击目标生命显示（非玩家实体，玩家自身血条已有显示）
             if (entity.isAlive() && !(entity instanceof ServerPlayer)) {
-                net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(attacker,
+                com.myriad.network.Packets.sendToPlayer(attacker,
                         new NetworkSetup.TargetHealthPayload(entity.getId(),
                                 (float) com.myriad.combat.DamageCalc.defenseValue(entity,
                                         com.myriad.combat.DamageCalc.Kind.PHYSICAL),
@@ -1632,7 +1613,7 @@ public final class PlayerDataProvider {
                             shieldedPlayer, absorbed, event.getSource().getEntity());
                 }
                 com.myriad.game.BaseRules.combat(entity,event.getSource().getEntity());
-                event.getContainer().setNewDamage(Math.max(0.0f, event.getAmount() - absorbed));
+                event.setAmount(Math.max(0.0f, event.getAmount() - absorbed));
             }
         }
 
@@ -1641,7 +1622,7 @@ public final class PlayerDataProvider {
             if (event.getSource().getEntity() instanceof ServerPlayer jungler
                     && !com.myriad.character.rework.FirstGroupSkills.active(get(jungler).getCharacterId())
                     && java.util.Arrays.asList(get(jungler).getEquipmentSlots()).contains("jungle_blade"))
-                event.getContainer().setNewDamage(event.getAmount() * 1.30f);
+                event.setAmount(event.getAmount() * 1.30f);
             float before = com.myriad.game.MonsterManager.modHealth(entity);
             boolean lethal = com.myriad.game.MonsterManager.damageModHealth(entity, event.getAmount());
             float actual = Math.max(0.0F, before - com.myriad.game.MonsterManager.modHealth(entity));
@@ -1649,13 +1630,13 @@ public final class PlayerDataProvider {
             sendActualDamageFloat(entity, damageFloat, actual);
             damageFloat = null;
             if (event.getSource().getEntity() instanceof ServerPlayer ap) {
-                net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(ap,
+                com.myriad.network.Packets.sendToPlayer(ap,
                         new NetworkSetup.JiarenHpPayload(entity.getId(),
                                 com.myriad.game.MonsterManager.modHealth(entity),
                                 com.myriad.game.MonsterManager.modMaxHealth(entity)));
             }
             // 非致命伤害完全由模组生命池吸收；致命时放行足够高的原版伤害触发既有奖励/重生链路。
-            event.getContainer().setNewDamage(lethal ? 2048.0f : 0.0f);
+            event.setAmount(lethal ? 2048.0f : 0.0f);
         }
         // 防御塔与兵线单位：最终伤害进入独立生命池，友军和环境伤害无效。
         boolean laneManaged = com.myriad.game.LaneSystem.isManaged(entity);
@@ -1674,11 +1655,11 @@ public final class PlayerDataProvider {
             if(real>0)com.myriad.game.BaseRules.combat(entity,event.getSource().getEntity());
             float before = com.myriad.game.JiarenManager.hp(entity.getUUID());
             com.myriad.game.JiarenManager.damage(entity, real);
-            event.getContainer().setNewDamage(0.0f);
+            event.setAmount(0.0f);
             sendActualDamageFloat(entity, damageFloat, Math.min(real, before));
             damageFloat = null;
             if (event.getSource().getEntity() instanceof ServerPlayer ap) {
-                net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(ap,
+                com.myriad.network.Packets.sendToPlayer(ap,
                         new NetworkSetup.JiarenHpPayload(entity.getId(),
                                 com.myriad.game.JiarenManager.hp(entity.getUUID()),
                                 com.myriad.game.JiarenManager.MAX_HP));
@@ -1697,28 +1678,27 @@ public final class PlayerDataProvider {
     }
 
     /** 所有原版生命实体在护甲、减伤、格挡、吸收生命与生命扣除完成后，以实际生命损失显示飘字。 */
-    @SubscribeEvent
-    public static void onDamageApplied(net.neoforged.neoforge.event.entity.living.LivingDamageEvent.Post event) {
+    public static void onDamageApplied(LivingEntity subject, net.minecraft.world.damagesource.DamageSource source, float damage) {
         // 原版默认受击无敌帧较长，会吞掉高频技能与攻速收益；模组对局统一缩短为 3 tick。
-        if (!event.getEntity().level().isClientSide() && com.myriad.game.ModState.isEnabled()
-                && event.getHealthDamage() > 0) {
-            event.getEntity().invulnerableTime = 3;
+        if (!subject.level().isClientSide() && com.myriad.game.ModState.isEnabled()
+                && damage > 0) {
+            subject.damageCooldownTime = 3;
         }
-        if(event.getHealthDamage()>0)com.myriad.game.BaseRules.combat(event.getEntity(),event.getSource().getEntity());
-        if (event.getEntity().level().isClientSide() || !com.myriad.game.ModState.isEnabled()) return;
-        LivingEntity entity = event.getEntity();
+        if(damage>0)com.myriad.game.BaseRules.combat(subject,source.getEntity());
+        if (subject.level().isClientSide() || !com.myriad.game.ModState.isEnabled()) return;
+        LivingEntity entity = subject;
         if (entity instanceof ServerPlayer victimPlayer) {
             com.myriad.combat.CombatTelemetry.recordDamage(
-                    victimPlayer, event.getHealthDamage(), event.getSource().getEntity());
-            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(victimPlayer,
-                    new NetworkSetup.HurtFeedbackPayload(event.getHealthDamage(), victimPlayer.getMaxHealth()));
+                    victimPlayer, damage, source.getEntity());
+            com.myriad.network.Packets.sendToPlayer(victimPlayer,
+                    new NetworkSetup.HurtFeedbackPayload(damage, victimPlayer.getMaxHealth()));
         }
         // 这些目标已在 Incoming 阶段按各自独立生命池的真实差值发送并消费上下文。
         if (com.myriad.game.MonsterManager.isMonster(entity)
                 || com.myriad.game.LaneSystem.isManaged(entity)
                 || com.myriad.game.JiarenManager.isJiaren(entity.getUUID())) return;
 
-        sendActualDamageFloat(entity, pollDamageFloat(entity), event.getHealthDamage());
+        sendActualDamageFloat(entity, pollDamageFloat(entity), damage);
     }
 
     /** 攻击者是否在目标背后 */
@@ -1792,29 +1772,31 @@ public final class PlayerDataProvider {
      * 模组对局中的普通伤害不附带原版击退。明确设计了击退、牵引或推行的技能
      * 直接通过 KnockbackBuffer.apply / motion 施加，因此不会被这里误拦截。
      */
-    @SubscribeEvent
-    public static void onLivingKnockBack(LivingKnockBackEvent event) {
-        if (!com.myriad.game.ModState.isEnabled() || event.getEntity().level().isClientSide()) return;
+    public static boolean blockVanillaKnockback(LivingEntity subject) {
+        boolean cancelled=false;
+        if (!com.myriad.game.ModState.isEnabled() || subject.level().isClientSide()) return cancelled;
 
-        event.setCanceled(true);
+        cancelled=true;
+
+        return cancelled;
     }
 
-    @SubscribeEvent
-    public static void onLivingDeath(LivingDeathEvent event) {
-        com.myriad.combat.KnockbackBuffer.clear(event.getEntity().getUUID());
-        ModShieldSystem.clearFor(event.getEntity().getUUID());
+    public static boolean onLivingDeath(LivingEntity subject, net.minecraft.world.damagesource.DamageSource source) {
+        boolean cancelled=false;
+        com.myriad.combat.KnockbackBuffer.clear(subject.getUUID());
+        ModShieldSystem.clearFor(subject.getUUID());
         if (!com.myriad.game.ModState.isEnabled()) {
-            return;
+            return cancelled;
         }
-        if (event.getEntity().level().isClientSide()) {
-            return;
+        if (subject.level().isClientSide()) {
+            return cancelled;
         }
-        if (event.getEntity() instanceof ServerPlayer player) {
+        if (subject instanceof ServerPlayer player) {
             long deathTick = player.level().getGameTime();
             Long previousDeath = LAST_PLAYER_DEATH_EVENT.put(player.getUUID(), deathTick);
             if (previousDeath != null && deathTick - previousDeath <= 10L) {
-                event.setCanceled(true);
-                return;
+                cancelled=true;
+                return cancelled;
             }
             com.myriad.character.ability.AbilityRuntime.clear(player);
 
@@ -1822,19 +1804,19 @@ public final class PlayerDataProvider {
             ModShieldSystem.clearFor(player);
             GameManager manager = GameManager.get();
             if (com.myriad.game.TrainingMode.isEnabled()) {
-                event.setCanceled(true);
+                cancelled=true;
                 player.setCamera(player);
                 player.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
                 player.fallDistance = 0;
                 player.clearFire();
-                player.invulnerableTime = 20;
+                player.damageCooldownTime = 20;
                 PlayerHealthSystem.fill(player);
                 get(player).setMana((float)player.getAttributeValue(ModAttributes.MAX_MANA));
                 syncToClient(player);
-                return;
+                return cancelled;
             }
 
-            net.minecraft.world.entity.Entity credited = creditedKiller(player, event.getSource().getEntity());
+            net.minecraft.world.entity.Entity credited = creditedKiller(player, source.getEntity());
             if (manager != null) {
                 manager.recordHeroDeath(player, credited);
             }
@@ -1851,35 +1833,35 @@ public final class PlayerDataProvider {
                             Math.max(0, killer.getMaxHealth() - killer.getHealth()) * .30F, "kill");
                 }
             }
-            player.getPersistentData().putInt("myriad_deaths_without_kill",
-                    Math.min(20,player.getPersistentData().getIntOr("myriad_deaths_without_kill",0)+1));
-            player.getPersistentData().remove("myriad_last_hero");
-            player.getPersistentData().remove("myriad_last_hero_at");
+            com.myriad.player.EntityState.data(player).putInt("myriad_deaths_without_kill",
+                    Math.min(20,com.myriad.player.EntityState.data(player).getIntOr("myriad_deaths_without_kill",0)+1));
+            com.myriad.player.EntityState.data(player).remove("myriad_last_hero");
+            com.myriad.player.EntityState.data(player).remove("myriad_last_hero_at");
             if (com.myriad.game.TrainingMode.isEnabled()
                     || manager != null && manager.getPhase() == GameManager.Phase.PLAYING) {
-                event.setCanceled(true);
+                cancelled=true;
                 com.myriad.game.HeroRespawnSystem.begin(player);
             }
-            return;
+            return cancelled;
         }
         // 野怪死亡：先发放击杀奖励（依赖存活标记），再清理标记 + 安排重生
-        if (event.getEntity() instanceof net.minecraft.world.entity.LivingEntity living
+        if (subject instanceof net.minecraft.world.entity.LivingEntity living
                 && com.myriad.game.MonsterManager.isMonster(living)) {
-            if (event.getSource().getEntity() instanceof ServerPlayer killer) {
+            if (source.getEntity() instanceof ServerPlayer killer) {
                 com.myriad.game.MonsterManager.onKill(killer, living);
             }
             com.myriad.game.MonsterManager.onDeath(living);
         }
-        if (event.getEntity() instanceof net.minecraft.world.entity.LivingEntity living
+        if (subject instanceof net.minecraft.world.entity.LivingEntity living
                 && com.myriad.game.LaneSystem.isManaged(living)) {
 
-            com.myriad.game.LaneSystem.onDeath(living, event.getSource().getEntity());
-            return;
+            com.myriad.game.LaneSystem.onDeath(living, source.getEntity());
+            return cancelled;
         }
 
         // 焚诀被动【焚天战意】：每击杀一名敌方玩家，回复自身 30% 已损失生命值
-        if (event.getSource().getEntity() instanceof ServerPlayer killer
-                && event.getEntity() instanceof ServerPlayer victim
+        if (source.getEntity() instanceof ServerPlayer killer
+                && subject instanceof ServerPlayer victim
                 && CharacterType.byId(get(killer).getCharacterId()) == CharacterType.FENJUE
                 && !com.myriad.character.rework.FirstGroupSkills.active(get(killer).getCharacterId())) {
             GameManager mgr = GameManager.get();
@@ -1895,13 +1877,13 @@ public final class PlayerDataProvider {
                 }
             }
         }
+
+        return cancelled;
     }
 
     // ---- 命令 ----
 
-    @SubscribeEvent
-    public static void onRegisterCommands(RegisterCommandsEvent event) {
-        CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
+    public static void onRegisterCommands(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("myriad")
                 .then(Commands.literal("jiaren")
                         .then(Commands.literal("create").executes(ctx -> {
@@ -2432,7 +2414,7 @@ public final class PlayerDataProvider {
         if (GameManager.get() != null) {
             GameManager.get().onPlayerJoin(player);
         }
-        player.refreshTabListName();
+        com.myriad.player.PlayerNames.refresh(player);
         syncToClient(player);
     }
 
@@ -2455,7 +2437,7 @@ public final class PlayerDataProvider {
         settings.put("targetScore", com.myriad.game.GameRules.TEAM_TARGET_SCORE);
         settings.put("spiritPerExtract", com.myriad.game.GameRules.SPIRIT_PER_EXTRACT);
         settings.put("channelTicks", com.myriad.game.GameRules.CHANNEL_TICKS);
-        net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(requester,
+        com.myriad.network.Packets.sendToPlayer(requester,
                 new NetworkSetup.GameSettingsPayload(settings));
     }
 
@@ -2585,7 +2567,7 @@ public final class PlayerDataProvider {
                     RetiredRuneCleanup.clean(player);
                 }
             }
-            player.refreshTabListName();
+            com.myriad.player.PlayerNames.refresh(player);
             syncToClient(player);
         }
     }
@@ -2601,7 +2583,7 @@ public final class PlayerDataProvider {
             Faction f = d == null ? null : d.getFaction();
             teams.put(p.getName().getString(), f == null ? 0 : (f == Faction.XUANXIAO ? 1 : 2));
         }
-        net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(requester,
+        com.myriad.network.Packets.sendToPlayer(requester,
                 new NetworkSetup.TeamListPayload(teams, com.myriad.game.MatchArena.active().id,
                         com.myriad.game.MatchArena.available(server, com.myriad.game.MatchArena.Mode.DUEL)));
     }

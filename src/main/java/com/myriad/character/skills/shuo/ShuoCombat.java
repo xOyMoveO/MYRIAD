@@ -10,7 +10,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.myriad.network.Packets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import static com.myriad.network.ShuoViewPayload.*;
@@ -26,7 +26,7 @@ public final class ShuoCombat {
     public static boolean blocked(ServerPlayer p){if(!isShuo(p))return false;var s=state(p);advance(p,s);return s.charging||s.sheath!=null||s.busy!=null||AbilityRuntime.moving(p);}
     public static boolean drawn(ServerPlayer p){return state(p).drawn;}
     public static int gauge(ServerPlayer p){return state(p).gauge;}
-    public static void cue(ServerPlayer p,int action,int ticks){int token=SEQUENCE.updateAndGet(v->v==Integer.MAX_VALUE?1:v+1);PacketDistributor.sendToPlayer(p,new ShuoViewPayload(action,ticks,p.level().getGameTime(),token));}
+    public static void cue(ServerPlayer p,int action,int ticks){int token=SEQUENCE.updateAndGet(v->v==Integer.MAX_VALUE?1:v+1);Packets.sendToPlayer(p,new ShuoViewPayload(action,ticks,p.level().getGameTime(),token));}
     public static void clear(ServerPlayer p){
         ShuoWeaponState.sync(p,false);
         if(STATES.remove(p)!=null&&p.connection!=null)cue(p,CANCEL,0);

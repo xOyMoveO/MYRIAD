@@ -22,4 +22,9 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build with Gradle
-        run: ./gradlew build
+        run: bash ./gradlew build
+
+      - name: Fabric GameTest
+        run: |
+          bash ./gradlew runGameTestServer -PmyriadGameTests -PgameTestFilter=myriad:first_group
+          bash ./gradlew runGameTestServer -PmyriadGameTests -PgameTestFilter=myriad:shuo_pilot

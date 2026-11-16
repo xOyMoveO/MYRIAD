@@ -42,9 +42,9 @@ public final class SkillPresentation {
         boolean ultimate = skill.isUltimate();
         // Stored on the entity: no global UUID map or cross-world lifecycle leak.
         long now = p.level().getGameTime();
-        long last = p.getPersistentData().getLongOr("myriad_presentation_cast", Long.MIN_VALUE);
+        long last = com.myriad.player.EntityState.data(p).getLongOr("myriad_presentation_cast", Long.MIN_VALUE);
         if (last != Long.MIN_VALUE && now - last < 2) return;
-        p.getPersistentData().putLong("myriad_presentation_cast", now);
+        com.myriad.player.EntityState.data(p).putLong("myriad_presentation_cast", now);
         p.level().playSound(null, p.blockPosition(), ModSounds.foley(s.sound), SoundSource.PLAYERS,
                 ultimate ? .65F : .42F, 1F);
         // New modular skills author their own silhouettes; do not overlay the old generic burst.
@@ -87,9 +87,9 @@ public final class SkillPresentation {
         // Fenjue's contact is emitted after measured HP/shield loss, not this older generic burst.
         if(type==CharacterType.FENJUE)return;
         long now = p.level().getGameTime();
-        long last = p.getPersistentData().getLongOr("myriad_presentation_hit", Long.MIN_VALUE);
+        long last = com.myriad.player.EntityState.data(p).getLongOr("myriad_presentation_hit", Long.MIN_VALUE);
         if (last != Long.MIN_VALUE && now - last < 5) return;
-        p.getPersistentData().putLong("myriad_presentation_hit", now);
+        com.myriad.player.EntityState.data(p).putLong("myriad_presentation_hit", now);
         Style s = style(type);
         Vec3 c = target.position().add(0, target.getBbHeight() * .5, 0);
         // Personal confirmation only: no hidden-target position is broadcast to spectators/enemies.

@@ -5,7 +5,7 @@ import com.myriad.game.VisionSystem;
 import com.myriad.network.YikeStatePayload;
 import com.myriad.player.PlayerDataProvider;
 import net.minecraft.server.level.ServerPlayer;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.myriad.network.Packets;
 import java.util.*;
 
 /** A confirmed pose/sight snapshot. These values are presentation, never client authority. */
@@ -25,11 +25,11 @@ public final class YikeState {
             YikeStance.nextShotTicks(p),windup,PrismaticBeam.jumps(p),mode==3?PrismaticBeam.aim(p):YikeStance.aim(p),
             SteadyBarrier.cooldown(p),SteadyBarrier.ready(p),winding==null?0:winding.windupProgress(),p.level().getGameTime());
         for(var viewer:p.level().players()){
-            if(viewer==p||viewer.position().distanceToSqr(p.position())<64*64&&VisionSystem.canSee(viewer,p))PacketDistributor.sendToPlayer(viewer,packet);
+            if(viewer==p||viewer.position().distanceToSqr(p.position())<64*64&&VisionSystem.canSee(viewer,p))Packets.sendToPlayer(viewer,packet);
         }
     }
     public static void clear(ServerPlayer p){BEAM_CHARGE.remove(p.getUUID());
         var packet=new YikeStatePayload(p.getId(),0,0,0,0,-1,0,p.getLookAngle(),0,false,0,p.level().getGameTime());
-        for(var viewer:p.level().players())PacketDistributor.sendToPlayer(viewer,packet);
+        for(var viewer:p.level().players())Packets.sendToPlayer(viewer,packet);
     }
 }

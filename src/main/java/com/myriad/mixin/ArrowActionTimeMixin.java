@@ -48,10 +48,10 @@ public abstract class ArrowActionTimeMixin extends Projectile {
         boolean supported=getType()==EntityTypes.ARROW||getType()==EntityTypes.SPECTRAL_ARROW;
         if(!supported||isInGround()) {myriad$phase=0;original.call();return;}
         double rate;
-        if(level().isClientSide())rate=getData(VanillaArrowTime.RATE);
+        if(level().isClientSide())rate=com.myriad.combat.VanillaArrowTime.rate(this);
         else {
             rate=ModState.isEnabled()?KehengTimeFields.projectileRate(getOwner(),position(),level().getGameTime()):1;
-            if(getData(VanillaArrowTime.RATE)!=rate)setData(VanillaArrowTime.RATE,rate);
+            if(com.myriad.combat.VanillaArrowTime.rate(this)!=rate)com.myriad.combat.VanillaArrowTime.rate(this,rate);
         }
         // Vanilla has no airborne TTL. These are MYRIAD's explicit flight budgets, not its in-ground life.
         if(!level().isClientSide()&&ModState.isEnabled()){

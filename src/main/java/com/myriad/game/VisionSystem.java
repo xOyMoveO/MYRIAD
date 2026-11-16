@@ -24,7 +24,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.myriad.network.Packets;
 
 /** 服务端战争迷雾与草丛判定：每名玩家拥有独立视野结果。 */
 public final class VisionSystem {
@@ -94,7 +94,7 @@ public final class VisionSystem {
                                 target.getHealth(), targetData.getModMaxHealth(), ally));
                     }
                 }
-                PacketDistributor.sendToPlayer(viewer, new com.myriad.network.EnemyHealthPayload(bars));
+                Packets.sendToPlayer(viewer, new com.myriad.network.EnemyHealthPayload(bars));
             }
         }
         boolean enabled = manager != null && manager.getPhase() == GameManager.Phase.PLAYING
@@ -126,7 +126,7 @@ public final class VisionSystem {
     }
 
     private static void send(ServerPlayer viewer, boolean enabled, Set<Integer> visible) {
-        PacketDistributor.sendToPlayer(viewer,
+        Packets.sendToPlayer(viewer,
                 new NetworkSetup.FogVisibilityPayload(enabled, new ArrayList<>(visible)));
     }
 

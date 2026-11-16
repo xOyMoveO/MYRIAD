@@ -12,7 +12,7 @@ public final class LifestealSystem {
         if (skill && !magic) return;
         double rate = Math.clamp(p.getAttributeValue(magic ? ModAttributes.SPELL_LIFESTEAL : ModAttributes.PHYSICAL_LIFESTEAL), 0, 20) / 100;
         double efficiency = (skill ? .33 : 1) * (target instanceof ServerPlayer ? 1 : .5);
-        var nbt = p.getPersistentData();
+        var nbt = com.myriad.player.EntityState.data(p);
         long second = p.level().getGameTime() / 20;
         double used = nbt.getLongOr("myriad_lifesteal_second", -1) == second ? nbt.getDoubleOr("myriad_lifesteal_used", 0) : 0;
         float heal = (float)Math.max(0, Math.min(actual * rate * efficiency, p.getMaxHealth() * .04 - used));
@@ -21,7 +21,7 @@ public final class LifestealSystem {
         float before = p.getHealth(); CombatTelemetry.heal(p, heal, "lifesteal");
         float gained = Math.max(0, p.getHealth() - before);
         nbt.putLong("myriad_lifesteal_second", second); nbt.putDouble("myriad_lifesteal_used", used + gained);
-        if (gained > 0) net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p,
+        if (gained > 0) com.myriad.network.Packets.sendToPlayer(p,
                 new com.myriad.network.NetworkSetup.HealFloatPayload(Math.max(1, Math.round(gained))));
     }
 }

@@ -247,7 +247,7 @@ public final class DamageCalc {
         }
         // 物理技能不吸血；普攻吸血和法术吸血仍由各自属性控制。
         if (kind == Kind.PHYSICAL) return;
-        net.neoforged.neoforge.registries.DeferredHolder<net.minecraft.world.entity.ai.attributes.Attribute, ?>
+        net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute>
                 holder = kind == Kind.PHYSICAL ? ModAttributes.PHYSICAL_LIFESTEAL : ModAttributes.SPELL_LIFESTEAL;
         double lifesteal = Mth.clamp(attr(living, holder), 0, LIFESTEAL_CAP) / 100.0;
         if (lifesteal > 0 && living.getHealth() < living.getMaxHealth()) {
@@ -255,7 +255,7 @@ public final class DamageCalc {
             CombatTelemetry.heal(living, heal, "lifesteal");
             // 回复飘字（吸血来源为玩家时，仅实际回血）
             if (living instanceof net.minecraft.server.level.ServerPlayer sp) {
-                net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(sp,
+                com.myriad.network.Packets.sendToPlayer(sp,
                         new com.myriad.network.NetworkSetup.HealFloatPayload(Math.max(1, Math.round(heal))));
             }
         }
@@ -267,7 +267,7 @@ public final class DamageCalc {
     }
 
     /** 读取属性值；未挂载该属性的实体（野怪无模组属性）返回属性默认值，避免异常 */
-    private static double attr(LivingEntity entity, net.neoforged.neoforge.registries.DeferredHolder<net.minecraft.world.entity.ai.attributes.Attribute, ?> holder) {
+    private static double attr(LivingEntity entity, net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> holder) {
         net.minecraft.world.entity.ai.attributes.AttributeInstance inst = entity.getAttribute(holder);
         return inst == null ? holder.value().getDefaultValue() : inst.getValue();
     }

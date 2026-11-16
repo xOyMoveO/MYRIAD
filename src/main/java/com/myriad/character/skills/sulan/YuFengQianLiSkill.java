@@ -20,7 +20,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.myriad.network.Packets;
 
 import com.myriad.character.Skill;
 import com.myriad.combat.DamageCalc;
@@ -237,7 +237,7 @@ public class YuFengQianLiSkill extends Skill {
         if (cast.remainingTicks > 0) {
             cast.dir = currentDirection(player);
             player.setDeltaMovement(cast.dir.x * DASH_SPEED, 0, cast.dir.z * DASH_SPEED);
-            PacketDistributor.sendToPlayer(player,
+            Packets.sendToPlayer(player,
                     new DashPayload((float) cast.dir.x, 0f, (float) cast.dir.z, 2));
             player.setNoGravity(true);
             player.noPhysics = true;
@@ -254,7 +254,7 @@ public class YuFengQianLiSkill extends Skill {
         double range = BASE_RANGE + (cast.level - 1);
         cast.lastPos = player.position();
         cast.remainingTicks = (int) Math.round(range / DASH_SPEED);
-        PacketDistributor.sendToPlayer(player,
+        Packets.sendToPlayer(player,
                 new DashPayload((float) cast.dir.x, 0f, (float) cast.dir.z, cast.remainingTicks),
                 new CustomPacketPayload[0]);
         player.setDeltaMovement(cast.dir.x * DASH_SPEED, 0, cast.dir.z * DASH_SPEED);
@@ -325,7 +325,7 @@ public class YuFengQianLiSkill extends Skill {
         player.setNoGravity(false);
         player.setDeltaMovement(0, player.getDeltaMovement().y, 0);
         // 通知客户端停止冲刺（撞人/位移结束立即停下，不再滑行）
-        PacketDistributor.sendToPlayer(player,
+        Packets.sendToPlayer(player,
                 new DashPayload(0f, 0f, 0f, 0), new CustomPacketPayload[0]);
         // 结束后移速 +30%、无视减速 3 秒
         AttributeInstance ms = player.getAttribute(Attributes.MOVEMENT_SPEED);

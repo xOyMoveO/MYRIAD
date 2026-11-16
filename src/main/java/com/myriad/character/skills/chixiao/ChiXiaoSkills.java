@@ -38,7 +38,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.component.ResolvableProfile;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.myriad.network.Packets;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 /** 破军·赤霄：战意叠层、扇形斩、两段追魂踏、招架反击与单体斩杀。 */
@@ -147,7 +147,7 @@ public final class ChiXiaoSkills extends Skill {
                 BLOOD_MARKS.put(player.getUUID(), new MarkState(player.position(), level.getGameTime() + 70,
                         spawnBloodClone(level, player)));
                 DASHES.put(player.getUUID(), new DashState(flat, 9, lv, player.position()));
-                PacketDistributor.sendToPlayer(player, new DashPayload((float)flat.x, 0, (float)flat.z, 9), new CustomPacketPayload[0]);
+                Packets.sendToPlayer(player, new DashPayload((float)flat.x, 0, (float)flat.z, 9), new CustomPacketPayload[0]);
                 player.setDeltaMovement(flat.x * .9, player.getDeltaMovement().y, flat.z * .9);
                 for (int i = 0; i < 18; i++) { double a = Math.PI * 2 * i / 18.0;
                     level.sendParticles(BLOOD_DUST, player.getX() + Math.cos(a) * .7, player.getY() + .1,
@@ -222,10 +222,10 @@ public final class ChiXiaoSkills extends Skill {
     }
 
     /** 招架仅减伤正面攻击；成功挡下敌方英雄伤害时立即反击。 */
-    public static void onIncomingDamage(ServerPlayer victim, net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent event) {
+    public static void onIncomingDamage(ServerPlayer victim, com.myriad.combat.DamageContext event) {
         long until = PARRIES.getOrDefault(victim.getUUID(), 0L); long now = victim.level().getGameTime();
         if (until > now && event.getSource().getEntity() instanceof LivingEntity attacker && isFront(victim, attacker)) {
-            event.getContainer().setNewDamage(event.getAmount() * .30F);
+            event.setAmount(event.getAmount() * .30F);
             if (attacker instanceof ServerPlayer && !ally(victim, attacker)) {
                 PARRIES.remove(victim.getUUID()); PlayerDataProvider.get(victim).setBuff("chixiaofanfeng", 0);
                 float ad = (float)victim.getAttributeValue(ModAttributes.PHYSICAL_ATTACK);
@@ -238,7 +238,7 @@ public final class ChiXiaoSkills extends Skill {
             }
         }
         PlayerData data = PlayerDataProvider.get(victim);
-        if (data.getBuff("pojunwuhui") > 0 && event.getAmount() > 0) event.getContainer().setNewDamage(event.getAmount() * .70F);
+        if (data.getBuff("pojunwuhui") > 0 && event.getAmount() > 0) event.setAmount(event.getAmount() * .70F);
     }
 
     public static boolean hasUltimateTarget(ServerPlayer player) { return nearestEnemyHero(player.level(), player, 14) != null; }
@@ -259,7 +259,7 @@ public final class ChiXiaoSkills extends Skill {
         Vec3 delta = point.subtract(player.position());
         LEAPS.put(player.getUUID(), new LeapState(player.position(), point, player.level().getGameTime(),
                 Math.max(1, data.skillLevel("pojunwuhui"))));
-        PacketDistributor.sendToPlayer(player,
+        Packets.sendToPlayer(player,
                 new ParabolicMotionPayload((float)delta.x, (float)delta.y, (float)delta.z, 4.0F, 16),
                 new CustomPacketPayload[0]);
         player.resetFallDistance();
@@ -392,7 +392,7 @@ public final class ChiXiaoSkills extends Skill {
             if (mark != null && mark.stand != null && mark.stand.isAlive()) mark.stand.discard();
             BLOOD_MARKS.remove(player.getUUID()); return; }
         if (mark.stand != null && mark.stand.isAlive()) {
-            mark.stand.setInvulnerable(true);
+            mark.stand.setPermanentlyInvulnerable(true);
             mark.stand.setHealth(mark.stand.getMaxHealth());
             mark.stand.clearFire();
         }
@@ -406,7 +406,7 @@ public final class ChiXiaoSkills extends Skill {
         if (stand == null) return null;
         stand.setPos(player.getX(), player.getY(), player.getZ());
         stand.setYRot(player.getYRot()); stand.setYHeadRot(player.getYHeadRot());
-        stand.setNoGravity(true); stand.setInvulnerable(true);
+        stand.setNoGravity(true); stand.setPermanentlyInvulnerable(true);
         stand.setHealth(stand.getMaxHealth());
         stand.setComponent(DataComponents.PROFILE, ResolvableProfile.createResolved(player.getGameProfile()));
         stand.setItemSlot(EquipmentSlot.MAINHAND, player.getMainHandItem().copy());

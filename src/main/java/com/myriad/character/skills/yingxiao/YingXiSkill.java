@@ -25,7 +25,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.myriad.network.Packets;
 
 /**
  * 影刹·夜影 Q 技能【影袭】：朝视角方向高速冲刺（含垂直方向），
@@ -56,7 +56,7 @@ public class YingXiSkill extends Skill {
          dash.dir = dir;
          dash.lastPos = player.position();
          DASHES.put(player.getUUID(), dash);
-         PacketDistributor.sendToPlayer(player, new DashPayload((float)dir.x, (float)dir.y, (float)dir.z, 6), new CustomPacketPayload[0]);
+         Packets.sendToPlayer(player, new DashPayload((float)dir.x, (float)dir.y, (float)dir.z, 6), new CustomPacketPayload[0]);
          player.setDeltaMovement(dir.x * 1.0, dir.y * 1.0, dir.z * 1.0);
          dash.remainingTicks--;
          ServerLevel level = player.level();

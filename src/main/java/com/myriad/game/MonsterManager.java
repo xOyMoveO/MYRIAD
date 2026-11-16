@@ -439,7 +439,7 @@ public final class MonsterManager {
             if(s.attackRecovery+1E-9>=cooldown){
                 s.attackRecovery=0;
                 s.lastAttackTick=now;
-                mob.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+                mob.swing(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT);
                 applyNpcDamage(target,mob,(float)(s.type.getAttack()*growthMultiplier(s.respawnGeneration)));
             }
         }else NpcNavigation.move(level,mob,s.navigation,target.position(),s.type.getMoveSpeed()*growthMultiplier(s.respawnGeneration)/12.0);
@@ -460,7 +460,7 @@ public final class MonsterManager {
         stand.setPos(pos.getX() + 0.5, pos.getY() + 1.5, pos.getZ() + 0.5);
         stand.setNoGravity(true);
         stand.setInvisible(true);
-        stand.setInvulnerable(true);
+        stand.setPermanentlyInvulnerable(true);
         stand.setCustomNameVisible(true);
         stand.setCustomName(Component.literal("刷新: --s"));
         level.addFreshEntity(ModEntityTracker.markGenerated(stand));

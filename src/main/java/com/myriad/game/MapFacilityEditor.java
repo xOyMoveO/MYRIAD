@@ -12,7 +12,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.Permissions;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.myriad.network.Packets;
 
 /** 服务端权威的地图设施编辑入口。所有页面操作在这里重新校验并写入当前地图存档。 */
 public final class MapFacilityEditor {
@@ -184,7 +184,7 @@ public final class MapFacilityEditor {
 
     private static void sendSnapshot(ServerPlayer player) {
         if (!canEdit(player, false)) return;
-        PacketDistributor.sendToPlayer(player, new NetworkSetup.MapFacilitySnapshotPayload(
+        Packets.sendToPlayer(player, new NetworkSetup.MapFacilitySnapshotPayload(
                 snapshotEntries(player.level().getServer())));
     }
 

@@ -1,17 +1,18 @@
 package com.myriad.combat;
 
-import com.myriad.Myriad;
+import net.fabricmc.fabric.api.attachment.v1.*;
 import net.minecraft.network.codec.ByteBufCodecs;
-import net.neoforged.neoforge.attachment.AttachmentType;
-import net.neoforged.neoforge.registries.*;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.Entity;
 
-/** The current flight rate travels with vanilla entity tracking, including newly tracking observers. */
+/** Fabric attachment tracking includes the current flight rate for late observers. */
 public final class VanillaArrowTime {
-    private VanillaArrowTime() {}
-    public static final DeferredRegister<AttachmentType<?>> ATTACHMENTS=
-            DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES,Myriad.MODID);
-    public static final DeferredHolder<AttachmentType<?>,AttachmentType<Double>> RATE=
-            ATTACHMENTS.register("arrow_action_rate",()->AttachmentType.builder(()->1.0).sync(ByteBufCodecs.DOUBLE).build());
-    // Explicit MYRIAD airborne budgets. Vanilla only has an unrelated 1200-tick in-ground life.
+    /** Registers saved/synced types before any world or entity data is decoded. */
+    public static void initialize() { }
+
+    private VanillaArrowTime() { }
+    public static final AttachmentType<Double> RATE = AttachmentRegistry.create(Identifier.parse("myriad:arrow_action_rate"), b -> b.initializer(() -> 1.0).syncWith(ByteBufCodecs.DOUBLE, AttachmentSyncPredicate.all()));
+    public static double rate(Entity entity) { return ((AttachmentTarget) entity).getAttachedOrCreate(RATE); }
+    public static void rate(Entity entity,double value) { ((AttachmentTarget) entity).setAttached(RATE,value); }
     public static final int FLIGHT_TICKS=1200, REAL_FLIGHT_TICKS=2400;
 }

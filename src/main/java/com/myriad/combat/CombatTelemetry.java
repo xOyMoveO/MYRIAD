@@ -5,7 +5,7 @@ import com.myriad.network.NetworkSetup;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.myriad.network.Packets;
 
 /** 服务端权威的个人承伤/治疗统计，只向事件所属玩家发送汇总增量。 */
 public final class CombatTelemetry {
@@ -34,7 +34,7 @@ public final class CombatTelemetry {
         if (actual <= 0) return;
         if (com.myriad.game.GameManager.get() != null)
             com.myriad.game.GameManager.get().recordHealingReceived(player, actual);
-        PacketDistributor.sendToPlayer(player, new NetworkSetup.CombatTelemetryPayload(
+        Packets.sendToPlayer(player, new NetworkSetup.CombatTelemetryPayload(
                 HEAL, Math.max(1, Math.round(actual)), sanitize(HEAL_SOURCE.get())));
     }
 
@@ -43,7 +43,7 @@ public final class CombatTelemetry {
         if (com.myriad.game.GameManager.get() != null)
             com.myriad.game.GameManager.get().recordDamageTaken(victim, actualDamage);
         int kind = source instanceof ServerPlayer ? DAMAGE_PLAYER : DAMAGE_NON_PLAYER;
-        PacketDistributor.sendToPlayer(victim, new NetworkSetup.CombatTelemetryPayload(
+        Packets.sendToPlayer(victim, new NetworkSetup.CombatTelemetryPayload(
                 kind, Math.max(1, Math.round(actualDamage)), ""));
     }
 

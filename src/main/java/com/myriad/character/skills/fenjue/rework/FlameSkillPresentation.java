@@ -3,7 +3,7 @@ package com.myriad.character.skills.fenjue.rework;
 import com.myriad.character.ability.AbilityRuntime;
 import com.myriad.character.ability.AbilityRuntime.Cast;
 import com.myriad.network.FlameSkillViewPayload;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.myriad.network.Packets;
 import java.util.concurrent.atomic.AtomicInteger;
 import static com.myriad.network.FlameSkillViewPayload.*;
 
@@ -12,7 +12,7 @@ public final class FlameSkillPresentation {
     private static final AtomicInteger SEQUENCE=new AtomicInteger();
     private FlameSkillPresentation(){}
     public static int play(Cast c,int action,int ticks){int token=SEQUENCE.updateAndGet(n->n==Integer.MAX_VALUE?1:n+1);play(c,action,ticks,token);return token;}
-    public static void play(Cast c,int action,int ticks,int token){PacketDistributor.sendToPlayer(c.player,new FlameSkillViewPayload(action,ticks,c.now(),token));}
+    public static void play(Cast c,int action,int ticks,int token){Packets.sendToPlayer(c.player,new FlameSkillViewPayload(action,ticks,c.now(),token));}
     public static void mobileBurst(Cast c,Runnable release){
         int token=play(c,BURST_READY,13);boolean[] resolved={false};
         c.windup(13,.25f,()->{resolved[0]=true;play(c,BURST_FIRE,10,token);release.run();});

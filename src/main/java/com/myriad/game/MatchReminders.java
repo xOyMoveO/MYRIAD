@@ -14,7 +14,7 @@ public final class MatchReminders {
         if (data == null || data.getCharacterId() == null || player.isSpectator()) return;
         long now = player.level().getGameTime();
         long round = manager.getMatchStartTime();
-        var tag = player.getPersistentData();
+        var tag = com.myriad.player.EntityState.data(player);
         if (tag.getLongOr("myriad_reminder_round", -1) != round) {
             tag.putLong("myriad_reminder_round", round);
             tag.putLong("myriad_reminder_next", 0);

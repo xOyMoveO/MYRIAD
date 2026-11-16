@@ -15,7 +15,7 @@ public final class FullGameReset {
     private static final String KEY = "myriad_full_reset_generation";
     private FullGameReset() { }
     private static Path path(MinecraftServer server) {
-        return server.getWorldPath(LevelResource.ROOT).resolve("myriad_reset_generation.txt");
+        return server.getWorldPath(LevelResource.ROOT).resolve("myriad_fabric_reset_generation.txt");
     }
     public static void execute(MinecraftServer server) throws IOException {
         String generation = UUID.randomUUID().toString();
@@ -35,7 +35,7 @@ public final class FullGameReset {
         TrainingMode.setNoMana(false);
         GameManager.get().resetToLobby(server, true);
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            player.getPersistentData().putString(KEY, generation);
+            com.myriad.player.EntityState.data(player).putString(KEY, generation);
         }
         server.getPlayerList().saveAll();
         MatchProgress.save(server);
@@ -48,16 +48,16 @@ public final class FullGameReset {
         if (!Files.isRegularFile(file)) return;
         try {
             String generation = Files.readString(file).trim();
-            if (!stale(generation, player.getPersistentData().getStringOr(KEY, ""))) return;
+            if (!stale(generation, com.myriad.player.EntityState.data(player).getStringOr(KEY, ""))) return;
             if (ModState.isEnabled()) {
                 PlayerDataProvider.resetForHostSession(player);
                 player.setGameMode(net.minecraft.world.level.GameType.ADVENTURE);
                 LobbySystem.teleportToLobby(player);
             } else {
                 // Never erase restored vanilla inventory while the mod is off.
-                player.setData(PlayerDataProvider.PLAYER_DATA, new PlayerData());
+                PlayerDataProvider.set(player, new PlayerData());
             }
-            player.getPersistentData().putString(KEY, generation);
+            com.myriad.player.EntityState.data(player).putString(KEY, generation);
         } catch (IOException e) {
             throw new IllegalStateException("Cannot read world reset generation", e);
         }

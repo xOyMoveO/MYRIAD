@@ -30,7 +30,7 @@ public final class KnockbackBuffer {
     public static boolean apply(LivingEntity target, Vec3 motion) {
         if (!allow(target)) return false;
         target.setDeltaMovement(motion.scale(com.myriad.character.skills.rivet.EmergencyStrut.knockbackMultiplier(target)));
-        target.hurtMarked = true;
+        target.syncVelocity=true;
         return true;
     }
 

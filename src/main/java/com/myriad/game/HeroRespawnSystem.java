@@ -4,7 +4,7 @@ import com.myriad.player.PlayerDataProvider;
 import com.myriad.network.SpectatorTargetPayload;
 import com.myriad.registry.ModAttributes;
 import net.minecraft.server.level.ServerPlayer;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.myriad.network.Packets;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 import java.util.Comparator;
@@ -31,7 +31,7 @@ public final class HeroRespawnSystem {
             Waiting waiting = WAITING.remove(player.getUUID());
             if (waiting != null) {
                 player.setCamera(player);
-                PacketDistributor.sendToPlayer(player, new SpectatorTargetPayload(false, ""));
+                Packets.sendToPlayer(player, new SpectatorTargetPayload(false, ""));
                 player.setGameMode(GameType.ADVENTURE);
                 player.setHealth(player.getMaxHealth());
                 PlayerDataProvider.get(player).setBuff("hero_respawn", 0);
@@ -98,7 +98,7 @@ public final class HeroRespawnSystem {
         if (remaining <= 0 || !active) {
             WAITING.remove(player.getUUID());
             player.setCamera(player);
-            PacketDistributor.sendToPlayer(player, new SpectatorTargetPayload(false, ""));
+            Packets.sendToPlayer(player, new SpectatorTargetPayload(false, ""));
             player.teleportTo(waiting.point.x, waiting.point.y, waiting.point.z);
             player.setGameMode(GameType.ADVENTURE);
             com.myriad.player.PlayerHealthSystem.fill(player);
@@ -154,7 +154,7 @@ public final class HeroRespawnSystem {
             player.setCamera(target);
         }
         if (forceSync || cameraChanged) {
-            PacketDistributor.sendToPlayer(player, new SpectatorTargetPayload(true,
+            Packets.sendToPlayer(player, new SpectatorTargetPayload(true,
                     target == null ? "" : target.getName().getString()));
         }
     }

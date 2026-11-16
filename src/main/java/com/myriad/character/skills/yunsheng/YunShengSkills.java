@@ -33,7 +33,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import com.myriad.combat.DamageContext;
 
 /** 灵契·云笙：灵契辅助、视野界标、共鸣减伤与群体牵引。 */
 public final class YunShengSkills extends Skill {
@@ -370,10 +370,10 @@ public final class YunShengSkills extends Skill {
     }
 
     /** 共鸣只抵消下一次有效伤害，随后立即消耗。 */
-    public static void reduceResonanceDamage(LivingEntity victim, LivingIncomingDamageEvent event) {
+    public static void reduceResonanceDamage(LivingEntity victim, DamageContext event) {
         Long until = RESONANCE.get(victim.getUUID());
         if (until == null || until <= victim.level().getGameTime() || event.getAmount() <= 0) return;
-        event.getContainer().setNewDamage(event.getAmount() * .80F);
+        event.setAmount(event.getAmount() * .80F);
         RESONANCE.remove(victim.getUUID());
         if (victim instanceof ServerPlayer player) {
             PlayerDataProvider.get(player).setBuff("yunsheng_passive", 0);

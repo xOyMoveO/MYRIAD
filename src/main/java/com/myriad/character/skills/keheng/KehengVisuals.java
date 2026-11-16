@@ -5,7 +5,7 @@ import com.myriad.game.VisionSystem;
 import com.myriad.network.AbilityVfxPayload;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.myriad.network.Packets;
 import static com.myriad.character.ability.AbilityVfxGeometry.*;
 import static com.myriad.character.skills.keheng.KehengVfx.*;
 
@@ -21,7 +21,7 @@ public final class KehengVisuals {
             if(viewer.position().distanceToSqr(packet.from())>Math.pow(64+packet.radius(),2)&&viewer.position().distanceToSqr(packet.to())>Math.pow(64+packet.radius(),2))continue;
             var anchor=c.player.level().getEntity(packet.anchor());
             if(anchor!=null&&!VisionSystem.canSee(viewer,anchor))continue;
-            if(viewer==c.player||VisionSystem.canSee(viewer,c.player))PacketDistributor.sendToPlayer(viewer,packet);
+            if(viewer==c.player||VisionSystem.canSee(viewer,c.player))Packets.sendToPlayer(viewer,packet);
         }
     }
     public static void warning(AbilityRuntime.Cast c,Vec3 at,double radius,long elapsed,int instance){
@@ -42,7 +42,7 @@ public final class KehengVisuals {
     public static void pulse(AbilityRuntime.Cast c,Vec3 at,double radius){AbilityVisuals.emit(c,ARC,at.add(0,.05,0),at.add(0,1,0),radius,0,5,false);}
     public static void finish(AbilityRuntime.Cast c,int instance){
         var packet=recipe(c,CANCEL,Vec3.ZERO,Vec3.ZERO,0,2,1,-1,instance);
-        for(var viewer:c.player.level().players())PacketDistributor.sendToPlayer(viewer,packet);
+        for(var viewer:c.player.level().players())Packets.sendToPlayer(viewer,packet);
     }
     public static void end(AbilityRuntime.Cast c,Vec3 at,double radius,boolean natural,int instance,boolean clear){
         finish(c,instance);
