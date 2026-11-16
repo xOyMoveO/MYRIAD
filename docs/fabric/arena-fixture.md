@@ -48,6 +48,8 @@ bash ./gradlew runGameTestServer -PmyriadGameTests -PgameTestFilter=myriad:arena
 bash ./gradlew runGameTestServer -PmyriadGameTests -PgameTestFilter=myriad:arena_tower_3v3
 ```
 
+地图导入要求隔离启动时已设置的 `myriad.combatTests`，独立服务器专项要求生成器创建的 `synthetic-only` 实例标记；拒绝把这些配置导入任意手动启动的普通世界。
+
 主流程使用10/6名同进程 fixture 玩家；正式命令经真实 dispatcher，开始/选角/设施拒绝经生产 C2S codec 和已注册 Fabric receiver。未直接写对局 phase、角色预约或伤害后的建筑生命来冒充开局/胜利。仅将测试世界时钟推进到已定义的计时边界，并给合法普攻较大的测试伤害以缩短拆塔；兵线执行实际导航与碰撞步进。两份塔专项让65个实际服务器 tick 自然运行，核对设施确实索敌、攻击敌方而不攻击友方。
 
 主流程检查两模式配置修改、保存、读回、切换隔离、大厅、管理员/阶段约束、分队、轮次与唯一性、准备、兵线、泉水、草丛视野、小地图、营地与首领刷新、资源点、塔序/水晶胜负、回大厅、重开、关闭和清理。检查本地/LAN规则时直接调用实际生产的会话打开/关闭处理器；这不宣称已经运行物理客户端退出世界。

@@ -14,11 +14,14 @@
 
 | 场景 | 输入与期望 | 实际结果 |
 |---|---|---|
-| 完整主流程 | 5v5十人、3v3六人；正常命令分队、生产UI开始/选角payload、正式阶段、地图点位/设施、胜负/新局/关闭 | 见本轮GameTest逐项报告 |
-| 两模式塔 | 当前配置生成真实塔，65个实际服务器tick，敌方站入范围、友方同时在场 | 见两份塔专项报告 |
-| 3v3三进程 | 第一进程保存新PLAYING局；第二进程恢复/关闭；第三进程关闭态重开、逐点读两模式 | write/read/read-off通过，原始结构化记录附后 |
+| 完整主流程 | 5v5十人、3v3六人；正常命令分队、生产UI开始/选角payload、正式阶段、地图点位/设施、胜负/新局/关闭 | 1/1通过，346条断言 |
+| 两模式塔 | 当前配置生成真实塔，65个实际服务器tick，敌方站入范围、友方同时在场 | 5v5 1/1、130条；3v3 1/1、79条通过 |
+| 3v3三进程 | 第一进程保存新PLAYING局；第二进程恢复/关闭；第三进程关闭态重开、逐点读两模式 | 364/4/80条断言通过，4塔2晶、3营地正确恢复 |
 | 5v5三进程 | 独立新平坦世界，重复同样保存/恢复/关闭态重开 | 416/4/80条断言通过，18塔2晶、3营地正确恢复，原始结构化记录附后 |
+| 既有战场缓时专项 | `myriad:world_time`，四类兵线、九类普通营地、四类首领与合法伤害/免缓时边界，原版箭同步/碰撞/寿命 | 1/1通过，[原stdout](evidence/arena-world-time-20261116.txt)与XML保留 |
 | 本地/LAN规则 | 直接执行生产会话结束/打开处理器，期望结束当前局并关闭，不续局 | 主流程覆盖；物理客户端退出世界留给#44真实客户端整合 |
+
+主流程与塔专项：[完整流程JSON](evidence/arena-flow-20261116.json)、[5v5塔JSON](evidence/arena-tower5-20261116.json)、[3v3塔JSON](evidence/arena-tower3-20261116.json)；同名 `.txt` 保存完整stdout、`.xml` 各有实际1个通过用例。不是空套件。三项均在合入 `e835e9f56a373cede4c1f6ed198693ecfdf3bb5b` 后独立JVM运行。
 
 3v3记录：[write](evidence/arena-3v3-write-20261116.json)、[read](evidence/arena-3v3-read-20261116.json)、[read-off](evidence/arena-3v3-read-off-20261116.json)。5v5记录：[write](evidence/arena-5v5-write-20261116.json)、[read](evidence/arena-5v5-read-20261116.json)、[read-off](evidence/arena-5v5-read-off-20261116.json)。每份报告保留实际执行的断言，不把期望当作结果。
 
@@ -34,6 +37,10 @@
 - 初轮fixture还发现默认管理员权限为0、泉水只在整秒tick执行、空模板缺乏基地到线路的地面支撑。分别通过显式测试OP、在生产脉冲时点检查和合成平面补齐fixture；没有关闭原断言或改变这些玩法规则。
 
 Minecraft/Fabric可能在异常结束时仍让Gradle显示 `BUILD SUCCESSFUL`；因此本报告同时使用日志中的实际GameTest完成信息和结构化报告 `passed`，不以Gradle状态代替结果。GameTest XML若为空套件，单独保留并说明，不能写成XML提供了完整case证据。
+
+## 构建产物
+
+`bash ./gradlew build --offline` 编译全部主源码及保留的GameTest源通过；命名空间、JSON、发行JAR审计通过。产物 `myriad-0.1.0.jar` 为26,508,747字节，SHA256 `1a7a8206de7f073aa36664a97ece12b0541b6d847469c366416debc372a16dfb`。已核对主JAR不含GameTest、合成fixture、测试实例、适配工具或验收入口。详细[构建记录](evidence/arena-build-20261116.json)及同名stdout保留。只构建本地交付包，未安装正式实例。共享资源完整性检查5149项通过，没有重新下载资源。
 
 ## 交付边界
 

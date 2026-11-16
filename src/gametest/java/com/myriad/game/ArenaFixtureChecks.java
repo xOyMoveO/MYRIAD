@@ -65,6 +65,10 @@ public final class ArenaFixtureChecks implements ModInitializer {
             if (!server.isDedicatedServer()) throw new IllegalStateException("Fixture restart runner requires dedicated server");
             var suite = new Suite(server);
             try {
+                Path manifest=suite.world.toAbsolutePath().normalize().getParent().resolve("arena-fixture-manifest.json");
+                if(!Files.isRegularFile(manifest) || !"synthetic-only".equals(JsonParser.parseString(
+                        Files.readString(manifest)).getAsJsonObject().get("kind").getAsString()))
+                    throw new IllegalStateException("Dedicated fixture stages require the generator's new synthetic instance");
                 switch (stage) {
                     case "write" -> { suite.scenarios(); suite.begin(System.getProperty("myriad.arenaFixtureMode","3v3")); suite.facilities(); MatchProgress.save(server); }
                     case "read" -> suite.restored();
@@ -131,6 +135,8 @@ public final class ArenaFixtureChecks implements ModInitializer {
             passed.add(MatchArena.active().id + ": " + label);
         }
         void install() throws Exception {
+            if(!Boolean.getBoolean("myriad.combatTests"))
+                throw new IllegalStateException("Fixture import requires the isolated GameTest launch flag");
             for (String file : FILES) {
                 Path path = world.resolve(file); Files.createDirectories(path.getParent());
                 try (var stream = ArenaFixtureChecks.class.getResourceAsStream("/arena-fixture/" + file)) {
