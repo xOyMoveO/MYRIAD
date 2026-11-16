@@ -1,0 +1,67 @@
+{
+  "kind": "synthetic-only",
+  "baseline": "8da79ddc329492155cea44f3166c97f0e37d86fc",
+  "dimension": "minecraft:overworld",
+  "files": [
+    {
+      "path": "myriad_arena_selection.json",
+      "bytes": 20,
+      "sha256": "a874d731b79371b22ab145b01888287f2df3b064eaff90c0b0ce79c71bca0b17"
+    },
+    {
+      "path": "myriad_arenas/3v3/myriad_brush_zones.json",
+      "bytes": 155,
+      "sha256": "c9de93f57326d87a2a8c2e363d3b614d4428d976d0b5c97fee54eb8eb91a5a45"
+    },
+    {
+      "path": "myriad_arenas/3v3/myriad_lane_layout.json",
+      "bytes": 1556,
+      "sha256": "c5b5c079b246d5a8307bf85b0731da18b45a6956f17aaf338fae98334ba4a108"
+    },
+    {
+      "path": "myriad_arenas/3v3/myriad_minimap.json",
+      "bytes": 322,
+      "sha256": "f65ef79282ad5dbc29b654362cfd7bce9f8de5ae3ef54f2a763307f6abecc281"
+    },
+    {
+      "path": "myriad_arenas/3v3/myriad_monster_spawns.json",
+      "bytes": 360,
+      "sha256": "03dfe38f03cf39c36cd8424504b06cc835055df0ff8b542b02de617e6283b811"
+    },
+    {
+      "path": "myriad_arenas/3v3/myriad_vein_spawns.json",
+      "bytes": 57,
+      "sha256": "1c560d18b6b85393823df0ab6551506ab5ee396445c932fd0b00d975832180e1"
+    },
+    {
+      "path": "myriad_brush_zones.json",
+      "bytes": 153,
+      "sha256": "7fedc7436057f168b44c7e8660c6322b0b7b445518ad32d1bf4c896cb5697ee9"
+    },
+    {
+      "path": "myriad_lane_layout.json",
+      "bytes": 4552,
+      "sha256": "17302cf8bbc388c6faa631febff7efee3e784696e756c91cf665984125e841e1"
+    },
+    {
+      "path": "myriad_lobby.json",
+      "bytes": 54,
+      "sha256": "7dd7d96e9047de81f7cc24249b9fa6826e0976bd502e587bc9415e2693e0a510"
+    },
+    {
+      "path": "myriad_minimap.json",
+      "bytes": 318,
+      "sha256": "595938176d4f5ad3e486d28c95e5eb7d253d7e8398f366a339a01dbce6e7f94b"
+    },
+    {
+      "path": "myriad_monster_spawns.json",
+      "bytes": 357,
+      "sha256": "693d54c48ac1e742ba68b5fabd7a3d645b5df849182a8706ea0f23a8f168b8ef"
+    },
+    {
+      "path": "myriad_vein_spawns.json",
+      "bytes": 374,
+      "sha256": "1801b410d319b4435862edd1d9bfbcb729e16a41b50685337dc5e92ccd726073"
+    }
+  ]
+}

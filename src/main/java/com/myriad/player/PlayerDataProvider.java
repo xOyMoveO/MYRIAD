@@ -461,6 +461,10 @@ public final class PlayerDataProvider {
         SESSION_PLAYERS.clear();
         GameManager.create();
         com.myriad.game.MatchArena.initialize(server);
+    }
+
+    /** Fabric STARTING precedes levels and the player list; map/runtime binding needs both. */
+    public static void onServerStarted(MinecraftServer server) {
         GameManager.get().setServer(server);
         com.myriad.game.MonsterManager.initialize(server);
         com.myriad.game.LaneSystem.initialize(server);
@@ -2413,18 +2417,23 @@ public final class PlayerDataProvider {
     }
 
     private static void assignTeam(ServerPlayer player, Faction faction) {
+        // Consume a pending round reset before writing the administrator's new choice.
+        if (GameManager.get() != null) {
+            GameManager.get().onPlayerJoin(player);
+        }
         PlayerData data = get(player);
         if (data != null) {
             data.setFaction(faction);
-        }
-        if (GameManager.get() != null) {
-            GameManager.get().onPlayerJoin(player);
         }
         com.myriad.player.PlayerNames.refresh(player);
         syncToClient(player);
     }
 
     private static int assignTeamById(CommandSourceStack source, ServerPlayer player, String factionId) {
+        if (GameManager.get() == null || GameManager.get().getPhase() != GameManager.Phase.WAITING) {
+            source.sendFailure(Component.translatable("message.myriad.settings_only_before"));
+            return 0;
+        }
         Faction faction = Faction.byId(factionId);
         if (faction == null) {
             source.sendFailure(Component.translatable("message.myriad.invalid_faction"));

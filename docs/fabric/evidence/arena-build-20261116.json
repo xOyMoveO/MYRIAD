@@ -1,0 +1,11 @@
+{
+  "file": "myriad-0.1.0.jar",
+  "bytes": 26508747,
+  "sha256": "1a7a8206de7f073aa36664a97ece12b0541b6d847469c366416debc372a16dfb",
+  "build": "bash ./gradlew build --offline",
+  "namespace": "PASS",
+  "fixturesInRelease": false,
+  "deployed": false,
+  "sourceBase": "4f11db31f0af0c1845e7198113b852b63d8cf7f2",
+  "additionalChanges": "isolated test entry guards and verification evidence; production source unchanged"
+}

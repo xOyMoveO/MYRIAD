@@ -1,6 +1,6 @@
 # Fabric 26.3 开发与复现
 
-本目录记录 #40 的平台接合与朔「一闪」试点；全量迁移完成条件仍属于 #39。[保留清单与公共契约](retention-and-contracts.md) 区分保留内容、试点与后续专项。
+本目录记录 #40 的平台接合与朔「一闪」试点，以及 #43 的[双模式合成地图与生命周期复现](arena-fixture.md)；全量迁移完成条件仍属于 #39。[保留清单与公共契约](retention-and-contracts.md) 区分保留内容、试点与后续专项。
 
 [#42 B组角色记录](roster-b-20261116.md)列出7人/56候选、实际服务端专项、共享伤害修复及人工待验边界。
 
@@ -18,7 +18,7 @@ bash ./gradlew runGameTestServer -PmyriadGameTests -PgameTestFilter=myriad:rivet
 bash ./gradlew runGameTestClient -PmyriadGameTests
 ```
 
-`build` 编译主源码和所有保留GameTest源。测试mod仅在 `-PmyriadGameTests` 启用，独立目录 `run-fabric-gametest`，XML报告为 `build/reports/fabric-gametest.xml`。筛选项来自 Fabric 的 `fabric-api.gametest.filter`；默认只运行隔离的`myriad:first_group`。旧专项会修改共同训练/对局状态，逐专项显式filter、在新进程运行，不能并发聚合后宣称等价覆盖。物理客户端`runGameTestClient`启动后运行原管线/模型客观断言，报告`build/reports/fabric-client-checks.json`，不产生视觉通过结论。`arena_switch` 保留历史人工fixture入口并标为manual_only；按用户补充，实际地图及原地图整局由人验收。技术侧只在测试世界验证，不索取或加载原地图。
+`build` 编译主源码和所有保留GameTest源。测试mod仅在 `-PmyriadGameTests` 启用，独立目录 `run-fabric-gametest`，XML报告为 `build/reports/fabric-gametest.xml`。筛选项来自 Fabric 的 `fabric-api.gametest.filter`；默认只运行隔离的`myriad:first_group`。旧专项会修改共同训练/对局状态，逐专项显式filter、在新进程运行，不能并发聚合后宣称等价覆盖。物理客户端`runGameTestClient`启动后运行原管线/模型客观断言，报告`build/reports/fabric-client-checks.json`，不产生视觉通过结论。`arena_switch` 保留历史人工fixture入口并标为manual_only；按用户补充，实际地图及原地图整局由人验收。技术侧使用仓库内 `arena_fixture`、`arena_tower_5v5`、`arena_tower_3v3` 合成专项与独立服务器重启入口验证两模式，不索取或加载原地图。详见[双模式复现说明](arena-fixture.md)。
 
 ## 已有资源与隔离运行
 
