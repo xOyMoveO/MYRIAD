@@ -43,7 +43,9 @@ final class RosterBChecks {
             int serial=0;
             for(String role:LEGACY)for(int index=0;index<8;index++)for(int pass=0;pass<(index==slowIndex(role)?2:1);pass++) {
                 var s=new Scene();s.role=role;s.index=index;s.slow=pass==1;int n=serial++;
-                var floor=h.absolutePos(new BlockPos(-40+(n%3)*64,12+(n/3)*12,-30));CombatChunks.prepare(h.getLevel(),floor);
+                // Keep every scene inside roster_b_empty's declared bounds so the
+                // runner tracks its entity sections independently of random chunk alignment.
+                var floor=h.absolutePos(new BlockPos(8+(n%3)*40,12+(n/3)*12,4));CombatChunks.prepare(h.getLevel(),floor);
                 for(int x=-3;x<=3;x++)for(int z=-3;z<=19;z++)for(int y=0;y<=5;y++){
                     var at=floor.offset(x,y,z);s.blocks.put(at,h.getLevel().getBlockState(at));h.getLevel().setBlockAndUpdate(at,(y==0?Blocks.STONE:Blocks.AIR).defaultBlockState());
                 }

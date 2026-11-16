@@ -45,7 +45,7 @@ final class RivetChecks {
             ModState.setEnabled(true);TrainingMode.setEnabled(false);TrainingMode.setNoCooldown(false);TrainingMode.setNoMana(false);
             RivetVfxChecks.verify(h);
             GameManager.create();var manager=GameManager.get();manager.setServer(h.getLevel().getServer());
-            for(int col=0;col<8;col++)CombatChunks.prepare(h.getLevel(),h.absolutePos(new BlockPos(-80+col*20,12,-30)));
+            for(int col=0;col<8;col++)CombatChunks.prepare(h.getLevel(),h.absolutePos(new BlockPos(8+col*20,12,4)));
             CombatChunks.prepare(h.getLevel(),h.absolutePos(new BlockPos(1024,12,-30)));
             var prep=fixture(h,CASES+10);fixtures.add(prep);
             var noWall=fixture(h,CASES+11);fixtures.add(noWall);
@@ -78,7 +78,7 @@ final class RivetChecks {
             for(int n=1;n<=205;n++){final int tick=n;h.runAfterDelay(n,()->{
                 if(done[0])return;
                 try {
-                    if(tick%20==0){for(int col=0;col<8;col++)CombatChunks.hold(h.getLevel(),h.absolutePos(new BlockPos(-80+col*20,12,-30)));CombatChunks.hold(h.getLevel(),h.absolutePos(new BlockPos(1024,12,-30)));}
+                    if(tick%20==0){for(int col=0;col<8;col++)CombatChunks.hold(h.getLevel(),h.absolutePos(new BlockPos(8+col*20,12,4)));CombatChunks.hold(h.getLevel(),h.absolutePos(new BlockPos(1024,12,-30)));}
                     AbilityRuntime.tick(prep.p);manager.tick(h.getLevel().getServer(),h.getLevel().getGameTime());
                     if(tick==100){list.add(noWall.p);h.getLevel().getServer().getPlayerList().getPlayersByUUID().put(noWall.p.getUUID(),noWall.p);h.getLevel().players().add(noWall.p);manager.onPlayerJoin(noWall.p);h.assertTrue(noWall.p.position().distanceTo(noWall.origin)<.01&&(Long)field(GameManager.class,manager,"pickCountdownEndTick")==deadline&&noWall.packets.stream().filter(NetworkSetup.PickStatePayload.class::isInstance).map(NetworkSetup.PickStatePayload.class::cast).anyMatch(packet->packet.state()==1),"A teammate reconnecting during preparation receives its missed fountain transfer and closed draft without restarting the timer");}
                     if(tick==100)h.assertTrue(!TacticalAnchor.anchorReady(prep.p)&&manager.getPhase()==GameManager.Phase.PICKING&&TacticalAnchor.anchor(prep.p).until()==anchorUntil,"Preparation does not restart the countdown or anchor lifetime");
@@ -325,7 +325,7 @@ final class RivetChecks {
     private static void basic(ServerPlayer player,LivingEntity target){set(LivingEntity.class,player,"attackStrengthTicker",200);target.damageCooldownTime = 0;player.fallDistance=0;player.attack(target);}
     private static AbilitySkill node(int i){return FirstGroupSkills.node("rivet",i);}
     private static void rank(Fixture f,int index,int rank){var d=PlayerDataProvider.get(f.p);for(int r=d.skillLevel(node(index).getId());r<rank;r++)PlayerDataProvider.upgradeSkill(f.p,node(index).getId());}
-    private static Fixture fixture(GameTestHelper h,int i){var f=new Fixture();f.index=i;f.level=h.getLevel();var at=h.absolutePos(i==69?new BlockPos(1024,12,-30):new BlockPos(-80+(i%8)*20,12+(i/8)*7,-30));
+    private static Fixture fixture(GameTestHelper h,int i){var f=new Fixture();f.index=i;f.level=h.getLevel();var at=h.absolutePos(i==69?new BlockPos(1024,12,-30):new BlockPos(8+(i%8)*20,12+(i/8)*7,4));
         f.origin=Vec3.atBottomCenterOf(at.above());for(int x=-7;x<=7;x++)for(int z=-4;z<=18;z++)for(int y=-1;y<4;y++)block(f,x,y,z,y==-1?Blocks.STONE:Blocks.AIR);
         // Native player registration maintains entity/chunk tracking for remote fixture columns.
         f.p=player(h,f,f.origin);f.level.players().remove(f.p);f.level.addNewPlayer(f.p);f.p.setYRot(0);f.p.setXRot(0);if(i<CASES)f.target=dummy(f,f.origin.add(0,0,2.35));return f;}

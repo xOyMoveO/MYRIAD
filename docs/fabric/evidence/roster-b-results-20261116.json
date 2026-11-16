@@ -7,37 +7,37 @@
       "filter": "myriad:roster_b",
       "observed_required_passed": 1,
       "build_successful": true,
-      "log_sha256": "18c9213f7b3327c4b643ee2fc2b158cc49dc9ec370c40ba6ae3c9d27a6fae7bb",
+      "log_sha256": "0e0ccfcfc83ac8c85b3b1bf80070f1901a5f38b938cc7994e3876598ceebdf4a",
       "xml_file": "roster-b-20261116.xml",
       "xml_testcase_count": 1,
       "stdout_evidence": [
-        "[23:24:32] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-ACCEPTED-DAMAGE] PASS: vanilla HP 100+60, pure shield 100+60, independent HP 100+60, invulnerable/zero rejection, exact cooldown 3/unchanged17",
-        "[23:24:32] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-ROSTER-B] PASS: 7-role/56-candidate registered packet learning, branch/gate rejection, native attachment disk+clone, five-role 30 active-branch exact damage/shield/motion outcomes + ten actual passive hooks + five public-rate paired windup/motion scenarios and actual presentation packets; Yike/Rivet exhaustive scenarios separate; no native-client or visual acceptance"
+        "[23:37:33] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-ACCEPTED-DAMAGE] PASS: vanilla HP 100+60, pure shield 100+60, independent HP 100+60, invulnerable/zero rejection, exact cooldown 3/unchanged17",
+        "[23:37:35] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-ROSTER-B] PASS: 7-role/56-candidate registered packet learning, branch/gate rejection, native attachment disk+clone, five-role 30 active-branch exact damage/shield/motion outcomes + ten actual passive hooks + five public-rate paired windup/motion scenarios and actual presentation packets; Yike/Rivet exhaustive scenarios separate; no native-client or visual acceptance"
       ]
     },
     {
       "filter": "myriad:yike",
       "observed_required_passed": 1,
       "build_successful": true,
-      "log_sha256": "9fb5a1e429cabe8607aa363b0353a353575d3fafa96c46e97b74bad961e5637d",
+      "log_sha256": "0c19a495e246ec38490460e44baddee1c9187256d0543ce784e4597ea6533d05",
       "xml_file": "roster-b-yike-20261116.xml",
       "xml_testcase_count": 1,
       "stdout_evidence": [
-        "[23:23:47] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-YIKE] PASS: 60 real-input cases, unpaid commit/recheck, W cancellation, fixed five/mobile four, real muzzle deadlines, exit CD, root/stun, six-jump cancel, heavy collision, physical basic, rolling barrier, shields/marks, S230 actual chain, beam turn, 3D centre visibility and cleanup"
+        "[23:38:30] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-YIKE] PASS: 60 real-input cases, unpaid commit/recheck, W cancellation, fixed five/mobile four, real muzzle deadlines, exit CD, root/stun, six-jump cancel, heavy collision, physical basic, rolling barrier, shields/marks, S230 actual chain, beam turn, 3D centre visibility and cleanup"
       ]
     },
     {
       "filter": "myriad:rivet",
       "observed_required_passed": 1,
       "build_successful": true,
-      "log_sha256": "e87115895b332d2ee8c9667765b25f73d88ecd5526f66f7bb5d850a0a63ce03e",
+      "log_sha256": "95e5d29808036e5709398e5a42d934576dacc137496891633f5bfb56c9a1012a",
       "xml_file": "roster-b-rivet-20261116.xml",
       "xml_testcase_count": 1,
       "stdout_evidence": [
-        "[23:20:14] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-RIVET-POLISH] PASS: 84 extra real contact stage/detail frames; four wall-normal attachments, real LOD, distinct wall/anchor stages, duplicate-solid suppression and authoritative pose lifecycle; no graphical acceptance",
-        "[23:20:14] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-RIVET-GRIP] PASS: 2364 real pose/hand/skin matrix samples, welded palm, neutral wrist/handle relationship, directional backswing and forward-down strike, actual model operating-side vertices, positive winding and standard/underwater hand projection; offline geometry only",
-        "[23:20:14] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-RIVET-ASSETS] PASS: 1024 production mesh stage/detail frames, finite vertices, <=192 faces, actual model material, expiry, wire and nine action icons; subjective presentation untested",
-        "[23:20:19] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-RIVET32] PASS: 87 real-input scenes + 2 formal draft/preparation players; combinations=8, Q-wall=8/8; actual NPC shield absorption=150.0; tow-then-Q hits=1/1; maximum observed consecutive rooted ticks=20; maximum consecutive forced-movement-or-root ticks=35; visual/audio/feel acceptance excluded"
+        "[23:38:40] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-RIVET-POLISH] PASS: 84 extra real contact stage/detail frames; four wall-normal attachments, real LOD, distinct wall/anchor stages, duplicate-solid suppression and authoritative pose lifecycle; no graphical acceptance",
+        "[23:38:40] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-RIVET-GRIP] PASS: 2364 real pose/hand/skin matrix samples, welded palm, neutral wrist/handle relationship, directional backswing and forward-down strike, actual model operating-side vertices, positive winding and standard/underwater hand projection; offline geometry only",
+        "[23:38:40] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-RIVET-ASSETS] PASS: 1024 production mesh stage/detail frames, finite vertices, <=192 faces, actual model material, expiry, wire and nine action icons; subjective presentation untested",
+        "[23:38:50] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-RIVET32] PASS: 87 real-input scenes + 2 formal draft/preparation players; combinations=8, Q-wall=8/8; actual NPC shield absorption=150.0; tow-then-Q hits=1/1; maximum observed consecutive rooted ticks=20; maximum consecutive forced-movement-or-root ticks=35; visual/audio/feel acceptance excluded"
       ]
     },
     {
@@ -170,5 +170,27 @@
       "xml_testcase_count": 1,
       "stdout_evidence": []
     }
-  ]
+  ],
+  "fixture_diagnosis": {
+    "declared_old_size": [
+      48,
+      8,
+      24
+    ],
+    "declared_b_size": [
+      112,
+      200,
+      32
+    ],
+    "declared_rivet_size": [
+      192,
+      128,
+      32
+    ],
+    "observed_target_not_queryable": [
+      "[23:34:40] [Server thread/INFO] (Minecraft) [STDOUT]: [B-START-TRACE] yingxiao/g1_yingxiao_n1 mu=1 look=(0.0, -0.0, 1.0) eye=(0.0, 1.6200000047683716, 0.0) targetBB=AABB[-0.30000001192092896, 0.0, 2.699999988079071] -> [0.30000001192092896, 1.7999999523162842, 3.300000011920929] cansee=true ray=MISS entities=[23/(0.0, 0.0, 3.0)/true]",
+      "[23:34:40] [Server thread/INFO] (Minecraft) [STDOUT]: [B-START-TRACE] sulan/g1_sulan_n2 mu=1 look=(0.0, -0.0, 1.0) eye=(0.0, 1.6200000047683716, 0.0) targetBB=AABB[-0.30000001192092896, 0.0, 2.699999988079071] -> [0.30000001192092896, 1.7999999523162842, 3.300000011920929] cansee=true ray=MISS entities=[]"
+    ]
+  },
+  "historical_ci_unresolved": "first_group NightExecutionChecks 16-tick blink intermittent at run 43893422732; this ticket does not change its clock or assertions"
 }

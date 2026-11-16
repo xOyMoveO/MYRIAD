@@ -217,7 +217,7 @@ final class YikeChecks {
     private static Fixture fixture(GameTestHelper h,int i){
         // 26.3 anchors GameTests near Y=4. Translate the whole stack down so all
         // sixty unchanged six-block scenes stay within the -64..319 build range.
-        var f=new Fixture();f.index=i;f.level=h.getLevel();BlockPos at=h.absolutePos(new BlockPos(-10,-60+i*6,4));
+        var f=new Fixture();f.index=i;f.level=h.getLevel();BlockPos at=h.absolutePos(new BlockPos(8,-60+i*6,4));
         CombatChunks.prepare(f.level,at);
         for(int x=-5;x<=5;x++)for(int z=-2;z<=29;z++)for(int y=0;y<=4;y++){
             BlockPos b=at.offset(x,y,z);f.blocks.put(b,f.level.getBlockState(b));f.level.setBlockAndUpdate(b,(y==0?Blocks.STONE:Blocks.AIR).defaultBlockState());
