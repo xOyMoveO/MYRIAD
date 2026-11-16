@@ -161,6 +161,6 @@ public final class HudLayoutConfig {
 
     private static Path path() {
         return Minecraft.getInstance().gameDirectory.toPath().resolve("config")
-                .resolve("myriad_hud_layout.json");
+                .resolve("myriad_fabric_hud_layout.json");
     }
 }

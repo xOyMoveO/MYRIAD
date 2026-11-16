@@ -59,8 +59,8 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
                 com.myriad.registry.ModEntities.LANE_MINION.get(), com.myriad.client.MinionRenderer::new);
         net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(
                 com.myriad.registry.ModEntities.DEFENSE_TOWER.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
-        net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback.EVENT.register(
-                (dispatcher, context) -> onRegisterClientCommands(dispatcher));
+        net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents.ALLOW_COMMAND.register(
+                MyriadClient::allowCommand);
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.JOIN.register(
                 (handler, sender, client) -> com.myriad.client.ClientDataHolder.resetConnection());
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT.register(
@@ -488,76 +488,23 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
             net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper.registerKeyMapping(key);
     }
 
-    /** 客户端指令：/myriad choose 打开职业选择界面；/myriad start 打开开局管理界面 */
-    private static void onRegisterClientCommands(
-            com.mojang.brigadier.CommandDispatcher<net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource> dispatcher) {
-        dispatcher.register(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("myriad")
-                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("choose")
-                        .executes(ctx -> {
-                            if (Minecraft.getInstance().player != null) {
-                                Minecraft.getInstance().setScreenAndShow(
-                                        new com.myriad.client.gui.CharacterSelectScreen());
-                            }
-                            return 1;
-                        }))
-                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("start")
-                        .executes(ctx -> {
-                            if (Minecraft.getInstance().player != null) {
-                                Minecraft.getInstance().setScreenAndShow(
-                                        new com.myriad.client.gui.TeamManageScreen());
-                            }
-                            return 1;
-                        }))
-                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("settings")
-                        .executes(ctx -> {
-                            if (Minecraft.getInstance().player != null) {
-                                Minecraft.getInstance().setScreenAndShow(
-                                        new com.myriad.client.gui.SettingsScreen());
-                            }
-                            return 1;
-                        }))
-                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("minimap")
-                        .executes(ctx -> {
-                            if (Minecraft.getInstance().player != null) {
-                                Minecraft.getInstance().setScreenAndShow(
-                                        new com.myriad.client.gui.MinimapPositionScreen(null));
-                            }
-                            return 1;
-                        }))
-                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("hud")
-                        .executes(ctx -> {
-                            if (Minecraft.getInstance().player != null) {
-                                Minecraft.getInstance().setScreenAndShow(
-                                        new com.myriad.client.gui.HudEditorScreen(null));
-                            }
-                            return 1;
-                        }))
-                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("results")
-                        .executes(ctx -> {
-                            com.myriad.client.MatchResultsStore.open();
-                            return 1;
-                        }))
-                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("shop")
-                        .executes(ctx -> {
-                            if (Minecraft.getInstance().player != null) {
-                                Minecraft.getInstance().setScreenAndShow(
-                                        new com.myriad.client.gui.ShopScreen());
-                            }
-                            return 1;
-                        }))
-                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("train")
-                        .executes(ctx -> {
-                            if (Minecraft.getInstance().player != null) {
-                                Minecraft.getInstance().setScreenAndShow(
-                                        new com.myriad.client.gui.TrainScreen());
-                            }
-                            return 1;
-                        }))
-                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("wind_test")
-                        .executes(ctx -> {
-                            playWind1Test();
-                            return 1;
-                        })));
+    /** Exact GUI aliases leave the shared /myriad server command tree available. */
+    private static boolean allowCommand(String command) {
+        Minecraft mc=Minecraft.getInstance();
+        if(mc.player==null)return true;
+        switch(command.strip()) {
+            case "myriad choose" -> mc.setScreenAndShow(new com.myriad.client.gui.CharacterSelectScreen());
+            case "myriad start" -> mc.setScreenAndShow(new com.myriad.client.gui.TeamManageScreen());
+            case "myriad settings" -> mc.setScreenAndShow(new com.myriad.client.gui.SettingsScreen());
+            case "myriad minimap" -> mc.setScreenAndShow(new com.myriad.client.gui.MinimapPositionScreen(null));
+            case "myriad hud" -> mc.setScreenAndShow(new com.myriad.client.gui.HudEditorScreen(null));
+            case "myriad results" -> com.myriad.client.MatchResultsStore.open();
+            case "myriad shop" -> mc.setScreenAndShow(new com.myriad.client.gui.ShopScreen());
+            case "myriad train" -> mc.setScreenAndShow(new com.myriad.client.gui.TrainScreen());
+            case "myriad wind_test" -> playWind1Test();
+            default -> { return true; }
+        }
+        return false;
     }
 
     /** 客户端预览 Wind1.efkproj 的近似效果，不发送服务器包。 */
