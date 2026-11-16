@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.myriad.acceptance.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "NativeKeyboardCounterMixin",
+    "NativeMouseCounterMixin",
+    "ShuoPresentationMixin",
+    "AbilityPresentationMixin",
+    "SoundPresentationMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

@@ -5,12 +5,14 @@ import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
+const runDirectory = resolve(root, process.env.MYRIAD_MCP_RUN_DIR ?? 'run-fabric-client');
 const client = new Client({ name: 'myriad-mcpfabric-check', version: '1.0.0' });
 const transport = new StdioClientTransport({
   command: process.execPath,
   args: [resolve(root, 'tools/mcpfabric/start-server.mjs')],
   cwd: root,
   stderr: 'inherit',
+  env: process.env,
 });
 
 try {
@@ -31,8 +33,8 @@ try {
     if (result.isError) throw new Error(JSON.stringify(result.content));
     const frame = result.content.find(item => item.type === 'image');
     if (!frame) throw new Error('Screenshot did not return image content.');
-    const output = resolve(root, 'run-mcpfabric/screenshots/mcp-connection.png');
-    mkdirSync(resolve(root, 'run-mcpfabric/screenshots'), { recursive: true });
+    const output = resolve(runDirectory, 'screenshots/mcp-connection.png');
+    mkdirSync(resolve(runDirectory, 'screenshots'), { recursive: true });
     writeFileSync(output, Buffer.from(frame.data, 'base64'));
     console.log(`Captured: ${output}`);
   }

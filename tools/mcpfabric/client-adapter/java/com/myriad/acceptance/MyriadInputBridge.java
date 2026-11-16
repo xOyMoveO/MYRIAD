@@ -15,13 +15,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonInfo;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.client.event.InputEvent;
+import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 
-import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -29,14 +26,17 @@ import java.util.List;
 import java.util.UUID;
 
 /** Test-launch source set only: extends the authenticated MCPFabric router, never a release JAR. */
-@EventBusSubscriber(modid = "myriad", value = Dist.CLIENT)
-public final class MyriadInputBridge {
+public final class MyriadInputBridge implements ClientModInitializer {
+    @Override public void onInitializeClient() {
+        ClientTickEvents.END_CLIENT_TICK.register(client -> onTick());
+    }
     private record Held(KeyMapping mapping, InputConstants.Key original, int key, int button, long until) {}
     private static final List<Held> held = new ArrayList<>();
     private static boolean registered;
     private static long tick, keyEvents, mouseEvents;
     private static Object inputWorld;
     private static Capture capture;
+    private static final java.util.ArrayDeque<JsonObject> presentation = new java.util.ArrayDeque<>();
 
     private static final class Capture {
         final String id = UUID.randomUUID().toString();
@@ -53,8 +53,7 @@ public final class MyriadInputBridge {
         }
     }
 
-    @SubscribeEvent
-    public static void onTick(ClientTickEvent.Post event) {
+    public static void onTick() {
         tick++;
         if (!registered && McpFabric.router() != null) {
             var router = McpFabric.router();
@@ -68,6 +67,10 @@ public final class MyriadInputBridge {
             }));
             router.register("myriad.capture", c -> onClient(() -> startCapture(c)));
             router.register("myriad.captureStatus", c -> onClient(() -> captureStatus(c)));
+            router.register("myriad.presentation", c -> onClient(() -> {
+                Gates.vision(); JsonArray events=new JsonArray(); presentation.forEach(events::add);
+                JsonObject result=new JsonObject(); result.add("events",events); return result;
+            }));
             registered = true;
             McpFabric.LOGGER.info("[myriad-acceptance] native input and frame capture registered");
         }
@@ -82,10 +85,15 @@ public final class MyriadInputBridge {
         }
     }
 
-    @SubscribeEvent
-    public static void onKey(InputEvent.Key event) { keyEvents++; }
-    @SubscribeEvent(receiveCanceled = true)
-    public static void onMouse(InputEvent.MouseButton.Pre event) { mouseEvents++; }
+    public static void observedKey() { keyEvents++; }
+    public static void observedMouse() { mouseEvents++; }
+
+    /** Observes production presentation entry points; never changes a skill or its result. */
+    public static void observePresentation(String type, JsonObject detail) {
+        detail.addProperty("type",type); detail.addProperty("clientTick",tick);
+        if(presentation.size()>=128)presentation.removeFirst();
+        presentation.addLast(detail);
+    }
 
     private static JsonObject onClient(java.util.concurrent.Callable<JsonObject> task) throws RpcException {
         return ClientMc.call(() -> {
@@ -116,9 +124,9 @@ public final class MyriadInputBridge {
                 for (KeyMapping candidate : mc.options.keyMappings) if (candidate.getName().equals(name)) mapping = candidate;
                 if (mapping == null) throw RpcException.notFound("Unknown key mapping: " + name);
                 if (mapping.isDown()) throw RpcException.unavailable("Key mapping is already held");
-                original = mapping.getKey();
+                original = KeyMappingHelper.getBoundKeyOf(mapping);
                 code = unusedKey(mc);
-                mapping.setKey(InputConstants.Type.KEYSYM.getOrCreate(code));
+                mapping.setKey(InputConstants.Type.KEYBOARD.getOrCreate(code));
                 KeyMapping.resetMapping();
             }
             key = new Held(mapping, original, code, -1, tick + duration);
@@ -128,11 +136,16 @@ public final class MyriadInputBridge {
             if (mc.gui.screen() != null) {
                 if (!c.has("x") || !c.has("y")) throw RpcException.badRequest("GUI mouse input needs x and y");
                 var window = mc.getWindow();
-                invoke(mc.mouseHandler, "onMove", new Class<?>[]{long.class, double.class, double.class},
-                        window.handle(), c.getDouble("x") * window.getScreenWidth() / mc.gui.screen().width,
-                        c.getDouble("y") * window.getScreenHeight() / mc.gui.screen().height);
+                mc.mouseHandler.onMove(window.handle(),
+                        c.getDouble("x") * window.getScreenWidth() / mc.gui.screen().width,
+                        c.getDouble("y") * window.getScreenHeight() / mc.gui.screen().height, 0, 0);
             }
-            key = new Held(null, null, -1, button, tick + duration);
+            int nativeButton = switch(button) {
+                case 0 -> InputConstants.MOUSE_BUTTON_LEFT;
+                case 1 -> InputConstants.MOUSE_BUTTON_RIGHT;
+                default -> InputConstants.MOUSE_BUTTON_MIDDLE;
+            };
+            key = new Held(null, null, -1, nativeButton, tick + duration);
         } else throw RpcException.badRequest("kind must be key or mouse");
         inputWorld = mc.level;
         held.add(key);
@@ -147,30 +160,23 @@ public final class MyriadInputBridge {
     }
 
     private static int unusedKey(Minecraft mc) throws RpcException {
-        for (int code = 302; code <= 314; code++) { // GLFW F13..F25; temporary, never saved to options.
+        for (int code = InputConstants.KEY_F13; code <= InputConstants.KEY_F24; code++) { // SDL F13..F24; temporary, never saved to options.
             boolean used = false;
             for (KeyMapping mapping : mc.options.keyMappings)
-                if (mapping.getKey().getType() == InputConstants.Type.KEYSYM && mapping.getKey().getValue() == code) used = true;
+                if (KeyMappingHelper.getBoundKeyOf(mapping).getType() == InputConstants.Type.KEYBOARD && KeyMappingHelper.getBoundKeyOf(mapping).getValue() == code) used = true;
             if (!used) return code;
         }
         throw RpcException.unavailable("No unused temporary key is available");
     }
 
-    private static void dispatch(Held key, int action) throws Exception {
+    private static void dispatch(Held key, int action) {
         Minecraft mc = Minecraft.getInstance();
         if (key.button() >= 0) {
-            invoke(mc.mouseHandler, "onButton", new Class<?>[]{long.class, MouseButtonInfo.class, int.class},
-                    mc.getWindow().handle(), new MouseButtonInfo(key.button(), 0), action);
+            mc.mouseHandler.onButton(mc.getWindow().handle(), new MouseButtonInfo(key.button(), 0), action);
         } else {
-            invoke(mc.keyboardHandler, "keyPress", new Class<?>[]{long.class, int.class, KeyEvent.class},
-                    mc.getWindow().handle(), action, new KeyEvent(key.key(), 0, 0));
+            int keycode = org.lwjgl.sdl.SDLKeyboard.SDL_GetKeyFromScancode(key.key(), (short)0, false);
+            mc.keyboardHandler.keyPress(mc.getWindow().handle(), action, new KeyEvent(key.key(), keycode, 0));
         }
-    }
-
-    private static void invoke(Object object, String name, Class<?>[] types, Object... args) throws Exception {
-        Method method = object.getClass().getDeclaredMethod(name, types);
-        method.setAccessible(true);
-        method.invoke(object, args);
     }
 
     private static void release(Held key) throws Exception {
@@ -189,7 +195,8 @@ public final class MyriadInputBridge {
     private static JsonObject state() {
         Minecraft mc = Minecraft.getInstance();
         JsonObject o = new JsonObject();
-        o.addProperty("adapterVersion", 1);
+        o.addProperty("adapterVersion", 2);
+        o.addProperty("platform", "fabric-26.3-sdl");
         o.addProperty("character", ClientDataHolder.characterId());
         o.addProperty("modEnabled", ClientDataHolder.modEnabled());
         o.addProperty("training", ClientDataHolder.isTraining());
@@ -197,6 +204,8 @@ public final class MyriadInputBridge {
         o.addProperty("nativeMouseEvents", mouseEvents);
         o.addProperty("heldInputs", held.size());
         o.addProperty("clientTick", tick);
+        o.addProperty("guiWidth", mc.getWindow().getGuiScaledWidth());
+        o.addProperty("guiHeight", mc.getWindow().getGuiScaledHeight());
         o.addProperty("placementType", ClientDataHolder.placementType());
         o.addProperty("screen", mc.gui.screen() == null ? "none" : mc.gui.screen().getClass().getSimpleName());
         var data = ClientDataHolder.get();
@@ -212,6 +221,19 @@ public final class MyriadInputBridge {
             o.addProperty("x", mc.player.getX()); o.addProperty("y", mc.player.getY()); o.addProperty("z", mc.player.getZ());
             o.addProperty("yaw", mc.player.getYRot()); o.addProperty("pitch", mc.player.getXRot());
             o.addProperty("camera", mc.options.getCameraType().name());
+            o.addProperty("uuid", mc.player.getUUID().toString());
+            o.addProperty("name", mc.player.getName().getString());
+            JsonArray observed = new JsonArray();
+            for (var other : mc.level.players()) {
+                JsonObject player = new JsonObject();
+                player.addProperty("id", other.getId());
+                player.addProperty("name", other.getName().getString());
+                player.addProperty("uuid", other.getUUID().toString());
+                player.addProperty("x", other.getX()); player.addProperty("y", other.getY()); player.addProperty("z", other.getZ());
+                player.addProperty("health", other.getHealth());
+                observed.add(player);
+            }
+            o.add("observedPlayers", observed);
         }
         return o;
     }

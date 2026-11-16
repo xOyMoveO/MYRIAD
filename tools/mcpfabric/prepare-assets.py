@@ -30,23 +30,24 @@ def prepare():
     if invalid:
         raise RuntimeError(f"{len(invalid)} resources missing or corrupt: {invalid[:8]}. Restore only these files.")
 
-    link = root / ".gradle-user-home/caches/neoformruntime/assets"
+    gradle_home = Path(os.environ.get("GRADLE_USER_HOME", Path.home() / ".gradle"))
+    link = gradle_home / "caches/fabric-loom/assets"
     link.parent.mkdir(parents=True, exist_ok=True)
     if link.is_symlink():
         if link.resolve() != store.resolve():
-            temporary = link.with_name("assets.persistent-link")
-            temporary.symlink_to(store, target_is_directory=True)
-            os.replace(temporary, link)
+            raise RuntimeError(f"Loom assets points to a different store: {link}. Reconcile it before launching.")
     elif link.exists():
         raise RuntimeError(f"Separate resource directory found: {link}. Reconcile it before launching.")
     else:
         link.symlink_to(store, target_is_directory=True)
 
-    # This is the properties-file contract consumed by ModDevGradle's prepare*Run tasks.
-    # Recreate it after build/ cleanup only after every indexed object has passed verification.
-    properties = root / "build/moddev/minecraft_assets.properties"
-    properties.parent.mkdir(parents=True, exist_ok=True)
-    properties.write_text(f"asset_index={index_id}\nassets_root={store}\n")
+    # Loom uses a version-prefixed ID; both names refer to the same verified index.
+    alias = store / "indexes" / f"{installation['loom_asset_index']}.json"
+    if alias.exists():
+        if hashlib.sha1(alias.read_bytes()).hexdigest() != installation["asset_index_sha1"]:
+            raise RuntimeError(f"Loom resource index alias differs: {alias}")
+    else:
+        alias.write_bytes(index_file.read_bytes())
     print(f"Verified {len(objects)} shared Minecraft resources; resource download is skipped: {store}")
 
 
