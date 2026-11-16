@@ -5,14 +5,15 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
-import net.neoforged.neoforge.network.PacketDistributor;
-import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 
 import com.myriad.Myriad;
 import com.myriad.character.CharacterType;
 import com.myriad.character.Skill;
 import com.myriad.character.SkillSystem;
-import com.myriad.client.ClientDataHolder;
 import com.myriad.game.Faction;
 import com.myriad.game.GameManager;
 import com.myriad.player.PlayerData;
@@ -98,17 +99,17 @@ public final class NetworkSetup {
             buf.writeBoolean(payload.noCooldown());
             buf.writeBoolean(payload.noGoldCost());
             buf.writeBoolean(payload.noMana());
-            buf.writeMap(payload.buffs(), FriendlyByteBuf::writeUtf, FriendlyByteBuf::writeInt);
-            buf.writeMap(payload.taken(), FriendlyByteBuf::writeUtf, FriendlyByteBuf::writeBoolean);
+            PayloadBuffers.writeMap(buf, payload.buffs(), FriendlyByteBuf::writeUtf, FriendlyByteBuf::writeInt);
+            PayloadBuffers.writeMap(buf, payload.taken(), FriendlyByteBuf::writeUtf, FriendlyByteBuf::writeBoolean);
             buf.writeInt(payload.skillPoints());
             buf.writeInt(payload.placementType());
-            buf.writeMap(payload.skillLevels(), FriendlyByteBuf::writeUtf, FriendlyByteBuf::writeInt);
+            PayloadBuffers.writeMap(buf, payload.skillLevels(), FriendlyByteBuf::writeUtf, FriendlyByteBuf::writeInt);
             buf.writeBoolean(payload.channeling());
             buf.writeInt(payload.channelTicks());
             buf.writeBoolean(payload.modEnabled());
             buf.writeInt(payload.remainTicks());
-            buf.writeCollection(payload.equipment(), FriendlyByteBuf::writeUtf);
-            buf.writeMap(payload.attrs(), FriendlyByteBuf::writeUtf, FriendlyByteBuf::writeDouble);
+            PayloadBuffers.writeCollection(buf, payload.equipment(), FriendlyByteBuf::writeUtf);
+            PayloadBuffers.writeMap(buf, payload.attrs(), FriendlyByteBuf::writeUtf, FriendlyByteBuf::writeDouble);
             buf.writeInt(payload.swordQi());
             buf.writeInt(payload.flyingSwords());
             buf.writeInt(payload.basicAttackCooldown());
@@ -140,17 +141,17 @@ public final class NetworkSetup {
                     buf.readBoolean(),
                     buf.readBoolean(),
                     buf.readBoolean(),
-                    buf.readMap(FriendlyByteBuf::readUtf, FriendlyByteBuf::readInt),
-                    buf.readMap(FriendlyByteBuf::readUtf, FriendlyByteBuf::readBoolean),
+                    PayloadBuffers.readMap(buf, FriendlyByteBuf::readUtf, FriendlyByteBuf::readInt),
+                    PayloadBuffers.readMap(buf, FriendlyByteBuf::readUtf, FriendlyByteBuf::readBoolean),
                     buf.readInt(),
                     buf.readInt(),
-                    buf.readMap(FriendlyByteBuf::readUtf, FriendlyByteBuf::readInt),
+                    PayloadBuffers.readMap(buf, FriendlyByteBuf::readUtf, FriendlyByteBuf::readInt),
                     buf.readBoolean(),
                     buf.readInt(),
                     buf.readBoolean(),
                     buf.readInt(),
-                    buf.readList(FriendlyByteBuf::readUtf),
-                    buf.readMap(FriendlyByteBuf::readUtf, FriendlyByteBuf::readDouble),
+                    PayloadBuffers.readList(buf, FriendlyByteBuf::readUtf),
+                    PayloadBuffers.readMap(buf, FriendlyByteBuf::readUtf, FriendlyByteBuf::readDouble),
                     buf.readInt(),
                     buf.readInt(),
                     buf.readInt(),
@@ -223,11 +224,11 @@ public final class NetworkSetup {
 
         private static void write(FogVisibilityPayload payload, FriendlyByteBuf buf) {
             buf.writeBoolean(payload.enabled());
-            buf.writeCollection(payload.visiblePlayerIds(), FriendlyByteBuf::writeInt);
+            PayloadBuffers.writeCollection(buf, payload.visiblePlayerIds(), FriendlyByteBuf::writeInt);
         }
 
         private static FogVisibilityPayload decode(FriendlyByteBuf buf) {
-            return new FogVisibilityPayload(buf.readBoolean(), buf.readList(FriendlyByteBuf::readInt));
+            return new FogVisibilityPayload(buf.readBoolean(), PayloadBuffers.readList(buf, FriendlyByteBuf::readInt));
         }
 
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
@@ -582,13 +583,13 @@ public final class NetworkSetup {
                 StreamCodec.ofMember(TeamListPayload::write, TeamListPayload::decode);
 
         private static void write(TeamListPayload payload, FriendlyByteBuf buf) {
-            buf.writeMap(payload.teams(), FriendlyByteBuf::writeUtf, FriendlyByteBuf::writeInt);
+            PayloadBuffers.writeMap(buf, payload.teams(), FriendlyByteBuf::writeUtf, FriendlyByteBuf::writeInt);
             buf.writeUtf(payload.arenaId(), 8);
             buf.writeBoolean(payload.duelAvailable());
         }
 
         private static TeamListPayload decode(FriendlyByteBuf buf) {
-            return new TeamListPayload(buf.readMap(FriendlyByteBuf::readUtf, FriendlyByteBuf::readInt), buf.readUtf(8), buf.readBoolean());
+            return new TeamListPayload(PayloadBuffers.readMap(buf, FriendlyByteBuf::readUtf, FriendlyByteBuf::readInt), buf.readUtf(8), buf.readBoolean());
         }
 
         @Override
@@ -701,11 +702,11 @@ public final class NetworkSetup {
                 StreamCodec.ofMember(GameSettingsPayload::write, GameSettingsPayload::decode);
 
         private static void write(GameSettingsPayload payload, FriendlyByteBuf buf) {
-            buf.writeMap(payload.settings(), FriendlyByteBuf::writeUtf, FriendlyByteBuf::writeInt);
+            PayloadBuffers.writeMap(buf, payload.settings(), FriendlyByteBuf::writeUtf, FriendlyByteBuf::writeInt);
         }
 
         private static GameSettingsPayload decode(FriendlyByteBuf buf) {
-            return new GameSettingsPayload(buf.readMap(FriendlyByteBuf::readUtf, FriendlyByteBuf::readInt));
+            return new GameSettingsPayload(PayloadBuffers.readMap(buf, FriendlyByteBuf::readUtf, FriendlyByteBuf::readInt));
         }
 
         @Override
@@ -792,11 +793,11 @@ public final class NetworkSetup {
                 StreamCodec.ofMember(MapFacilitySnapshotPayload::write, MapFacilitySnapshotPayload::decode);
 
         private static void write(MapFacilitySnapshotPayload payload, FriendlyByteBuf buf) {
-            buf.writeCollection(payload.entries(), MapFacilityEntry::write);
+            PayloadBuffers.writeCollection(buf, payload.entries(), MapFacilityEntry::write);
         }
 
         private static MapFacilitySnapshotPayload decode(FriendlyByteBuf buf) {
-            return new MapFacilitySnapshotPayload(buf.readList(MapFacilityEntry::read));
+            return new MapFacilitySnapshotPayload(PayloadBuffers.readList(buf, MapFacilityEntry::read));
         }
 
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
@@ -890,16 +891,16 @@ public final class NetworkSetup {
             buf.writeFloat(payload.z3());
             buf.writeFloat(payload.x4());
             buf.writeFloat(payload.z4());
-            buf.writeCollection(payload.paths(), MinimapPathPoint::write);
-            buf.writeCollection(payload.markers(), MinimapMarker::write);
+            PayloadBuffers.writeCollection(buf, payload.paths(), MinimapPathPoint::write);
+            PayloadBuffers.writeCollection(buf, payload.markers(), MinimapMarker::write);
         }
 
         private static MinimapSnapshotPayload decode(FriendlyByteBuf buf) {
             return new MinimapSnapshotPayload(buf.readBoolean(),
                     buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readFloat(),
                     buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readFloat(),
-                    buf.readList(MinimapPathPoint::read),
-                    buf.readList(MinimapMarker::read));
+                    PayloadBuffers.readList(buf, MinimapPathPoint::read),
+                    PayloadBuffers.readList(buf, MinimapMarker::read));
         }
 
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
@@ -1026,12 +1027,12 @@ public final class NetworkSetup {
         private static void write(MatchResultsPayload payload, FriendlyByteBuf buf) {
             buf.writeUtf(payload.winner(), 16);
             buf.writeVarInt(payload.durationSeconds());
-            buf.writeCollection(payload.entries(), MatchResultEntry::write);
+            PayloadBuffers.writeCollection(buf, payload.entries(), MatchResultEntry::write);
         }
 
         private static MatchResultsPayload decode(FriendlyByteBuf buf) {
             return new MatchResultsPayload(buf.readUtf(16), buf.readVarInt(),
-                    buf.readList(MatchResultEntry::read));
+                    PayloadBuffers.readList(buf, MatchResultEntry::read));
         }
 
         @Override
@@ -1239,296 +1240,217 @@ public final class NetworkSetup {
         }
     }
 
-    public static void register(RegisterPayloadHandlersEvent event) {
-        event.registrar("18")
-                .playToClient(YikeStatePayload.TYPE,YikeStatePayload.CODEC,(payload,context)->com.myriad.client.YikeClientState.receive(payload))
-                .playToClient(ShuoViewPayload.TYPE,ShuoViewPayload.CODEC,
-                        (payload,context)->com.myriad.client.firstperson.ShuoView.receive(payload))
-                .playToClient(FlameSkillViewPayload.TYPE,FlameSkillViewPayload.CODEC,
-                        (payload,context)->com.myriad.client.firstperson.FlameDaoView.receive(payload))
-                .playToClient(ThunderSkillViewPayload.TYPE,ThunderSkillViewPayload.CODEC,
-                        (payload,context)->com.myriad.client.firstperson.ThunderSwordView.receive(payload))
-                .playToClient(NightSkillViewPayload.TYPE,NightSkillViewPayload.CODEC,
-                        (payload,context)->com.myriad.client.firstperson.NightDaggerView.receive(payload))
-                .playToClient(SkillChargePayload.TYPE, SkillChargePayload.CODEC,
-                        (payload, context) -> com.myriad.client.SkillChargeClient.receive(payload))
-                .playToServer(RecallPayload.TYPE, RecallPayload.CODEC,
-                        (payload, context) -> { if(context.player() instanceof ServerPlayer p) com.myriad.game.RecallSystem.request(p); })
-                .playToServer(CycleSpectatorPayload.TYPE, CycleSpectatorPayload.CODEC,
-                        (payload, context) -> {
-                            if (context.player() instanceof ServerPlayer player) {
-                                com.myriad.game.HeroRespawnSystem.cycleTarget(player);
-                            }
-                        })
-                .playToClient(SpectatorTargetPayload.TYPE, SpectatorTargetPayload.CODEC,
-                        (payload, context) -> com.myriad.client.RespawnSpectatorView.update(
-                                payload.active(), payload.targetName()))
-                .playToClient(KillAnnouncementPayload.TYPE, KillAnnouncementPayload.CODEC,
-                        (payload, context) -> com.myriad.client.KillAnnouncementOverlay.show(
-                                payload.killerId(), payload.killerName(), payload.victimId(),
-                                payload.victimName(), payload.multiKill()))
-                .playToClient(MatchTabPayload.TYPE, MatchTabPayload.CODEC,
-                        (payload, context) -> com.myriad.client.MatchTabOverlay.update(payload))
-                .playToClient(EnemyHealthPayload.TYPE, EnemyHealthPayload.CODEC,
-                        (payload, context) -> com.myriad.client.EnemyHealthBars.update(payload))
-                .playToClient(RewardFloatPayload.TYPE, RewardFloatPayload.CODEC,
-                        (payload, context) -> com.myriad.client.RewardFloater.add(payload))
-                .playToClient(TowerAlertPayload.TYPE, TowerAlertPayload.CODEC,
-                        (payload, context) -> com.myriad.client.TowerAlertOverlay.show(
-                                payload.laneId(), payload.tier()))
-                .playToClient(PlayerDataPayload.TYPE, PlayerDataPayload.STREAM_CODEC,
-                        (payload, context) -> {
-                            ClientDataHolder.update(payload);
-                            Myriad.LOGGER.debug("[sync] client received: lv={} char={} faction={} phase={}",
-                                    payload.level(), payload.characterId(), payload.factionId(), payload.phaseId());
-                        })
-                .playToClient(VeinStatusPayload.TYPE, VeinStatusPayload.STREAM_CODEC,
-                        (payload, context) -> com.myriad.client.HudOverlay.setVeinStatus(payload))
-                .playToClient(FogVisibilityPayload.TYPE, FogVisibilityPayload.STREAM_CODEC,
-                        (payload, context) -> com.myriad.client.FogOfWarClient.update(
-                                payload.enabled(), payload.visiblePlayerIds()))
-                .playToServer(RequestSyncPayload.TYPE, RequestSyncPayload.STREAM_CODEC,
-                        (payload, context) -> {
-                            if (context.player() instanceof ServerPlayer player) {
-                                PlayerDataProvider.syncToClient(player);
-                            }
-                        })
-                .playToServer(CastSkillPayload.TYPE, CastSkillPayload.STREAM_CODEC,
-                        (payload, context) -> {
-                            if (context.player() instanceof ServerPlayer player) {
-                                SkillSystem.cast(player, payload.slot());
-                            }
-                        })
-                .playToServer(ChooseCharacterPayload.TYPE, ChooseCharacterPayload.STREAM_CODEC,
-                        (payload, context) -> {
-                            if (context.player() instanceof ServerPlayer player) {
-                                handleChooseCharacter(player, payload);
-                            }
-                        })
-                .playToClient(DamageFloatPayload.TYPE, DamageFloatPayload.STREAM_CODEC,
-                        (payload, context) -> com.myriad.client.DamageFloater.add(
-                                payload.dmgType(), payload.amount(), payload.crit(),
-                                payload.x(), payload.y(), payload.z()))
-                .playToClient(HurtFeedbackPayload.TYPE, HurtFeedbackPayload.STREAM_CODEC,
-                        (payload, context) -> com.myriad.client.HudOverlay.showHurtFeedback(
-                                payload.healthDamage(), payload.maxHealth()))
-                .playToClient(TargetHealthPayload.TYPE, TargetHealthPayload.STREAM_CODEC,
-                        (payload, context) -> com.myriad.client.HudOverlay.setTarget(
-                                payload.entityId(), payload.physicalDefense(), payload.magicDefense()))
-                .playToClient(JiarenHpPayload.TYPE, JiarenHpPayload.STREAM_CODEC,
-                        (payload, context) -> com.myriad.client.HudOverlay.setJiarenHp(
-                                payload.entityId(), payload.hp(), payload.maxHp()))
-                .playToClient(MatchStartedPayload.TYPE, MatchStartedPayload.STREAM_CODEC,
-                        (payload, context) -> {
-                            com.myriad.client.CombatStatsPanel.reset();
-                            com.myriad.client.MatchResultsStore.clear();
-                            com.myriad.client.TowerAlertOverlay.clear();
-                            com.myriad.client.KillAnnouncementOverlay.clear();
-                            com.myriad.client.RespawnSpectatorView.reset();
-                        })
-                .playToClient(CombatTelemetryPayload.TYPE, CombatTelemetryPayload.STREAM_CODEC,
-                        (payload, context) -> com.myriad.client.CombatStatsPanel.record(
-                                payload.kind(), payload.amount(), payload.source()))
-                .playToClient(MatchResultsPayload.TYPE, MatchResultsPayload.STREAM_CODEC,
-                        (payload, context) -> com.myriad.client.MatchResultsStore.receive(payload))
-                .playToClient(OpenPickScreenPayload.TYPE, OpenPickScreenPayload.STREAM_CODEC,
-                        (payload, context) -> {
-                            if (net.minecraft.client.Minecraft.getInstance().player != null) {
-                                net.minecraft.client.Minecraft.getInstance().setScreenAndShow(
-                                        new com.myriad.client.gui.PickScreen());
-                            }
-                        })
-                .playToClient(OpenJiarenSettingsPayload.TYPE, OpenJiarenSettingsPayload.STREAM_CODEC,
-                        (payload, context) -> net.minecraft.client.Minecraft.getInstance().setScreenAndShow(
-                                new com.myriad.client.gui.JiarenSettingsScreen(payload.entityId(),
-                                        payload.physicalDefense(), payload.magicDefense())))
-                .playToServer(SetJiarenDefensesPayload.TYPE, SetJiarenDefensesPayload.STREAM_CODEC,
-                        (payload, context) -> {
-                            if (!(context.player() instanceof ServerPlayer player)
-                                    || !Float.isFinite(payload.physicalDefense())
-                                    || !Float.isFinite(payload.magicDefense())) return;
-                            net.minecraft.world.entity.Entity entity = player.level().getEntity(payload.entityId());
-                            if (entity instanceof net.minecraft.world.entity.LivingEntity living
-                                    && com.myriad.game.JiarenManager.isJiaren(living.getUUID())
-                                    && player.distanceToSqr(living) <= 36.0) {
-                                com.myriad.game.JiarenManager.setDefenses(living,
-                                        payload.physicalDefense(), payload.magicDefense());
-                                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
-                                        "message.myriad.jiaren_defenses_set",
-                                        Math.round(com.myriad.game.JiarenManager.physicalDefense(living)),
-                                        Math.round(com.myriad.game.JiarenManager.magicDefense(living))));
-                            }
-                        })
-                .playToClient(PickStatePayload.TYPE, PickStatePayload.STREAM_CODEC,
-                        (payload, context) -> {
-                            ClientDataHolder.updatePickState(payload);
-                            Myriad.LOGGER.info("[pick-state] recv st={} myF={} cur={} curF={} dl={} cd={} taken={}",
-                                    payload.state(), payload.myFaction(), payload.currentName(),
-                                    payload.currentFaction(), payload.deadlineTick(),
-                                    payload.countdownTick(), payload.taken().keySet());
-                            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
-                            if (payload.state() == 1 && mc.gui.screen() instanceof com.myriad.client.gui.PickScreen) {
-                                mc.setScreenAndShow(null);
-                            }
-                            if (payload.state() == 0 && mc.player != null && mc.gui.screen() == null) {
-                                mc.setScreenAndShow(new com.myriad.client.gui.PickScreen());
-                            }
-                        })
-                .playToClient(HealFloatPayload.TYPE, HealFloatPayload.STREAM_CODEC,
-                        (payload, context) -> com.myriad.client.HealFloater.add(payload.amount()))
+    /** Registers the production codecs on both physical sides and authoritative server receivers. */
+    public static void register() {
+        NetworkProtocol.register();
+        PayloadTypeRegistry.clientboundPlay().register(YikeStatePayload.TYPE, YikeStatePayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(ShuoViewPayload.TYPE, ShuoViewPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(FlameSkillViewPayload.TYPE, FlameSkillViewPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(ThunderSkillViewPayload.TYPE, ThunderSkillViewPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(NightSkillViewPayload.TYPE, NightSkillViewPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(SkillChargePayload.TYPE, SkillChargePayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(RecallPayload.TYPE, RecallPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(CycleSpectatorPayload.TYPE, CycleSpectatorPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(SpectatorTargetPayload.TYPE, SpectatorTargetPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(KillAnnouncementPayload.TYPE, KillAnnouncementPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(MatchTabPayload.TYPE, MatchTabPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(EnemyHealthPayload.TYPE, EnemyHealthPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(RewardFloatPayload.TYPE, RewardFloatPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(TowerAlertPayload.TYPE, TowerAlertPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(PlayerDataPayload.TYPE, PlayerDataPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(VeinStatusPayload.TYPE, VeinStatusPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(FogVisibilityPayload.TYPE, FogVisibilityPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(RequestSyncPayload.TYPE, RequestSyncPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(CastSkillPayload.TYPE, CastSkillPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(ChooseCharacterPayload.TYPE, ChooseCharacterPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(DamageFloatPayload.TYPE, DamageFloatPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(HurtFeedbackPayload.TYPE, HurtFeedbackPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(TargetHealthPayload.TYPE, TargetHealthPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(JiarenHpPayload.TYPE, JiarenHpPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(MatchStartedPayload.TYPE, MatchStartedPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(CombatTelemetryPayload.TYPE, CombatTelemetryPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(MatchResultsPayload.TYPE, MatchResultsPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(OpenPickScreenPayload.TYPE, OpenPickScreenPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(OpenJiarenSettingsPayload.TYPE, OpenJiarenSettingsPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(SetJiarenDefensesPayload.TYPE, SetJiarenDefensesPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(PickStatePayload.TYPE, PickStatePayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(HealFloatPayload.TYPE, HealFloatPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(DashPayload.TYPE, DashPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(AbilityVfxPayload.TYPE, AbilityVfxPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(AbilityMotionPayload.TYPE, AbilityMotionPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(ParabolicMotionPayload.TYPE, ParabolicMotionPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(StarPullMotionPayload.TYPE, StarPullMotionPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(MagicBulletCooldownPayload.TYPE, MagicBulletCooldownPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(ZhouTianChannelPayload.TYPE, ZhouTianChannelPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(FrostViewPayload.TYPE, FrostViewPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(UiFeedbackPayload.TYPE, UiFeedbackPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(ConfirmPlacementPayload.TYPE, ConfirmPlacementPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(CancelPlacementPayload.TYPE, CancelPlacementPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(MagicBulletFirePayload.TYPE, MagicBulletFirePayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(BasicAttackPayload.TYPE, BasicAttackPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(TrainActionPayload.TYPE, TrainActionPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(UpgradeSkillPayload.TYPE, UpgradeSkillPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(TeamListPayload.TYPE, TeamListPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(SelectArenaPayload.TYPE, SelectArenaPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(RequestTeamListPayload.TYPE, RequestTeamListPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(SetTeamPayload.TYPE, SetTeamPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(StartMatchPayload.TYPE, StartMatchPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(GameSettingsPayload.TYPE, GameSettingsPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(RequestGameSettingsPayload.TYPE, RequestGameSettingsPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(UpdateSettingPayload.TYPE, UpdateSettingPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(MapFacilitySnapshotPayload.TYPE, MapFacilitySnapshotPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(RequestMapFacilityEditorPayload.TYPE, RequestMapFacilityEditorPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(MapFacilityActionPayload.TYPE, MapFacilityActionPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(MinimapSnapshotPayload.TYPE, MinimapSnapshotPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(ShopBuyPayload.TYPE, ShopBuyPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(SellEquipPayload.TYPE, SellEquipPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(CraftEquipPayload.TYPE, CraftEquipPayload.STREAM_CODEC);
 
-                .playToClient(DashPayload.TYPE, DashPayload.STREAM_CODEC,
-                        (payload, context) -> com.myriad.client.DashController.start(
-                                payload.dirX(), payload.dirY(), payload.dirZ(), payload.ticks()))
-                .playToClient(AbilityVfxPayload.TYPE, AbilityVfxPayload.CODEC,
-                        (payload, context) -> {
-                            com.myriad.client.firstperson.FlameDaoView.receive(payload);
-                            com.myriad.client.particle.AbilityMeshParticle.receive(payload);
-                        })
-                .playToClient(AbilityMotionPayload.TYPE, AbilityMotionPayload.STREAM_CODEC,
-                        (payload, context) -> com.myriad.client.DashController.startBounded(payload))
-                .playToClient(ParabolicMotionPayload.TYPE, ParabolicMotionPayload.STREAM_CODEC,
-                        (payload, context) -> com.myriad.client.DashController.startParabola(
-                                payload.deltaX(), payload.deltaY(), payload.deltaZ(), payload.arcHeight(), payload.ticks()))
-                .playToClient(StarPullMotionPayload.TYPE, StarPullMotionPayload.STREAM_CODEC,
-                        (payload, context) -> com.myriad.client.StarPullController.start(
-                                payload.centerX(), payload.centerZ(), payload.strength(),
-                                payload.velocityBlend(), payload.ticks()))
-                .playToClient(MagicBulletCooldownPayload.TYPE, MagicBulletCooldownPayload.STREAM_CODEC,
-                        (payload, context) -> com.myriad.client.ClientDataHolder.startMagicBulletCooldown(
-                                payload.cooldownTicks(), payload.totalTicks()))
-                .playToClient(ZhouTianChannelPayload.TYPE, ZhouTianChannelPayload.STREAM_CODEC,
-                        (payload, context) -> com.myriad.client.ZhoutianChannelView.start(
-                                payload.durationTicks()))
-                .playToClient(FrostViewPayload.TYPE, FrostViewPayload.STREAM_CODEC,
-                        (payload, context) -> com.myriad.client.HanzeFrostView.start(
-                                payload.durationTicks()))
+        ServerPlayNetworking.registerGlobalReceiver(RecallPayload.TYPE,
+                (payload, context) -> {
+            ServerPlayer p = context.player();
+            com.myriad.game.RecallSystem.request(p);
+        });
+        ServerPlayNetworking.registerGlobalReceiver(CycleSpectatorPayload.TYPE,
+                (payload, context) -> {
+            ServerPlayer player = context.player();
+            com.myriad.game.HeroRespawnSystem.cycleTarget(player);
+        });
+        ServerPlayNetworking.registerGlobalReceiver(RequestSyncPayload.TYPE,
+                (payload, context) -> {
+            ServerPlayer player = context.player();
+            PlayerDataProvider.syncToClient(player);
+        });
+        ServerPlayNetworking.registerGlobalReceiver(CastSkillPayload.TYPE,
+                (payload, context) -> {
+            ServerPlayer player = context.player();
+            SkillSystem.cast(player, payload.slot());
+        });
+        ServerPlayNetworking.registerGlobalReceiver(ChooseCharacterPayload.TYPE,
+                (payload, context) -> {
+            ServerPlayer player = context.player();
+            handleChooseCharacter(player, payload);
+        });
+        ServerPlayNetworking.registerGlobalReceiver(SetJiarenDefensesPayload.TYPE,
+                (payload, context) -> {
+            ServerPlayer player = context.player();
+            if (!Float.isFinite(payload.physicalDefense())
+                    || !Float.isFinite(payload.magicDefense())) return;
+            net.minecraft.world.entity.Entity entity = player.level().getEntity(payload.entityId());
+            if (entity instanceof net.minecraft.world.entity.LivingEntity living
+                    && com.myriad.game.JiarenManager.isJiaren(living.getUUID())
+                    && player.distanceToSqr(living) <= 36.0) {
+                com.myriad.game.JiarenManager.setDefenses(living,
+                        payload.physicalDefense(), payload.magicDefense());
+                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
+                        "message.myriad.jiaren_defenses_set",
+                        Math.round(com.myriad.game.JiarenManager.physicalDefense(living)),
+                        Math.round(com.myriad.game.JiarenManager.magicDefense(living))));
+            }
+        });
+        ServerPlayNetworking.registerGlobalReceiver(ConfirmPlacementPayload.TYPE,
+                (payload, context) -> {
+            ServerPlayer player = context.player();
+            PlayerDataProvider.confirmPlacement(player);
+        });
+        ServerPlayNetworking.registerGlobalReceiver(CancelPlacementPayload.TYPE,
+                (payload, context) -> {
+            ServerPlayer player = context.player();
+            PlayerDataProvider.cancelPlacement(player);
+        });
+        ServerPlayNetworking.registerGlobalReceiver(MagicBulletFirePayload.TYPE,
+                (payload, context) -> {
+            ServerPlayer player = context.player();
+            com.myriad.combat.MagicBullet.tryFire(player, player.getMainHandItem());
+        });
+        ServerPlayNetworking.registerGlobalReceiver(BasicAttackPayload.TYPE,
+                (payload, context) -> {
+            ServerPlayer player = context.player();
+            com.myriad.combat.BasicAttackSystem.tryAttack(player, payload.targetId());
+        });
+        ServerPlayNetworking.registerGlobalReceiver(TrainActionPayload.TYPE,
+                (payload, context) -> {
+            ServerPlayer player = context.player();
+            PlayerDataProvider.trainAction(player, payload.action(), payload.value());
+        });
+        ServerPlayNetworking.registerGlobalReceiver(UpgradeSkillPayload.TYPE,
+                (payload, context) -> {
+            ServerPlayer player = context.player();
+            PlayerDataProvider.upgradeSkill(player, payload.skillId());
+        });
+        ServerPlayNetworking.registerGlobalReceiver(SelectArenaPayload.TYPE,
+                (payload, context) -> {
+            ServerPlayer player = context.player();
+            PlayerDataProvider.selectArenaByAdmin(player, payload.arenaId());
+        });
+        ServerPlayNetworking.registerGlobalReceiver(RequestTeamListPayload.TYPE,
+                (payload, context) -> {
+            ServerPlayer player = context.player();
+            PlayerDataProvider.sendTeamList(player);
+        });
+        ServerPlayNetworking.registerGlobalReceiver(SetTeamPayload.TYPE,
+                (payload, context) -> {
+            ServerPlayer player = context.player();
+            PlayerDataProvider.setTeamByAdmin(player, payload.playerName(), payload.factionId());
+        });
+        ServerPlayNetworking.registerGlobalReceiver(StartMatchPayload.TYPE,
+                (payload, context) -> {
+            ServerPlayer player = context.player();
+            PlayerDataProvider.startMatchFromUi(player, payload.mode(), payload.arenaId());
+        });
+        ServerPlayNetworking.registerGlobalReceiver(RequestGameSettingsPayload.TYPE,
+                (payload, context) -> {
+            ServerPlayer player = context.player();
+            PlayerDataProvider.sendGameSettings(player);
+        });
+        ServerPlayNetworking.registerGlobalReceiver(UpdateSettingPayload.TYPE,
+                (payload, context) -> {
+            ServerPlayer player = context.player();
+            PlayerDataProvider.updateGameSetting(player, payload.key(), payload.value());
+        });
+        ServerPlayNetworking.registerGlobalReceiver(RequestMapFacilityEditorPayload.TYPE,
+                (payload, context) -> {
+            ServerPlayer player = context.player();
+            com.myriad.game.MapFacilityEditor.open(player);
+        });
+        ServerPlayNetworking.registerGlobalReceiver(MapFacilityActionPayload.TYPE,
+                (payload, context) -> {
+            ServerPlayer player = context.player();
+            com.myriad.game.MapFacilityEditor.handle(player, payload);
+        });
+        ServerPlayNetworking.registerGlobalReceiver(ShopBuyPayload.TYPE,
+                (payload, context) -> {
+            ServerPlayer player = context.player();
+            if (com.myriad.game.TacticalSupplySystem.isSupply(payload.equipId())) {
+                PlayerDataProvider.buySupply(player, payload.equipId());
+            } else {
+                PlayerDataProvider.buyEquipment(player, payload.equipId());
+            }
+        });
+        ServerPlayNetworking.registerGlobalReceiver(SellEquipPayload.TYPE,
+                (payload, context) -> {
+            ServerPlayer player = context.player();
+            PlayerDataProvider.sellEquipment(player, payload.slot());
+        });
+        ServerPlayNetworking.registerGlobalReceiver(CraftEquipPayload.TYPE,
+                (payload, context) -> {
+            ServerPlayer player = context.player();
+            PlayerDataProvider.craftEquipment(player, payload.equipId());
+        });
+    }
 
-                .playToClient(UiFeedbackPayload.TYPE, UiFeedbackPayload.CODEC,
-                        (payload, context) -> com.myriad.client.UiFeedback.receive(payload.kind()))
-
-                .playToServer(ConfirmPlacementPayload.TYPE, ConfirmPlacementPayload.STREAM_CODEC,
-                        (payload, context) -> {
-                            if (context.player() instanceof ServerPlayer player) {
-                                PlayerDataProvider.confirmPlacement(player);
-                            }
-                        })
-                .playToServer(CancelPlacementPayload.TYPE, CancelPlacementPayload.STREAM_CODEC,
-                        (payload, context) -> {
-                            if (context.player() instanceof ServerPlayer player) {
-                                PlayerDataProvider.cancelPlacement(player);
-                            }
-                        })
-                .playToServer(MagicBulletFirePayload.TYPE, MagicBulletFirePayload.STREAM_CODEC,
-                        (payload, context) -> {
-                            if (context.player() instanceof ServerPlayer player) {
-                                com.myriad.combat.MagicBullet.tryFire(player, player.getMainHandItem());
-                            }
-                        })
-                .playToServer(BasicAttackPayload.TYPE, BasicAttackPayload.STREAM_CODEC,
-                        (payload, context) -> {
-                            if (context.player() instanceof ServerPlayer player) {
-                                com.myriad.combat.BasicAttackSystem.tryAttack(player, payload.targetId());
-                            }
-                        })
-                .playToServer(TrainActionPayload.TYPE, TrainActionPayload.STREAM_CODEC,
-                        (payload, context) -> {
-                            if (context.player() instanceof ServerPlayer player) {
-                                PlayerDataProvider.trainAction(player, payload.action(), payload.value());
-                            }
-                        })
-                .playToServer(UpgradeSkillPayload.TYPE, UpgradeSkillPayload.STREAM_CODEC,
-                        (payload, context) -> {
-                            if (context.player() instanceof ServerPlayer player) {
-                                PlayerDataProvider.upgradeSkill(player, payload.skillId());
-                            }
-                        })
-                .playToClient(TeamListPayload.TYPE, TeamListPayload.STREAM_CODEC,
-                        (payload, context) -> com.myriad.client.gui.TeamManageScreen.receiveTeamList(payload.teams(), payload.arenaId(), payload.duelAvailable()))
-                .playToServer(SelectArenaPayload.TYPE, SelectArenaPayload.CODEC,
-                        (payload, context) -> {
-                            if (context.player() instanceof ServerPlayer player)
-                                PlayerDataProvider.selectArenaByAdmin(player, payload.arenaId());
-                        })
-                .playToServer(RequestTeamListPayload.TYPE, RequestTeamListPayload.STREAM_CODEC,
-                        (payload, context) -> {
-                            if (context.player() instanceof ServerPlayer player) {
-                                PlayerDataProvider.sendTeamList(player);
-                            }
-                        })
-                .playToServer(SetTeamPayload.TYPE, SetTeamPayload.STREAM_CODEC,
-                        (payload, context) -> {
-                            if (context.player() instanceof ServerPlayer player) {
-                                PlayerDataProvider.setTeamByAdmin(player, payload.playerName(), payload.factionId());
-                            }
-                        })
-                .playToServer(StartMatchPayload.TYPE, StartMatchPayload.STREAM_CODEC,
-                        (payload, context) -> {
-                            if (context.player() instanceof ServerPlayer player) {
-                                PlayerDataProvider.startMatchFromUi(player, payload.mode(), payload.arenaId());
-                            }
-                        })
-                .playToClient(GameSettingsPayload.TYPE, GameSettingsPayload.STREAM_CODEC,
-                        (payload, context) -> com.myriad.client.gui.SettingsScreen.receiveSettings(payload.settings()))
-                .playToServer(RequestGameSettingsPayload.TYPE, RequestGameSettingsPayload.STREAM_CODEC,
-                        (payload, context) -> {
-                            if (context.player() instanceof ServerPlayer player) {
-                                PlayerDataProvider.sendGameSettings(player);
-                            }
-                        })
-                .playToServer(UpdateSettingPayload.TYPE, UpdateSettingPayload.STREAM_CODEC,
-                        (payload, context) -> {
-                            if (context.player() instanceof ServerPlayer player) {
-                                PlayerDataProvider.updateGameSetting(player, payload.key(), payload.value());
-                            }
-                        })
-                .playToClient(MapFacilitySnapshotPayload.TYPE, MapFacilitySnapshotPayload.STREAM_CODEC,
-                        (payload, context) -> com.myriad.client.gui.MapFacilityEditorScreen.receive(
-                                payload.entries()))
-                .playToServer(RequestMapFacilityEditorPayload.TYPE, RequestMapFacilityEditorPayload.STREAM_CODEC,
-                        (payload, context) -> {
-                            if (context.player() instanceof ServerPlayer player) {
-                                com.myriad.game.MapFacilityEditor.open(player);
-                            }
-                        })
-                .playToServer(MapFacilityActionPayload.TYPE, MapFacilityActionPayload.STREAM_CODEC,
-                        (payload, context) -> {
-                            if (context.player() instanceof ServerPlayer player) {
-                                com.myriad.game.MapFacilityEditor.handle(player, payload);
-                            }
-                        })
-                .playToClient(MinimapSnapshotPayload.TYPE, MinimapSnapshotPayload.STREAM_CODEC,
-                        (payload, context) -> com.myriad.client.MinimapClientState.update(payload))
-                .playToServer(ShopBuyPayload.TYPE, ShopBuyPayload.STREAM_CODEC,
-                        (payload, context) -> {
-                            if (context.player() instanceof ServerPlayer player) {
-                                if (com.myriad.game.TacticalSupplySystem.isSupply(payload.equipId())) {
-                                    PlayerDataProvider.buySupply(player, payload.equipId());
-                                } else {
-                                    PlayerDataProvider.buyEquipment(player, payload.equipId());
-                                }
-                            }
-                        })
-                .playToServer(SellEquipPayload.TYPE, SellEquipPayload.STREAM_CODEC,
-                        (payload, context) -> {
-                            if (context.player() instanceof ServerPlayer player) {
-                                PlayerDataProvider.sellEquipment(player, payload.slot());
-                            }
-                        })
-                .playToServer(CraftEquipPayload.TYPE, CraftEquipPayload.STREAM_CODEC,
-                        (payload, context) -> {
-                            if (context.player() instanceof ServerPlayer player) {
-                                PlayerDataProvider.craftEquipment(player, payload.equipId());
-                            }
-                        });
+    /** Called only from the Fabric client initializer. */
+    @Environment(EnvType.CLIENT)
+    public static void registerClient() {
+        NetworkClientSetup.register();
     }
 
     public static void sendToPlayer(ServerPlayer player, PlayerDataPayload payload) {
-        PacketDistributor.sendToPlayer(player, payload);
+        Packets.sendToPlayer(player, payload);
     }
 
     public static void sendFrostView(ServerPlayer player, int durationTicks) {
-        PacketDistributor.sendToPlayer(player, new FrostViewPayload(durationTicks));
+        Packets.sendToPlayer(player, new FrostViewPayload(durationTicks));
     }
 
     /** 技能槽位剩余冷却（供同步包读取） */
