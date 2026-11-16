@@ -501,13 +501,13 @@ public class PickScreen extends Screen {
 
     @Override
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
-        if (event.buttonInfo().button() == 1) {
+        if (event.buttonInfo().button() == InputConstants.MOUSE_BUTTON_RIGHT) {
             var state = ClientDataHolder.pickState();
             String id = state == null ? null : hitAnyCharacter(event.x(), event.y(), state);
             var type = id == null ? null : CharacterType.byId(id);
             if(type!=null){Minecraft.getInstance().setScreenAndShow(new CharacterGuideScreen(this,type));return true;}
         }
-        if (event.buttonInfo().button() != 0) {
+        if (event.buttonInfo().button() != InputConstants.MOUSE_BUTTON_LEFT) {
             return super.mouseClicked(event, doubleClick);
         }
         NetworkSetup.PickStatePayload state = ClientDataHolder.pickState();

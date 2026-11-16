@@ -16,10 +16,14 @@ public abstract class MyriadMinecraftClientMixin {
     }
     @Inject(method="continueAttack",at=@At("HEAD"),cancellable=true)
     private void myriad$noCustomAttackMining(boolean held,CallbackInfo ci) {
-        if(com.myriad.client.ClientDataHolder.modEnabled()
-                && !com.myriad.client.ClientDataHolder.characterId().isEmpty()
-                && !com.myriad.combat.VanillaMeleeAttack.usesVanilla(
-                    com.myriad.character.CharacterType.byId(com.myriad.client.ClientDataHolder.characterId()))) ci.cancel();
+        if(!com.myriad.client.ClientDataHolder.modEnabled()
+                || com.myriad.client.ClientDataHolder.characterId().isEmpty())return;
+        if(com.myriad.client.RespawnSpectatorView.isActive()
+                || com.myriad.client.ClientDataHolder.placementType()!=0
+                || com.myriad.client.ClientDataHolder.isChanneling()
+                || com.myriad.client.ClientDataHolder.buffTicks("g1_stun")>0
+                || !com.myriad.combat.VanillaMeleeAttack.usesVanilla(
+                    com.myriad.character.CharacterType.byId(com.myriad.client.ClientDataHolder.characterId())))ci.cancel();
     }
     @Inject(method="renderFrame",at=@At("HEAD"))
     private void myriad$suppressHurtCamera(boolean tick,CallbackInfo ci) { MyriadClient.beforeRenderFrame(); }

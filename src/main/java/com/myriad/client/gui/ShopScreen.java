@@ -97,7 +97,7 @@ public class ShopScreen extends Screen {
 
     @Override
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
-        if (event.buttonInfo().button() != 0) return super.mouseClicked(event, doubleClick);
+        if (event.buttonInfo().button() != InputConstants.MOUSE_BUTTON_LEFT) return super.mouseClicked(event, doubleClick);
         double mx = event.x();
         double my = event.y();
         for (Object[] rect : recipeRects) {

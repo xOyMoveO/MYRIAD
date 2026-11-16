@@ -302,7 +302,7 @@ public class InfoScreen extends Screen {
         float s = fitScaleValue();
         int mx = (int) (event.x() / s);
         int my = (int) (event.y() / s) + scrollY;
-        if (event.buttonInfo().button() == 1 && !equipRects.isEmpty()) {
+        if (event.buttonInfo().button() == InputConstants.MOUSE_BUTTON_RIGHT && !equipRects.isEmpty()) {
             for (int[] rect : equipRects) {
                 if (mx >= rect[0] && mx <= rect[0] + rect[2] && my >= rect[1] && my <= rect[1] + rect[3]) {
                     Packets.sendToServer(new NetworkSetup.SellEquipPayload(rect[4]));
@@ -310,7 +310,7 @@ public class InfoScreen extends Screen {
                 }
             }
         }
-        if (event.buttonInfo().button() == 0 && !skillRects.isEmpty()) {
+        if (event.buttonInfo().button() == InputConstants.MOUSE_BUTTON_LEFT && !skillRects.isEmpty()) {
             CharacterType type = CharacterType.byId(ClientDataHolder.characterId());
             if (type != null) {
                 for (int[] rect : skillRects) {

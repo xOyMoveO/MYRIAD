@@ -107,7 +107,7 @@ public final class ZhoutianChannelView {
                 inst.removeModifier(CAM_DIST_MOD);
                 inst.setBaseValue(previousDistance);
             }
-            previousDistance = -1.0;
         }
+        previousDistance = -1.0;
     }
 }

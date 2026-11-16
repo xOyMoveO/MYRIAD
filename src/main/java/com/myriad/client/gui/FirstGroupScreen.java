@@ -121,7 +121,7 @@ public final class FirstGroupScreen extends Screen {
         return true;
     }
     @Override public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean twice) {
-        if (event.buttonInfo().button() != 0) return super.mouseClicked(event, twice);
+        if (event.buttonInfo().button() != InputConstants.MOUSE_BUTTON_LEFT) return super.mouseClicked(event, twice);
         var layout = layout();
         double x = event.x(), y = event.y();
         if (maximum() > 0 && layout.verticalTrack().contains(x, y)) {
@@ -139,10 +139,10 @@ public final class FirstGroupScreen extends Screen {
     }
     private boolean drag(double y){scroll=layout().scrollToVertical(y,maximum());clearTooltip();actions.clear();return true;}
     @Override public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event,double dx,double dy){
-        return dragAxis!=0&&event.buttonInfo().button()==0?drag(event.y()):super.mouseDragged(event,dx,dy);
+        return dragAxis!=0&&event.buttonInfo().button()==InputConstants.MOUSE_BUTTON_LEFT?drag(event.y()):super.mouseDragged(event,dx,dy);
     }
     @Override public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event){
-        if(dragAxis!=0&&event.buttonInfo().button()==0){dragAxis=0;return true;}return super.mouseReleased(event);
+        if(dragAxis!=0&&event.buttonInfo().button()==InputConstants.MOUSE_BUTTON_LEFT){dragAxis=0;return true;}return super.mouseReleased(event);
     }
     @Override public boolean mouseScrolled(double x,double y,double dx,double dy){
         if(tooltip!=null&&tooltipLayout!=null&&(tooltip.anchor.contains(x,y)||tooltipLayout.box().contains(x,y))&&tooltipLayout.maximum()>0){

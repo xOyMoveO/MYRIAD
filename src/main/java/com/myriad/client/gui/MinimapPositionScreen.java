@@ -1,5 +1,7 @@
 package com.myriad.client.gui;
 
+import com.mojang.blaze3d.platform.InputConstants;
+
 import com.myriad.client.MinimapConfig;
 import com.myriad.client.MinimapOverlay;
 import net.minecraft.client.Minecraft;
@@ -33,7 +35,7 @@ public final class MinimapPositionScreen extends Screen {
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         if (super.mouseClicked(event, doubleClick)) return true;
-        if (event.buttonInfo().button() == 0 && event.y() < height - 34) {
+        if (event.buttonInfo().button() == InputConstants.MOUSE_BUTTON_LEFT && event.y() < height - 34) {
             MinimapConfig.placeAt((int) event.x(), (int) event.y(), width, height, MinimapOverlay.SIZE);
             return true;
         }

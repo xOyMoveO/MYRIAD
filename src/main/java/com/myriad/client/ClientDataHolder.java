@@ -34,6 +34,8 @@ public final class ClientDataHolder {
         if (!payload.modEnabled()) {
             pickState = null;
             RespawnSpectatorView.reset();
+            ZhoutianChannelView.start(0);
+            HanzeFrostView.start(0);
             KillAnnouncementOverlay.clear();
             DashController.start(0, 0, 0, 0);
             com.myriad.client.FogOfWarClient.update(false, java.util.List.of());
@@ -53,6 +55,8 @@ public final class ClientDataHolder {
         com.myriad.client.firstperson.FlameDaoView.reset();
         com.myriad.client.firstperson.ShuoView.reset();
         SkillChargeClient.reset();
+        ZhoutianChannelView.start(0);
+        HanzeFrostView.start(0);
         com.myriad.client.particle.AbilityMeshParticle.reset();
         data = null;
         pickState = null;

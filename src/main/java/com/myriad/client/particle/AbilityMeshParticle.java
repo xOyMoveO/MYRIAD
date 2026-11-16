@@ -18,7 +18,7 @@ import net.fabricmc.fabric.api.client.particle.v1.ParticleGroupRegistry;
 
 /** One recipe particle owns a whole authored mesh instead of dozens of networked dust particles. */
 public final class AbilityMeshParticle extends SingleQuadParticle {
-    public static final ParticleRenderType GROUP=new ParticleRenderType("MYRIAD_ABILITY_MESH","XM");
+    public static final ParticleRenderType GROUP=new ParticleRenderType("myriad:ability_mesh","XM");
     private static SpriteSet sprites;
     private static int epoch;
     private static final java.util.Map<Integer,Integer> OWNER_EPOCHS=new java.util.HashMap<>();
