@@ -121,7 +121,7 @@ final class RosterDeliveryChecks {
         int candidates=0;
         for(var type:CharacterType.playableValues()) {
             PlayerDataProvider.resetForHostSession(p);p.getInventory().clearContent();
-            NetworkSetup.handleChooseCharacter(p,new NetworkSetup.ChooseCharacterPayload(type.getId()));
+            ShuoPilotChecks.receive(h,p,new NetworkSetup.ChooseCharacterPayload(type.getId()));
             var d=PlayerDataProvider.get(p);
             h.assertTrue(type.getId().equals(d.getCharacterId())&&d.getSkillPoints()==1
                             &&p.getInventory().getItem(0).is(ModItems.initialWeaponItem(type.getId())),
@@ -145,13 +145,13 @@ final class RosterDeliveryChecks {
         var factions=(Map<UUID,Faction>)get(manager,"factions");
         factions.put(first.getUUID(),Faction.XUANXIAO);factions.put(second.getUUID(),Faction.YOUMING);
         PlayerDataProvider.get(first).setCharacterId(null);PlayerDataProvider.get(second).setCharacterId(null);
-        NetworkSetup.handleChooseCharacter(second,new NetworkSetup.ChooseCharacterPayload("keheng"));
+        ShuoPilotChecks.receive(h,second,new NetworkSetup.ChooseCharacterPayload("keheng"));
         h.assertTrue(PlayerDataProvider.get(second).getCharacterId()==null,"Out-of-turn new-role wire input is rejected");
-        NetworkSetup.handleChooseCharacter(first,new NetworkSetup.ChooseCharacterPayload("yike"));
+        ShuoPilotChecks.receive(h,first,new NetworkSetup.ChooseCharacterPayload("yike"));
         h.assertTrue("yike".equals(PlayerDataProvider.get(first).getCharacterId()),"Formal first pick accepts Yike");
-        NetworkSetup.handleChooseCharacter(second,new NetworkSetup.ChooseCharacterPayload("yike"));
+        ShuoPilotChecks.receive(h,second,new NetworkSetup.ChooseCharacterPayload("yike"));
         h.assertTrue(PlayerDataProvider.get(second).getCharacterId()==null,"Duplicate new-role pick cannot steal an occupied hero");
-        NetworkSetup.handleChooseCharacter(second,new NetworkSetup.ChooseCharacterPayload("keheng"));
+        ShuoPilotChecks.receive(h,second,new NetworkSetup.ChooseCharacterPayload("keheng"));
         h.assertTrue("keheng".equals(PlayerDataProvider.get(second).getCharacterId())
                         &&((Map<?,?>)get(manager,"charPicks")).size()==2,
                 "Formal second pick accepts Keheng without bypassing the unique roster");
@@ -181,7 +181,14 @@ final class RosterDeliveryChecks {
         p.connection=new net.minecraft.server.network.ServerGamePacketListenerImpl(h.getLevel().getServer(),connection,p,
                 net.minecraft.server.network.CommonListenerCookie.createInitial(p.getGameProfile(),false)) {
             @Override public void send(net.minecraft.network.protocol.Packet<?> packet) {
-                if(packet instanceof ClientboundCustomPayloadPacket custom)packets.add(custom.payload());
+                if(packet instanceof ClientboundCustomPayloadPacket custom) {
+                    var buffer=new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(),h.getLevel().registryAccess());
+                    try {
+                        ClientboundCustomPayloadPacket.GAMEPLAY_STREAM_CODEC.encode(buffer,custom);
+                        packets.add(ClientboundCustomPayloadPacket.GAMEPLAY_STREAM_CODEC.decode(buffer).payload());
+                        h.assertTrue(!buffer.isReadable(),"Production S2C packet codec consumes the complete state");
+                    } finally {buffer.release();}
+                }
             }
         };
         p.connection.handleAcceptPlayerLoad(new net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket());p.setPos(pos);p.setNoGravity(true);

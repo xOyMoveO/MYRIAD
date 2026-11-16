@@ -62,11 +62,12 @@ final class YikeChecks {
                 if(i==0||i==1||i==2||i==3||i==30)h.assertTrue(d.getMana()==700&&d.getCooldown(node(2).getId())==0,"Q starts unpaid: "+i);
                 if(i==13||i==17||i==18)h.assertTrue(d.getMana()==(i==13?530:540),"Ultimate pays at charge start: "+i);
             }
-        }catch(Throwable fail){fixtures.forEach(YikeChecks::cleanup);restore(enabled,training,nc,nm);throw fail;}
+        }catch(Throwable fail){fail.printStackTrace();fixtures.forEach(YikeChecks::cleanup);restore(enabled,training,nc,nm);throw fail;}
         for(int n=1;n<=150;n++){final int tick=n;h.runAfterDelay(n,()->{
             if(done[0])return;TrainingMode.setEnabled(true);ModState.setEnabled(true);TrainingMode.setNoCooldown(false);TrainingMode.setNoMana(false);
             try{
                 for(var f:fixtures){var p=f.p;var d=PlayerDataProvider.get(p);int i=f.index;
+                    if(tick%20==0)CombatChunks.hold(f.level,BlockPos.containing(f.origin));
                     if(tick==2&&i==53)wall(f,2,4);
                     if(tick==2&&i==54){
                         f.target.setPos(f.origin.add(0,2,5));
@@ -167,7 +168,7 @@ final class YikeChecks {
                     if(tick==34&&i==24)h.assertTrue(Math.abs(ModShieldSystem.value(p)-72.5)<.1,"Standing steady uses actual successful deployment, not request");
                     if(tick==28&&i==25)h.assertTrue(ModShieldSystem.value(p)==0,"Cancelled unpaid action never grants steady shield");
                     if(tick==31&&i==25)h.assertTrue(ModShieldSystem.value(p)>0,"Next successful W consumes the ready barrier");
-                    if(tick==50&&(i==14||i==15))h.assertTrue(!PrismaticBeam.active(p)&&Math.abs(loss(f)-155)<.1,"Cancel/control stops the beam after two real jumps");
+                    if(tick==50&&(i==14||i==15))h.assertTrue(!PrismaticBeam.active(p)&&Math.abs(loss(f)-155)<.1,"Cancel/control stops the beam after two real jumps: case="+i+", loss="+loss(f)+", active="+PrismaticBeam.active(p)+", target="+f.target.isAlive()+"/"+f.target.isRemoved());
                     if(tick==74&&i>=56){
                         h.assertTrue(!PrismaticBeam.active(p),"Cover/edge beam completes its ordinary six-jump lifecycle");
                         h.assertTrue(Math.abs(loss(f)-(i==58?465:0))<.1,"Beam keeps .625 half-width at an unobstructed .60 edge, but never damages through thin or full cover: "+i+" loss="+loss(f));
@@ -214,7 +215,10 @@ final class YikeChecks {
     }
     private static AbilitySkill node(int i){return FirstGroupSkills.node("yike",i);}
     private static Fixture fixture(GameTestHelper h,int i){
-        var f=new Fixture();f.index=i;f.level=h.getLevel();BlockPos at=h.absolutePos(new BlockPos(-10,12+i*6,4));
+        // 26.3 anchors GameTests near Y=4. Translate the whole stack down so all
+        // sixty unchanged six-block scenes stay within the -64..319 build range.
+        var f=new Fixture();f.index=i;f.level=h.getLevel();BlockPos at=h.absolutePos(new BlockPos(-10,-60+i*6,4));
+        CombatChunks.prepare(f.level,at);
         for(int x=-5;x<=5;x++)for(int z=-2;z<=29;z++)for(int y=0;y<=4;y++){
             BlockPos b=at.offset(x,y,z);f.blocks.put(b,f.level.getBlockState(b));f.level.setBlockAndUpdate(b,(y==0?Blocks.STONE:Blocks.AIR).defaultBlockState());
         }

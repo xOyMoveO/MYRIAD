@@ -29,6 +29,7 @@ public final class CombatRegressionTests {
         register("first_group", FirstGroupRegressionChecks::run);
         register("roster_delivery", RosterDeliveryChecks::run);
         register("shuo_pilot", ShuoPilotChecks::run);
+        register("roster_b", RosterBChecks::run);
         register("melee_arc", helper -> {
             verifyMeleeArc(helper);
             helper.succeed();

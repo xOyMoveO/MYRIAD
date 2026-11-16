@@ -181,7 +181,7 @@ final class RivetChecks {
                     if(AbilityRuntime.moving(p))p.move(MoverType.SELF,p.getDeltaMovement());
                     if(i==82&&RivetPush.autonomousMovementBlocked(f.target))f.target.move(MoverType.SELF,f.target.getDeltaMovement());
                     if(tick==1){
-                        if(i==69)p.setPos(Vec3.atBottomCenterOf(h.absolutePos(new BlockPos(-120,13,-30))));
+                        if(i==69){p.setPos(Vec3.atBottomCenterOf(h.absolutePos(new BlockPos(-120,13,-30))));f.level.getChunkSource().move(p);}
                         if(i==65)h.assertTrue(TacticalAnchor.anchor(p)!=null,"The late-impact test begins with a valid live anchor");
                         if(i>=8&&i<=19||i==29||i==38||i==39||i==47||i==52||i==70||i>=64&&i<=66)SkillSystem.cast(p,0);
                         if(Set.of(20,35,36,37,50,51,53,55).contains(i))SkillSystem.cast(p,3);
@@ -315,7 +315,7 @@ final class RivetChecks {
         if(i==36)h.assertTrue(loss(f)>0&&f.maxZ-f.initialZ>7&&hp(f.rear)==JiarenManager.MAX_HP,"R2 carries only its first enemy and does not repeat contact damage on the rear target");
         if(i==37)h.assertTrue(loss(f)==0&&f.p.getZ()<f.origin.z+1,"R2 caster wall collision prevents hitting a target beyond the obstruction");
         if(i==38)h.assertTrue(loss(f)>=340&&f.roots.contains(16)&&f.roots.contains(8),"Q into R2 retains actual damage and does not suppress the second push");
-        if(i==39)h.assertTrue(loss(f)>=250,"Two Rivets share the target root record while both still deal their wall hits");
+        if(i==39)h.assertTrue(loss(f)>=250,"Two Rivets share the target root record while both still deal their wall hits: loss="+loss(f)+", roots="+f.roots);
         if(i==50||i==51)h.assertTrue(loss(f)==0,"Stun/silence cancels a not-yet-committed R2 charge: "+i);
         if(i==68){near(h,loss(f),125,"A real self-pull followed from its actual endpoint by an aimed Q hits and wall-collides");h.assertTrue(f.p.position().subtract(f.origin).horizontalDistance()>6&&f.sawRoot,"Tow-to-Q success includes the full anchor distance and target control");}
         if(i==64||i==66){near(h,loss(f),90,"Slowed flat Q retains direct damage without invented wall bonus: "+i);h.assertTrue(f.maxZ-f.initialZ>1.85&&!f.sawRoot,"Slowed or rate-changing push preserves completed work and its two-block budget: "+i);}
@@ -327,7 +327,8 @@ final class RivetChecks {
     private static void rank(Fixture f,int index,int rank){var d=PlayerDataProvider.get(f.p);for(int r=d.skillLevel(node(index).getId());r<rank;r++)PlayerDataProvider.upgradeSkill(f.p,node(index).getId());}
     private static Fixture fixture(GameTestHelper h,int i){var f=new Fixture();f.index=i;f.level=h.getLevel();var at=h.absolutePos(i==69?new BlockPos(1024,12,-30):new BlockPos(-80+(i%8)*20,12+(i/8)*7,-30));
         f.origin=Vec3.atBottomCenterOf(at.above());for(int x=-7;x<=7;x++)for(int z=-4;z<=18;z++)for(int y=-1;y<4;y++)block(f,x,y,z,y==-1?Blocks.STONE:Blocks.AIR);
-        f.p=player(h,f,f.origin);f.p.setYRot(0);f.p.setXRot(0);if(i<CASES)f.target=dummy(f,f.origin.add(0,0,2.35));return f;}
+        // Native player registration maintains entity/chunk tracking for remote fixture columns.
+        f.p=player(h,f,f.origin);f.level.players().remove(f.p);f.level.addNewPlayer(f.p);f.p.setYRot(0);f.p.setXRot(0);if(i<CASES)f.target=dummy(f,f.origin.add(0,0,2.35));return f;}
     private static ServerPlayer player(GameTestHelper h,Fixture f,Vec3 at){var p=(ServerPlayer)h.makeMockServerPlayer(GameType.SURVIVAL);var c=new net.minecraft.network.Connection(net.minecraft.network.protocol.PacketFlow.SERVERBOUND);new io.netty.channel.embedded.EmbeddedChannel(c);
         p.connection=new net.minecraft.server.network.ServerGamePacketListenerImpl(f.level.getServer(),c,p,net.minecraft.server.network.CommonListenerCookie.createInitial(p.getGameProfile(),false)){
             @Override public void send(net.minecraft.network.protocol.Packet<?> packet){if(packet instanceof ClientboundCustomPayloadPacket custom){f.packets.add(custom.payload());f.mailboxes.computeIfAbsent(p.getUUID(),ignored->new ArrayList<>()).add(custom.payload());}}};

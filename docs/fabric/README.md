@@ -2,6 +2,8 @@
 
 本目录记录 #40 的平台接合与朔「一闪」试点；全量迁移完成条件仍属于 #39。[保留清单与公共契约](retention-and-contracts.md) 区分保留内容、试点与后续专项。
 
+[#42 B组角色记录](roster-b-20261116.md)列出7人/56候选、实际服务端专项、共享伤害修复及人工待验边界。
+
 固定工具：Minecraft 26.3 正式、Fabric Loader 0.20.1、Fabric API 0.166.2+26.3、Loom 1.18.4、Gradle Wrapper 9.7.0、Java 25。构建依赖按 `gradle.properties` 固定，首次缺项时正常联网；已有缓存不清空。官方来源为 [Fabric 26.3示例](https://github.com/FabricMC/fabric-example-mod/tree/26.3) 与 [Loom1.18.4元数据](https://maven.fabricmc.net/net/fabricmc/fabric-loom/1.18.4/fabric-loom-1.18.4.module)，实际执行结果另见[验证报告](verification-20261116.md)。
 
 ```sh
@@ -10,6 +12,9 @@ bash ./gradlew build
 bash ./gradlew runGameTestServer -PmyriadGameTests -PgameTestFilter=myriad:melee_arc
 bash ./gradlew runGameTestServer -PmyriadGameTests -PgameTestFilter=myriad:first_group
 bash ./gradlew runGameTestServer -PmyriadGameTests -PgameTestFilter=myriad:shuo_pilot
+bash ./gradlew runGameTestServer -PmyriadGameTests -PgameTestFilter=myriad:roster_b
+bash ./gradlew runGameTestServer -PmyriadGameTests -PgameTestFilter=myriad:yike
+bash ./gradlew runGameTestServer -PmyriadGameTests -PgameTestFilter=myriad:rivet
 bash ./gradlew runGameTestClient -PmyriadGameTests
 ```
 

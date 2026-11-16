@@ -1600,6 +1600,9 @@ public final class PlayerDataProvider {
         if (event.getAmount() > 0.0f) {
             float absorbed = ModShieldSystem.consume(entity, event.getAmount());
             if (absorbed > 0.0f) {
+                // Fabric enters after vanilla has set its cooldown; accepted shield/pool hits
+                // need the same three-tick cadence as accepted vanilla HP loss.
+                entity.damageCooldownTime = 3;
                 if(damageFloat!=null&&event.getSource().getEntity() instanceof ServerPlayer shieldAttacker){
                     com.myriad.combat.CombatImpactFeedback.confirmed(shieldAttacker,entity,damageFloat.type(),
                             damageFloat.crit(),damageFloat.skill()&&!damageFloat.direct(),absorbed,true);
@@ -1626,6 +1629,7 @@ public final class PlayerDataProvider {
             float before = com.myriad.game.MonsterManager.modHealth(entity);
             boolean lethal = com.myriad.game.MonsterManager.damageModHealth(entity, event.getAmount());
             float actual = Math.max(0.0F, before - com.myriad.game.MonsterManager.modHealth(entity));
+            if(actual>0)entity.damageCooldownTime = 3;
             if(actual>0)com.myriad.game.BaseRules.combat(entity,event.getSource().getEntity());
             sendActualDamageFloat(entity, damageFloat, actual);
             damageFloat = null;
@@ -1644,6 +1648,7 @@ public final class PlayerDataProvider {
         com.myriad.game.LaneSystem.absorbIncomingDamage(entity, event.getSource(), event);
         if (laneManaged) {
             float actual = Math.max(0.0F, laneHealthBefore - com.myriad.game.LaneSystem.health(entity));
+            if(actual>0)entity.damageCooldownTime = 3;
             if(actual>0)com.myriad.game.BaseRules.combat(entity,event.getSource().getEntity());
             sendActualDamageFloat(entity, damageFloat, actual);
             damageFloat = null;
@@ -1652,6 +1657,7 @@ public final class PlayerDataProvider {
         // 并把 mod 血量同步给攻击者显示
         if (com.myriad.game.JiarenManager.isJiaren(entity.getUUID()) && event.getAmount() > 0) {
             float real = event.getAmount();
+            if(real>0)entity.damageCooldownTime = 3;
             if(real>0)com.myriad.game.BaseRules.combat(entity,event.getSource().getEntity());
             float before = com.myriad.game.JiarenManager.hp(entity.getUUID());
             com.myriad.game.JiarenManager.damage(entity, real);
