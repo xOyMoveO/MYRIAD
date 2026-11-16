@@ -24,7 +24,25 @@ jobs:
       - name: Build with Gradle
         run: bash ./gradlew build
 
-      - name: Fabric GameTest
-        run: |
-          bash ./gradlew runGameTestServer -PmyriadGameTests -PgameTestFilter=myriad:first_group
-          bash ./gradlew runGameTestServer -PmyriadGameTests -PgameTestFilter=myriad:shuo_pilot
+      - name: Verify Fabric release JAR and SHA256
+        run: python tools/fabric/prepare-ci-release.py
+
+      - name: Isolated Fabric GameTests
+        run: python tools/fabric/run-ci-gametests.py
+
+      - name: Upload Fabric release JAR and SHA256
+        uses: actions/upload-artifact@v7
+        with:
+          name: myriad-fabric-26.3-${{ github.sha }}
+          path: build/ci-release/*
+          if-no-files-found: error
+
+      - name: Upload build and GameTest evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: fabric-build-evidence-${{ github.sha }}
+          path: |
+            build/reports/
+            run-fabric-gametest/crash-reports/
+          if-no-files-found: warn
