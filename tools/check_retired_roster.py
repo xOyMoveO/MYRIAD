@@ -126,6 +126,14 @@ def main():
                 source_resources[resource] = path
                 if resource.startswith("assets/myriad/") and resource.endswith(".json"):
                     source_edges.update(asset_references(resource, json.loads(path.read_text(encoding="utf-8-sig"))))
+    expected_roles = {"yingxiao", "tianxing", "fenjue", "xuanchen", "sulan", "lingyuan", "hanze", "qingluo", "chixiao", "yunsheng", "shuo", "keheng", "yike", "rivet"}
+    graphs = [json.loads(p.read_text(encoding="utf-8-sig")) for p in (root / "src/main/resources/data/myriad/role_rework").glob("*.json")]
+    nodes = [skill for graph in graphs for skill in graph.get("skills", [])]
+    role_counts = collections.Counter(skill["role"] for skill in nodes)
+    if set(role_counts) != expected_roles or len(nodes) != 112 or any(count != 8 for count in role_counts.values()):
+        failures.append(f"formal candidate graph must contain 14 roles / 112 skills: {dict(role_counts)}")
+    if len({skill["id"] for skill in nodes}) != 112:
+        failures.append("formal candidate IDs must be unique")
     for origin, target in sorted(source_edges):
         if target not in source_resources:
             failures.append(f"source resource reference {origin} -> missing {target}")
@@ -156,6 +164,7 @@ def main():
 
     if failures:
         raise SystemExit("FAIL: retired-character references remain\n" + "\n".join(failures))
+    print("PASS: fourteen formal roles / 112 unique candidates, eight per role")
     print(f"PASS: retired-character source/tool/asset scan ({source_count} files)"
           + (f" and release JAR scan ({jar_count} entries)" if args.jar else ""))
     print(f"PASS: owned model/texture/particle/sound references ({len(source_edges)} source edges"

@@ -30,7 +30,8 @@ public final class SkillSystem {
 
         boolean training = com.myriad.game.TrainingMode.isEnabled();
         GameManager manager = GameManager.get();
-        if (!training && (manager == null || manager.getPhase() != GameManager.Phase.PLAYING)) {
+        if (!training && (manager == null || manager.getPhase() != GameManager.Phase.PLAYING
+                && !(slot == CharacterType.SLOT_W && manager.preparationFor(player)))) {
             Myriad.LOGGER.info("[cast] {} rejected: phase={}", player.getName().getString(),
                     manager == null ? "no-manager" : manager.getPhase());
             player.sendSystemMessage(Component.translatable("message.myriad.match_not_playing"));

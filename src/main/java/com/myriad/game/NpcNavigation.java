@@ -12,6 +12,7 @@ public final class NpcNavigation {
         public void clear(){path=null;goal=null;nextPlan=0;stuckTicks=0;}
     }
     public static void move(ServerLevel level,Mob mob,Route route,Vec3 goal,double step){
+        if (com.myriad.character.skills.rivet.RivetPush.autonomousMovementBlocked(mob)) return;
         long now=level.getGameTime();
         // This is the autonomous movement layer: do not scale entity velocity, gravity or external pushes.
         step*=Math.min(com.myriad.character.ability.AbilityRuntime.ordinarySlowRate(mob),
@@ -88,6 +89,7 @@ public final class NpcNavigation {
                 .getType()==net.minecraft.world.phys.HitResult.Type.MISS;
     }
     public static void separate(ServerLevel level,LaneMinionEntity mob){
+        if (com.myriad.character.skills.rivet.RivetPush.autonomousMovementBlocked(mob)) return;
         Vec3 correction=Vec3.ZERO;
         for(LaneMinionEntity other:level.getEntitiesOfClass(LaneMinionEntity.class,mob.getBoundingBox().inflate(1.8),e->e!=mob&&e.isAlive())){
             Vec3 delta=mob.position().subtract(other.position()).multiply(1,0,1);

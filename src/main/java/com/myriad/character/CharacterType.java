@@ -635,6 +635,20 @@ public enum CharacterType {
         @Override public double initialHpRegen(){return 2;}
         @Override public double initialManaRegen(){return 4;}
         @Override public double growthHp(){return 100;}
+    },
+
+    RIVET("rivet",Faction.XUANXIAO,new Skill[0]) {
+        @Override public double initialHp(){return 700;}
+        @Override public double growthHp(){return 110;}
+        @Override public double initialAd(){return 65;}
+        @Override public double initialSp(){return 30;}
+        @Override public double initialMp(){return 700;}
+        @Override public double initialPd(){return 45;}
+        @Override public double initialMr(){return 45;}
+        @Override public double initialAs(){return .70;}
+        @Override public double initialMs(){return .10;}
+        @Override public double initialHpRegen(){return 2;}
+        @Override public double initialManaRegen(){return 4;}
     };
 
     public static final int SLOT_Q = 0;

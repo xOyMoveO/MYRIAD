@@ -163,6 +163,62 @@ neoForge {
             logLevel = org.slf4j.event.Level.INFO
         }
 
+        matchExperienceTestServer {
+            type = "gameTestServer"
+            gameDirectory = project.file('run-match-experience-test')
+            systemProperty 'myriad.combatTests', 'true'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            programArguments.addAll '--tests', 'myriad:match_experience', '--universe', 'myriad-match-experience-20261116',
+                    '--report', project.file('build/reports/match-experience-gametest.xml').absolutePath
+            logLevel = org.slf4j.event.Level.INFO
+        }
+        controlShieldTestServer {
+            type = "gameTestServer"
+            gameDirectory = project.file('run-control-shield-test')
+            systemProperty 'myriad.combatTests', 'true'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            programArguments.addAll '--tests', 'myriad:control_shield', '--universe', 'myriad-control-shield-20261116',
+                    '--report', project.file('build/reports/control-shield-gametest.xml').absolutePath
+            logLevel = org.slf4j.event.Level.INFO
+        }
+        teamSignalTestServer {
+            type = "gameTestServer"
+            gameDirectory = project.file('run-team-signal-test')
+            systemProperty 'myriad.combatTests', 'true'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            programArguments.addAll '--tests', 'myriad:team_signal', '--universe', 'myriad-team-signal-20261116',
+                    '--report', project.file('build/reports/team-signal-gametest.xml').absolutePath
+            logLevel = org.slf4j.event.Level.INFO
+        }
+        deathRecapTestServer {
+            type = "gameTestServer"
+            gameDirectory = project.file('run-death-recap-test')
+            systemProperty 'myriad.combatTests', 'true'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            programArguments.addAll '--tests', 'myriad:death_recap', '--universe', 'myriad-death-recap-20261116',
+                    '--report', project.file('build/reports/death-recap-gametest.xml').absolutePath
+            logLevel = org.slf4j.event.Level.INFO
+        }
+        matchContributionTestServer {
+            type = "gameTestServer"
+            gameDirectory = project.file('run-match-contribution-test')
+            systemProperty 'myriad.combatTests', 'true'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            programArguments.addAll '--tests', 'myriad:match_contribution', '--universe', 'myriad-match-contribution-20261116',
+                    '--report', project.file('build/reports/match-contribution-gametest.xml').absolutePath
+            logLevel = org.slf4j.event.Level.INFO
+        }
+
+        rivetTestServer {
+            type = "gameTestServer"
+            gameDirectory = project.file('run-rivet-test')
+            systemProperty 'myriad.combatTests', 'true'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            programArguments.addAll '--tests', 'myriad:rivet', '--universe', 'myriad-rivet32-new-world',
+                    '--report', project.file('build/reports/rivet-gametest.xml').absolutePath
+            logLevel = org.slf4j.event.Level.INFO
+        }
+
         rosterDeliveryTestServer {
             type = "gameTestServer"
             gameDirectory = project.file('run-roster-delivery-test')
@@ -212,7 +268,7 @@ neoForge {
 }
 
 // GameTest's XML reporter does not create its parent directory after a clean build.
-tasks.matching { it.name in ['runFirstGroupTestServer', 'runArenaTestServer', 'runKehengTestServer', 'runYikeTestServer', 'runRosterDeliveryTestServer', 'runWorldTimeTestServer', 'runHeroActionTimeTestServer'] }.configureEach {
+tasks.matching { it.name in ['runMatchContributionTestServer', 'runMatchExperienceTestServer', 'runRivetTestServer', 'runFirstGroupTestServer', 'runArenaTestServer', 'runKehengTestServer', 'runYikeTestServer', 'runRosterDeliveryTestServer', 'runWorldTimeTestServer', 'runHeroActionTimeTestServer'] }.configureEach {
     def reportDirectory = layout.buildDirectory.dir('reports')
     doFirst { reportDirectory.get().asFile.mkdirs() }
 }
@@ -223,9 +279,15 @@ tasks.named('jar') {
     exclude 'data/myriad_arena/**'
     exclude 'data/myriad/test_instance/combat_regression.json'
     exclude 'data/myriad/test_instance/first_group.json'
+    exclude 'data/myriad/test_instance/match_experience.json'
+    exclude 'data/myriad/test_instance/match_contribution.json'
+    exclude 'data/myriad/test_instance/death_recap.json'
+    exclude 'data/myriad/test_instance/control_shield.json'
+    exclude 'data/myriad/test_instance/team_signal.json'
     exclude 'data/myriad/test_instance/keheng.json'
     exclude 'data/myriad/test_instance/world_time.json'
     exclude 'data/myriad/test_instance/yike.json'
+    exclude 'data/myriad/test_instance/rivet.json'
     exclude 'data/myriad/test_instance/roster_delivery.json'
     exclude 'data/myriad/test_instance/hero_action_time.json'
     exclude 'data/myriad/structure/combat_test_empty.nbt'

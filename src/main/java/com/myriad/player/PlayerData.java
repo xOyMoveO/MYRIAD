@@ -286,14 +286,18 @@ public class PlayerData {
      * 客户端看到层数凭空 +1。
      */
     private static final java.util.Set<String> PASSIVE_STACK_COUNTERS = java.util.Set.of(
-            "sulan_passive_ready", "chixiao_passive", "g1_keheng_marks", "g1_keheng_rate");
+            "sulan_passive_ready", "chixiao_passive", "g1_keheng_marks", "g1_keheng_rate", "g1_rivet_anchor_active");
 
     /** 技能附加效果剩余刻数 */
     public int getBuff(String skillId) {
-        return buffs.getOrDefault(skillId, 0);
+        int remaining = buffs.getOrDefault(skillId, 0);
+        if (skillId.equals("g1_root")) for (var entry : buffs.entrySet())
+            if (entry.getKey().startsWith("g1_root/")) remaining = Math.max(remaining, entry.getValue());
+        return remaining;
     }
 
     public void setBuff(String skillId, int ticks) {
+        if (skillId.equals("g1_root") && ticks <= 0) buffs.keySet().removeIf(key -> key.startsWith("g1_root/"));
         if (skillId.startsWith("skill_charge_")) {
             buffs.put(skillId, Math.max(0, ticks));
             return;

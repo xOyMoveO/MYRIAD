@@ -66,4 +66,6 @@ node tools/mcpfabric/call-tool.mjs myriad_capture_status '{"captureId":"上一�
 
 `captureFrames` 范围 1–40，`intervalTicks` 范围 1–10。帧保存在 `run-mcpfabric/screenshots/myriad/<captureId>/`，轮询状态时写入 `capture.json`。GPU 读回会影响实际间隔，以每帧 `clientTick` 为准。
 
+`myriad_state` 与截图、连拍状态遵守 `enableVision`；界面已打开时，键盘和鼠标输入都需要 `enableUiControl`，并继续遵守玩家 STOP。关闭观察能力后，成功输入只返回确认信息与 `heldInputs`，不会附带完整状态，也不会在输入已触发后再报观察权限错误。`myriad_release_inputs` 始终允许释放本适配持有的输入，只返回 `heldInputs`。
+
 已通过朔“一闪”的第一、第三人称实测，各记录 30 帧；正常界面学习、技能键释放、右键回鞘、法力扣除、冷却和位移均观察到。详细证据与范围见 [验证记录](../../docs/verification/mcpfabric-shuo-20261113.md)。

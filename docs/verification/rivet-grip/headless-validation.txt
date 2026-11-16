@@ -1,0 +1,25 @@
+最终无图形验证关键输出摘录（非完整日志）
+
+首轮发行build任务完成；其后铆钉旧夹具RivetChecks.dummy查询失败，组合命令退出1。
+> Task :compileJava
+> Task :jarJar NO-SOURCE
+> Task :jar
+> Task :build
+[MYRIAD-RIVET-GRIP] PASS: 2364 real pose/hand/skin matrix samples, welded palm, neutral wrist/handle relationship, directional backswing and forward-down strike, actual model operating-side vertices, positive winding and standard/underwater hand projection; offline geometry only
+java.util.NoSuchElementException: No value present
+[15:47:41] [Server thread/ERROR] [minecraft/GameTestServer]: 1 required tests failed :(
+[15:47:41] [Server thread/ERROR] [minecraft/GameTestServer]:    - myriad:rivet: Unknown internal error: Rivet test: java.util.NoSuchElementException: No value present
+BUILD FAILED in 22s
+
+冻结源码不改、原断言不改的复跑：
+> Task :compileJava UP-TO-DATE
+[MYRIAD-RIVET-GRIP] PASS: 2364 real pose/hand/skin matrix samples, welded palm, neutral wrist/handle relationship, directional backswing and forward-down strike, actual model operating-side vertices, positive winding and standard/underwater hand projection; offline geometry only
+[MYRIAD-RIVET32] PASS: 71 real-input scenes + 2 formal draft/preparation players; combinations=8, Q-wall=8/8; actual NPC shield absorption=150.0; tow-then-Q hits=1/1; maximum observed consecutive rooted ticks=20; maximum consecutive forced-movement-or-root ticks=24; visual/audio/feel acceptance excluded
+[15:49:52] [Server thread/INFO] [minecraft/GameTestServer]: All 1 required tests passed :)
+[MYRIAD-RIVET-GRIP] PASS: 2364 real pose/hand/skin matrix samples, welded palm, neutral wrist/handle relationship, directional backswing and forward-down strike, actual model operating-side vertices, positive winding and standard/underwater hand projection; offline geometry only
+[MYRIAD-G1-G2] PASS: 112 independent modules across 14 heroes, caps, alternatives, budgets, growth, economy, persistence, cancel
+[MYRIAD-G2-EXECUTION] PASS: real 140 ticks, sword 6 / ice 6 / chorus 4, exact aggregate damage, windup unlock
+[15:50:07] [Server thread/INFO] [minecraft/GameTestServer]: All 1 required tests passed :)
+BUILD SUCCESSFUL in 34s
+
+完整日志与失败XML本地保留于 /private/tmp/myriad-rivet-grip-evidence/；用户原截图不发布。

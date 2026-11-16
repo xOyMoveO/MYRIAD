@@ -34,7 +34,7 @@ final class AbilityMeshState extends QuadParticleRenderState {
             hasGround|=flame&&com.myriad.character.ability.AbilityVfxMaterials.flameGround(q.material());
             hasFlame|=flame&&!com.myriad.character.ability.AbilityVfxMaterials.flameGround(q.material());hasOrdinary|=!flame;
             hasModels|=q.material()>=com.myriad.character.ability.AbilityVfxMaterials.KEHENG_HD_RING
-                    &&q.material()<=com.myriad.character.ability.AbilityVfxMaterials.YIKE_PROJECTILE_MODEL
+                    &&q.material()<=com.myriad.character.ability.AbilityVfxMaterials.RIVET_MODEL
                     ||q.material()==com.myriad.character.ability.AbilityVfxMaterials.LINGYUAN_PIXEL_MODEL
                     ||q.material()==com.myriad.character.ability.AbilityVfxMaterials.NIGHT_NEEDLE_MODEL
                     ||q.material()>=com.myriad.character.ability.AbilityVfxMaterials.NIGHT_GRAY_BLADE
@@ -59,7 +59,8 @@ final class AbilityMeshState extends QuadParticleRenderState {
                 &&q.material()!=com.myriad.character.ability.AbilityVfxMaterials.NIGHT_NEEDLE_MODEL
                 &&q.material()!=com.myriad.character.ability.AbilityVfxMaterials.THUNDER_PROJECTILE_MODEL
                 &&q.material()!=com.myriad.character.ability.AbilityVfxMaterials.KEHENG_PROJECTILE_MODEL
-                &&q.material()!=com.myriad.character.ability.AbilityVfxMaterials.YIKE_PROJECTILE_MODEL)return true;
+                &&q.material()!=com.myriad.character.ability.AbilityVfxMaterials.YIKE_PROJECTILE_MODEL
+                &&q.material()!=com.myriad.character.ability.AbilityVfxMaterials.RIVET_MODEL)return true;
         return q.b().subtract(q.a()).cross(q.c().subtract(q.a())).dot(camera.subtract(q.a()))>1E-10;
     }
     @Override public void clear(){super.clear();mesh.clear();hasModels=hasFlame=hasGround=hasOrdinary=false;}

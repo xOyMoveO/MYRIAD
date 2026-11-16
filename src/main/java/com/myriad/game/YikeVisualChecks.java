@@ -27,7 +27,8 @@ final class YikeVisualChecks {
                 var mesh=YikeVfxGeometry.build(p,age,low);
                 h.assertTrue(mesh.size()<=(low?96:192),"Each role recipe respects its real full/LOD budget");
                 for(var q:mesh){
-                    h.assertTrue(q.alpha()>0&&q.alpha()<=1&&q.material()>=YIKE_HD_RING&&q.material()<=YIKE_HD_SPARK,"Every non-flight layer samples a real HD/pixel PNG with finite opacity");
+                    boolean beamCore=q.material()==0&&(signal==YikeVfx.BEAM||signal==BEAM_END);
+                    h.assertTrue(q.alpha()>0&&q.alpha()<=1&&(beamCore||q.material()>=YIKE_HD_RING&&q.material()<=YIKE_HD_SPARK),"Only the continuous beam core uses a solid texel; other non-flight layers retain HD/pixel PNGs with finite opacity");
                     h.assertTrue(q.startU()>=0&&q.endU()<=1&&q.startV()>=0&&q.endV()<=1&&q.startU()<q.endU()&&q.startV()<q.endV(),"HD layer UVs stay inside the authored transparent sprite");
                     for(var point:List.of(q.a(),q.b(),q.c(),q.d()))h.assertTrue(Double.isFinite(point.x)&&Double.isFinite(point.y)&&Double.isFinite(point.z),"Finite production vertices");
                 }
@@ -76,14 +77,35 @@ final class YikeVisualChecks {
                 &&sheets.stream().anyMatch(q->q.material()==YIKE_HD_ARC)&&pixels.stream().anyMatch(q->q.material()==YIKE_HD_MOTES),"Cold core flash, HD shock panels and pixel fragments enter at distinct confirmed event ages");
         var beam=packet(AbilityVfxGeometry.BEAM,YikeVfx.BEAM,3,100,new Vec3(8,0,0),.625f);
         var refreshed=packet(AbilityVfxGeometry.BEAM,YikeVfx.BEAM,3,101,new Vec3(8,0,0),.625f);
+        h.assertTrue(YikeVfxGeometry.continuousBeam(beam)&&!YikeVfxGeometry.continuousBeam(layered),"Only sustained beam/retraction bypass whole-effect muzzle proximity fading");
         h.assertTrue(YikeVfxGeometry.replaces(refreshed,beam)&&YikeVfxGeometry.obsolete(beam,refreshed),"Refreshed beam replaces older mesh instead of stacking brightness");
         var a=YikeVfxGeometry.build(beam,1.5f,false);var b=YikeVfxGeometry.build(refreshed,.5f,false);
+        for(boolean low:new boolean[]{false,true})for(Vec3 f:List.of(new Vec3(1,0,0),new Vec3(0,1,0),new Vec3(0,-1,0),new Vec3(.4,.6,-.3).normalize())){
+            var directed=packet(AbilityVfxGeometry.BEAM,YikeVfx.BEAM,3,100,f.scale(22),.625f);
+            var core=YikeVfxGeometry.build(directed,0,low).stream().filter(q->q.material()==0).toList();
+            h.assertTrue(core.size()==48,"Full and reduced detail retain the entire closed bright core and blue outer tube");
+            double near=100,far=-100,width=0;
+            for(var q:core){
+                h.assertTrue(q.alpha()>=.82f,"White texel beam surfaces remain visibly opaque instead of sparse transparent tail pixels");
+                h.assertTrue(q.b().subtract(q.a()).cross(q.c().subtract(q.a())).lengthSqr()>1E-14,"Every beam surface and end cap has real area");
+                for(var point:List.of(q.a(),q.b(),q.c(),q.d())){
+                    double along=point.dot(f);near=Math.min(near,along);far=Math.max(far,along);
+                    width=Math.max(width,point.subtract(f.scale(along)).length());
+                    h.assertTrue(along>=.5-1E-6&&along<=22+1E-6,"Solid core starts outside the owner near plane and ends at the clipped endpoint");
+                }
+            }
+            h.assertTrue(Math.abs(near-.5)<1E-6&&Math.abs(far-22)<1E-6&&Math.abs(width-.21)<1E-6,"Core spans the real beam and stays strictly inside its .625 damage half-width");
+            var shortBeam=packet(AbilityVfxGeometry.BEAM,YikeVfx.BEAM,3,100,f.scale(.1),.625f);
+            for(var q:YikeVfxGeometry.build(shortBeam,0,low))if(q.material()==0)for(var point:List.of(q.a(),q.b(),q.c(),q.d()))
+                h.assertTrue(point.dot(f)>=.025-1E-6&&point.dot(f)<=.1+1E-6,"Very close walls still clip the solid core without reversing it");
+        }
         h.assertTrue(a.size()==b.size(),"Refreshed beam keeps independent flowing strands");
         for(int i=0;i<a.size();i++)h.assertTrue(a.get(i).a().distanceToSqr(b.get(i).a())<1E-12,"World phase is continuous across per-tick packet renewal");
         var other=new AbilityVfxPayload(1,-1,THEME,7,AbilityVfxGeometry.BEAM,Vec3.ZERO,new Vec3(8,0,0),.625f,YikeVfx.BEAM,3,101,false,10);
         h.assertTrue(!YikeVfxGeometry.replaces(other,beam),"Distinct cast instances are not merged");
         for(var q:a)for(var at:List.of(q.a(),q.b(),q.c(),q.d()))h.assertTrue(at.x>=-1E-6&&at.x<=8+1E-6&&Math.hypot(at.y,at.z)<=.625,"Beam rails/streams remain inside clipped length and actual half-width");
         var end=packet(AbilityVfxGeometry.BEAM,BEAM_END,4,102,new Vec3(8,0,0),.625f);
+        h.assertTrue(YikeVfxGeometry.continuousBeam(end),"Retracting beam keeps the same near-plane-safe visibility policy");
         double previous=Double.POSITIVE_INFINITY;
         for(float t:new float[]{0,1,2,3}){double extent=YikeVfxGeometry.build(end,t,false).stream().flatMap(q->java.util.stream.Stream.of(q.a(),q.b(),q.c(),q.d())).mapToDouble(v->v.x).max().orElse(0);h.assertTrue(extent<previous,"Cancel contracts monotonically toward the muzzle with no continuing contact stage");previous=extent;}
         for(int signal:new int[]{DENIAL_WARNING,HEAVY_WARNING}){
@@ -97,5 +119,6 @@ final class YikeVisualChecks {
             h.assertTrue(early.size()==late.size()&&early.getFirst().a().equals(late.getFirst().a()),"Slow preparation cannot run to completion from local packet age");
         }
         System.out.println("[MYRIAD-YIKE-VISUAL] PASS: "+count+" HD/pixel staged frames, three actual textured full/LOD models, 3D tip/UV/area/budgets, no parked bodies, exact wakes/bounds, unchanged authoritative prep/flow and finite cancellation");
+        System.out.println("[MYRIAD-YIKE-SOLID-BEAM] PASS: 48 continuous white/blue faces in full/LOD, 4 directions, exact 22/near-wall endpoints, safe near plane, bounded radius and existing cancellation");
     }
 }

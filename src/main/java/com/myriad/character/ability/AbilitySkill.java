@@ -32,6 +32,10 @@ public abstract class AbilitySkill extends Skill {
     public boolean cooldownReady(AbilityRuntime.Cast c){return c.data.getCooldown(getId())<=0;}
     public int cooldownTicks(AbilityRuntime.Cast c){return getCooldownTicks(c.rank);}
     public boolean interruptPreparation(AbilityRuntime.Cast c){return false;}
+    /** Basic availability is independent of paid rank; paid ranks still consume ordinary skill points. */
+    public boolean baseAvailable(){return false;}
+    public float manaCost(AbilityRuntime.Cast c){return getManaCost();}
+    public boolean recastWhileMoving(){return false;}
     public boolean recastWhileRooted(){return false;}
     public boolean recastDuringChannel(){return false;}
     public boolean requiresStandingPoint(){return false;}

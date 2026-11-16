@@ -58,9 +58,14 @@ public final class MyriadInputBridge {
         tick++;
         if (!registered && McpFabric.router() != null) {
             var router = McpFabric.router();
-            router.register("myriad.state", c -> onClient(MyriadInputBridge::state));
+            router.register("myriad.state", c -> onClient(() -> { Gates.vision(); return state(); }));
             router.register("myriad.input", c -> onClient(() -> input(c)));
-            router.register("myriad.release", c -> onClient(() -> { releaseAll(); return state(); }));
+            router.register("myriad.release", c -> onClient(() -> {
+                releaseAll();
+                JsonObject result = new JsonObject();
+                result.addProperty("heldInputs", held.size());
+                return result;
+            }));
             router.register("myriad.capture", c -> onClient(() -> startCapture(c)));
             router.register("myriad.captureStatus", c -> onClient(() -> captureStatus(c)));
             registered = true;
@@ -94,6 +99,7 @@ public final class MyriadInputBridge {
         Gates.playerControl();
         Minecraft mc = Minecraft.getInstance();
         ClientMc.player();
+        if (mc.gui.screen() != null) Gates.uiControl();
         int duration = c.optInt("holdTicks", 1);
         if (duration < 1 || duration > 20) throw RpcException.badRequest("holdTicks must be 1..20");
         if (c.optInt("captureFrames", 0) > 0) startCapture(c);
@@ -120,7 +126,6 @@ public final class MyriadInputBridge {
             int button = c.getInt("button");
             if (button < 0 || button > 2) throw RpcException.badRequest("button must be 0..2");
             if (mc.gui.screen() != null) {
-                Gates.uiControl();
                 if (!c.has("x") || !c.has("y")) throw RpcException.badRequest("GUI mouse input needs x and y");
                 var window = mc.getWindow();
                 invoke(mc.mouseHandler, "onMove", new Class<?>[]{long.class, double.class, double.class},
@@ -133,7 +138,9 @@ public final class MyriadInputBridge {
         held.add(key);
         try { dispatch(key, InputConstants.PRESS); }
         catch (Exception error) { release(key); throw error; }
-        JsonObject result = state();
+        JsonObject result = new JsonObject();
+        result.addProperty("heldInputs", held.size());
+        if (McpFabric.config().enableVision) result = state();
         result.addProperty("inputRoute", "native_keyboard_or_mouse_handler");
         if (capture != null) result.addProperty("captureId", capture.id);
         return result;

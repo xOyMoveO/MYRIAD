@@ -13,6 +13,7 @@ import net.minecraft.client.resources.model.cuboid.*;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.item.*;
+import org.joml.Matrix4f;
 
 /** Closed weapon follows the real left hand, using original sword/sheath meshes and UVs. */
 public final class ShuoHeldView {
@@ -52,14 +53,23 @@ public final class ShuoHeldView {
         }finally{stack.popPose();}
         return true;
     }
-    /** Shared with offline mesh verification: exactly the existing vanilla left-hand transform. */
+    /** Closed-only half turn in hand space: keep the fist pivot and downward pitch, point the sheath aft. */
+    public static Matrix4f closedGrip(ItemTransforms itemTransforms){
+        var held=new PoseStack();
+        held.mulPose(Axis.XP.rotationDegrees(-90));held.mulPose(Axis.YP.rotationDegrees(180));
+        held.translate(-1f/16,2f/16,-10f/16);
+        itemTransforms.getTransform(ItemDisplayContext.THIRD_PERSON_LEFT_HAND).apply(true,held.last());
+        // ItemTransform.apply and NONE rendering each centre the mesh; undo just the former.
+        held.translate(.5,.5,.5);
+        var forward=held.last().pose();
+        // Two sign changes are a proper 180-degree rotation, not a reflection. Restore the
+        // grip translation so the sword and sheath turn together without orbiting the hand.
+        return new Matrix4f().scaling(-1,1,-1).mul(forward)
+                .setTranslation(forward.m30(),forward.m31(),forward.m32());
+    }
+    /** Shared by the live third-person renderer and offline mesh checks; follows the real left arm. */
     public static void leftHand(ArmedModel<ArmedEntityRenderState> model,ArmedEntityRenderState state,PoseStack stack,ItemTransforms itemTransforms){
         model.translateToHand(state,HumanoidArm.LEFT,stack);
-        stack.mulPose(Axis.XP.rotationDegrees(-90));stack.mulPose(Axis.YP.rotationDegrees(180));
-        stack.translate(-1f/16,2f/16,-10f/16);
-        itemTransforms.getTransform(ItemDisplayContext.THIRD_PERSON_LEFT_HAND).apply(true,stack.last());
-        // 26.2 ItemTransform.apply already includes -0.5 centring. NONE rendering centres again.
-        // Undo only that last centring here, otherwise both meshes float away from the hand.
-        stack.translate(.5,.5,.5);
+        stack.mulPose(closedGrip(itemTransforms));
     }
 }

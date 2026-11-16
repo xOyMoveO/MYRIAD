@@ -15,15 +15,16 @@ public final class ShuoSkillVfx {
         if(!p.valid()||p.theme()!=10||p.angle()!=(int)p.angle())return false;
         return switch((int)p.angle()){
             case CHARGING->p.kind()==CHARGE;case LEFT,RIGHT,DOWN->p.kind()==ARC;
-            case TRACE,CHASE,RIFT->p.kind()==BEAM;case GUARDING,MARK->p.kind()==SHIELD;
+            case TRACE,CHASE,RIFT->p.kind()==BEAM;case ShuoSilentLineVfx.SEAM,ShuoSilentLineVfx.CUT->ShuoSilentLineVfx.owns(p);case GUARDING,MARK->p.kind()==SHIELD;
             case CONTACT,PARRY,SHEATHING,READY,EMPOWER,ShuoDashVfx.DEPART,ShuoDashVfx.ARRIVE->p.kind()==BURST;default->false;
         };
     }
-    public static AABB bounds(AbilityVfxPayload p){return new AABB(p.from(),p.to()).inflate(Math.max(2,p.radius()+1));}
+    public static AABB bounds(AbilityVfxPayload p){return new AABB(p.from(),p.to()).inflate(Math.max(ShuoSilentLineVfx.owns(p)?2.5:2,p.radius()+1));}
     /** The caster sees the same world effects, including when looking through their own eyes. */
     public static boolean ownerHidden(AbilityVfxPayload p){return false;}
     public static List<Quad> build(AbilityVfxPayload p,float age,boolean low){
         if(!owns(p)||!Float.isFinite(age)||age<0||age>=p.life())return List.of();
+        if(ShuoSilentLineVfx.owns(p))return ShuoSilentLineVfx.build(p,age,low);
         if(ShuoDashVfx.signal((int)p.angle()))return ShuoDashVfx.build(p,age,low);
         var g=new Mesh(low);float t=age/p.life(),fade=Math.min(1,(age+1)/1.5f)*Math.min(1,(p.life()-age)/Math.max(1,p.life()*.32f));
         Vec3 f=p.to().subtract(p.from()).multiply(1,0,1).normalize();if(f.lengthSqr()<.001)f=new Vec3(0,0,1);
