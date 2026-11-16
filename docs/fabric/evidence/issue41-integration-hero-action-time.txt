@@ -1,0 +1,204 @@
+
+> Configure project :
+Fabric Loom: 1.18.4
+
+> Task :compileJava UP-TO-DATE
+> Task :processResources UP-TO-DATE
+> Task :classes UP-TO-DATE
+> Task :compileGametestJava UP-TO-DATE
+> Task :generateLog4jConfig UP-TO-DATE
+> Task :generateDLIConfig UP-TO-DATE
+> Task :configureLaunch UP-TO-DATE
+> Task :processGametestResources UP-TO-DATE
+> Task :gametestClasses UP-TO-DATE
+
+> Task :runGameTestServer
+[23:11:30] [main/INFO] (FabricLoader/GameProvider) Loading Minecraft 26.3 with Fabric Loader 0.20.1
+[23:11:30] [main/INFO] (FabricLoader/Mappings) Mappings not present!
+[23:11:30] [main/INFO] (FabricLoader) Loading 45 mods:
+	- fabric-advancement-api-v1 1.0.1+38c7a2d55d
+	- fabric-api 0.166.2+26.3
+	- fabric-api-base 2.0.6+fcdff87f5d
+	- fabric-api-lookup-api-v1 2.0.24+3434d6d95d
+	- fabric-biome-api-v1 20.2.0+423307765d
+	- fabric-block-api-v1 3.1.0+0ae6f9115d
+	- fabric-block-getter-api-v2 2.0.9+3434d6d95d
+	- fabric-command-api-v2 3.1.2+fcdff87f5d
+	- fabric-content-registries-v0 15.0.7+74ed1ea55d
+	- fabric-convention-tags-v2 4.10.5+187b64905d
+	- fabric-crash-report-info-v1 1.0.7+fcdff87f5d
+	- fabric-creative-tab-api-v1 5.0.22+fcdff87f5d
+	- fabric-data-attachment-api-v1 2.2.35+af2d4d095d
+	- fabric-data-generation-api-v1 27.4.3+187b64905d
+	- fabric-debug-api-v1 1.0.5+5af7744b5d
+	- fabric-dimensions-v1 5.1.20+5af7744b5d
+	- fabric-entity-events-v1 6.0.4+3434d6d95d
+	- fabric-events-interaction-v0 5.3.10+b9b88df45d
+	- fabric-game-rule-api-v1 4.0.10+3434d6d95d
+	- fabric-gametest-api-v1 4.0.36+3434d6d95d
+	- fabric-item-api-v1 14.8.1+8f511c9f5d
+	- fabric-lifecycle-events-v1 4.1.9+ffef5f675d
+	- fabric-loot-api-v3 4.0.9+4068fd645d
+	- fabric-menu-api-v1 2.0.31+ed66f0a35d
+	- fabric-message-api-v1 7.1.0+3e5b46335d
+	- fabric-networking-api-v1 6.4.1+c58129785d
+	- fabric-object-builder-api-v1 24.1.13+e2f63d3e5d
+	- fabric-particles-v1 5.0.28+3434d6d95d
+	- fabric-permission-api-v1 1.0.8+fcdff87f5d
+	- fabric-recipe-api-v1 10.0.12+b9b88df45d
+	- fabric-registry-sync-v0 8.0.5+1ca9f6365d
+	- fabric-rendering-fluids-v1 6.0.6+3434d6d95d
+	- fabric-resource-conditions-api-v1 6.2.1+fd3b1d565d
+	- fabric-resource-loader-v0 3.3.27+4fc5413f5d
+	- fabric-resource-loader-v1 3.1.0+5af7744b5d
+	- fabric-serialization-api-v1 2.0.8+bb0d41e65d
+	- fabric-tag-api-v1 2.1.11+fcdff87f5d
+	- fabric-transfer-api-v1 8.0.27+c8357e785d
+	- fabric-transitive-access-wideners-v1 8.1.17+e2f63d3e5d
+	- fabricloader 0.20.1
+	- java 25
+	- minecraft 26.3
+	- mixinextras 0.5.5
+	- myriad 0.1.0
+	- myriad_gametest 0.1.0
+[23:11:30] [main/INFO] (FabricLoader/Mixin) SpongePowered MIXIN Subsystem Version=0.8.7 Source=file:/Users/vesgrae/.gradle/caches/modules-2/files-2.1/net.fabricmc/sponge-mixin/0.17.5+mixin.0.8.7/cef8519a91129d0c21fa03bb9378f0e8ca810e5/sponge-mixin-0.17.5+mixin.0.8.7.jar Service=Knot/Fabric Env=SERVER
+[23:11:30] [main/INFO] (FabricLoader/MixinExtras|Service) Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.5.5).
+[23:11:31] [main/WARN] (MacOperatingSystem) Unable to parse version 27.2 to a codename.
+[23:11:33] [main/INFO] (Minecraft) Environment: Environment[discoveryUrl=https://discovery.minecraftservices.com/minecraft/client, name=PROD]
+[23:11:33] [main/INFO] (FabricGameTestRunner) Starting test server
+[23:11:34] [Worker-Main-3/INFO] (Minecraft) Loaded 1866 advancements
+[23:11:34] [main/INFO] (BiomeModificationImpl) Applied 0 biome modifications to 0 of 67 new biomes in 700.2 μs
+[23:11:34] [Server thread/INFO] (Minecraft) Selecting global world spawn...
+[23:11:34] [Server thread/INFO] (Minecraft) Loading 96 persistent chunks...
+[23:11:34] [Server thread/INFO] (Minecraft) Preparing spawn area: 9%
+[23:11:34] [Server thread/INFO] (Minecraft) Time elapsed: 178 ms
+[23:11:34] [Server thread/INFO] (Minecraft) Will run tests matching myriad:hero_action_time (1 tests)
+[23:11:34] [Server thread/INFO] (Minecraft) Started game test server
+[23:11:34] [Server thread/INFO] (Minecraft) 1 tests are now running at position 3427703, 4, -13838120!
+[23:11:34] [Server thread/INFO] (Minecraft) Running test environment '[unregistered]' batch 0 (1 tests)...
+[23:11:34] [Server thread/INFO] (Minecraft) [ ]
+[23:11:34] [Server thread/INFO] (Minecraft) [ ]
+[23:11:38] [Server thread/INFO] (Minecraft) [_]
+[23:11:38] [Server thread/INFO] (Minecraft) [_]
+[23:11:38] [Server thread/INFO] (Minecraft) [_]
+[23:11:38] [Server thread/INFO] (Minecraft) [_]
+[23:11:39] [Server thread/INFO] (Minecraft) [_]
+[23:11:39] [Server thread/INFO] (Minecraft) [_]
+[23:11:39] [Server thread/INFO] (Minecraft) [_]
+[23:11:39] [Minecraft Services Discovery/ERROR] (Minecraft) Failed to request Minecraft Services public key
+
+com.mojang.authlib.exceptions.MinecraftClientException: Failed to read from https://api.minecraftservices.com/publickeys due to Remote host terminated the handshake
+	at knot//com.mojang.authlib.minecraft.client.MinecraftClient.readServiceResponse(MinecraftClient.java:151)
+	at knot//com.mojang.authlib.minecraft.client.MinecraftClient.getWithEtag(MinecraftClient.java:81)
+	at knot//com.mojang.authlib.minecraft.client.MinecraftClient.get(MinecraftClient.java:65)
+	at knot//com.mojang.authlib.services.MinecraftServicesKeyInfo.fetch(MinecraftServicesKeyInfo.java:82)
+	at knot//com.mojang.authlib.services.MinecraftServicesKeyInfo.lambda$get$1(MinecraftServicesKeyInfo.java:71)
+	at knot//com.mojang.authlib.services.RetryableFetch$1.run(RetryableFetch.java:42)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:545)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:328)
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:309)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base/java.lang.Thread.run(Thread.java:1474)
+Caused by: javax.net.ssl.SSLHandshakeException: Remote host terminated the handshake
+	at java.base/sun.security.ssl.SSLSocketImpl.handleEOF(SSLSocketImpl.java:1716)
+	at java.base/sun.security.ssl.SSLSocketImpl.decode(SSLSocketImpl.java:1514)
+	at java.base/sun.security.ssl.SSLSocketImpl.readHandshakeRecord(SSLSocketImpl.java:1421)
+	at java.base/sun.security.ssl.SSLSocketImpl.startHandshake(SSLSocketImpl.java:455)
+	at java.base/sun.security.ssl.SSLSocketImpl.startHandshake(SSLSocketImpl.java:426)
+	at java.base/sun.net.www.protocol.https.HttpsClient.afterConnect(HttpsClient.java:483)
+	at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.connect(AbstractDelegateHttpsURLConnection.java:187)
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getInputStream0(HttpURLConnection.java:1377)
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getInputStream(HttpURLConnection.java:1302)
+	at java.base/java.net.HttpURLConnection.getResponseCode(HttpURLConnection.java:493)
+	at java.base/sun.net.www.protocol.https.HttpsURLConnectionImpl.getResponseCode(HttpsURLConnectionImpl.java:307)
+	at knot//com.mojang.authlib.minecraft.client.MinecraftClient.readServiceResponse(MinecraftClient.java:130)
+	... 11 more
+Caused by: java.io.EOFException: SSL peer shut down incorrectly
+	at java.base/sun.security.ssl.SSLSocketInputRecord.read(SSLSocketInputRecord.java:494)
+	at java.base/sun.security.ssl.SSLSocketInputRecord.readHeader(SSLSocketInputRecord.java:483)
+	at java.base/sun.security.ssl.SSLSocketInputRecord.decode(SSLSocketInputRecord.java:160)
+	at java.base/sun.security.ssl.SSLTransport.decode(SSLTransport.java:111)
+	at java.base/sun.security.ssl.SSLSocketImpl.decode(SSLSocketImpl.java:1506)
+	... 21 more
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] yingxiao/2 attack base=[5]/[61.5] slow=[7]/[61.5] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] yingxiao/4 attack base=[1]/[94.0] slow=[2]/[94.0] motion=5/7 positions=(0.0, 0.0, 9.0)/(0.0, 0.0, 9.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] yingxiao/5 attack base=[1]/[74.5] slow=[2]/[74.5] motion=4/7 positions=(0.0, 0.024999999990001243, 7.000385966151953)/(0.0, 0.024999999988352783, 7.000385966151953) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] yingxiao/6 attack base=[16]/[219.0] slow=[32]/[219.0] motion=-1/-1 positions=(0.0, 0.025000000000005684, 1.979999976232648)/(0.0, 0.025000000000005684, 1.979999976232648) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] tianxing/3 attack base=[9]/[79.5] slow=[17]/[79.5] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] tianxing/5 attack base=[12]/[123.5] slow=[23]/[123.5] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] tianxing/7 attack base=[12]/[245.0] slow=[24]/[245.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] xuanchen/2 attack base=[6]/[61.5] slow=[8]/[61.5] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] xuanchen/6 attack base=[36, 56, 76, 96]/[54.0, 54.0, 54.0, 54.0] slow=[52, 72, 92, 112]/[54.0, 54.0, 54.0, 54.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] sulan/2 attack base=[2]/[68.0] slow=[3]/[68.0] motion=7/12 positions=(0.0, 0.0, 5.9999999944120646)/(0.0, 0.0, 6.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] sulan/5 attack base=[7, 16]/[58.5, 58.5] slow=[10, 19]/[58.5, 58.5] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] sulan/6 attack base=[14]/[196.0] slow=[28]/[196.0] motion=14/28 positions=(0.0, 0.0, 3.4285714253783226)/(0.0, 0.0, 3.428571432828903) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] lingyuan/2 attack base=[2]/[81.5] slow=[4]/[81.5] motion=8/13 positions=(0.0, 0.0, 6.0)/(0.0, 0.0, 6.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] lingyuan/4 attack base=[6, 9, 13]/[42.5, 42.5, 42.5] slow=[8, 15, 23]/[42.5, 42.5, 42.5] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] lingyuan/7 attack base=[30]/[336.0] slow=[60]/[336.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] hanze/2 attack base=[6, 10, 15]/[31.0, 31.0, 31.0] slow=[8, 17, 27]/[31.0, 31.0, 31.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] hanze/5 attack base=[6]/[101.5] slow=[8]/[101.5] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] hanze/4 attack base=[20]/[136.0] slow=[40]/[136.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] qingluo/3 attack base=[6]/[63.5] slow=[8]/[63.5] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] chixiao/3 attack base=[2]/[62.0] slow=[3]/[62.0] motion=8/13 positions=(0.0, 0.0, 7.0)/(0.0, 0.0, 7.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] chixiao/5 attack base=[6]/[101.5] slow=[8]/[101.5] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] chixiao/6 attack base=[14]/[195.5] slow=[21]/[195.5] motion=14/21 positions=(0.0, 0.025000000000005684, 6.001404406502843)/(0.0, 0.025000000000005684, 6.001404406502843) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] yunsheng/2 attack base=[12]/[68.5] slow=[16]/[68.5] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] yunsheng/6 attack base=[40, 60, 80, 100]/[52.5, 52.5, 52.5, 52.5] slow=[60, 80, 100, 120]/[52.5, 52.5, 52.5, 52.5] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] yunsheng/5 motion base=[]/[] slow=[]/[] motion=10/16 positions=(0.0, 0.024999999979030463, 6.001404406502843)/(0.0, 0.024999999979030463, 6.001404406502843) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] fenjue/2 attack base=[3, 7]/[43.0, 43.0] slow=[6, 14]/[43.0, 43.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] fenjue/3 attack base=[1]/[47.0] slow=[2]/[47.0] motion=6/9 positions=(0.0, 0.0, 8.0)/(0.0, 0.0, 7.999999998137355) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] fenjue/5 attack base=[13]/[143.0] slow=[26]/[143.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] fenjue/6 attack base=[18, 38, 58, 78, 98]/[170.0, 36.0, 36.0, 36.0, 36.0] slow=[22, 42, 62, 82, 102]/[170.0, 36.0, 36.0, 36.0, 36.0] motion=18/22 positions=(0.0, 0.025000000000005684, 6.001404406502843)/(0.0, 0.025000000000005684, 6.001404406502843) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/4 attack base=[12, 22]/[71.40039, 47.59961] slow=[23, 36]/[71.40039, 47.59961] motion=16/30 positions=(0.0, 0.0, 6.99999999627471)/(0.0, 0.0, 7.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/5 attack base=[9, 15]/[81.299805, 54.200195] slow=[18, 30]/[81.299805, 54.200195] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/6 attack base=[29]/[368.0] slow=[46]/[368.0] motion=21/38 positions=(0.0, 0.0, 12.0)/(0.0, 0.0, 12.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/7 attack base=[4, 8, 12]/[118.0, 118.0, 187.0] slow=[8, 16, 24]/[118.0, 118.0, 187.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/5 drawn attack base=[0, 4]/[55.5, 55.5] slow=[0, 8]/[55.5, 55.5] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/2 drawn attack base=[0, 7]/[40.200195, 26.799805] slow=[0, 14]/[40.200195, 26.799805] motion=6/12 positions=(1.307669695932418, 0.0, -2.6999999936670065)/(1.3076696977950633, 0.0, -2.6999999936670065) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/4 drawn attack base=[2]/[81.5] slow=[4]/[81.5] motion=5/10 positions=(0.0, 0.0, 4.0)/(0.0, 0.0, 4.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/6 drawn attack base=[6]/[276.0] slow=[10]/[276.0] motion=6/10 positions=(0.0, 0.0, 6.0)/(0.0, 0.0, 6.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/7 drawn attack base=[6]/[320.5] slow=[12]/[320.5] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/2 motion base=[]/[] slow=[]/[] motion=6/12 positions=(1.307669695932418, 0.0, -2.6999999936670065)/(1.3076696977950633, 0.0, -2.6999999936670065) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/7 chase base=[4, 12]/[118.0, 118.0] slow=[8, 24]/[118.0, 118.0] motion=12/24 positions=(0.0, 0.0, 4.0)/(0.0, 0.0, 4.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] chixiao/6 forced base=[]/[] slow=[]/[] motion=4/4 positions=(0.5, 1.5522959183673635, 1.2860152292996645)/(0.5, 0.967984693877554, 0.6430076155811548) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/2 drawn sheath base=[]/[] slow=[]/[] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=8/16
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] tianxing/6 real base=[8, 18, 28, 38, 48, 58]/[52.5, 52.5, 52.5, 52.5, 52.5, 52.5] slow=[8, 18, 28, 38, 48, 58]/[52.5, 52.5, 52.5, 52.5, 52.5, 52.5] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] xuanchen/7 real base=[14]/[203.0] slow=[14]/[203.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] fenjue/4 real base=[32, 52, 72, 92]/[31.0, 31.0, 31.0, 31.0] slow=[32, 52, 72, 92]/[31.0, 31.0, 31.0, 31.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] yunsheng/3 real base=[0, 40]/[44.0, 44.0] slow=[0, 40]/[44.0, 44.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] fenjue/2 boundary base=[3, 7]/[43.0, 43.0] slow=[6, 11]/[43.0, 43.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(8.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] fenjue/2 cancel base=[3]/[43.0] slow=[6]/[43.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/5 interrupt base=[]/[] slow=[]/[] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] fenjue/2 needle base=[3, 7]/[43.0, 43.0] slow=[4, 8]/[43.0, 43.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] fenjue/2 ally base=[3, 7]/[43.0, 43.0] slow=[3, 7]/[43.0, 43.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] fenjue/2 dot base=[3, 7, 23, 43, 63]/[43.0, 43.0, 1.7998047, 1.7998047, 1.7998047] slow=[6, 14, 26, 46, 66]/[43.0, 43.0, 1.7998047, 1.7998047, 1.7998047] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/2 drawn dome-finish base=[0, 7]/[40.200195, 26.799805] slow=[0, 20]/[40.200195, 26.799805] motion=6/17 positions=(1.307669695932418, 0.0, -2.6999999936670065)/(1.296772446949035, 0.0, -2.6774999797344208) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/6 needle-finish base=[29]/[368.0] slow=[31]/[368.0] motion=21/21 positions=(0.0, 0.0, 12.0)/(0.0, 0.0, 12.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] yingxiao/2 basic base=[0, 20]/[66.50391, 66.50391] slow=[0, 40]/[66.50391, 66.50391] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] tianxing/2 basic base=[0, 20]/[66.50391, 66.50391] slow=[0, 40]/[66.50391, 66.50391] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] xuanchen/2 basic base=[5, 15]/[65.0, 65.0] slow=[7, 27]/[65.0, 65.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] sulan/2 basic base=[0, 20]/[66.50391, 66.50391] slow=[0, 40]/[66.50391, 66.50391] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] lingyuan/2 basic base=[0, 20]/[66.50391, 66.50391] slow=[0, 40]/[66.50391, 66.50391] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] hanze/2 basic base=[5, 15]/[78.0, 78.0] slow=[7, 27]/[78.0, 78.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] qingluo/2 basic base=[5, 15]/[65.0, 65.0] slow=[7, 27]/[65.0, 65.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] chixiao/2 basic base=[0, 20]/[66.50391, 66.50391] slow=[0, 40]/[66.50391, 66.50391] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] yunsheng/2 basic base=[5, 15]/[65.0, 65.0] slow=[7, 27]/[65.0, 65.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] fenjue/2 basic base=[0, 20]/[66.50391, 66.50391] slow=[0, 40]/[66.50391, 66.50391] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/2 basic base=[0, 20]/[66.50391, 66.50391] slow=[0, 40]/[66.50391, 66.50391] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[23:11:39] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-ACTION-TIME] PASS: 130 actual-cast paired scenarios; 11 retained roles, actual .5 fields vs mu1, damage timelines/motion distances, private slash/draw/follow/sheathe, rank-two dome/needle-source finishers, real-time warnings and lifecycle
+[23:11:39] [Server thread/INFO] (Minecraft) [+]
+[23:11:39] [Server thread/INFO] (Minecraft) ========= 1 GAME TESTS COMPLETE IN 5.387 s ======================
+[23:11:39] [Server thread/INFO] (Minecraft) All 1 required tests passed :)
+[23:11:39] [Server thread/INFO] (Minecraft) ====================================================
+[23:11:39] [Server thread/INFO] (Minecraft) Stopping server
+[23:11:39] [Server thread/INFO] (Minecraft) Saving players
+[23:11:39] [Server thread/INFO] (Minecraft) Saving worlds
+[23:11:40] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[Test Level]'/minecraft:overworld
+[23:11:40] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[Test Level]'/minecraft:the_end
+[23:11:40] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[Test Level]'/minecraft:the_nether
+[23:11:40] [Server thread/INFO] (Minecraft) Game test server shutting down
+
+BUILD SUCCESSFUL in 11s
+7 actionable tasks: 1 executed, 6 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.0/userguide/configuration_cache_enabling.html

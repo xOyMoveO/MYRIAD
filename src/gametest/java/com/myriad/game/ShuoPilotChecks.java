@@ -218,7 +218,7 @@ final class ShuoPilotChecks {
         }
     }
 
-    private static void receive(GameTestHelper h, ServerPlayer player, CustomPacketPayload payload) {
+    static void receive(GameTestHelper h, ServerPlayer player, CustomPacketPayload payload) {
         var buf = new RegistryFriendlyByteBuf(Unpooled.buffer(), h.getLevel().registryAccess());
         try {
             ServerboundCustomPayloadPacket.STREAM_CODEC.encode(buf, new ServerboundCustomPayloadPacket(payload));

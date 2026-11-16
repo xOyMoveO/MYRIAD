@@ -171,7 +171,7 @@ final class WorldTimeChecks {
         var ally=f.arrow(false,at,velocity,f.owner);var enemy=f.arrow(false,at,velocity,f.enemy);var unowned=f.arrow(false,at,velocity,null);
         ally.tick();enemy.tick();unowned.tick();
         f.h.assertTrue(com.myriad.combat.VanillaArrowTime.rate(enemy)==.5&&com.myriad.combat.VanillaArrowTime.rate(ally)==1,
-                "NeoForge synced entity attachment carries each arrow's current server rate");
+                "Fabric synced entity attachment carries each arrow's current server rate");
         near(f,ally.position(),unowned.position(),"Ownerless flight is not assigned a fictional enemy faction");
         near(f,at.add(velocity.scale(.5)),enemy.position(),"Overlapping real fields choose strongest flight rate");
         f.clearFields();
