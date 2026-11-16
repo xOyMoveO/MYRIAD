@@ -1,37 +1,103 @@
 package com.myriad.client.gui;
 
-/** Pure geometry shared by rendering, clipping, scrolling, input and regression checks. */
-public record SkillChoiceLayout(SkillChoiceLayout.Box panel, SkillChoiceLayout.Box viewport,
-        int columnWidth, int cardHeight, int scrollX, int scrollY, int maxX, int maxY) {
-    public static final int GAP = 10, GROUP_HEADER = 26, ROW_GAP = 8;
-    public record Box(int x,int y,int w,int h) {
-        public int right(){return x+w;}
-        public int bottom(){return y+h;}
-        public boolean contains(double px,double py){return px>=x&&px<right()&&py>=y&&py<bottom();}
-        public boolean overlaps(Box b){return x<b.right()&&right()>b.x&&y<b.bottom()&&bottom()>b.y;}
+/** Shared geometry for icon rendering, clipping, scrolling and regression checks. */
+public record SkillChoiceLayout(Box panel, Box viewport, int labelWidth, int tileWidth,
+        int rowHeight, int scrollY, int maxY) {
+    private static final int[] DISPLAY_GROUPS = {0, 2, 1, 3};
+
+    public record Box(int x, int y, int w, int h) {
+        public int right() { return x + w; }
+        public int bottom() { return y + h; }
+        public boolean contains(double px, double py) { return px >= x && px < right() && py >= y && py < bottom(); }
+        public boolean overlaps(Box other) { return x < other.right() && right() > other.x && y < other.bottom() && bottom() > other.y; }
     }
-    public static SkillChoiceLayout create(int screenWidth,int screenHeight,int xOffset,int yOffset){
-        int w=Math.max(1,Math.min(920,screenWidth-24)),h=Math.max(1,Math.min(452,screenHeight-16));
-        var panel=new Box((screenWidth-w)/2,(screenHeight-h)/2,w,h);
-        var viewport=new Box(panel.x+16,panel.y+88,Math.max(1,w-40),Math.max(1,h-122));
-        int column=Math.max(116,(viewport.w-3*GAP)/4);
-        int card=Math.clamp((viewport.h-GROUP_HEADER-ROW_GAP)/2,86,126);
-        int maxX=Math.max(0,4*column+3*GAP-viewport.w);
-        int maxY=Math.max(0,GROUP_HEADER+2*card+ROW_GAP-viewport.h);
-        return new SkillChoiceLayout(panel,viewport,column,card,Math.clamp(xOffset,0,maxX),Math.clamp(yOffset,0,maxY),maxX,maxY);
+
+    public static SkillChoiceLayout create(int width, int height, int requestedY) {
+        return create(width, height, requestedY, 32);
     }
-    public Box column(int group){return new Box(viewport.x+group*(columnWidth+GAP)-scrollX,
-            viewport.y-scrollY,columnWidth,GROUP_HEADER);}
-    public Box card(int index){var col=column(index/2);return new Box(col.x,col.y+GROUP_HEADER+(index%2)*(cardHeight+ROW_GAP),columnWidth,cardHeight);}
-    public Box action(int index){var c=card(index);return new Box(c.x+8,c.bottom()-24,c.w-16,18);}
-    public Box tab(int index){int w=(panel.w-40-12)/3;return new Box(panel.x+20+index*(w+6),panel.y+59,w,21);}
-    public Box horizontalTrack(){return new Box(viewport.x,panel.bottom()-28,viewport.w,5);}
-    public Box verticalTrack(){return new Box(viewport.right()+3,viewport.y,5,viewport.h);}
-    public Box horizontalThumb(){var track=horizontalTrack();int w=Math.min(track.w,Math.max(24,track.w*viewport.w/(viewport.w+maxX)));
-        return new Box(track.x+(maxX==0?0:(track.w-w)*scrollX/maxX),track.y,w,track.h);}
-    public Box verticalThumb(){var track=verticalTrack();int h=Math.min(track.h,Math.max(18,track.h*viewport.h/(viewport.h+maxY)));
-        return new Box(track.x,track.y+(maxY==0?0:(track.h-h)*scrollY/maxY),track.w,h);}
-    public int scrollToHorizontal(double mouseX){var track=horizontalTrack();var thumb=horizontalThumb();return Math.clamp((int)Math.round((mouseX-track.x-thumb.w/2.0)*maxX/Math.max(1,track.w-thumb.w)),0,maxX);}
-    public int scrollToVertical(double mouseY){var track=verticalTrack();var thumb=verticalThumb();return Math.clamp((int)Math.round((mouseY-track.y-thumb.h/2.0)*maxY/Math.max(1,track.h-thumb.h)),0,maxY);}
-    public boolean canHit(Box box,double x,double y){return viewport.contains(x,y)&&box.contains(x,y);}
+    public static SkillChoiceLayout create(int width, int height, int requestedY, int measuredLabelWidth) {
+        int h = Math.max(1, Math.min(280, height - 8));
+        int w = Math.max(1, Math.min(300, Math.min(width - 8, (int) Math.round(h * 1.15))));
+        var panel = new Box((width - w) / 2, (height - h) / 2, w, h);
+        int bodyTop = titleOffset(h) + 28;
+        int divider = navigationOffset(w);
+        var view = new Box(panel.x + divider + 12, panel.y + bodyTop,
+                Math.max(1, w - divider - 34), Math.max(1, h - 37 - bodyTop));
+        int label = Math.clamp(measuredLabelWidth, 20, 70);
+        int row = Math.clamp(view.h / 4, 17, 44);
+        int tile = Math.clamp(row + 2, 20, 46);
+        label = Math.min(label,Math.max(20,view.w-2*tile-18));
+        int maximum = Math.max(0, 4 * row - view.h);
+        return new SkillChoiceLayout(panel, view, label, tile, row, Math.clamp(requestedY, 0, maximum), maximum);
+    }
+
+    public static int displayRow(int skillIndex) {
+        return switch (skillIndex / 2) { case 0 -> 0; case 2 -> 1; case 1 -> 2; default -> 3; };
+    }
+    public static int firstIndex(int row) { return DISPLAY_GROUPS[row] * 2; }
+    private int groupWidth() { return labelWidth + 2 * tileWidth + 18; }
+    private int groupStart() { return viewport.x + Math.max(0, (viewport.w - groupWidth()) / 4); }
+
+    public Box category(int group) {
+        int row = displayRow(group * 2);
+        return new Box(groupStart(), viewport.y + row * rowHeight - scrollY, labelWidth, rowHeight - 1);
+    }
+    public Box card(int index) {
+        return new Box(groupStart() + labelWidth + 8 + (index % 2) * (tileWidth + 10),
+                viewport.y + displayRow(index) * rowHeight - scrollY, tileWidth, rowHeight - 1);
+    }
+    private static int titleOffset(int height) { return (int) Math.ceil(height * .18) + 4; }
+    private static int navigationOffset(int width) { return Math.clamp(width / 5, 44, 64); }
+    public int titleY() { return panel.y + titleOffset(panel.h); }
+    public int statusY() { return titleY() + 11; }
+    public int headerDividerY() { return titleY() + 23; }
+    public int navigationDividerX() { return panel.x + navigationOffset(panel.w); }
+    public int footerDividerY() { return panel.bottom() - 37; }
+    public float rankScale() { return rowHeight < 28 ? .8f : 1; }
+    public float footerScale() { return panel.h < 200 ? .8f : 1; }
+    public Box primary() {
+        int width = Math.min(80, Math.max(60, viewport.w / 2));
+        return new Box(viewport.right() - width, footerDividerY() + 4, width, panel.h < 200 ? 16 : 18);
+    }
+    public Box selectedLabel() {
+        return new Box(viewport.x, footerDividerY() + 2, Math.max(1, viewport.w - primary().w - 8), 20);
+    }
+    public Box tab(int index) {
+        int size = Math.clamp((viewport.h - 12) / 3 - 4, 16, 24);
+        int left = Math.clamp(panel.w / 12, 16, 25);
+        return new Box(panel.x + left, viewport.y + 1 + index * (size + 8), size, size);
+    }
+    public int attributeColumns() { return Math.clamp((viewport.w + 8) / 40, 1, 5); }
+    public Box attribute(int index, int requestedScroll) {
+        int columns = attributeColumns();
+        int width = Math.min(38, (viewport.w - (columns - 1) * 8) / columns);
+        int full = columns * width + (columns - 1) * 8;
+        return new Box(viewport.x + Math.max(0, (viewport.w - full) / 2) + (index % columns) * (width + 8),
+                viewport.y + 26 + (index / columns) * 48 - requestedScroll, width, 40);
+    }
+    public int attributeMaximum() {
+        int rows = (5 + attributeColumns() - 1) / attributeColumns();
+        return Math.max(0, 26 + rows * 48 - viewport.h);
+    }
+    public Box supply(int index, int requestedScroll) {
+        return new Box(viewport.x, viewport.y + index * 32 - requestedScroll, viewport.w, 30);
+    }
+    public Box supplyAction(int index, int requestedScroll) {
+        var row = supply(index, requestedScroll);
+        return new Box(row.right() - 74, row.y + 6, 70, 18);
+    }
+    public Box verticalTrack() { return new Box(viewport.right() + 4, viewport.y, 5, viewport.h); }
+    public Box verticalThumb() { return verticalThumb(maxY, scrollY); }
+    public Box verticalThumb(int maximum, int scroll) {
+        var track = verticalTrack();
+        int h = Math.min(track.h, Math.max(16, track.h * track.h / Math.max(1, track.h + maximum)));
+        return new Box(track.x, track.y + (maximum == 0 ? 0 : (track.h - h) * Math.clamp(scroll, 0, maximum) / maximum), track.w, h);
+    }
+    public int scrollToVertical(double y) { return scrollToVertical(y, maxY); }
+    public int scrollToVertical(double y, int maximum) {
+        var track = verticalTrack();
+        var thumb = verticalThumb(maximum, 0);
+        return Math.clamp((int) Math.round((y - track.y - thumb.h / 2.0) * maximum / Math.max(1, track.h - thumb.h)), 0, maximum);
+    }
+    public boolean canHit(Box box, double x, double y) { return viewport.contains(x, y) && box.contains(x, y); }
 }

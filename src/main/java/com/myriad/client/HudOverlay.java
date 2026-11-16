@@ -187,14 +187,9 @@ public class HudOverlay implements GuiLayer {
     private void renderRecall(GuiGraphicsExtractor gui, Font font) {
         int ticks = ClientDataHolder.buffTicks("recall");
         if (ticks <= 0) return;
-        int x=Minecraft.getInstance().getWindow().getGuiScaledWidth()/2;
-        int y=Minecraft.getInstance().getWindow().getGuiScaledHeight()/2+40;
         String text=Component.translatable("hud.myriad.recall",String.format(java.util.Locale.ROOT,"%.1f",ticks/20.0)).getString();
-        gui.fill(x-80,y,x+80,y+24,0xD0101722);
-        gui.text(font,text,x-font.width(text)/2,y+3,0xFFA6F5EC);
-        gui.fill(x-76,y+17,x+76,y+20,0xFF293C48);
-        int filled=Math.max(0,Math.min(152,152*(160-ticks)/160));
-        gui.fill(x-76,y+17,x-76+filled,y+20,0xFF66DCCE);
+        float progress=1.0F-ticks/(float)com.myriad.game.RecallSystem.DURATION;
+        CastProgressBar.draw(gui,font,text,progress);
     }
 
     /** 位于灵脉范围内时显示双方人数与双向占领进度。 */

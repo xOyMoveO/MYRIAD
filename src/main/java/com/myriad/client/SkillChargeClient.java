@@ -12,6 +12,8 @@ import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 
 /** Frame-interpolated bar; movement is suppressed after vanilla refreshes keyboard input. */
 public final class SkillChargeClient {
+    // Brief attack windups keep their weapon/VFX cue without flashing a text panel.
+    private static final int MIN_VISIBLE_TICKS = 8;
     private static String skill="";private static int total;private static long started;private static float walkFactor;
     private SkillChargeClient(){}
     public static void reset(){skill="";total=0;started=0;walkFactor=0;}
@@ -35,18 +37,12 @@ public final class SkillChargeClient {
         Minecraft.getInstance().player.setSprinting(false);
     }
     public static void render(GuiGraphicsExtractor gui,Font font,float partial){
-        if(!active())return;
+        if(!active()||total<MIN_VISIBLE_TICKS)return;
         var mc=Minecraft.getInstance();double remaining=Math.max(0,started+total-mc.level.getGameTime()-partial);
         float progress=(float)Math.clamp(1-remaining/total,0,1);
-        int x=mc.getWindow().getGuiScaledWidth()/2,y=mc.getWindow().getGuiScaledHeight()/2+42;
         String name=Component.translatable("skill.myriad."+skill).getString();
         String text=Component.translatable("hud.myriad.skill_charge",name,
-                String.format(java.util.Locale.ROOT,"%.2f",remaining/20)).getString();
-        gui.fill(x-86,y-1,x+86,y+28,0xE3181026);
-        gui.fill(x-86,y-1,x+86,y,0xFFAA7BD6);
-        gui.text(font,text,x-font.width(text)/2,y+3,0xFFF0E6FF);
-        gui.fill(x-81,y+17,x+81,y+23,0xFF362547);
-        int fill=Math.round(progress*162);
-        if(fill>0){gui.fill(x-81,y+17,x-81+fill,y+23,0xFFA776DC);gui.fill(x-81,y+17,x-81+fill,y+19,0xFFEAD5FF);}
+                String.format(java.util.Locale.ROOT,"%.1f",remaining/20)).getString();
+        CastProgressBar.draw(gui,font,text,progress);
     }
 }
