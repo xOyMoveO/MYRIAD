@@ -1,4 +1,5 @@
 package com.myriad.client.gui;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,7 +9,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import com.myriad.network.Packets;
 
 import com.myriad.client.ClientDataHolder;
 import com.myriad.game.TacticalSupplySystem;
@@ -127,7 +128,7 @@ public class ShopScreen extends Screen {
                         confirmed -> {
                             var current=ClientDataHolder.equipment();
                             if(confirmed && slot<current.size() && expected.equals(current.get(slot)))
-                                ClientPacketDistributor.sendToServer(new NetworkSetup.SellEquipPayload(slot));
+                                Packets.sendToServer(new NetworkSetup.SellEquipPayload(slot));
                             net.minecraft.client.Minecraft.getInstance().setScreenAndShow(this);
                         }, Component.translatable("screen.myriad.shop.sell_confirm"),
                         Component.translatable("screen.myriad.shop.sell_confirm_body",Component.translatable(def.nameKey()))));
@@ -170,7 +171,7 @@ public class ShopScreen extends Screen {
     private void buySelected() {
         if (purchaseBlockReason() != null) return;
         purchasePending = true;
-        ClientPacketDistributor.sendToServer(new NetworkSetup.ShopBuyPayload(selectedId));
+        Packets.sendToServer(new NetworkSetup.ShopBuyPayload(selectedId));
     }
 
     private String purchaseBlockReason() {
@@ -550,7 +551,7 @@ public class ShopScreen extends Screen {
 
     @Override
     public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
-        if (event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
+        if (event.key() == InputConstants.KEY_ESCAPE) {
             onClose();
             return true;
         }

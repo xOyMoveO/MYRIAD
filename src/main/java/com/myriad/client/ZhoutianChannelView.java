@@ -7,7 +7,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.neoforged.neoforge.client.event.ViewportEvent;
+import com.myriad.client.platform.CameraAngles;
 
 /**
  * 周天覆阵引导视角：灵魂出窍式——相机移到身侧（绕实体旋转 90°），略微俯视看向自己。
@@ -81,7 +81,7 @@ public final class ZhoutianChannelView {
     }
 
     /** 相机回调：绕实体转到侧方看向自己，pitch 32°→18° 俯瞰全貌 */
-    public static void onCamera(ViewportEvent.ComputeCameraAngles event) {
+    public static void onCamera(CameraAngles event) {
         if (!isActive()) {
             return;
         }

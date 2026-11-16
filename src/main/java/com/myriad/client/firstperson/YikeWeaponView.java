@@ -16,7 +16,7 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.*;
 import net.minecraft.world.item.*;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.client.event.RenderHandEvent;
+import com.myriad.client.platform.HandRenderContext;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -26,7 +26,7 @@ import org.joml.Vector4f;
 public final class YikeWeaponView {
     private static final net.minecraft.client.model.geom.ModelPart[] ARMS=new net.minecraft.client.model.geom.ModelPart[4];
     private YikeWeaponView(){}
-    public static boolean render(RenderHandEvent e){
+    public static boolean render(HandRenderContext e){
         var mc=Minecraft.getInstance();
         if(mc.player==null||mc.level==null||!ClientDataHolder.modEnabled()||!"yike".equals(ClientDataHolder.characterId())
             ||!mc.player.isAlive()||mc.player.isSpectator()||!mc.player.getMainHandItem().is(ModItems.HONG_LIE.get())||mc.gui.screen()!=null)return false;
@@ -73,7 +73,7 @@ public final class YikeWeaponView {
             model.translateToHand(state,arm,stack);
             // Model origin is the palm at y=10/16 along the actual arm; mesh grip is (8,8,8).
             stack.translate(arm==HumanoidArm.RIGHT?-1f/16:1f/16,10f/16,0);
-            stack.mulPose(Axis.XP.rotationDegrees((float)(180*(1-pose.aimBlend()))));
+            stack.rotate(Axis.XP.rotationDegrees((float)(180*(1-pose.aimBlend()))));
             parts(entity,stack,collector,light,pose,mc.level.getGameTime()+partial);
         }finally{stack.popPose();}
         return true;
@@ -83,7 +83,7 @@ public final class YikeWeaponView {
         var x=new Vector3f((float)right[0],(float)right[1],(float)right[2]);var z=new Vector3f(x).cross(y).normalize();
         return new Matrix4f().setColumn(0,new Vector4f(x,0)).setColumn(1,new Vector4f(y,0)).setColumn(2,new Vector4f(z,0)).setColumn(3,new Vector4f(origin,1));
     }
-    private static void item(LivingEntity owner,PoseStack stack,SubmitNodeCollector collector,int light,Item item){Minecraft.getInstance().getEntityRenderDispatcher().getItemInHandRenderer().renderItem(owner,item.getDefaultInstance(),ItemDisplayContext.NONE,stack,collector,light);}
+    private static void item(LivingEntity owner,PoseStack stack,SubmitNodeCollector collector,int light,Item item){com.myriad.client.platform.ClientItemRenderer.submit(owner,item.getDefaultInstance(),ItemDisplayContext.NONE,stack,collector,light);}
     private static float partial(float age){return age-(float)Math.floor(age);}
     private static void parts(LivingEntity owner,PoseStack stack,SubmitNodeCollector collector,int light,YikeWeaponAnimation.Pose pose,double time){
         stack.pushPose();try{
@@ -91,13 +91,13 @@ public final class YikeWeaponView {
         item(owner,stack,collector,light,ModItems.HONG_LIE_FRAME.get());
         for(int i=0;i<3;i++){
             stack.pushPose();try{
-                stack.translate(0,5.5f/16,0);stack.mulPose(Axis.YP.rotationDegrees(i*120));
-                stack.mulPose(Axis.XP.rotationDegrees((float)pose.petal(i)));
+                stack.translate(0,5.5f/16,0);stack.rotate(Axis.YP.rotationDegrees(i*120));
+                stack.rotate(Axis.XP.rotationDegrees((float)pose.petal(i)));
                 stack.translate(0,pose.petalSway(i,time)/16,pose.latch()/16);
                 item(owner,stack,collector,light,ModItems.HONG_LIE_PETAL.get());
             }finally{stack.popPose();}
         }
-        stack.pushPose();try{stack.translate(0,(13.2+pose.ringSlide())/16,0);stack.mulPose(Axis.YP.rotationDegrees((float)pose.ringTwist()));
+        stack.pushPose();try{stack.translate(0,(13.2+pose.ringSlide())/16,0);stack.rotate(Axis.YP.rotationDegrees((float)pose.ringTwist()));
             item(owner,stack,collector,light,ModItems.HONG_LIE_RING.get());}finally{stack.popPose();}
         }finally{stack.popPose();}
     }

@@ -17,8 +17,8 @@ import net.minecraft.world.entity.player.PlayerModelType;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.HitResult;
-import net.neoforged.neoforge.client.event.InputEvent;
-import net.neoforged.neoforge.client.event.RenderHandEvent;
+import com.myriad.client.platform.AttackInput;
+import com.myriad.client.platform.HandRenderContext;
 
 /** Night Shadow's LOCAL first-person arm. Does not touch shared player models or third-person poses. */
 public final class NightDaggerView {
@@ -61,7 +61,7 @@ public final class NightDaggerView {
         }
     }
     /** LOWEST priority, after skill-input consumers; never cancels or changes vanilla attack input. */
-    public static void onAttack(InputEvent.InteractionKeyMappingTriggered event) {
+    public static void onAttack(AttackInput event) {
         Minecraft mc=Minecraft.getInstance();
         if (!event.isAttack() || event.isCanceled() || !event.shouldSwingHand()
                 || !enabled(mc) || mc.gui.screen()!=null || mc.player.isUsingItem()
@@ -73,7 +73,7 @@ public final class NightDaggerView {
         if(SKILL.active(mc.player.tickCount))return;
         MOTION.attack(mc.player.tickCount,mc.player.getCurrentItemAttackStrengthDelay());
     }
-    public static boolean render(RenderHandEvent event) {
+    public static boolean render(HandRenderContext event) {
         Minecraft mc=Minecraft.getInstance();
         if (!enabled(mc)) { reset(); return false; }
         if(event.isCanceled())return false;
@@ -113,7 +113,7 @@ public final class NightDaggerView {
                     renderDagger.set(DataComponents.ITEM_MODEL,MODEL);
                 }
                 if(skill.action()<0||skill.showBlade()){
-                    mc.getEntityRenderDispatcher().getItemInHandRenderer().renderItem(mc.player,renderDagger,
+                    com.myriad.client.platform.ClientItemRenderer.submit(mc.player,renderDagger,
                             ItemDisplayContext.NONE,stack,event.getSubmitNodeCollector(),event.getPackedLight());
                     NightSkillHandRenderer.submit(event,stack,NightSkillHandVfx.blade(skill,now));
                 }
@@ -133,7 +133,7 @@ public final class NightDaggerView {
         event.setCanceled(true);
         return true;
     }
-    private static void submitArm(RenderHandEvent event,PoseStack stack,Minecraft mc,boolean slim,boolean left) {
+    private static void submitArm(HandRenderContext event,PoseStack stack,Minecraft mc,boolean slim,boolean left) {
         // Private baked parts: third-person rendering and the vanilla AvatarRenderer are never mutated.
         if (slim && slimRoot==null) slimRoot=NightDaggerArmModel.bake(true);
         if (!slim && normalRoot==null) normalRoot=NightDaggerArmModel.bake(false);

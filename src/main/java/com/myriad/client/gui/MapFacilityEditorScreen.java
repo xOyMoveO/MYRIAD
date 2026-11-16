@@ -13,7 +13,7 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import com.myriad.network.Packets;
 
 /** 可视化地图设施编辑器：以玩家当前脚下方块为服务端落点。 */
 public final class MapFacilityEditorScreen extends Screen {
@@ -177,7 +177,7 @@ public final class MapFacilityEditorScreen extends Screen {
 
     private void send(String category, String id, String meta, String action) {
         if (selectingArena && !category.equals("arena")) return;
-        ClientPacketDistributor.sendToServer(new NetworkSetup.MapFacilityActionPayload(category, id, meta, action));
+        Packets.sendToServer(new NetworkSetup.MapFacilityActionPayload(category, id, meta, action));
     }
 
     private void selectArena(String mode) {
@@ -188,7 +188,7 @@ public final class MapFacilityEditorScreen extends Screen {
 
     private void requestRefresh() {
         rememberInput();
-        ClientPacketDistributor.sendToServer(new NetworkSetup.RequestMapFacilityEditorPayload());
+        Packets.sendToServer(new NetworkSetup.RequestMapFacilityEditorPayload());
     }
 
     private void rememberInput() {

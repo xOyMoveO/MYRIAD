@@ -1,7 +1,7 @@
 package com.myriad.client.particle;
 
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.DepthStencilState;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import net.minecraft.client.particle.SingleQuadParticle;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.texture.TextureAtlas;
@@ -17,9 +17,9 @@ public final class FlameTransparentLayer {
     private static final class Pipeline extends RenderPipeline {
         private Pipeline(RenderPipeline base,boolean ground){
             super(Identifier.fromNamespaceAndPath("myriad",ground?"pipeline/fenjue_ground":"pipeline/fenjue_translucent"),
-                    base.getVertexShader(),base.getFragmentShader(),base.getShaderDefines(),base.getBindGroupLayouts(),
-                    base.getColorTargetStates().clone(),new DepthStencilState(base.getDepthStencilState().depthTest(),false,0,ground?2:0),
-                    base.getPolygonMode(),base.isCull(),base.getVertexFormatBindings().clone(),base.getPrimitiveTopology(),base.getSortKey()+(ground?4097:4096));
+                    base.getShaders(),base.getShaderDefines(),base.getBindGroupLayouts(),
+                    base.getColorTargetStates().toArray(com.mojang.renderpearl.api.pipeline.ColorTargetState[]::new),new DepthStencilState(base.getDepthStencilState().depthTest(),false,0,ground?2:0),
+                    base.getPolygonMode(),base.isCull(),base.getVertexFormatBindings().toArray(com.mojang.renderpearl.api.vertex.VertexFormat[]::new),base.getPrimitiveTopology(),base.pushConstantSize(),base.getSortKey()+(ground?4097:4096));
         }
     }
 }

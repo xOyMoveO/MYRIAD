@@ -13,7 +13,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.*;
 import net.minecraft.world.item.ItemDisplayContext;
-import net.neoforged.neoforge.client.event.RenderHandEvent;
+import com.myriad.client.platform.HandRenderContext;
 
 /** Rivet-only held hammer; no camera motion, input prediction, inventory or global arm changes. */
 public final class RivetWeaponView {
@@ -29,24 +29,24 @@ public final class RivetWeaponView {
     private static void check(Minecraft mc){if(owner!=mc.player||world!=mc.level){reset();owner=mc.player;world=mc.level;}}
     public static void receive(AbilityVfxPayload p){var mc=Minecraft.getInstance();
         if(!enabled(mc)||p.owner()!=mc.player.getId())return;check(mc);MOTION.accept(p,mc.level.getGameTime());}
-    public static boolean render(RenderHandEvent e){var mc=Minecraft.getInstance();
+    public static boolean render(HandRenderContext e){var mc=Minecraft.getInstance();
         if(!enabled(mc)){reset();return false;}check(mc);
         if(e.isCanceled()||mc.gui.screen()!=null||mc.player.isUsingItem()||mc.gameMode!=null&&mc.gameMode.isDestroying()
                 ||!mc.options.getCameraType().isFirstPerson()||mc.getCameraEntity()!=mc.player)return false;
         if(ClientDataHolder.buffTicks("g1_stun")>0)MOTION.reset();
-        var pose=MOTION.sample(mc.level.getGameTime()+e.getPartialTick(),mc.player.getAttackAnim(e.getPartialTick()),
+        var pose=MOTION.sample(mc.level.getGameTime()+e.getPartialTick(),mc.player.getSwingAnimation(e.getPartialTick()),
                 ClientDataHolder.buffTicks("g1_rivet_rhythm")>0);
         if(e.getHand()!=InteractionHand.MAIN_HAND)return false;
         boolean left=mc.player.getMainArm()==HumanoidArm.LEFT,slim=mc.player.getSkin().model()==PlayerModelType.SLIM;
         arm(e,pose,slim,left);
         var stack=e.getPoseStack();stack.pushPose();try{
             stack.mulPose(RivetWeaponRig.item(pose,left));
-            mc.getEntityRenderDispatcher().getItemInHandRenderer().renderItem(mc.player,e.getItemStack(),ItemDisplayContext.NONE,
+            com.myriad.client.platform.ClientItemRenderer.submit(mc.player,e.getItemStack(),ItemDisplayContext.NONE,
                     stack,e.getSubmitNodeCollector(),e.getPackedLight());
         }finally{stack.popPose();}
         e.setCanceled(true);return true;
     }
-    private static void arm(RenderHandEvent e,RivetWeaponMotion.Pose pose,boolean slim,boolean left){
+    private static void arm(HandRenderContext e,RivetWeaponMotion.Pose pose,boolean slim,boolean left){
         var mc=Minecraft.getInstance();int index=(slim?2:0)+(left?1:0);
         if(ARMS[index]==null)ARMS[index]=RivetArmModel.bake(slim,left);
         var arm=ARMS[index];arm.resetPose();arm.setPos(0,0,0);arm.setRotation(0,0,0);arm.visible=true;

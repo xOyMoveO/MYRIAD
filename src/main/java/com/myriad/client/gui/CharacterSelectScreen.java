@@ -12,7 +12,7 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import com.myriad.network.Packets;
 import java.util.*;
 import static com.myriad.client.gui.SkillChoiceTheme.*;
 
@@ -26,7 +26,7 @@ public final class CharacterSelectScreen extends Screen {
     private Button confirm;
     public CharacterSelectScreen(){
         super(Component.translatable("screen.myriad.choose.title"));
-        ClientPacketDistributor.sendToServer(new NetworkSetup.RequestSyncPayload());
+        Packets.sendToServer(new NetworkSetup.RequestSyncPayload());
     }
     @Override public boolean isPauseScreen(){return false;}
     private boolean available(String id){return CharacterType.byId(id)!=null&&CharacterChoiceLayout.available(id,ClientDataHolder.characterId(),ClientDataHolder.takenCharacters());}
@@ -51,7 +51,7 @@ public final class CharacterSelectScreen extends Screen {
         confirm=addRenderableWidget(new PanelButton(layout.confirm(),Component.translatable("screen.myriad.choose.confirm"),b->{
             // Read the latest sync again, never a map captured when the window opened.
             if(!available(selectedId))return;
-            ClientPacketDistributor.sendToServer(new NetworkSetup.ChooseCharacterPayload(selectedId));onClose();
+            Packets.sendToServer(new NetworkSetup.ChooseCharacterPayload(selectedId));onClose();
         }));
         confirm.active=available(selectedId);
         addRenderableWidget(new PanelButton(layout.close(),Component.literal("×"),b->onClose()));

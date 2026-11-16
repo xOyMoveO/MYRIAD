@@ -7,7 +7,7 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.client.event.RenderHandEvent;
+import com.myriad.client.platform.HandRenderContext;
 
 /** Bounded local translucent/fullbright geometry using the already packaged authored pixel atlases. */
 public final class AttackTrailRenderer {
@@ -15,7 +15,7 @@ public final class AttackTrailRenderer {
             Map.entry(57,id("thunder_pixel_slash")),Map.entry(58,id("thunder_pixel_bolt")),Map.entry(64,id("fenjue_pixel_slash")),Map.entry(68,id("fenjue_pixel_stream")),Map.entry(71,id("fenjue_hd_fire")),Map.entry(75,id("shuo_basic_hd")),Map.entry(77,id("shuo_stream_hd")));
     private AttackTrailRenderer(){}
     private static Identifier id(String name){return Identifier.fromNamespaceAndPath("myriad","textures/particle/vfx/"+name+".png");}
-    public static void submit(RenderHandEvent event,List<Quad> quads){
+    public static void submit(HandRenderContext event,List<Quad> quads){
         submit(event.getPoseStack(),event.getSubmitNodeCollector(),quads);
     }
     public static void submit(com.mojang.blaze3d.vertex.PoseStack stack,net.minecraft.client.renderer.SubmitNodeCollector collector,List<Quad> quads){

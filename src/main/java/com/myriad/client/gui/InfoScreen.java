@@ -3,7 +3,7 @@ package com.myriad.client.gui;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -16,7 +16,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import com.myriad.network.Packets;
 
 import com.myriad.character.CharacterType;
 import com.myriad.character.Skill;
@@ -80,7 +80,7 @@ public class InfoScreen extends Screen {
         super(Component.translatable("screen.myriad.info.title"));
         com.myriad.Myriad.LOGGER.info("[info-screen] opened (player={})",
                 net.minecraft.client.Minecraft.getInstance().player != null);
-        ClientPacketDistributor.sendToServer(new NetworkSetup.RequestSyncPayload());
+        Packets.sendToServer(new NetworkSetup.RequestSyncPayload());
     }
     @Override protected void init() {
         if (com.myriad.character.rework.FirstGroupSkills.active(ClientDataHolder.characterId()))
@@ -94,7 +94,7 @@ public class InfoScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        if (event.key() == GLFW.GLFW_KEY_C) {
+        if (event.key() == InputConstants.KEY_C) {
             onClose();
             return true;
         }
@@ -305,7 +305,7 @@ public class InfoScreen extends Screen {
         if (event.buttonInfo().button() == 1 && !equipRects.isEmpty()) {
             for (int[] rect : equipRects) {
                 if (mx >= rect[0] && mx <= rect[0] + rect[2] && my >= rect[1] && my <= rect[1] + rect[3]) {
-                    ClientPacketDistributor.sendToServer(new NetworkSetup.SellEquipPayload(rect[4]));
+                    Packets.sendToServer(new NetworkSetup.SellEquipPayload(rect[4]));
                     return true;
                 }
             }
@@ -317,7 +317,7 @@ public class InfoScreen extends Screen {
                     if (mx >= rect[0] && mx <= rect[0] + rect[2] && my >= rect[1] && my <= rect[1] + rect[3]) {
                         Skill skill = type.skill(rect[4]);
                         if (skill != null) {
-                            ClientPacketDistributor.sendToServer(
+                            Packets.sendToServer(
                                     new NetworkSetup.UpgradeSkillPayload(skill.getId()));
                             return true;
                         }

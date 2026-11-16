@@ -8,7 +8,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.phys.Vec2;
-import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
+import net.minecraft.client.player.ClientInput;
 
 /** Frame-interpolated bar; movement is suppressed after vanilla refreshes keyboard input. */
 public final class SkillChargeClient {
@@ -26,14 +26,14 @@ public final class SkillChargeClient {
         var mc=Minecraft.getInstance();return total>0&&ClientDataHolder.modEnabled()&&mc.level!=null&&mc.player!=null
                 &&mc.player.isAlive()&&!mc.player.isSpectator()&&mc.level.getGameTime()<started+total;
     }
-    public static void input(MovementInputUpdateEvent e){
-        if(!active()||e.getEntity()!=Minecraft.getInstance().player)return;
+    public static void input(ClientInput input){
+        if(!active())return;
         Minecraft.getInstance().player.setSprinting(false);
         // The server movement attribute supplies the slow. Do not suppress a mobile channel's input twice.
-        if(walkFactor>0){var k=e.getInput().keyPresses;
-            e.getInput().keyPresses=new Input(k.forward(),k.backward(),k.left(),k.right(),false,k.shift(),false);return;}
-        e.getInput().keyPresses=Input.EMPTY;
-        ((ClientInputAccessor)e.getInput()).myriad$setMoveVector(Vec2.ZERO);
+        if(walkFactor>0){var k=input.keyPresses;
+            input.keyPresses=new Input(k.forward(),k.backward(),k.left(),k.right(),false,k.shift(),false);return;}
+        input.keyPresses=Input.EMPTY;
+        ((ClientInputAccessor)input).myriad$setMoveVector(Vec2.ZERO);
         Minecraft.getInstance().player.setSprinting(false);
     }
     public static void render(GuiGraphicsExtractor gui,Font font,float partial){

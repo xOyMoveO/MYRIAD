@@ -14,7 +14,7 @@ import net.minecraft.client.renderer.state.level.QuadParticleRenderState;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.AABB;
-import net.neoforged.neoforge.client.event.RegisterParticleGroupsEvent;
+import net.fabricmc.fabric.api.client.particle.v1.ParticleGroupRegistry;
 
 /** One recipe particle owns a whole authored mesh instead of dozens of networked dust particles. */
 public final class AbilityMeshParticle extends SingleQuadParticle {
@@ -93,7 +93,7 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
         mc.particleEngine.add(new AbilityMeshParticle(mc.level,p));
     }
     public static void reset(){epoch++;OWNER_EPOCHS.clear();SKILL_EPOCHS.clear();FLIGHTS.clear();com.myriad.client.firstperson.ShuoHeldLight.reset();com.myriad.client.YikeClientState.reset();com.myriad.client.firstperson.RivetWeaponView.reset();}
-    public static void registerGroup(RegisterParticleGroupsEvent event){event.register(GROUP,Group::new);}
+    public static void registerGroup(){ParticleGroupRegistry.register(GROUP,Group::new);}
     @Override public ParticleRenderType getGroup(){return GROUP;}
     @Override protected Layer getLayer(){return Layer.TRANSLUCENT;}
     @Override public void tick() {

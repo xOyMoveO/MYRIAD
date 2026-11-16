@@ -7,7 +7,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.neoforged.neoforge.client.event.ViewportEvent;
+import com.myriad.client.platform.CameraAngles;
 
 /** 寒泽【千里冰封】期间：相机升至角色头顶 10 格并垂直俯视，结束后恢复玩家原本视角。 */
 public final class HanzeFrostView {
@@ -49,7 +49,7 @@ public final class HanzeFrostView {
         return true;
     }
 
-    public static void onCamera(ViewportEvent.ComputeCameraAngles event) {
+    public static void onCamera(CameraAngles event) {
         // 领域相机仅拉远到头顶视距，不覆写 yaw/pitch，玩家可自由调整朝向。
         active();
     }

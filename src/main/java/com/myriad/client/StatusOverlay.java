@@ -5,7 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
-import net.neoforged.neoforge.client.gui.GuiLayer;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
 
 import com.myriad.network.NetworkSetup.PlayerDataPayload;
 import com.myriad.registry.ModAttributes;
@@ -60,7 +60,7 @@ public final class StatusOverlay {
     }
 
     /** 血量文本层（替换 vanilla 心形条） */
-    public static final GuiLayer HEALTH = (gui, delta) -> {
+    public static final HudElement HEALTH = (gui, delta) -> {
         if (!ClientDataHolder.modEnabled()) {
             return;
         }
@@ -99,7 +99,7 @@ public final class StatusOverlay {
     };
 
     /** 法力文本层（替换 vanilla 饱食度鸡腿条） */
-    public static final GuiLayer MANA = (gui, delta) -> {
+    public static final HudElement MANA = (gui, delta) -> {
         if (!ClientDataHolder.modEnabled()) {
             return;
         }
@@ -150,7 +150,7 @@ public final class StatusOverlay {
     };
 
     /** 底部经验区：游戏等级+经验文本层（替换 vanilla 经验等级数字与经验条，合并为一行） */
-    public static final GuiLayer LEVEL = (gui, delta) -> {
+    public static final HudElement LEVEL = (gui, delta) -> {
         if (!ClientDataHolder.modEnabled()) {
             return;
         }
@@ -187,6 +187,6 @@ public final class StatusOverlay {
     };
 
     /** 空层：占位替换 vanilla 经验条背景/进度，避免残留渲染 */
-    public static final GuiLayer NOOP = (gui, delta) -> {
+    public static final HudElement NOOP = (gui, delta) -> {
     };
 }

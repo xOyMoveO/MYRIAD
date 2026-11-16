@@ -15,8 +15,8 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
-import org.lwjgl.glfw.GLFW;
+import com.myriad.network.Packets;
+import com.mojang.blaze3d.platform.InputConstants;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -40,7 +40,7 @@ public final class FirstGroupScreen extends Screen {
 
     public FirstGroupScreen(boolean attributes){
         super(Component.translatable("screen.myriad.g1.title"));page=attributes?1:0;
-        ClientPacketDistributor.sendToServer(new NetworkSetup.RequestSyncPayload());
+        Packets.sendToServer(new NetworkSetup.RequestSyncPayload());
     }
     @Override public boolean isPauseScreen(){return false;}
     @Override protected void init(){
@@ -88,9 +88,9 @@ public final class FirstGroupScreen extends Screen {
         submittedSnapshot = ClientDataHolder.get();
         submittedAt = System.nanoTime();
         if (id.startsWith("g1_attribute_") || TacticalSupplySystem.isSupply(id)) {
-            ClientPacketDistributor.sendToServer(new NetworkSetup.ShopBuyPayload(id));
+            Packets.sendToServer(new NetworkSetup.ShopBuyPayload(id));
         } else {
-            ClientPacketDistributor.sendToServer(new NetworkSetup.UpgradeSkillPayload(id));
+            Packets.sendToServer(new NetworkSetup.UpgradeSkillPayload(id));
         }
         actions.clear();
     }
@@ -152,7 +152,7 @@ public final class FirstGroupScreen extends Screen {
         scroll-=(int)Math.round(dy*24);clampScroll();clearTooltip();actions.clear();return true;
     }
     @Override public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
-        if (event.key() == GLFW.GLFW_KEY_TAB && !actions.isEmpty()) {
+        if (event.key() == InputConstants.KEY_TAB && !actions.isEmpty()) {
             int at = -1;
             for (int i = 0; i < actions.size(); i++) {
                 if (actions.get(i).id.equals(focused)) at = i;
@@ -168,13 +168,13 @@ public final class FirstGroupScreen extends Screen {
             clearTooltip();
             return true;
         }
-        if (event.key() == GLFW.GLFW_KEY_ENTER || event.key() == GLFW.GLFW_KEY_SPACE) {
+        if (event.key() == InputConstants.KEY_RETURN || event.key() == InputConstants.KEY_SPACE) {
             for (var action : List.copyOf(actions)) {
                 if (action.id.equals(focused)) return perform(action, false);
             }
         }
-        if (event.key() == GLFW.GLFW_KEY_PAGE_DOWN || event.key() == GLFW.GLFW_KEY_PAGE_UP) {
-            int delta = event.key() == GLFW.GLFW_KEY_PAGE_DOWN ? 8 : -8;
+        if (event.key() == InputConstants.KEY_PAGEDOWN || event.key() == InputConstants.KEY_PAGEUP) {
+            int delta = event.key() == InputConstants.KEY_PAGEDOWN ? 8 : -8;
             if (tooltipLayout != null) {
                 tooltipScroll = Math.clamp(tooltipScroll + delta, 0, tooltipLayout.maximum());
                 return true;
