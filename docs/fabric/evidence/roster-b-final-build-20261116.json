@@ -1,0 +1,13 @@
+{
+  "integration_parent": "b6c8d58d40a25a48993f72155cf65c1b1645203f",
+  "tested_merge": "08a43caa6379f8b6f9bf5c59e4efaf2ef686ded6",
+  "build": "bash ./gradlew build --offline",
+  "build_result": "BUILD SUCCESSFUL",
+  "jar": "build/libs/myriad-0.1.0.jar",
+  "bytes": 26508771,
+  "sha256": "d470bada67579dca5c829f4f7efb80f79cec75d0513415b617131affa1abc54c",
+  "zip_crc": "passed",
+  "fixture_class_and_structure_exclusion": "passed",
+  "namespace_audit": "python tools/check_namespace.py --jar build/libs/myriad-0.1.0.jar passed",
+  "formal_instance_deployed": false
+}
