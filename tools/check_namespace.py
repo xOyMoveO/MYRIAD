@@ -50,7 +50,7 @@ if args.jar:
         if 'modId="myriad"' not in metadata:
             errors.append("Wrong JAR modId")
         if any("data/myriad/test_instance/" + n + ".json" in names
-               for n in ("first_group", "combat_regression", "keheng", "yike", "rivet",
+               for n in ("team_signal", "control_shield", "death_recap", "match_contribution", "match_experience", "first_group", "combat_regression", "keheng", "yike", "rivet",
                          "roster_delivery", "world_time", "hero_action_time")):
             errors.append("Development-only test instance in release JAR")
 if errors:
