@@ -9,10 +9,22 @@ final class SkillChoiceTheme {
     private static final Identifier BACKDROP=Identifier.fromNamespaceAndPath("myriad","textures/gui/skill_choice/meridian_hall.png");
     static final int GOLD=0xFFE8CE90,JADE=0xFF91D9CA,INK=0xF00A1C22,MUTED=0xFF869C9F;
     private SkillChoiceTheme(){}
-    static void backdrop(GuiGraphicsExtractor g,SkillChoiceLayout.Box b){
-        g.fill(b.x()-3,b.y()-3,b.right()+3,b.bottom()+3,0xA0000000);
-        g.blit(BACKDROP,b.x(),b.y(),b.right(),b.bottom(),0,1,0,1);
-        g.fill(b.x()+18,b.y()+18,b.right()-18,b.y()+54,0xB0091B21);
+    static void backdrop(GuiGraphicsExtractor g, SkillChoiceLayout.Box box) {
+        g.fill(box.x() - 2, box.y() - 2, box.right() + 2, box.bottom() + 2, 0x90000000);
+        // Preserve the complete original artwork, including all corners and the sword crest.
+        g.blit(BACKDROP, box.x(), box.y(), box.right(), box.bottom(), 0, 1, 0, 1);
+    }
+    static void divider(GuiGraphicsExtractor g, int left, int right, int y, int color) {
+        int middle = (left + right) / 2;
+        g.fill(left, y, middle - 4, y + 1, color);
+        g.fill(middle + 5, y, right, y + 1, color);
+        diamond(g, middle, y, color);
+    }
+    static void diamond(GuiGraphicsExtractor g, int x, int y, int color) {
+        g.fill(x, y - 3, x + 1, y - 1, color);
+        g.fill(x - 2, y - 1, x, y + 1, color);
+        g.fill(x + 1, y - 1, x + 3, y + 1, color);
+        g.fill(x, y + 1, x + 1, y + 3, color);
     }
     static void plate(GuiGraphicsExtractor g,SkillChoiceLayout.Box b,int border,int fill){
         g.fill(b.x(),b.y(),b.right(),b.bottom(),border);

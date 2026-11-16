@@ -141,6 +141,18 @@ public class SkillIcon {
                 .isPresent();
     }
 
+    /** Menu artwork without HUD frames, cooldown marks or branch badges. */
+    public static void drawArtwork(GuiGraphicsExtractor gui, Font font, int x, int y, int size, Skill skill) {
+        String displayedId = displayedSkillId(skill.getId());
+        if (hasIcon(displayedId)) {
+            gui.blitSprite(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, iconSprite(displayedId),
+                    x, y, size, size);
+        } else {
+            String name = net.minecraft.network.chat.Component.translatable("skill.myriad." + skill.getId()).getString();
+            gui.text(font, name.isEmpty() ? "?" : name.substring(0, 1), x, y, 0xFFE8CE90);
+        }
+    }
+
     public static void draw(GuiGraphicsExtractor gui, Font font, int x, int y, int size,
             Skill skill, boolean ultimate, boolean ready, String keyLabel) {
         boolean effectiveReady = ready;
