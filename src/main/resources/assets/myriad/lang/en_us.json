@@ -992,5 +992,17 @@
   "subtitle.myriad.rivet_charge": "Rivet charge",
   "subtitle.myriad.rivet_charge_release": "Rivet charge release",
   "hud.myriad.rivet.anchor_preparing": "Preparing · Anchor strike disabled",
-  "hud.myriad.rivet.anchor_status": "%s · Anchor %.1fs"
+  "hud.myriad.rivet.anchor_status": "%s · Anchor %.1fs",
+  "hud.myriad.reincarnating": "Reincarnating…",
+  "message.myriad.buff_azure_attack": "Azure Horn Guard defeated! Team gains Frost Edge: +15% physical attack for 90s",
+  "message.myriad.buff_beast": "Gained Frostbind Seal: attacks slow enemies by 15% for 3s (90s)",
+  "message.myriad.buff_gale_haste": "Gale Roc King defeated! Team gains Windrider: +15% movement speed and +20% attack speed for 90s",
+  "message.myriad.buff_obsidian_guard": "Obsidian Tortoise defeated! Team gains Mountain Guard: 15% damage reduction for 90s",
+  "message.myriad.buff_spirit": "Gained Spirit Infusion: +10 mana regeneration/s out of combat and +20% cooldown reduction for 90s",
+  "message.myriad.buff_spring_mana": "Gained Spring Tide: +8 mana regeneration/s for 90s",
+  "message.myriad.buff_vermilion_spell": "Vermilion Beast King defeated! Team gains Flame Spirit: +15% spell power for 90s",
+  "message.myriad.invalid_monster": "Unknown monster type",
+  "message.myriad.mob_kill": "Defeated %s! +%s XP, +%s gold",
+  "message.myriad.mob_team_gold": "Defeated %s! Team gains %s gold",
+  "skill.myriad.spirit_rune": "Spirit Infusion"
 }
