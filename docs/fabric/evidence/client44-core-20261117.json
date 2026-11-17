@@ -1,0 +1,1118 @@
+{
+  "date": "2026-11-17",
+  "scope": "core functionality; stop detailed/performance investigations per latest user instruction",
+  "kind": "dedicated server and real independent clients on synthetic fixtures only",
+  "releaseJar": {
+    "file": "myriad-0.1.0.jar",
+    "bytes": 26509242,
+    "sha256": "2cc19725e1ac4e5f8c35bb5b591885abb8852f1f5f3f8b235ff356d6881b0932"
+  },
+  "modes": [
+    {
+      "mode": "3v3",
+      "startingRealClients": 2,
+      "realAccounts": [
+        "MyriadPilot",
+        "MyriadObserver"
+      ],
+      "roles": [
+        "keheng",
+        "yike"
+      ],
+      "duration": "8 min 46 sec",
+      "result": "Xuanxiao win, results screen, restart PICKING"
+    },
+    {
+      "mode": "5v5",
+      "startingRealClients": 2,
+      "lateJoiningRealClients": 1,
+      "realAccounts": [
+        "MyriadPilot",
+        "MyriadObserver",
+        "MyriadLate"
+      ],
+      "roles": [
+        "keheng",
+        "yike",
+        "rivet"
+      ],
+      "duration": "18 min 55 sec",
+      "result": "Xuanxiao win, results screen, restart PICKING"
+    }
+  ],
+  "completionMessages": [
+    "Match over! Winner: Xuanxiao Sect",
+    "Last match · 8 min 46 sec",
+    "Last match · 18 min 55 sec"
+  ],
+  "snapshots": [
+    {
+      "label": "3v3-preparing",
+      "wallTime": "2026-11-17T01:53:26.985288Z",
+      "mode": "3v3",
+      "gameTime": 4004,
+      "phase": "PICKING",
+      "modEnabled": true,
+      "wave": 0,
+      "units": {},
+      "monsters": [],
+      "players": [
+        {
+          "name": "MyriadObserver",
+          "id": 1,
+          "gameMode": "adventure",
+          "health": 550.0,
+          "x": 408.5,
+          "y": 64.15312379606114,
+          "z": 72.5,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": "yike",
+            "faction": "YOUMING",
+            "level": 1,
+            "gold": 0,
+            "mana": 700.0,
+            "skillPoints": 1,
+            "skillLevels": {},
+            "cooldowns": {}
+          }
+        },
+        {
+          "name": "MyriadPilot",
+          "id": 6,
+          "gameMode": "adventure",
+          "health": 600.0,
+          "x": 264.5,
+          "y": 64.23152379758702,
+          "z": 72.5,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": "keheng",
+            "faction": "XUANXIAO",
+            "level": 1,
+            "gold": 0,
+            "mana": 700.0,
+            "skillPoints": 1,
+            "skillLevels": {},
+            "cooldowns": {}
+          }
+        }
+      ]
+    },
+    {
+      "label": "3v3-wave-live",
+      "wallTime": "2026-11-17T01:56:09.934491Z",
+      "mode": "3v3",
+      "gameTime": 7263,
+      "phase": "PLAYING",
+      "modEnabled": true,
+      "wave": 3,
+      "units": {
+        "TOWER": 4,
+        "MELEE": 4,
+        "MAGIC": 2,
+        "CRYSTAL": 2,
+        "RANGED": 7
+      },
+      "monsters": [
+        "FROST_WEB_MATRIARCH",
+        "FROST_HARE"
+      ],
+      "players": [
+        {
+          "name": "MyriadObserver",
+          "id": 1,
+          "gameMode": "adventure",
+          "health": 1975.0,
+          "x": 408.55320312630755,
+          "y": 64.0,
+          "z": 72.47778747921843,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": "yike",
+            "faction": "YOUMING",
+            "level": 20,
+            "gold": 920,
+            "mana": 700.0,
+            "skillPoints": 15,
+            "skillLevels": {
+              "yike_fixed_artillery": 1,
+              "yike_rainbow_shell": 1,
+              "yike_distant_bombardment": 1,
+              "yike_rainbow_mark": 1,
+              "yike_refraction_denial": 1
+            },
+            "cooldowns": {}
+          }
+        },
+        {
+          "name": "MyriadPilot",
+          "id": 6,
+          "gameMode": "adventure",
+          "health": 2215.0,
+          "x": 264.746891196788,
+          "y": 64.0,
+          "z": 72.21900170307178,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": "keheng",
+            "faction": "XUANXIAO",
+            "level": 20,
+            "gold": 920,
+            "mana": 700.0,
+            "skillPoints": 15,
+            "skillLevels": {
+              "keheng_cuopaibu": 1,
+              "keheng_chijie": 1,
+              "keheng_yimiao": 1,
+              "keheng_kehen": 1,
+              "keheng_chizhen": 1
+            },
+            "cooldowns": {}
+          }
+        }
+      ]
+    },
+    {
+      "label": "needle-3",
+      "wallTime": "2026-11-17T01:57:06.705971Z",
+      "mode": "3v3",
+      "gameTime": 8398,
+      "phase": "PLAYING",
+      "modEnabled": true,
+      "wave": 4,
+      "units": {
+        "RANGED": 5,
+        "TOWER": 4,
+        "MELEE": 2,
+        "CRYSTAL": 2
+      },
+      "monsters": [
+        "FROST_WEB_MATRIARCH",
+        "FROST_HARE"
+      ],
+      "players": [
+        {
+          "name": "MyriadObserver",
+          "id": 1,
+          "gameMode": "adventure",
+          "health": 1909.4828,
+          "x": 336.5,
+          "y": 64.0,
+          "z": 110.5,
+          "actionRate": 0.85,
+          "data": {
+            "characterId": "yike",
+            "faction": "YOUMING",
+            "level": 20,
+            "gold": 1088,
+            "mana": 700.0,
+            "skillPoints": 15,
+            "skillLevels": {
+              "yike_fixed_artillery": 1,
+              "yike_rainbow_shell": 1,
+              "yike_distant_bombardment": 1,
+              "yike_rainbow_mark": 1,
+              "yike_refraction_denial": 1
+            },
+            "cooldowns": {}
+          }
+        },
+        {
+          "name": "MyriadPilot",
+          "id": 6,
+          "gameMode": "adventure",
+          "health": 2215.0,
+          "x": 330.5,
+          "y": 64.0,
+          "z": 110.5,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": "keheng",
+            "faction": "XUANXIAO",
+            "level": 20,
+            "gold": 1088,
+            "mana": 660.0,
+            "skillPoints": 15,
+            "skillLevels": {
+              "keheng_cuopaibu": 1,
+              "keheng_chijie": 1,
+              "keheng_yimiao": 1,
+              "keheng_kehen": 1,
+              "keheng_chizhen": 1
+            },
+            "cooldowns": {
+              "keheng_chizhen": 131
+            }
+          }
+        }
+      ]
+    },
+    {
+      "label": "field-confirm",
+      "wallTime": "2026-11-17T01:57:39.387873Z",
+      "mode": "3v3",
+      "gameTime": 9052,
+      "phase": "PLAYING",
+      "modEnabled": true,
+      "wave": 5,
+      "units": {
+        "MELEE": 4,
+        "TOWER": 4,
+        "CRYSTAL": 2,
+        "RANGED": 7
+      },
+      "monsters": [
+        "FROST_WEB_MATRIARCH",
+        "FROST_HARE"
+      ],
+      "players": [
+        {
+          "name": "MyriadObserver",
+          "id": 1,
+          "gameMode": "adventure",
+          "health": 1910.5172,
+          "x": 336.5,
+          "y": 64.0,
+          "z": 110.5,
+          "actionRate": 0.65,
+          "data": {
+            "characterId": "yike",
+            "faction": "YOUMING",
+            "level": 20,
+            "gold": 1172,
+            "mana": 700.0,
+            "skillPoints": 15,
+            "skillLevels": {
+              "yike_fixed_artillery": 1,
+              "yike_rainbow_shell": 1,
+              "yike_distant_bombardment": 1,
+              "yike_rainbow_mark": 1,
+              "yike_refraction_denial": 1
+            },
+            "cooldowns": {}
+          }
+        },
+        {
+          "name": "MyriadPilot",
+          "id": 6,
+          "gameMode": "adventure",
+          "health": 2215.0,
+          "x": 330.5,
+          "y": 64.0,
+          "z": 110.5,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": "keheng",
+            "faction": "XUANXIAO",
+            "level": 20,
+            "gold": 1172,
+            "mana": 629.0,
+            "skillPoints": 15,
+            "skillLevels": {
+              "keheng_cuopaibu": 1,
+              "keheng_chijie": 1,
+              "keheng_yimiao": 1,
+              "keheng_kehen": 1,
+              "keheng_chizhen": 1
+            },
+            "cooldowns": {
+              "keheng_chijie": 385
+            }
+          }
+        }
+      ]
+    },
+    {
+      "label": "dash-shield",
+      "wallTime": "2026-11-17T01:57:40.121486Z",
+      "mode": "3v3",
+      "gameTime": 9067,
+      "phase": "PLAYING",
+      "modEnabled": true,
+      "wave": 5,
+      "units": {
+        "MELEE": 4,
+        "TOWER": 4,
+        "CRYSTAL": 2,
+        "RANGED": 7
+      },
+      "monsters": [
+        "FROST_WEB_MATRIARCH",
+        "FROST_HARE"
+      ],
+      "players": [
+        {
+          "name": "MyriadObserver",
+          "id": 1,
+          "gameMode": "adventure",
+          "health": 1913.5172,
+          "x": 336.5,
+          "y": 64.0,
+          "z": 110.5,
+          "actionRate": 0.65,
+          "data": {
+            "characterId": "yike",
+            "faction": "YOUMING",
+            "level": 20,
+            "gold": 1172,
+            "mana": 700.0,
+            "skillPoints": 15,
+            "skillLevels": {
+              "yike_fixed_artillery": 1,
+              "yike_rainbow_shell": 1,
+              "yike_distant_bombardment": 1,
+              "yike_rainbow_mark": 1,
+              "yike_refraction_denial": 1
+            },
+            "cooldowns": {}
+          }
+        },
+        {
+          "name": "MyriadPilot",
+          "id": 6,
+          "gameMode": "adventure",
+          "health": 2215.0,
+          "x": 335.2856862804435,
+          "y": 64.0,
+          "z": 110.5,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": "keheng",
+            "faction": "XUANXIAO",
+            "level": 20,
+            "gold": 1172,
+            "mana": 584.0,
+            "skillPoints": 15,
+            "skillLevels": {
+              "keheng_cuopaibu": 1,
+              "keheng_chijie": 1,
+              "keheng_yimiao": 1,
+              "keheng_kehen": 1,
+              "keheng_chizhen": 1
+            },
+            "cooldowns": {
+              "keheng_cuopaibu": 267,
+              "keheng_chijie": 370
+            }
+          }
+        }
+      ]
+    },
+    {
+      "label": "3v3-jungle-killed",
+      "wallTime": "2026-11-17T01:58:58.070610Z",
+      "mode": "3v3",
+      "gameTime": 10627,
+      "phase": "PLAYING",
+      "modEnabled": true,
+      "wave": 7,
+      "units": {
+        "MELEE": 4,
+        "TOWER": 4,
+        "CRYSTAL": 2,
+        "MAGIC": 1,
+        "RANGED": 4
+      },
+      "monsters": [
+        "FROST_WEB_MATRIARCH"
+      ],
+      "players": [
+        {
+          "name": "MyriadObserver",
+          "id": 1,
+          "gameMode": "adventure",
+          "health": 1975.0,
+          "x": 336.5,
+          "y": 64.0,
+          "z": 110.5,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": "yike",
+            "faction": "YOUMING",
+            "level": 20,
+            "gold": 1396,
+            "mana": 700.0,
+            "skillPoints": 15,
+            "skillLevels": {
+              "yike_fixed_artillery": 1,
+              "yike_rainbow_shell": 1,
+              "yike_distant_bombardment": 1,
+              "yike_rainbow_mark": 1,
+              "yike_refraction_denial": 1
+            },
+            "cooldowns": {}
+          }
+        },
+        {
+          "name": "MyriadPilot",
+          "id": 6,
+          "gameMode": "adventure",
+          "health": 2215.0,
+          "x": 336.5,
+          "y": 64.0,
+          "z": 34.5,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": "keheng",
+            "faction": "XUANXIAO",
+            "level": 20,
+            "gold": 1494,
+            "mana": 700.0,
+            "skillPoints": 15,
+            "skillLevels": {
+              "keheng_cuopaibu": 1,
+              "keheng_chijie": 1,
+              "keheng_yimiao": 1,
+              "keheng_kehen": 1,
+              "keheng_chizhen": 1
+            },
+            "cooldowns": {}
+          }
+        }
+      ]
+    },
+    {
+      "label": "3v3-lobby-after-win",
+      "wallTime": "2026-11-17T02:02:23.279325Z",
+      "mode": "3v3",
+      "gameTime": 14731,
+      "phase": "WAITING",
+      "modEnabled": true,
+      "wave": 12,
+      "units": {},
+      "monsters": [],
+      "players": [
+        {
+          "name": "MyriadObserver",
+          "id": 1,
+          "gameMode": "adventure",
+          "health": 20.0,
+          "x": -32.5,
+          "y": 64.0,
+          "z": 64.5,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": null,
+            "faction": null,
+            "level": 1,
+            "gold": 0,
+            "mana": 50.0,
+            "skillPoints": 0,
+            "skillLevels": {},
+            "cooldowns": {}
+          }
+        },
+        {
+          "name": "MyriadPilot",
+          "id": 6,
+          "gameMode": "adventure",
+          "health": 20.0,
+          "x": -32.5,
+          "y": 64.0,
+          "z": 64.5,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": null,
+            "faction": null,
+            "level": 1,
+            "gold": 0,
+            "mana": 50.0,
+            "skillPoints": 0,
+            "skillLevels": {},
+            "cooldowns": {}
+          }
+        }
+      ]
+    },
+    {
+      "label": "3v3-restart",
+      "wallTime": "2026-11-17T02:03:31.614788Z",
+      "mode": "3v3",
+      "gameTime": 16098,
+      "phase": "PICKING",
+      "modEnabled": true,
+      "wave": 12,
+      "units": {},
+      "monsters": [],
+      "players": [
+        {
+          "name": "MyriadObserver",
+          "id": 1,
+          "gameMode": "adventure",
+          "health": 20.0,
+          "x": -32.5,
+          "y": 64.0,
+          "z": 64.5,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": null,
+            "faction": "YOUMING",
+            "level": 1,
+            "gold": 0,
+            "mana": 50.0,
+            "skillPoints": 0,
+            "skillLevels": {},
+            "cooldowns": {}
+          }
+        },
+        {
+          "name": "MyriadPilot",
+          "id": 6,
+          "gameMode": "adventure",
+          "health": 20.0,
+          "x": -32.5,
+          "y": 64.0,
+          "z": 64.5,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": null,
+            "faction": "XUANXIAO",
+            "level": 1,
+            "gold": 0,
+            "mana": 50.0,
+            "skillPoints": 0,
+            "skillLevels": {},
+            "cooldowns": {}
+          }
+        }
+      ]
+    },
+    {
+      "label": "3v3-closed",
+      "wallTime": "2026-11-17T02:03:51.500303Z",
+      "mode": "3v3",
+      "gameTime": 16495,
+      "phase": "WAITING",
+      "modEnabled": false,
+      "wave": 12,
+      "units": {},
+      "monsters": [],
+      "players": [
+        {
+          "name": "MyriadObserver",
+          "id": 1,
+          "gameMode": "creative",
+          "health": 20.0,
+          "x": -32.5,
+          "y": 64.0,
+          "z": 64.5,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": null,
+            "faction": null,
+            "level": 1,
+            "gold": 0,
+            "mana": 50.0,
+            "skillPoints": 0,
+            "skillLevels": {},
+            "cooldowns": {}
+          }
+        },
+        {
+          "name": "MyriadPilot",
+          "id": 6,
+          "gameMode": "creative",
+          "health": 20.0,
+          "x": -32.5,
+          "y": 64.0,
+          "z": 64.5,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": null,
+            "faction": null,
+            "level": 1,
+            "gold": 0,
+            "mana": 50.0,
+            "skillPoints": 0,
+            "skillLevels": {},
+            "cooldowns": {}
+          }
+        }
+      ]
+    },
+    {
+      "label": "server-reopen-off",
+      "wallTime": "2026-11-17T02:13:46.041973Z",
+      "mode": "3v3",
+      "gameTime": 20333,
+      "phase": "WAITING",
+      "modEnabled": false,
+      "wave": 0,
+      "units": {},
+      "monsters": [],
+      "players": []
+    },
+    {
+      "label": "5v5-preparing",
+      "wallTime": "2026-11-17T02:14:14.156290Z",
+      "mode": "5v5",
+      "gameTime": 20896,
+      "phase": "PICKING",
+      "modEnabled": true,
+      "wave": 0,
+      "units": {},
+      "monsters": [],
+      "players": [
+        {
+          "name": "MyriadPilot",
+          "id": 12,
+          "gameMode": "adventure",
+          "health": 600.0,
+          "x": 8.5,
+          "y": 64.76636799395752,
+          "z": 72.5,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": "keheng",
+            "faction": "XUANXIAO",
+            "level": 1,
+            "gold": 0,
+            "mana": 700.0,
+            "skillPoints": 1,
+            "skillLevels": {},
+            "cooldowns": {}
+          }
+        },
+        {
+          "name": "MyriadObserver",
+          "id": 13,
+          "gameMode": "adventure",
+          "health": 550.0,
+          "x": 152.5,
+          "y": 64.76636799395752,
+          "z": 72.5,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": "yike",
+            "faction": "YOUMING",
+            "level": 1,
+            "gold": 0,
+            "mana": 700.0,
+            "skillPoints": 1,
+            "skillLevels": {},
+            "cooldowns": {}
+          }
+        }
+      ]
+    },
+    {
+      "label": "5v5-playing",
+      "wallTime": "2026-11-17T02:14:25.168202Z",
+      "mode": "5v5",
+      "gameTime": 21116,
+      "phase": "PLAYING",
+      "modEnabled": true,
+      "wave": 0,
+      "units": {
+        "TOWER": 18,
+        "CRYSTAL": 2
+      },
+      "monsters": [],
+      "players": [
+        {
+          "name": "MyriadPilot",
+          "id": 12,
+          "gameMode": "adventure",
+          "health": 600.0,
+          "x": 8.5,
+          "y": 64.0,
+          "z": 72.5,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": "keheng",
+            "faction": "XUANXIAO",
+            "level": 1,
+            "gold": 500,
+            "mana": 700.0,
+            "skillPoints": 1,
+            "skillLevels": {},
+            "cooldowns": {}
+          }
+        },
+        {
+          "name": "MyriadObserver",
+          "id": 13,
+          "gameMode": "adventure",
+          "health": 550.0,
+          "x": 152.5,
+          "y": 64.0,
+          "z": 72.5,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": "yike",
+            "faction": "YOUMING",
+            "level": 1,
+            "gold": 500,
+            "mana": 700.0,
+            "skillPoints": 1,
+            "skillLevels": {},
+            "cooldowns": {}
+          }
+        }
+      ]
+    },
+    {
+      "label": "5v5-core-complete",
+      "wallTime": "2026-11-17T02:33:20.496241Z",
+      "mode": "5v5",
+      "gameTime": 43823,
+      "phase": "WAITING",
+      "modEnabled": true,
+      "wave": 27,
+      "units": {},
+      "monsters": [],
+      "players": [
+        {
+          "name": "MyriadPilot",
+          "id": 12,
+          "gameMode": "adventure",
+          "health": 20.0,
+          "x": -32.5,
+          "y": 64.0,
+          "z": 64.5,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": null,
+            "faction": null,
+            "level": 1,
+            "gold": 0,
+            "mana": 50.0,
+            "skillPoints": 0,
+            "skillLevels": {},
+            "cooldowns": {}
+          }
+        },
+        {
+          "name": "MyriadObserver",
+          "id": 13,
+          "gameMode": "adventure",
+          "health": 20.0,
+          "x": -32.5,
+          "y": 64.0,
+          "z": 64.5,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": null,
+            "faction": null,
+            "level": 1,
+            "gold": 0,
+            "mana": 50.0,
+            "skillPoints": 0,
+            "skillLevels": {},
+            "cooldowns": {}
+          }
+        },
+        {
+          "name": "MyriadLate",
+          "id": 534,
+          "gameMode": "adventure",
+          "health": 20.0,
+          "x": -32.5,
+          "y": 64.0,
+          "z": 64.5,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": null,
+            "faction": null,
+            "level": 1,
+            "gold": 0,
+            "mana": 50.0,
+            "skillPoints": 0,
+            "skillLevels": {},
+            "cooldowns": {}
+          }
+        }
+      ]
+    },
+    {
+      "label": "5v5-core-restarted",
+      "wallTime": "2026-11-17T02:33:20.805295Z",
+      "mode": "5v5",
+      "gameTime": 43829,
+      "phase": "PICKING",
+      "modEnabled": true,
+      "wave": 27,
+      "units": {},
+      "monsters": [],
+      "players": [
+        {
+          "name": "MyriadPilot",
+          "id": 12,
+          "gameMode": "adventure",
+          "health": 20.0,
+          "x": -32.5,
+          "y": 64.0,
+          "z": 64.5,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": null,
+            "faction": "YOUMING",
+            "level": 1,
+            "gold": 0,
+            "mana": 50.0,
+            "skillPoints": 0,
+            "skillLevels": {},
+            "cooldowns": {}
+          }
+        },
+        {
+          "name": "MyriadObserver",
+          "id": 13,
+          "gameMode": "adventure",
+          "health": 20.0,
+          "x": -32.5,
+          "y": 64.0,
+          "z": 64.5,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": null,
+            "faction": "XUANXIAO",
+            "level": 1,
+            "gold": 0,
+            "mana": 50.0,
+            "skillPoints": 0,
+            "skillLevels": {},
+            "cooldowns": {}
+          }
+        },
+        {
+          "name": "MyriadLate",
+          "id": 534,
+          "gameMode": "adventure",
+          "health": 20.0,
+          "x": -32.5,
+          "y": 64.0,
+          "z": 64.5,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": null,
+            "faction": "YOUMING",
+            "level": 1,
+            "gold": 0,
+            "mana": 50.0,
+            "skillPoints": 0,
+            "skillLevels": {},
+            "cooldowns": {}
+          }
+        }
+      ]
+    },
+    {
+      "label": "5v5-core-closed",
+      "wallTime": "2026-11-17T02:33:20.815752Z",
+      "mode": "5v5",
+      "gameTime": 43829,
+      "phase": "WAITING",
+      "modEnabled": false,
+      "wave": 27,
+      "units": {},
+      "monsters": [],
+      "players": [
+        {
+          "name": "MyriadPilot",
+          "id": 12,
+          "gameMode": "creative",
+          "health": 20.0,
+          "x": -32.5,
+          "y": 64.0,
+          "z": 64.5,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": null,
+            "faction": null,
+            "level": 1,
+            "gold": 0,
+            "mana": 50.0,
+            "skillPoints": 0,
+            "skillLevels": {},
+            "cooldowns": {}
+          }
+        },
+        {
+          "name": "MyriadObserver",
+          "id": 13,
+          "gameMode": "creative",
+          "health": 20.0,
+          "x": -32.5,
+          "y": 64.0,
+          "z": 64.5,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": null,
+            "faction": null,
+            "level": 1,
+            "gold": 0,
+            "mana": 50.0,
+            "skillPoints": 0,
+            "skillLevels": {},
+            "cooldowns": {}
+          }
+        },
+        {
+          "name": "MyriadLate",
+          "id": 534,
+          "gameMode": "creative",
+          "health": 20.0,
+          "x": -32.5,
+          "y": 64.0,
+          "z": 64.5,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": null,
+            "faction": null,
+            "level": 1,
+            "gold": 0,
+            "mana": 50.0,
+            "skillPoints": 0,
+            "skillLevels": {},
+            "cooldowns": {}
+          }
+        }
+      ]
+    },
+    {
+      "label": "local-lan-playing",
+      "wallTime": "2026-11-17T02:11:23.788173Z",
+      "mode": "3v3",
+      "gameTime": 24857,
+      "phase": "PLAYING",
+      "modEnabled": true,
+      "wave": 0,
+      "units": {
+        "TOWER": 4,
+        "CRYSTAL": 2
+      },
+      "monsters": [],
+      "players": [
+        {
+          "name": "MyriadPilot",
+          "id": 12,
+          "gameMode": "adventure",
+          "health": 640.0,
+          "x": 264.5,
+          "y": 64.0,
+          "z": 72.5,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": "shuo",
+            "faction": "XUANXIAO",
+            "level": 1,
+            "gold": 500,
+            "mana": 700.0,
+            "skillPoints": 1,
+            "skillLevels": {},
+            "cooldowns": {}
+          }
+        }
+      ]
+    },
+    {
+      "label": "local-after-reopen",
+      "wallTime": "2026-11-17T02:12:04.822388Z",
+      "mode": "3v3",
+      "gameTime": 25630,
+      "phase": "WAITING",
+      "modEnabled": false,
+      "wave": 0,
+      "units": {},
+      "monsters": [],
+      "players": [
+        {
+          "name": "MyriadPilot",
+          "id": 103,
+          "gameMode": "adventure",
+          "health": 640.0,
+          "x": 264.5,
+          "y": 64.0,
+          "z": 72.5,
+          "actionRate": 1.0,
+          "data": {
+            "characterId": "shuo",
+            "faction": "XUANXIAO",
+            "level": 1,
+            "gold": 542,
+            "mana": 700.0,
+            "skillPoints": 1,
+            "skillLevels": {},
+            "cooldowns": {}
+          }
+        }
+      ]
+    }
+  ],
+  "productionSmoke": [
+    {
+      "time": "2026-11-17T02:35:00.542040+00:00",
+      "role": "pilot",
+      "modEnabled": true,
+      "heldInputs": 0,
+      "character": ""
+    },
+    {
+      "time": "2026-11-17T02:35:00.682450+00:00",
+      "role": "observer",
+      "modEnabled": true,
+      "heldInputs": 0,
+      "character": ""
+    }
+  ],
+  "cleanup": {
+    "time": "2026-11-17T02:35:48.927759+00:00",
+    "clientScreens": {
+      "pilot": {
+        "screen": {
+          "inWorld": false,
+          "screen": "disconnected",
+          "paused": false,
+          "canJoin": true,
+          "lastWorldId": "mp:f40ccad9cbaac249"
+        },
+        "paused": false,
+        "heldInputs": 0
+      },
+      "observer": {
+        "screen": {
+          "inWorld": false,
+          "screen": "disconnected",
+          "paused": false,
+          "canJoin": true,
+          "lastWorldId": "mp:819fefe8820a02b1"
+        },
+        "paused": false,
+        "heldInputs": 0
+      },
+      "late": {
+        "screen": {
+          "inWorld": false,
+          "screen": "disconnected",
+          "paused": false,
+          "canJoin": true,
+          "lastWorldId": "mp:2f19a4e075af25c9"
+        },
+        "paused": false,
+        "heldInputs": 0
+      }
+    },
+    "terminatedPids": [
+      66131,
+      66152,
+      69422
+    ],
+    "remaining": [],
+    "serverExit": "normal stop, saved worlds",
+    "clientExit": "SIGTERM after world saved/disconnected; upstream UI refuses Quit Game"
+  },
+  "limits": [
+    "Not full six/ten-player matches; no simulated players were substituted",
+    "Fixture setup supplied XP and high legal AD/PD for accelerated objective attacks; no phase or objective HP writes",
+    "All visual/audio feel/game feel/fluency/balance and original-map testing remain human-only",
+    "Detailed arrow, performance, clone/cross-dimension and exhaustive lifecycle matrices were stopped/deferred under the latest user scope"
+  ],
+  "localRawEvidence": [
+    "/private/tmp/myriad-fabric26-worktrees/issue44/run-fabric-client/client44-evidence.jsonl",
+    "/private/tmp/myriad-fabric26-worktrees/issue44/run-fabric-server/client44-server-evidence.jsonl",
+    "/private/tmp/myriad-fabric26-worktrees/issue44/run-fabric-client/client44-server-evidence.jsonl",
+    "/private/tmp/myriad-fabric26-worktrees/issue44/run-fabric-release44/logs/latest.log"
+  ]
+}
