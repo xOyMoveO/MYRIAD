@@ -180,13 +180,24 @@ public final class CombatRegressionTests {
                     }).findFirst().orElseThrow();
                     Mob ownMob = (Mob) field(own.getClass(), own, "entity");
                     Mob enemy = (Mob) field(other.getClass(), other, "entity");
-                    ownMob.setPos(a.getX()+.5, a.getY(), a.getZ()+.5);
-                    enemy.setPos(a.getX()+4.5, a.getY(), a.getZ()+.5);
+                    // The UUID map can select any lane; keep the encounter on that unit's route.
+                    var combatLane = (LaneSystem.Lane) field(own.getClass(), own, "lane");
+                    BlockPos encounter = a.offset(0, 0, combatLane.ordinal()*5);
+                    ownMob.setPos(encounter.getX()+.5, encounter.getY(), encounter.getZ()+.5);
+                    enemy.setPos(encounter.getX()+4.5, encounter.getY(), encounter.getZ()+.5);
                     var tick = LaneSystem.class.getDeclaredMethod("tickMinion", net.minecraft.server.level.ServerLevel.class, Mob.class, own.getClass(), long.class);
                     tick.setAccessible(true);
                     tick.invoke(null, level, ownMob, own, level.getGameTime()+100);
-                    helper.assertTrue(field(own.getClass(), own, "chaseTarget") != null, "Minion must acquire a nearby enemy");
-                    enemy.setPos(a.getX()+40, a.getY(), a.getZ());
+                    helper.assertTrue(field(own.getClass(), own, "chaseTarget") != null,
+                            "Minion must acquire a nearby enemy; source=" + ownMob.position()
+                            + " enemy=" + enemy.position() + " alive=" + enemy.isAlive()
+                            + " visible=" + NpcNavigation.visible(ownMob, enemy)
+                            + " queryContainsEnemy=" + level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,
+                                    ownMob.getBoundingBox().inflate(12)).contains(enemy)
+                            + " nextScan=" + field(own.getClass(), own, "nextTargetScan")
+                            + " now=" + (level.getGameTime()+100)
+                            + " path=" + field(own.getClass(), own, "path"));
+                    enemy.setPos(encounter.getX()+40, encounter.getY(), encounter.getZ());
                     tick.invoke(null, level, ownMob, own, level.getGameTime()+101);
                     helper.assertTrue(!(Boolean) field(own.getClass(), own, "returning"), "Lost target must not force a retreat");
                     helper.assertTrue(!enemy.getUUID().equals(field(own.getClass(), own, "chaseTarget")), "Escaped target must be dropped");
@@ -429,7 +440,12 @@ public final class CombatRegressionTests {
         var hp=state.getClass().getDeclaredField("health");hp.setAccessible(true);hp.setFloat(state,1);crystal.damageCooldownTime = 0;
         NpcCombat.hit(crystal,player,50,DamageCalc.Kind.PHYSICAL);
         helper.assertTrue(manager.getPhase()==GameManager.Phase.ENDED&&manager.getWinner()==Faction.XUANXIAO,"Destroying the crystal must end the match for its enemy");
-        BaseRules.logout(player);phase.set(manager,GameManager.Phase.WAITING);
+        BaseRules.logout(player);
+        // Consume the normal deferred end-of-match cleanup before another test enables the mod.
+        manager.tick(level.getServer(),level.getGameTime());
+        helper.assertTrue(manager.getPhase()==GameManager.Phase.WAITING
+                        && !(Boolean)field(GameManager.class,manager,"returnToLobbyPending"),
+                "Crystal completion cleanup must finish before the next check");
         var clear=LaneSystem.class.getDeclaredMethod("clearRuntime",net.minecraft.server.level.ServerLevel.class);clear.setAccessible(true);clear.invoke(null,level);
         towerPoints.clear();
     }

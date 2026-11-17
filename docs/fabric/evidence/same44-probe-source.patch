@@ -1,0 +1,58 @@
+--- combat-before-probe.java
++++ diagnostic-only-combat-probe-fixed.java
+@@ -170,7 +170,8 @@
+                         helper.assertTrue(entity instanceof LaneMinionEntity, "Custom minion missing (must not be iron golem)");
+                     }
+                     Object own = units.values().stream().filter(s -> {
+-                        try { return field(s.getClass(), s, "faction") == Faction.XUANXIAO; }
++                        try { return field(s.getClass(), s, "faction") == Faction.XUANXIAO
++                                && (!Boolean.getBoolean("myriad.same44Probe") || field(s.getClass(), s, "lane") == LaneSystem.Lane.BOTTOM); }
+                         catch (ReflectiveOperationException e) { throw new IllegalStateException(e); }
+                     }).findFirst().orElseThrow();
+                     Object other = units.values().stream().filter(s -> {
+@@ -180,8 +181,19 @@
+                     }).findFirst().orElseThrow();
+                     Mob ownMob = (Mob) field(own.getClass(), own, "entity");
+                     Mob enemy = (Mob) field(other.getClass(), other, "entity");
+-                    ownMob.setPos(a.getX()+.5, a.getY(), a.getZ()+.5);
+-                    enemy.setPos(a.getX()+4.5, a.getY(), a.getZ()+.5);
++                    var combatLane = (LaneSystem.Lane) field(own.getClass(), own, "lane");
++                    BlockPos encounter = a.offset(0, 0, combatLane.ordinal()*5);
++                    ownMob.setPos(encounter.getX()+.5, encounter.getY(), encounter.getZ()+.5);
++                    enemy.setPos(encounter.getX()+4.5, encounter.getY(), encounter.getZ()+.5);
++                    if (Boolean.getBoolean("myriad.same44Probe")) {
++                        for (Object state : units.values()) {
++                            Mob unit = (Mob) field(state.getClass(), state, "entity");
++                            if (unit != ownMob && unit != enemy) unit.setPos(a.getX()+100, a.getY(), a.getZ()+100);
++                        }
++                        Mob neighbor = (Mob) field(units.values().stream().filter(state -> state != own && state != other).findFirst().orElseThrow().getClass(),
++                                units.values().stream().filter(state -> state != own && state != other).findFirst().orElseThrow(), "entity");
++                        neighbor.setPos(ownMob.position().add(0,0,.2));
++                    }
+                     var tick = LaneSystem.class.getDeclaredMethod("tickMinion", net.minecraft.server.level.ServerLevel.class, Mob.class, own.getClass(), long.class);
+                     tick.setAccessible(true);
+                     tick.invoke(null, level, ownMob, own, level.getGameTime()+100);
+@@ -194,7 +206,7 @@
+                             + " nextScan=" + field(own.getClass(), own, "nextTargetScan")
+                             + " now=" + (level.getGameTime()+100)
+                             + " path=" + field(own.getClass(), own, "path"));
+-                    enemy.setPos(a.getX()+40, a.getY(), a.getZ());
++                    enemy.setPos(encounter.getX()+40, encounter.getY(), encounter.getZ());
+                     tick.invoke(null, level, ownMob, own, level.getGameTime()+101);
+                     helper.assertTrue(!(Boolean) field(own.getClass(), own, "returning"), "Lost target must not force a retreat");
+                     helper.assertTrue(!enemy.getUUID().equals(field(own.getClass(), own, "chaseTarget")), "Escaped target must be dropped");
+@@ -437,7 +449,13 @@
+         var hp=state.getClass().getDeclaredField("health");hp.setAccessible(true);hp.setFloat(state,1);crystal.damageCooldownTime = 0;
+         NpcCombat.hit(crystal,player,50,DamageCalc.Kind.PHYSICAL);
+         helper.assertTrue(manager.getPhase()==GameManager.Phase.ENDED&&manager.getWinner()==Faction.XUANXIAO,"Destroying the crystal must end the match for its enemy");
+-        BaseRules.logout(player);phase.set(manager,GameManager.Phase.WAITING);
++        System.out.println("[MYRIAD-SAME44-PROBE] pendingAfterCrystal="+field(GameManager.class,manager,"returnToLobbyPending"));
++        BaseRules.logout(player);
++        // Consume the normal deferred end-of-match cleanup before another test enables the mod.
++        manager.tick(level.getServer(),level.getGameTime());
++        helper.assertTrue(manager.getPhase()==GameManager.Phase.WAITING
++                        && !(Boolean)field(GameManager.class,manager,"returnToLobbyPending"),
++                "Crystal completion cleanup must finish before the next check");
+         var clear=LaneSystem.class.getDeclaredMethod("clearRuntime",net.minecraft.server.level.ServerLevel.class);clear.setAccessible(true);clear.invoke(null,level);
+         towerPoints.clear();
+     }

@@ -164,7 +164,7 @@ final class KehengChecks {
                         }
                         if(age==150){
                             done[0]=true;GameTestTicks.removeListener(this);cleanup.run();
-                            System.out.println("[MYRIAD-KEHENG] PASS: 42 real-cast scenarios (30 Keheng + 8 integration + 4 cover/edge); identity/growth/graph/save/melee, exact Q/W/field/follow/dome/corridor/echo resources and timings, actor/flight geometry, control/cleanse and lifecycle");h.succeed();}
+                            System.out.println("[MYRIAD-KEHENG] PASS: 42 real-cast scenarios (30 Keheng + 8 integration + 4 cover/edge); identity/growth/graph/save/melee, exact Q/W/field/follow/dome/corridor/echo resources and timings, actor/flight geometry, control/cleanse and lifecycle");h.runAfterDelay(1,h::succeed);}
                     }catch(Throwable failure){done[0]=true;GameTestTicks.removeListener(this);cleanup.run();throw new IllegalStateException(failure);}
                 }
             };

@@ -1,0 +1,129 @@
+---- Minecraft Crash Report ----
+// Shall we play a game?
+
+Time: 2026-11-17 10:28:07
+Description: Exception in server tick loop
+
+java.lang.IllegalStateException: net.minecraft.gametest.framework.GameTestAssertException: Same actual total damage, no catch-up/replay: sulan/5 attack base=58.5 slow=117.0 on tick 132
+	at knot//com.myriad.game.HeroActionTimeChecks$1.accept(HeroActionTimeChecks.java:138)
+	at knot//com.myriad.game.HeroActionTimeChecks$1.accept(HeroActionTimeChecks.java:79)
+	at knot//com.myriad.game.GameTestTicks.lambda$initialize$0(GameTestTicks.java:15)
+	at knot//net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.lambda$static$3(ServerTickEvents.java:55)
+	at knot//net.minecraft.server.MinecraftServer.handler$zib000$fabric-lifecycle-events-v1$onEndTick(MinecraftServer.java:4416)
+	at knot//net.minecraft.server.MinecraftServer.tickServer(MinecraftServer.java:1004)
+	at knot//net.minecraft.server.dedicated.DedicatedServer.tickServer(DedicatedServer.java:278)
+	at knot//net.minecraft.server.MinecraftServer.processPacketsAndTick(MinecraftServer.java:1013)
+	at knot//net.minecraft.server.MinecraftServer.runServer(MinecraftServer.java:752)
+	at knot//net.minecraft.server.MinecraftServer.lambda$spin$0(MinecraftServer.java:310)
+	at java.base/java.lang.Thread.run(Thread.java:1474)
+Caused by: net.minecraft.gametest.framework.GameTestAssertException: Same actual total damage, no catch-up/replay: sulan/5 attack base=58.5 slow=117.0 on tick 132
+	at knot//net.minecraft.gametest.framework.GameTestHelper.assertionException(GameTestHelper.java:96)
+	at knot//net.minecraft.gametest.framework.GameTestHelper.assertTrue(GameTestHelper.java:1131)
+	at knot//net.minecraft.gametest.framework.GameTestHelper.assertTrue(GameTestHelper.java:1136)
+	at knot//com.myriad.game.HeroActionTimeChecks.verify(HeroActionTimeChecks.java:215)
+	at knot//com.myriad.game.HeroActionTimeChecks$1.accept(HeroActionTimeChecks.java:134)
+	... 10 more
+
+
+A detailed walkthrough of the error, its code path and all known details is as follows:
+---------------------------------------------------------------------------------------
+
+-- System Details --
+Details:
+	Minecraft Version: 26.3
+	Minecraft Version ID: 26.3
+	Operating System: Mac OS X (aarch64) version 27.2.1
+	Java Version: 25.0.3, Oracle Corporation
+	Java VM Version: Java HotSpot(TM) 64-Bit Server VM (mixed mode, sharing), Oracle Corporation
+	Memory: 595615296 bytes (568 MiB) / 2327838720 bytes (2220 MiB) up to 8589934592 bytes (8192 MiB)
+	Memory (heap): init: 512MiB, used: 1645MiB, committed: 2220MiB, max: 8192MiB
+	Memory (non-heap): init: 007MiB, used: 166MiB, committed: 183MiB, max: 000MiB
+	CPUs: 10
+	Processor Vendor: Apple Inc.
+	Processor Name: Apple M5
+	Identifier: Apple Inc. Family 0x1b588bb3 Model 0 Stepping 0
+	Microarchitecture: ARM64 SoC: Firestorm + Icestorm
+	Frequency (GHz): 0.00
+	Number of physical packages: 1
+	Number of physical CPUs: 10
+	Number of logical CPUs: 10
+	Graphics card #0 name: Apple M5
+	Graphics card #0 vendor: Apple (0x106b)
+	Graphics card #0 VRAM (MiB): 0.00
+	Graphics card #0 deviceId: unknown
+	Graphics card #0 versionInfo: unknown
+	Memory slot #0 capacity (MiB): 0.00
+	Memory slot #0 clockSpeed (GHz): 0.00
+	Memory slot #0 type: unknown
+	Virtual memory max (MiB): 32768.00
+	Virtual memory used (MiB): 25164.83
+	Swap memory total (MiB): 0.00
+	Swap memory used (MiB): 0.00
+	Space in storage for jna.tmpdir (MiB): <path not set>
+	Space in storage for org.lwjgl.system.SharedLibraryExtractPath (MiB): <path not set>
+	Space in storage for io.netty.native.workdir (MiB): <path not set>
+	Space in storage for java.io.tmpdir (MiB): available: 56849.08, total: 471432.09
+	Space in storage for workdir (MiB): available: 56849.08, total: 471432.09
+	Operating System Version: Apple macOS 27.2.1 build 26B131
+	Process Elevated: false
+	Process Loads: Uptime: 151s, user: 99s (65.72%), kernel: 9s (5.86%), total: 108s (71.58%)
+	Process Virtual Size (MiB): 487545.59
+	Process Resident Size (MiB): 2462.05
+	JVM Flags: 0 total;
+	Debug Flags: 0 total;
+	Fabric Mods:
+		fabric-advancement-api-v1: Fabric Advancement API (v1) 1.0.1+38c7a2d55d
+		fabric-api: Fabric API 0.166.2+26.3
+		fabric-api-base: Fabric API Base 2.0.6+fcdff87f5d
+		fabric-api-lookup-api-v1: Fabric API Lookup API (v1) 2.0.24+3434d6d95d
+		fabric-biome-api-v1: Fabric Biome API (v1) 20.2.0+423307765d
+		fabric-block-api-v1: Fabric Block API (v1) 3.1.0+0ae6f9115d
+		fabric-block-getter-api-v2: Fabric BlockGetter API (v2) 2.0.9+3434d6d95d
+		fabric-command-api-v2: Fabric Command API (v2) 3.1.2+fcdff87f5d
+		fabric-content-registries-v0: Fabric Content Registries (v0) 15.0.7+74ed1ea55d
+		fabric-convention-tags-v2: Fabric Convention Tags (v2) 4.10.5+187b64905d
+		fabric-crash-report-info-v1: Fabric Crash Report Info (v1) 1.0.7+fcdff87f5d
+		fabric-creative-tab-api-v1: Fabric Creative Tab API (v1) 5.0.22+fcdff87f5d
+		fabric-data-attachment-api-v1: Fabric Data Attachment API (v1) 2.2.35+af2d4d095d
+		fabric-data-generation-api-v1: Fabric Data Generation API (v1) 27.4.3+187b64905d
+		fabric-debug-api-v1: Fabric Debug API (v1) 1.0.5+5af7744b5d
+		fabric-dimensions-v1: Fabric Dimensions API (v1) 5.1.20+5af7744b5d
+		fabric-entity-events-v1: Fabric Entity Events (v1) 6.0.4+3434d6d95d
+		fabric-events-interaction-v0: Fabric Events Interaction (v0) 5.3.10+b9b88df45d
+		fabric-game-rule-api-v1: Fabric Game Rule API (v1) 4.0.10+3434d6d95d
+		fabric-gametest-api-v1: Fabric Game Test API (v1) 4.0.36+3434d6d95d
+		fabric-item-api-v1: Fabric Item API (v1) 14.8.1+8f511c9f5d
+		fabric-lifecycle-events-v1: Fabric Lifecycle Events (v1) 4.1.9+ffef5f675d
+		fabric-loot-api-v3: Fabric Loot API (v3) 4.0.9+4068fd645d
+		fabric-menu-api-v1: Fabric Menu API (v1) 2.0.31+ed66f0a35d
+		fabric-message-api-v1: Fabric Message API (v1) 7.1.0+3e5b46335d
+		fabric-networking-api-v1: Fabric Networking API (v1) 6.4.1+c58129785d
+		fabric-object-builder-api-v1: Fabric Object Builder API (v1) 24.1.13+e2f63d3e5d
+		fabric-particles-v1: Fabric Particles (v1) 5.0.28+3434d6d95d
+		fabric-permission-api-v1: Fabric Permission API (v1) 1.0.8+fcdff87f5d
+		fabric-recipe-api-v1: Fabric Recipe API (v1) 10.0.12+b9b88df45d
+		fabric-registry-sync-v0: Fabric Registry Sync (v0) 8.0.5+1ca9f6365d
+		fabric-rendering-fluids-v1: Fabric Rendering Fluids (v1) 6.0.6+3434d6d95d
+		fabric-resource-conditions-api-v1: Fabric Resource Conditions API (v1) 6.2.1+fd3b1d565d
+		fabric-resource-loader-v0: Fabric Resource Loader (v0) 3.3.27+4fc5413f5d
+		fabric-resource-loader-v1: Fabric Resource Loader (v1) 3.1.0+5af7744b5d
+		fabric-serialization-api-v1: Fabric Serialization API (v1) 2.0.8+bb0d41e65d
+		fabric-tag-api-v1: Fabric Tag API (v1) 2.1.11+fcdff87f5d
+		fabric-transfer-api-v1: Fabric Transfer API (v1) 8.0.27+c8357e785d
+		fabric-transitive-access-wideners-v1: Fabric Transitive Access Wideners (v1) 8.1.17+e2f63d3e5d
+		fabricloader: Fabric Loader 0.20.1
+		java: Java HotSpot(TM) 64-Bit Server VM 25
+		minecraft: Minecraft 26.3
+		mixinextras: MixinExtras 0.5.5
+		myriad: MYRIAD 0.1.0
+		myriad_gametest: MYRIAD GameTests 0.1.0
+	Server Running: true
+	Player Count: 0 / 20; []
+	Active Data Packs: vanilla, fabric-convention-tags-v2, fabric-gametest-api-v1, myriad, myriad_gametest
+	Available Data Packs: fabric-convention-tags-v2, fabric-gametest-api-v1, minecart_improvements, myriad, myriad_gametest, redstone_experiments, trade_rebalance, vanilla
+	Enabled Feature Flags: minecraft:vanilla
+	World Generation: Stable
+	World Seed: 3164825845061527872
+	Suppressed Exceptions: ~~NONE~~
+	Is Modded: Definitely; Server brand changed to 'fabric'
+	Type: Dedicated Server

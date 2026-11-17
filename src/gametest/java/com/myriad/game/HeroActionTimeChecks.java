@@ -133,7 +133,7 @@ final class HeroActionTimeChecks {
                             for(int i=0;i<fs.size();i+=2)trace(fs.get(i),fs.get(i+1));
                             for(int i=0;i<fs.size();i+=2)verify(h,fs.get(i),fs.get(i+1));
                             System.out.println("[MYRIAD-HERO-ACTION-TIME] PASS: "+fs.size()+" actual-cast paired scenarios; 11 retained roles, actual .5 fields vs mu1, damage timelines/motion distances, private slash/draw/follow/sheathe, rank-two dome/needle-source finishers, real-time warnings and lifecycle");
-                            done[0]=true;GameTestTicks.removeListener(this);cleanup.run();h.succeed();
+                            done[0]=true;GameTestTicks.removeListener(this);cleanup.run();h.runAfterDelay(1,h::succeed);
                         }
                     }catch(Throwable failure){done[0]=true;GameTestTicks.removeListener(this);cleanup.run();throw new IllegalStateException(failure);}
                 }

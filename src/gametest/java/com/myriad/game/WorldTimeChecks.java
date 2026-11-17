@@ -81,7 +81,7 @@ final class WorldTimeChecks {
                         AbilityRuntime.clear(f.owner);f.removeMob(mob);
                     }
                     if(age==14)prepare.accept(1);if(age==28)prepare.accept(2);
-                    if(age>=41){done=true;GameTestTicks.removeListener(this);cleanup.run();System.out.println("[MYRIAD-WORLD-TIME] PASS: four lane kinds, nine ordinary camps, four bosses; actual Q against lane/camp/boss; vanilla ordinary/tipped/spectral flight, damage/effects, water/slope/wall/boundaries, ownership/sync and 1200/2400 budgets");f.h.succeed();}
+                    if(age>=41){done=true;GameTestTicks.removeListener(this);cleanup.run();System.out.println("[MYRIAD-WORLD-TIME] PASS: four lane kinds, nine ordinary camps, four bosses; actual Q against lane/camp/boss; vanilla ordinary/tipped/spectral flight, damage/effects, water/slope/wall/boundaries, ownership/sync and 1200/2400 budgets");f.h.runAfterDelay(1,f.h::succeed);}
                 }catch(Throwable e){com.myriad.Myriad.LOGGER.error("World time needle failed",e);done=true;GameTestTicks.removeListener(this);cleanup.run();f.h.runAfterDelay(1,()->f.h.fail("world_time needle: "+e));}
             }
         };
