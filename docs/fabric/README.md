@@ -42,7 +42,11 @@ bash ./gradlew runServer
 
 ## GitHub Build CI
 
-`.github/workflows/build.yml` 保留 push / pull_request 的 `build` 检查、JDK 25 与仓库 Gradle Wrapper，执行完整构建后审计单一 Fabric 发行 JAR、版本/加载器身份、ZIP、发行排除项及 SHA256，再串行运行核心隔离 GameTest。每个 filter 使用独立 JVM；两个 roster、刻衡/伊珂/铆钉、战场/角色行动缓时和两模式合成 fixture/塔行为均使用同一可复现入口：
+`.github/workflows/build.yml` 在 push / pull_request 时使用 JDK 25 与仓库 Gradle Wrapper，仅执行 `bash ./gradlew build`。Gradle 自身的正常 `check` 依赖保持不变；CI 不另跑 GameTest，也不设置额外发行审计或附件上传步骤。
+
+## 本地整合验证与交付
+
+发行审计和隔离专项保留为本地工具，供 #44 按实际验证范围单独运行：
 
 ```sh
 python tools/fabric/prepare-ci-release.py
@@ -51,8 +55,8 @@ python tools/fabric/run-ci-gametests.py
 python tools/fabric/run-ci-gametests.py --offline roster_a roster_b arena_fixture
 ```
 
-每次测试的 stdout、XML 和结果列表分别保存到 `build/reports/fabric-ci/<filter>/` 与 `results.json`，后一次不会覆盖前一项报告。成功同时要求 Gradle 正常退出、匹配指定的1个测试并实际完成和通过；空 XML 套件会如实记录 testcase=0，不能单独作为成功依据。失败不自动重试，后续独立专项继续运行，最终任一失败都会令 build 检查失败。
+`prepare-ci-release.py` 审计单一 Fabric 主 JAR 的版本、加载器身份、ZIP 和发行排除项，将 JAR、同名 `.sha256` 与 `release.json`（源码 SHA、版本、大小和摘要）写入 `build/ci-release/`。
 
-全部检查成功后，Actions artifact `myriad-fabric-26.3-<sha>` 仅含发行主 JAR、同名 `.sha256` 与 `release.json`（版本、大小、源码 SHA 和摘要），不发布 GitHub Release；源码 JAR不混入发行 artifact。`fabric-build-evidence-<sha>` 在失败时也尝试上传构建报告及各项原始日志/XML。SHA对应实际检出提交；PR事件通常为GitHub生成的合并提交，以 `release.json` 为包的源码对应关系，不把旧run的绿灯用于新提交。
+`run-ci-gametests.py` 对每个 filter 使用独立 JVM；每次测试的 stdout、XML 和结果列表分别保存到 `build/reports/fabric-ci/<filter>/` 与 `results.json`，后一次不会覆盖前一项报告。成功同时要求 Gradle 正常退出、匹配指定的1个测试并实际完成和通过；空 XML 套件会如实记录 testcase=0，不能单独作为成功依据。失败不自动重试，后续独立专项继续运行，任一失败最终返回非零退出码。
 
 这些服务端自动化不替代 #44 的真实独立服务器/双客户端联验，也不运行正式/原始地图，不给任何视觉或主观项目签通过。
