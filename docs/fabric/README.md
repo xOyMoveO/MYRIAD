@@ -69,3 +69,23 @@ python tools/fabric/run-ci-gametests.py --offline roster_a roster_b arena_fixtur
 ## 本地发行核对
 
 需要发行审计时，可在构建成功后运行 `python tools/fabric/prepare-ci-release.py`，仅在本机 `build/ci-release/` 生成生产JAR、同名SHA256与 `release.json`，不上传或发布。该脚本名称保留既有兼容入口；当前CI只做build。资源引用、语言占位符与全部音频解码审计使用 `python tools/fabric/audit-resources.py`（需要已有ffmpeg）。最终核心结果、交付摘要与用户暂缓项见#44记录。
+
+
+## 可选离线开发工具
+
+这些工具供模型、动作或地图配置修改时按需使用，不加入普通 `build` 或 CI，也不代表客户端视觉验收：
+
+```sh
+# 从本次 Fabric/Loom 运行类路径验证 Minecraft 版本、纹理和 hook 字节码
+bash ./gradlew -I tools/firstperson/preview.gradle runPreviewTool
+# 当前生产模型与变换的 CPU 预览，输出到 build/previews/ShuoHeldPreview/
+bash ./gradlew -I tools/firstperson/preview.gradle runPreviewTool -PpreviewTool=ShuoHeldPreview
+# 只读仓库合成配置，校验模式、单路兵线、防御塔解锁与数据包编解码
+bash ./gradlew -I tools/arena-check/verify-arena.gradle verifyArenaModes
+```
+
+`compilePreviewTools` 同时编译 `tools/firstperson/` 与 `tools/model-check/` 的 Java 工具，使用当前主源码及 Fabric 依赖；原版模型解析走公开 `CuboidModel.fromStream`，不依赖旧平台放宽访问的内部字段。不同工具需要专用输入时，通过 `-PpreviewArgs='["参数一","参数二"]'` 传入 JSON 参数列表；例如模型来源比对需提供素材目录，`ShuoBrightnessCompare` 需提供对应的历史基线 JAR。未传专用参数的普通预览默认接收当前仓库与自己的输出目录。铆钉工具保留原有显式客户端 JAR 参数，省略时使用当前 Fabric 类路径。
+
+地图工具默认只使用 `src/gametest/resources/arena-fixture/`，不读世界地形、不启动服务器。旧地图的专用地形解码比较保留为显式 `-ParenaCheckWorld=<目录> -ParenaCheckTerrain` 输入；该分支只适用于原有固定布局，不作为通用地图验证，原图及其副本仍按人工移交处理，本轮不运行。
+
+`tools/model-check/verify_shuo_package.py`、`verify_shuo_no_elbow.py`、`verify_shuo_upright.py` 和 `verify_shuo_left_scabbard.py` 保留 2026-11-11 各次特定修改的历史差异断言，全部要求显式传入 `--baseline <旧包> --candidate <对应新包> --output <报告目录>`；首个脚本另需 Pillow。这些历史对比不接受当前 Fabric 包作为自动默认值。当前发行核对使用上面的 `prepare-ci-release.py`、资源审计和按需客户端客观检查，不以历史包差异代替。

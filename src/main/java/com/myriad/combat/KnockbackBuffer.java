@@ -15,7 +15,7 @@ public final class KnockbackBuffer {
 
     private KnockbackBuffer() { }
 
-    /** 供原版/NeoForge 击退事件使用；返回 false 时应取消本次击退。 */
+    /** 供当前原版击退 Mixin 使用；返回 false 时应取消本次击退。 */
     public static boolean allow(LivingEntity target) {
         if (target instanceof com.myriad.game.DefenseTowerEntity) return false;
         long now = target.level().getGameTime();

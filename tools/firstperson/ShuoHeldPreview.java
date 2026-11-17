@@ -24,11 +24,11 @@ public final class ShuoHeldPreview {
         var blade=NightDaggerPreview.loadBlade(assets,"shuo_sword");var sheath=NightDaggerPreview.loadBlade(assets,"shuo_scabbard");
         net.minecraft.client.resources.model.cuboid.ItemTransforms transforms;
         try(var reader=Files.newBufferedReader(assets.resolve("models/item/shuo_sword.json"))){transforms=CuboidModel.fromStream(reader).transforms();}
-        try(var zip=new java.util.zip.ZipFile("E:/mod/.gradle/caches/neoformruntime/artifacts/minecraft_26.2_client.jar")){
+        try(var zip=MinecraftPreviewResources.open()){
             NightDaggerPreview.skin=ImageIO.read(zip.getInputStream(zip.getEntry("assets/minecraft/textures/entity/player/wide/steve.png")));
             var bytes=zip.getInputStream(zip.getEntry("net/minecraft/client/renderer/entity/layers/ItemInHandLayer.class")).readAllBytes();
             var node=new org.objectweb.asm.tree.ClassNode();new org.objectweb.asm.ClassReader(bytes).accept(node,0);
-            NightDaggerPreview.require(node.methods.stream().filter(m->m.name.equals("submitArmWithItem")&&m.desc.equals("(Lnet/minecraft/client/renderer/entity/state/ArmedEntityRenderState;Lnet/minecraft/client/renderer/item/ItemStackRenderState;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/entity/HumanoidArm;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;I)V")).count()==1,"Actual MC26.2 client matches the cancellable HEAD injection ABI");
+            NightDaggerPreview.require(node.methods.stream().filter(m->m.name.equals("submitArmWithItem")&&m.desc.equals("(Lnet/minecraft/client/renderer/entity/state/ArmedEntityRenderState;Lnet/minecraft/client/renderer/item/ItemStackRenderState;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/entity/HumanoidArm;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;I)V")).count()==1,"Current Minecraft client matches the cancellable HEAD injection ABI");
         }
         for(int gait=0;gait<3;gait++){
         var sheet=new BufferedImage(2560,720,BufferedImage.TYPE_INT_RGB);var graphics=sheet.createGraphics();

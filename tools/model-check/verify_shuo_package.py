@@ -1,11 +1,9 @@
-"""Strict resource preservation / model / atlas / audio / branch packaging verification."""
+"""Historical 2026-11-11 initial Shuo package delta check; not a current Fabric release check."""
 from pathlib import Path
 import hashlib,io,json,zipfile
+from historical_package_inputs import package_inputs
+old,new,QA=package_inputs(__doc__)
 from PIL import Image
-QA=Path('E:/mod/outputs/shuo-20261111')
-ROOT=Path(__file__).resolve().parents[2]
-old=Path('E:/mod/outputs/万象_MYRIAD_更名与多题材角色定位_20261110.jar')
-new=ROOT/'build/libs/myriad-0.1.0.jar'
 report={}
 def obj(z,name):return json.loads(z.read(name))
 with zipfile.ZipFile(old) as a,zipfile.ZipFile(new) as b:

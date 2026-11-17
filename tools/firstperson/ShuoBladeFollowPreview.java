@@ -23,7 +23,7 @@ public final class ShuoBladeFollowPreview {
         ShuoPreview.main(args);Path assets=Path.of(args[0]).resolve("src/main/resources/assets/myriad"),out=Path.of(args[1]);
         ShuoVfxPreview.materials.put(75,ImageIO.read(assets.resolve("textures/particle/vfx/shuo_basic_hd.png").toFile()));
         ShuoVfxPreview.materials.put(77,ImageIO.read(assets.resolve("textures/particle/vfx/shuo_stream_hd.png").toFile()));
-        try(var zip=new java.util.zip.ZipFile("E:/mod/.gradle/caches/neoformruntime/artifacts/minecraft_26.2_client.jar")){
+        try(var zip=MinecraftPreviewResources.open()){
             try(var in=zip.getInputStream(zip.getEntry("net/minecraft/client/renderer/entity/layers/ItemInHandLayer.class"))){
                 var node=new org.objectweb.asm.tree.ClassNode();new org.objectweb.asm.ClassReader(in).accept(node,0);
                 var methods=node.methods.stream().filter(m->m.name.equals("submitArmWithItem")).toList();

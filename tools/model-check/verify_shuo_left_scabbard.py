@@ -1,8 +1,8 @@
+"""Historical 2026-11-11 left-hand scabbard delta check; not a current Fabric release check."""
 from pathlib import Path
 import zipfile,json,hashlib
-old=Path('E:/mod/outputs/万象_MYRIAD_朔持刀姿势与加长_20261111.jar')
-new=Path('E:/mod/MDK-26.2-ModDevGradle-main/build/libs/myriad-0.1.0.jar')
-qa=Path('E:/mod/outputs/shuo-left-scabbard-20261111');qa.mkdir(parents=True,exist_ok=True)
+from historical_package_inputs import package_inputs
+old,new,qa=package_inputs(__doc__)
 with zipfile.ZipFile(old) as a,zipfile.ZipFile(new) as b:
     aa=set(a.namelist());bb=set(b.namelist());added=sorted(bb-aa);removed=sorted(aa-bb)
     changed=sorted(n for n in aa&bb if a.read(n)!=b.read(n))

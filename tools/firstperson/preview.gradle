@@ -1,0 +1,29 @@
+// Optional offline CPU previews; no game launch and no production JAR additions.
+gradle.projectsEvaluated {
+    def output = rootProject.layout.buildDirectory.dir('preview-tools/classes')
+    def compileTools = rootProject.tasks.register('compilePreviewTools', JavaCompile) {
+        dependsOn rootProject.tasks.named('classes')
+        source = rootProject.files(
+                rootProject.fileTree('tools/firstperson') { include '*.java' },
+                rootProject.fileTree('tools/model-check') { include '**/*.java' })
+        classpath = rootProject.sourceSets.main.compileClasspath + rootProject.sourceSets.main.output
+        destinationDirectory = output
+        javaCompiler = rootProject.javaToolchains.compilerFor { languageVersion = JavaLanguageVersion.of(25) }
+        options.encoding = 'UTF-8'
+    }
+    rootProject.tasks.register('runPreviewTool', JavaExec) {
+        dependsOn compileTools
+        classpath = rootProject.files(output) + rootProject.sourceSets.main.runtimeClasspath
+        mainClass = 'com.myriad.tools.' + (rootProject.findProperty('previewTool') ?: 'MinecraftPreviewResources')
+        javaLauncher = rootProject.javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
+        systemProperty 'java.awt.headless', 'true'
+        if (rootProject.hasProperty('previewArgs')) {
+            args new groovy.json.JsonSlurper().parseText(rootProject.property('previewArgs').toString())
+        } else if (!rootProject.hasProperty('previewTool') || rootProject.property('previewTool') == 'MinecraftPreviewResources') {
+            args rootProject.property('minecraft_version')
+        } else {
+            args rootProject.projectDir.absolutePath,
+                    rootProject.layout.buildDirectory.dir('previews/' + rootProject.property('previewTool')).get().asFile.absolutePath
+        }
+    }
+}

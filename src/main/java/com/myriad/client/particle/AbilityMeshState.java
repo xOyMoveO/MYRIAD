@@ -10,7 +10,7 @@ import net.minecraft.world.phys.Vec3;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Finite arbitrary quads submitted through Minecraft 26.2's normal particle pipeline. */
+/** Finite arbitrary quads submitted through Minecraft's normal particle pipeline. */
 final class AbilityMeshState extends QuadParticleRenderState {
     private record Entry(Quad q,Vec3 camera,float u0,float u1,float v0,float v1,float nearAlpha,double depth,int light,boolean flame) {}
     private final List<Entry> mesh=new ArrayList<>();

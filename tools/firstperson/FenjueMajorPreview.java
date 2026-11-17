@@ -13,7 +13,6 @@ import java.awt.image.BufferedImage;
 import java.nio.file.*;
 import java.util.*;
 import java.util.List;
-import java.util.zip.ZipFile;
 import javax.imageio.ImageIO;
 import static com.myriad.network.FlameSkillViewPayload.*;
 
@@ -112,7 +111,7 @@ public final class FenjueMajorPreview {
         textures.put(74,ImageIO.read(assets.resolve("textures/particle/vfx/fenjue_hit.png").toFile()));
         textures.put(69,ImageIO.read(assets.resolve("textures/particle/vfx/fenjue_pixel_embers.png").toFile()));
         textures.put(68,ImageIO.read(assets.resolve("textures/particle/vfx/fenjue_pixel_stream.png").toFile()));
-        try(var zip=new ZipFile("E:/mod/.gradle/caches/neoformruntime/artifacts/minecraft_26.2_client.jar")){
+        try(var zip=MinecraftPreviewResources.open()){
             NightDaggerPreview.skin=ImageIO.read(zip.getInputStream(zip.getEntry("assets/minecraft/textures/entity/player/wide/steve.png")));
             var grass=ImageIO.read(zip.getInputStream(zip.getEntry("assets/minecraft/textures/block/moss_block.png")));var stone=ImageIO.read(zip.getInputStream(zip.getEntry("assets/minecraft/textures/block/stone_bricks.png")));
             textures.put(0,ImageIO.read(zip.getInputStream(zip.getEntry("assets/minecraft/textures/particle/glow.png"))));

@@ -7,7 +7,7 @@ metadata:
 ---
 # Minecraft Modding Skill
 
-Bundled `scripts/` and `references/` paths are relative to this skill directory. Run build commands from the project root. This repository's `AGENTS.md` and `myriad-neoforge` rules take precedence over generic version, license, and publishing examples below; inspect current build configuration rather than changing this project to an example version.
+Bundled `scripts/` and `references/` paths are relative to this skill directory. Run build commands from the project root. This repository's `AGENTS.md` and `myriad-neoforge` rules take precedence over generic version, license, and publishing examples below; inspect current build configuration rather than changing this project to an example version. For MYRIAD, use Fabric / Minecraft 26.3 and the commands in `docs/fabric/README.md`; the generic NeoForge preference and 1.21 examples below apply only to other projects. `myriad-neoforge` remains a compatible skill name for the current Fabric rules.
 
 ## Overview
 
