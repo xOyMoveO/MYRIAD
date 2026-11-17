@@ -1,6 +1,7 @@
 {
   "ambientocclusion": false,
   "textures": {
+    "particle": "#layer0",
     "layer0": "myriad:item/fenjue_flame_changdao"
   },
   "elements": [

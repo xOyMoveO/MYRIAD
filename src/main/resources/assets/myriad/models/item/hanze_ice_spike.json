@@ -3,6 +3,7 @@
   "credit": "Generated from hanze_ice_spike.spec.json with minecraft-ai-generate-bbmodel",
   "ambientocclusion": false,
   "textures": {
+    "particle": "#layer0",
     "layer0": "myriad:item/hanze_ice_spike"
   },
   "elements": [
