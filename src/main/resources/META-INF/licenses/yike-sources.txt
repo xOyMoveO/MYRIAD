@@ -44,5 +44,7 @@ Skill icons, visual geometry, sounds:
   Three independent short shot variants plus deployment, impact, warning,
   barrier, heavy and beam stages. The beam loop is a periodic authored waveform.
 
-These project-created assets follow this repository's All Rights Reserved notice.
+The project-created non-code assets described here are All Rights Reserved.
+Project-owned generator and runtime code follows the root MIT License.
+See META-INF/LICENSE-SCOPE.txt.
 Existing third-party licenses elsewhere in this directory remain unchanged.

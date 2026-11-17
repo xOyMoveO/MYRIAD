@@ -35,5 +35,7 @@ the new 2D textures supply finite trails, fields, shields, impact and pixel acce
 Synthesized audio uses Python standard-library oscillators/noise and FFmpeg's native
 Vorbis encoder; no source recording or sampled third-party instrument is embedded.
 
-Project ownership and license: All Rights Reserved, consistent with this repository.
+The project-created non-code assets described here are All Rights Reserved.
+Project-owned generator and runtime code follows the root MIT License.
+See META-INF/LICENSE-SCOPE.txt.
 This notice does not change the license of Minecraft, NeoForge, Pillow or FFmpeg.

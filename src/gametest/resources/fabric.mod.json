@@ -3,6 +3,7 @@
   "id": "myriad_gametest",
   "version": "${version}",
   "name": "MYRIAD GameTests",
+  "license": "${mod_license}",
   "environment": "*",
   "entrypoints": {
     "main": [

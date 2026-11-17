@@ -26,6 +26,18 @@ with zipfile.ZipFile(jar) as archive:
     metadata = json.loads(archive.read("fabric.mod.json"))
     if metadata["version"] != properties["mod_version"]:
         raise SystemExit("Unresolved or incorrect release version")
+    if metadata.get("license") != properties["mod_license"]:
+        raise SystemExit("Unresolved or incorrect release license scope")
+    license_sources = {
+        "LICENSE": root / "LICENSE",
+        "META-INF/LICENSE-SCOPE.txt": root / "src/main/resources/META-INF/LICENSE-SCOPE.txt",
+    }
+    for notice in (root / "src/main/resources/META-INF/licenses").glob("*"):
+        if notice.is_file():
+            license_sources["META-INF/licenses/" + notice.name] = notice
+    for name, source in license_sources.items():
+        if archive.read(name) != source.read_bytes():
+            raise SystemExit(f"Release license differs from source: {name}")
     for key, value in {
         "minecraft": "=" + properties["minecraft_version"],
         "fabricloader": "=" + properties["loader_version"],

@@ -78,8 +78,11 @@ tasks.withType(JavaCompile).configureEach {
 tasks.withType(ProcessResources).configureEach {
     filteringCharset = 'UTF-8'
     inputs.property 'version', project.version
-    filesMatching('fabric.mod.json') { expand version: project.version }
+    inputs.property 'mod_license', project.mod_license
+    filesMatching('fabric.mod.json') { expand version: project.version, mod_license: project.mod_license }
 }
+tasks.named('processResources') { from('LICENSE') }
+tasks.named('sourcesJar') { from('LICENSE') }
 
 tasks.withType(JavaExec).configureEach { standardInput = System.in }
 

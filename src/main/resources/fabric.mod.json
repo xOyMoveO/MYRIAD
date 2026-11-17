@@ -4,7 +4,7 @@
   "version": "${version}",
   "name": "MYRIAD",
   "description": "万象",
-  "license": "All Rights Reserved",
+  "license": "${mod_license}",
   "environment": "*",
   "entrypoints": {
     "main": ["com.myriad.Myriad"],
