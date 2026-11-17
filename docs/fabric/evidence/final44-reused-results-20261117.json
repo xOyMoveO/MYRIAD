@@ -1,0 +1,156 @@
+{
+  "fixed_function_baseline": "8da79ddc329492155cea44f3166c97f0e37d86fc",
+  "local_run_source": "b627be9bca46302d4cf2d590a41513ecca9bf1a4",
+  "main_java_tree": "291a9c0afc0af39e48d91c79ee87a534586ccf03",
+  "gametest_tree_before_issue44_fixture_repairs": "4a9110bc873af9b4cc7cdf33f14499962378e359",
+  "local_raw_evidence_directory": "/private/tmp/myriad-fabric26-worktrees/integration/build/reports/fabric-ci",
+  "isolated_results": [
+    {
+      "filter": "myriad:melee_arc",
+      "exit_code": 0,
+      "passed": true,
+      "xml_testcases": 1,
+      "problems": [],
+      "stdout_sha256": "89a4849ce04ea526d58c47328fc56597c31bc75008cb98ee7706fcc5765e7a3d",
+      "xml_sha256": "fea7296e4a6df3d5cf3f0a46560dbfc68257aff9aaaaabb1f6dc294177b36905"
+    },
+    {
+      "filter": "myriad:first_group",
+      "exit_code": 0,
+      "passed": true,
+      "xml_testcases": 1,
+      "problems": [],
+      "stdout_sha256": "783527e7d263d8a4b5a40922fc8437327e6b42ce6cd65e024a7593c32dcdd649",
+      "xml_sha256": "e167a8272bdc74b74224039f305bc64e72b8c61e2293cc0bb0ec7aeef9a57e40"
+    },
+    {
+      "filter": "myriad:shuo_pilot",
+      "exit_code": 0,
+      "passed": true,
+      "xml_testcases": 1,
+      "problems": [],
+      "stdout_sha256": "4167d8abae209b5469466a22b1412719e74fad63e6e0f26dd0c89790af6ea827",
+      "xml_sha256": "cffad2d8b79ccd059106421af37ccd8225497b5281d0e59751f5745bde8aea37"
+    },
+    {
+      "filter": "myriad:roster_a",
+      "exit_code": 0,
+      "passed": true,
+      "xml_testcases": 1,
+      "problems": [],
+      "stdout_sha256": "2a3531a7fdfa334dae14d3d4f3a48bce46a33c3e71f18b1e86094697180d2d9b",
+      "xml_sha256": "074a7ccce9c0775f3f139c405ef8621d11badbfb0f1a2252c7a643cba06790e8"
+    },
+    {
+      "filter": "myriad:roster_b",
+      "exit_code": 0,
+      "passed": true,
+      "xml_testcases": 1,
+      "problems": [],
+      "stdout_sha256": "bd20deaa27d239a91c84b869d0549e199e08e4f6b5e3c19e027f5cc9adc38184",
+      "xml_sha256": "dd206bd894a827bdc96f02b57b37a8878576bb3d320c1f47f221361f90dc7da2"
+    },
+    {
+      "filter": "myriad:keheng",
+      "exit_code": 0,
+      "passed": true,
+      "xml_testcases": 0,
+      "problems": [],
+      "stdout_sha256": "0d7f7dae255de1e368bd88747cc987595bb2288d589e7aa05754650066a34bc9",
+      "xml_sha256": "8e57b2b09ae46ce9f2643a4dd360378e0cc985b497250473527b3f05dfab4fd9"
+    },
+    {
+      "filter": "myriad:yike",
+      "exit_code": 0,
+      "passed": true,
+      "xml_testcases": 1,
+      "problems": [],
+      "stdout_sha256": "58e9a4f22a31da084186f86fe8d847b0c065e1f832f2c6c9df89fd573617885b",
+      "xml_sha256": "a67687fb9b9289a7acb65375df4aadd64d53cb317ea422caa4b2726dc029d0b8"
+    },
+    {
+      "filter": "myriad:rivet",
+      "exit_code": 0,
+      "passed": true,
+      "xml_testcases": 1,
+      "problems": [],
+      "stdout_sha256": "bb44662b141b9c9003e87880bd1a8da4dcf11814e1f89016877e6a7d0f67af34",
+      "xml_sha256": "6fad3ee38095de947a8ce3b816aa98dd620f8d68d6a4ccaa0fa102c3950bade1"
+    },
+    {
+      "filter": "myriad:roster_delivery",
+      "exit_code": 0,
+      "passed": true,
+      "xml_testcases": 1,
+      "problems": [],
+      "stdout_sha256": "c498756368d12a5f4dc57034ab2c8d33b44db325c7aef57c2036bf070989ad41",
+      "xml_sha256": "58f7e408f2956cafc154bc4e16bd94818bc95d90694256579fe70ae633296dc5"
+    },
+    {
+      "filter": "myriad:world_time",
+      "exit_code": 0,
+      "passed": true,
+      "xml_testcases": 0,
+      "problems": [],
+      "stdout_sha256": "6bb8531faad9bf77e60c1465bc6b52af192fd2795a8e7df6210f77d68157307d",
+      "xml_sha256": "9e1c54208f3bf3d3f95fd1d9052375b0de918bc34a417dd8e6aede0b7025e52e"
+    },
+    {
+      "filter": "myriad:hero_action_time",
+      "exit_code": 0,
+      "passed": true,
+      "xml_testcases": 0,
+      "problems": [],
+      "stdout_sha256": "ff7cc8c15060e49d0240003679e0af728d8bc3e1a06e8ca1561db6bdbb63d842",
+      "xml_sha256": "494475618f282368916e24f6aff2e961fc6716844e0c72f8ff68e5b83430e3d2"
+    },
+    {
+      "filter": "myriad:arena_fixture",
+      "exit_code": 0,
+      "passed": true,
+      "xml_testcases": 1,
+      "problems": [],
+      "stdout_sha256": "6b9026e408aa3c3a7e4953a819ddff233f1bb28ed23ea6825db907259f8cb746",
+      "xml_sha256": "e726edd193dd25c95684a4c9d177da5ad3585a242f4d7c7f2a2df0028cdb87bc"
+    },
+    {
+      "filter": "myriad:arena_tower_5v5",
+      "exit_code": 0,
+      "passed": true,
+      "xml_testcases": 1,
+      "problems": [],
+      "stdout_sha256": "809bfbf2d03fdf65acbba0828162c7fe0e69a7fd5fc60965061541a3318c9bf1",
+      "xml_sha256": "4b558c81267ce176c8f9454231a040747b24fccd14784afea6f6dbdc04aa3c33"
+    },
+    {
+      "filter": "myriad:arena_tower_3v3",
+      "exit_code": 0,
+      "passed": true,
+      "xml_testcases": 1,
+      "problems": [],
+      "stdout_sha256": "78b6da32eab537f61c65d7520b36343771aa3b7e2cc28eede1c04bfcd66b5b95",
+      "xml_sha256": "b0881471f044ae6d8499fa65504345f3b90e53f62b1a6c3f83bf18045d8f054e"
+    }
+  ],
+  "remote_pr": {
+    "url": "https://github.com/xOyMoveO/MYRIAD/actions/runs/43900287675",
+    "head_sha": "b627be9bca46302d4cf2d590a41513ecca9bf1a4",
+    "actual_checkout": "f54eebe06f891d8d604674f2bdb9ac045791a36b",
+    "conclusion": "success",
+    "actual_result": "14/14",
+    "main_java_tree": "291a9c0afc0af39e48d91c79ee87a534586ccf03",
+    "gametest_tree": "4a9110bc873af9b4cc7cdf33f14499962378e359"
+  },
+  "remote_push": {
+    "url": "https://github.com/xOyMoveO/MYRIAD/actions/runs/43899992996",
+    "head_sha": "b627be9bca46302d4cf2d590a41513ecca9bf1a4",
+    "conclusion": "failure",
+    "actual_result": "13/14",
+    "failure": "first_group: At 0.8 seconds the hero instantly relocates, not an eight-tick dash on tick 16"
+  },
+  "log_sha256": {
+    "myriad-final44-ci-pr.log": "3c4134dded4a95109b4bc8c8a146aa247e5e71f55cf0adb87f9662da62235357",
+    "myriad-final44-ci-push.log": "fe09a95dae99f1725368ef6ffd1d787bfdd1ce9babf7d48b6578a6e68f591ae9"
+  },
+  "reuse_boundary": "All production Java is content-identical. Issue44 changes resource slots/provenance and appends missing English keys; current resource audit and physical-client loading are separate evidence. first_group and combat fixture repairs require their own current execution results, not the prior green run. XML-only success is not claimed for three empty suites."
+}

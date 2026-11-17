@@ -1,6 +1,6 @@
 ---
 name: myriad-skill-icons
-description: "Generate and integrate consistent 64×64 skill-icon sets for the MYRIAD NeoForge mod when adding or refreshing character skills and branch variants."
+description: "Generate and integrate consistent 64×64 skill-icon sets for the MYRIAD Fabric mod when adding or refreshing character skills and branch variants."
 ---
 
 # MYRIAD Skill Icons

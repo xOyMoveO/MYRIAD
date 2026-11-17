@@ -1,61 +1,44 @@
 ---
 name: mcpfabric-client-acceptance
-description: 在万象项目中通过 MCPFabric 操作真实 Minecraft 客户端，检查 HUD、界面、模型、技能和粒子特效；也用于启动测试客户端、检查连接和收集画面证据。
+description: 在万象 Fabric 项目中操作真实 Minecraft 客户端，验证原生输入、权威状态和联机同步，采集截图、音频触发与性能材料供人验收。
 ---
 
-# 万象客户端视觉验收
+# 万象 Fabric 客户端客观验证与人工移交
 
-## 连接与环境
+先读根目录 `AGENTS.md`、`docs/agents/domain.md` 及 `tools/mcpfabric/README.md`。以当前 `gradle.properties`、启动配置和实际连接状态确认版本；目标为 Fabric / Minecraft 26.3，旧26.2记录只作历史参考。
 
-本项目的连接配置在 `.codex/config.toml`；启动入口、依赖版本和文件摘要见 `tools/mcpfabric/`。这些路径均相对项目根目录。先检查实际文件，不把安装记录当成客户端正在运行。
+## 准备与连接
 
-- `bash tools/mcpfabric/launch-client.sh` 启动独立客户端，使用 `run-mcpfabric/`、MC 26.2 和 NeoForge 26.2.0.88。普通项目仍使用 `gradle.properties` 中的版本。客户端已运行时复用连接，不重复启动。
-- `node tools/mcpfabric/check-connection.mjs --tools-only` 验证 MCP 握手及工具清单，不需要游戏运行。
-- `node tools/mcpfabric/check-connection.mjs` 检查实际游戏桥接；进入测试世界后加 `--capture` 保存一张真实截图。
-- 新增 MCP 配置在重启客户端应用后加载；skill 可在后续轮次发现。工具未出现在当前对话时，可用项目内 MCP SDK 调用连接服务，不改全局配置。
+- 先复用已运行且版本匹配的测试客户端。需新启动时，`bash tools/mcpfabric/launch-client.sh pilot /path/to/mcpfabric-0.10.0+26.3.jar` 与 `observer` 分别启动 `runClient`、`runObserver`，使用 `run-fabric-client/`、`run-fabric-observer/`。第三方测试模组的官方来源和SHA512在 `tools/mcpfabric/installation.json`；不以旧 `run-mcpfabric/` 启动正式验证。
+- 启动器先核验共享资源 `~/.local/share/minecraft/assets`，仅在完整性通过后跳过下载。保留共享库，只补缺失、损坏或新版新增对象；先查缓存路径、链接、权限和可恢复副本。
+- `node tools/mcpfabric/check-connection.mjs --tools-only` 查服务握手，去掉 `--tools-only` 查实际游戏桥接。`get_status`、`list_capabilities` 和 `myriad_state` 确认实例、版本、世界及 `aiPaused=false`；暂停时停止输入。
+- pilot/observer桥接分别为回环25599/25600；凭据在各自忽略的测试目录，关闭全局发现。`MYRIAD_MCP_RUN_DIR=run-fabric-observer` 选择观察者；先核对实际目录和端口，避免连到另一实例。
 
-MC 共享资源固定在 `~/.local/share/minecraft/assets`。启动脚本先逐项校验资源并跳过下载任务；资源缺失时先恢复已有文件，再按差异补齐。固定资源库不属于项目缓存清理范围。
+仅操作新建、可复现的合成测试世界/fixture。正式/原始地图及其备份实图副本、原图3v3/5v5整局全部由人操作验收；提供操作清单和可选证据，不索取、读取、导入、运行或代验原图。当前fixture和人工步骤见 `docs/fabric/arena-fixture.md`。
 
-仅操作 `run-mcpfabric/` 内的新建或明确指定的测试世界。正式世界的迁移、复制或覆盖遵守根目录 `AGENTS.md`；启动工具不授权改变正式实例。
+## 原生输入与权威结果
 
-## 执行视觉检查
+1. 读回界面、窗口/GUI尺寸、玩家位置、角色、已学技能和冷却。固定角色、分支/等级、目标、距离、光照与视角；场景准备与正式输入分别记录。
+2. `myriad_input({kind:"key",key:"key.myriad.skill_e"})` 经真实 `KeyboardHandler.keyPress`；`holdTicks` 为1–20，临时借用空闲SDL键后自动恢复。`kind:"mouse"` 的0/1/2为左/右/中键；GUI同时传缩放后的 `x`、`y`。原始键可用 `key.keyboard.escape`，视角映射为 `key.togglePerspective`。以当前适配能力列表为准，不把不存在的方法当作已执行。
+3. 自绘界面没有控件树时，依据实际布局和当前尺寸确定坐标；单击/双击、按钮、滚动、重绑、确认/取消、二段和充能分别验证。输入回调计数只能证明处理函数被调用；再次读回服务端认可的学习、点数、法力、CD、位置、命中与阶段。
+4. 真实联机使用独立服务器及至少两个真实客户端，记录版本/协议一致性、生产请求、双端状态、新观察者、合法目标过滤、重连、死亡复活、跨维度、新局及关闭清理。fixture玩家与短段同步各有边界，不能冒充真实双端或两模式完整流程。
+5. 操作结束调用 `myriad_release_inputs` 并确认 `heldInputs=0`。切世界、打开界面和玩家STOP会释放输入；只正常停止本轮明确创建的实例，不关闭用户自己的游戏。
 
-1. 调用 `get_status`、`list_capabilities`，确认客户端侧、MC/模组版本和功能开关。使用 `get_screen` / `get_ui` 确认当前界面，进入世界后用 `get_self` 确认位置与状态。
-2. 固定测试角色、技能分支/等级、目标、距离、光照与视角。需要的 `/myriad` 命令从当前源码或游戏帮助中核对；通过 `run_command` 准备场景并读回结果。
-3. 按用户要检查的实际操作触发效果，再用 `screenshot` 获取 PNG 并真正查看。界面使用 `get_ui`、`click_widget`、`set_text_field`；转向和移动使用 `look`、`look_at`、`set_movement`。
-4. 记录画面问题对应的场景、第一/第三人称、触发步骤和截图。修改后在相同场景重复检查。短暂特效需要连续帧或重复触发，单张截图只能证明该帧看到的表现。
-5. 结束移动时调用 `stop_movement`，释放持续使用物品的状态。保留测试窗口或按用户要求退出；不关闭其他 Minecraft 实例。
+MCP未装载时，可用同一服务的项目入口：
 
-## 万象专用工具
-
-项目服务在上游工具之外增加 `myriad_state`、`myriad_input`、`myriad_release_inputs`、`myriad_capture` 和 `myriad_capture_status`。先读 `myriad_state` 确认角色、等级、法力、已学技能和冷却。
-
-- 技能键示例：`myriad_input({kind:"key", key:"key.myriad.skill_e", captureFrames:30})`。它经原生键盘回调触发 NeoForge 事件和既有服务端施法校验，临时借用空闲键后自动恢复，适用于未绑定或与原版移动键冲突的映射。`holdTicks` 为 1–20，默认 1。
-- 普通鼠标：`myriad_input({kind:"mouse", button:1})` 发送右键，可用于朔的回鞘；0 为左键、2 为中键。GUI 操作还需提供缩放后的 `x`、`y`，使用原生鼠标路径。自绘界面可能没有 `get_ui` 控件，先看截图、核对界面尺寸，再点击；不能按上一帧的旧坐标盲点。
-- 原始键使用 `key.keyboard.escape` 等名称；切换视角使用映射 `key.togglePerspective`。读取回传状态确认实际视角，不能把按下瞬间的旧快照当成最终结果。
-- `myriad_capture` 可单独开始连拍，也可由输入的 `captureFrames` 同步启动。范围 1–40 帧、`intervalTicks` 1–10。用返回的 `captureId` 轮询 `myriad_capture_status`，完成后实际查看 PNG；以每帧 `clientTick` 判断实际采样时序。
-- 检查技能学习、法力、冷却、位移和命中结果；输入回传的事件计数只说明进入了回调，不能单独证明服务端接受施法。参数回复可能早于同步包，需读回状态或逐帧证据。
-- 操作结束调用 `myriad_release_inputs` 并确认 `heldInputs=0`。界面打开、切世界和玩家 STOP 也会触发释放；继续尊重上游停止控制状态。
-
-适配仅编译到专用测试启动配置，普通发布 JAR 不包含它。`unknown_method` 说明当前游戏未加载适配，按项目约定取得测试客户端重启授权后再加载，不绕过服务端校验。
-
-MCP 工具尚未载入当前对话时，可调用同一服务的项目命令行入口：
-
-```bash
+```sh
 node tools/mcpfabric/call-tool.mjs myriad_state
-node tools/mcpfabric/call-tool.mjs myriad_input '{"kind":"key","key":"key.myriad.skill_e","captureFrames":30}'
+node tools/mcpfabric/call-tool.mjs myriad_input '{"kind":"key","key":"key.myriad.skill_e"}'
+python tools/mcpfabric/call-rpc.py myriad.state --run-dir run-fabric-observer
+python tools/mcpfabric/call-rpc.py myriad.presentation
 ```
 
-已验证朔“一闪”的第一/第三人称输入与连拍，见 `docs/verification/mcpfabric-shuo-20261113.md`。其他角色、地面选点确认/取消和长按组合仍须按场景实际验证，不能沿用这次结论。测试世界首次创建界面需手动完成；现有测试世界可用 `list_worlds` / `join_world` 重新进入。
+`--record /path/evidence.jsonl` 记录时间、实例、参数与响应，凭据不入记录。`myriad.presentation` 是只读生产表现/声音提交观测，实际事件接收与SoundManager返回值不表示听感通过。适配只编入独立测试JAR，发行主JAR排除它和MCPFabric；`unknown_method` 时检查实际加载和版本，不绕过服务端规则。
 
-## 图像与证据
+## 材料与结论
 
-`screenshot` 需要已经进入世界，标题界面无玩家时会返回 `no_client_player`。图片返回后通过当前工具的图像输出展示，或保存到 `run-mcpfabric/screenshots/` 并用图像查看工具检查；避免输出 Base64 文本。
+截图/连拍只用于向人提供可比较材料。按明确要求采集 `screenshot`、`myriad_capture` 或输入的 `captureFrames`；短暂效果记录多帧及 `clientTick`，保存原始文件供人查看。截图、离线渲染、自动比较和模型评分均不能签发视觉通过。全部GUI/HUD、模型、持握、第一/第三人称动作、相机、VFX、遮挡/可读性、音效听感、手感、流畅性和平衡由人确认；没有人的结论就写“人工待验/差异待确认”。
 
-区分 MCP 服务可用、桥接连接成功、操作触发成功、画面已检查和游戏机制验证通过。截图不能证明伤害数值、碰撞、多人同步或完整动画时序。
+按本次授权场景验证核心链路；性能及边缘态仅在任务要求时展开。区分“客观通过”“客观失败/受阻”“人工待验”“人工已确认”“差异待确认”，保留失败及重跑，技术交付与父规格整体验收分别声明。
 
-## 项目隔离
-
-连接入口从 `run-mcpfabric/config/mcpfabric.config.json` 读取认证信息，限定本机回环地址。凭据、模组 JAR、缓存、日志、截图和测试世界均在忽略目录；保留该边界，令牌不写入回复或跟踪文件。全局自动发现已关闭，避免连接到另一个实例。
-
-来源：上游 [MCPFabric](https://github.com/denfry/mcpfabric)；本 skill 为万象项目编写，并非上游附带内容。上游游戏内 `save_skill` 是另一套功能，本项目未启用其自主任务/记忆运行时。
+来源：上游 [MCPFabric](https://github.com/denfry/mcpfabric)；本技能和测试适配由万象项目维护，上游自主任务/记忆运行时未启用。

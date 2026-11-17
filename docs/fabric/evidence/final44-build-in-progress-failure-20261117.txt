@@ -1,0 +1,42 @@
+
+> Configure project :
+Fabric Loom: 1.18.4
+
+> Task :compileJava UP-TO-DATE
+> Task :processResources UP-TO-DATE
+> Task :classes UP-TO-DATE
+> Task :processIncludeJars
+> Task :jar
+> Task :sourcesJar
+> Task :assemble
+
+> Task :compileGametestJava FAILED
+/private/tmp/myriad-fabric26-worktrees/issue44/src/gametest/java/com/myriad/game/WorldTimeChecks.java:84: 错误: 找不到符号
+                    if(age>=41){done=true;GameTestTicks.removeListener(this);cleanup.run();System.out.println("[MYRIAD-WORLD-TIME] PASS: four lane kinds, nine ordinary camps, four bosses; actual Q against lane/camp/boss; vanilla ordinary/tipped/spectral flight, damage/effects, water/slope/wall/boundaries, ownership/sync and 1200/2400 budgets");f.h.runAfterDelay(1,h::succeed);}
+                                                                                                                                                                                                                                                                                                                                                                              ^
+  符号: 变量 h
+注: /private/tmp/myriad-fabric26-worktrees/issue44/src/gametest/java/com/myriad/game/RivetChecks.java使用或覆盖了已过时的 API。
+注: 有关详细信息, 请使用 -Xlint:deprecation 重新编译。
+1 个错误
+
+[Incubating] Problems report is available at: file:///private/tmp/myriad-fabric26-worktrees/issue44/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':compileGametestJava' (registered by plugin class 'org.gradle.api.plugins.JavaBasePlugin').
+> Compilation failed; see the compiler output below.
+  注: /private/tmp/myriad-fabric26-worktrees/issue44/src/gametest/java/com/myriad/game/RivetChecks.java使用或覆盖了已过时的 API。
+  注: 有关详细信息, 请使用 -Xlint:deprecation 重新编译。
+  /private/tmp/myriad-fabric26-worktrees/issue44/src/gametest/java/com/myriad/game/WorldTimeChecks.java:84: 错误: 找不到符号
+                      if(age>=41){done=true;GameTestTicks.removeListener(this);cleanup.run();System.out.println("[MYRIAD-WORLD-TIME] PASS: four lane kinds, nine ordinary camps, four bosses; actual Q against lane/camp/boss; vanilla ordinary/tipped/spectral flight, damage/effects, water/slope/wall/boundaries, ownership/sync and 1200/2400 budgets");f.h.runAfterDelay(1,h::succeed);}
+                                                                                                                                                                                                                                                                                                                                                                                ^
+    符号: 变量 h
+  1 个错误
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+BUILD FAILED in 3s
+6 actionable tasks: 4 executed, 2 up-to-date

@@ -1,8 +1,12 @@
 # Fabric 26.3 开发与复现
 
-本目录记录 #40 的平台接合与朔「一闪」试点，以及 #43 的[双模式合成地图与生命周期复现](arena-fixture.md)；全量迁移完成条件仍属于 #39。[保留清单与公共契约](retention-and-contracts.md) 区分保留内容、试点与后续专项。
+本目录记录 #40 的平台接合与朔「一闪」试点、#41/#42角色迁移，以及 #43 的[双模式合成地图与生命周期复现](arena-fixture.md)；全量迁移完成条件仍属于 #39。[保留清单与公共契约](retention-and-contracts.md) 区分保留内容、试点与后续专项。
+
+[#44最终技术记录](final44-20261117.md)汇总被测版本、复用/新增证据、发行包和已知失败；全部主观、视觉与原图工作见[人工移交](handoff44-20261117.md)。
 
 [#42 B组角色记录](roster-b-20261116.md)列出7人/56候选、实际服务端专项、共享伤害修复及人工待验边界。
+
+用户于2026-11-17收窄本轮范围：只以基础联机、核心对局、保存恢复和成功build收尾，性能及细节专项暂缓。以下是按任务选用的复现入口，不是本轮新增必跑清单；最终集成只留一次core build，CI仅build。
 
 固定工具：Minecraft 26.3 正式、Fabric Loader 0.20.1、Fabric API 0.166.2+26.3、Loom 1.18.4、Gradle Wrapper 9.7.0、Java 25。构建依赖按 `gradle.properties` 固定，首次缺项时正常联网；已有缓存不清空。官方来源为 [Fabric 26.3示例](https://github.com/FabricMC/fabric-example-mod/tree/26.3) 与 [Loom1.18.4元数据](https://maven.fabricmc.net/net/fabricmc/fabric-loom/1.18.4/fabric-loom-1.18.4.module)，实际执行结果另见[验证报告](verification-20261116.md)。
 
@@ -26,6 +30,7 @@ Minecraft资源固定复用 `~/.local/share/minecraft/assets`，26.3索引为34�
 
 ```sh
 python tools/fabric/verify-assets.py
+python tools/fabric/audit-resources.py
 python tools/fabric/verify-assets.py --prepare-loom
 bash ./gradlew runClient
 bash ./gradlew runObserver
@@ -60,3 +65,7 @@ python tools/fabric/run-ci-gametests.py --offline roster_a roster_b arena_fixtur
 `run-ci-gametests.py` 对每个 filter 使用独立 JVM；每次测试的 stdout、XML 和结果列表分别保存到 `build/reports/fabric-ci/<filter>/` 与 `results.json`，后一次不会覆盖前一项报告。成功同时要求 Gradle 正常退出、匹配指定的1个测试并实际完成和通过；空 XML 套件会如实记录 testcase=0，不能单独作为成功依据。失败不自动重试，后续独立专项继续运行，任一失败最终返回非零退出码。
 
 这些服务端自动化不替代 #44 的真实独立服务器/双客户端联验，也不运行正式/原始地图，不给任何视觉或主观项目签通过。
+
+## 本地发行核对
+
+需要发行审计时，可在构建成功后运行 `python tools/fabric/prepare-ci-release.py`，仅在本机 `build/ci-release/` 生成生产JAR、同名SHA256与 `release.json`，不上传或发布。该脚本名称保留既有兼容入口；当前CI只做build。资源引用、语言占位符与全部音频解码审计使用 `python tools/fabric/audit-resources.py`（需要已有ffmpeg）。最终核心结果、交付摘要与用户暂缓项见#44记录。
