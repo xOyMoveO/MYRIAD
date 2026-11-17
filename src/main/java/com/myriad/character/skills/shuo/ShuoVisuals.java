@@ -3,7 +3,7 @@ import com.myriad.network.AbilityVfxPayload;
 import com.myriad.game.VisionSystem;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.myriad.network.Packets;
 import static com.myriad.character.ability.AbilityVfxGeometry.*;
 import com.myriad.character.ability.AbilityRuntime;
 import net.minecraft.world.entity.LivingEntity;
@@ -23,7 +23,7 @@ public final class ShuoVisuals {
     public static void basic(ServerPlayer p,boolean wasDrawn,int action){
         var packet=basicRecipe(p.getId(),p.getEyePosition(),p.getLookAngle(),wasDrawn,action,p.level().getGameTime());
         for(var viewer:p.level().players())if(viewer==p||viewer.position().distanceToSqr(packet.from())<48*48
-            &&VisionSystem.canSee(viewer,p)&&VisionSystem.canSeePosition(viewer,packet.from()))PacketDistributor.sendToPlayer(viewer,packet);
+            &&VisionSystem.canSee(viewer,p)&&VisionSystem.canSeePosition(viewer,packet.from()))Packets.sendToPlayer(viewer,packet);
     }
     /** New authored skill recipes bypass the retired generic theme-10 effects deliberately. */
     public static AbilityVfxPayload recipe(int owner,int anchor,int index,int signal,Vec3 from,Vec3 to,float radius,int life,long now){
@@ -37,13 +37,13 @@ public final class ShuoVisuals {
             if(viewer.position().distanceToSqr(packet.from())>Math.pow(48+packet.radius(),2))continue;
             if(viewer!=p&&(!VisionSystem.canSee(viewer,p)||!VisionSystem.canSeePosition(viewer,packet.from())))continue;
             if(packet.anchor()>=0&&p.level().getEntity(packet.anchor()) instanceof LivingEntity t&&!VisionSystem.canSee(viewer,t))continue;
-            PacketDistributor.sendToPlayer(viewer,packet);
+            Packets.sendToPlayer(viewer,packet);
         }
     }
     public static void cancel(ServerPlayer p,int index){
         if(index<0)return;
         var packet=new AbilityVfxPayload(p.getId(),-1,10,index,CANCEL,Vec3.ZERO,Vec3.ZERO,0,1,1,p.level().getGameTime(),false);
-        for(var viewer:p.level().players())PacketDistributor.sendToPlayer(viewer,packet);
+        for(var viewer:p.level().players())Packets.sendToPlayer(viewer,packet);
     }
     public static void charge(AbilityRuntime.Cast c,int ticks){
         var at=c.player.position();send(c.player,recipe(c.player.getId(),c.player.getId(),c.skill.index(),ShuoSkillVfx.CHARGING,at,at.add(c.forward(1)),1,ticks,c.now()));

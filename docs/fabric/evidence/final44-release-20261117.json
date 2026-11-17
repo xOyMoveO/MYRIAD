@@ -1,0 +1,29 @@
+{
+  "bytes": 26509242,
+  "sha256": "2cc19725e1ac4e5f8c35bb5b591885abb8852f1f5f3f8b235ff356d6881b0932",
+  "source_sha": "73361fbde99151b494abd54c23251f770b2cb0bd",
+  "main_java_tree": "291a9c0afc0af39e48d91c79ee87a534586ccf03",
+  "resources_tree": "f92751f7e6eea2b72f336c8cfead8ca8c24255af",
+  "zip_entries": 1542,
+  "classes": 802,
+  "class_versions": [
+    69
+  ],
+  "runtime_assets_exact": 611,
+  "gametest_classes_excluded": 167,
+  "zip_crc_valid": true,
+  "duplicate_entries": false,
+  "test_fixture_and_adapter_excluded": true,
+  "neoforge_class_references": false,
+  "passed": true,
+  "file": "build/ci-release/myriad-0.1.0.jar",
+  "licenses": 9,
+  "successful_build": {
+    "command": "bash ./gradlew build --offline --console=plain --rerun-tasks",
+    "actual_tasks": 6,
+    "log": "final44-build-20261117.txt"
+  },
+  "repeated_build_byte_reproducibility": "Not executed; deferred by user scope reduction.",
+  "performance": "按用户决定暂缓",
+  "earlier_failed_build": "The first attempt overlapped an in-progress GameTest edit (WorldTimeChecks undefined h); build failed, was not accepted or deployed. Corrected full build succeeded."
+}

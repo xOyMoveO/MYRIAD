@@ -1,43 +1,169 @@
-
 # 万象 · MYRIAD
 
-我的世界万象mod开发。
+万象是 Minecraft 的多题材角色团队对抗模组，原名《仙凡劫》。玩家组成两支队伍，选择角色、学习技能分支，通过兵线推进、野区争夺和团队配合，依次摧毁防御塔，最终击破敌方水晶。角色题材不限于修仙。
 
-多题材角色团队对抗玩法模组，原名《仙凡劫》。未来角色不限于修仙，奇幻、科幻、现代、历史、神话、机械等题材均可按角色定位与机制设计。
+当前版本面向 **Minecraft 26.3 / Fabric / Java 25**，包含十四名可选角色、112 个候选技能，以及 3v3、5v5 两种对局模式。
 
-中文名：**万象**；英文名：**MYRIAD**。现有地图主题保留。正式可选阵容为夜影、天刑、焚诀、墨尘、素岚、凌渊、寒泽、青萝、赤霄、云笙、朔、刻衡和伊珂，共十三人、104 个独立候选技能。十名旧版角色已退役。支持行动的起手、攻击恢复、自主位移与独立弹体按局部缓时推进；兵线、普通野怪及原版普通／药／光灵箭也已接入。视角、握持、模型、VFX 和听感按用户要求后置统一调整；功能证据与新测试世界交付见 [十三人整合验证](docs/verification/roster13-final28.md)。
+- [玩法与角色](#玩法与角色)
+- [安装与版本要求](#安装与版本要求)
+- [第一次游玩](#第一次游玩)
+- [地图与存档](#地图与存档)
+- [开发与构建](#开发与构建)
+- [参与项目](#参与项目)
+- [许可](#许可)
 
-当前目标 Minecraft 26.2 / NeoForge 26.2.0.59 / Java 25。内部模组 ID 与资源命名空间为 `myriad`，Java 包为 `com.myriad`，命令为 `/myriad`，构建包为 `myriad-0.1.0.jar`。
+## 玩法与角色
 
-2026-11-12 的内部命名迁移不兼容旧身份的存档数据与旧客户端；请先备份，在新世界测试，客户端和服务端同时更新。不要同时加载新旧模组，也不要直接用新包打开唯一一份旧世界。
+一局从分队和轮流选角开始。双方共享角色池，同一角色只能由一名玩家选择；全员选完后进入泉水，经过十秒准备再开战。玩家在对局中获得经验和金币，用技能点学习能力，用金币强化力量、智慧、速度、防御、冷却五类属性并购买补给。力量增强普攻，智慧增强技能。
 
-开发接手请先阅读：[协作开发与内部命名](docs/协作开发与内部命名.md)。
+每名角色有八个候选：两个被动、两个常规技能、两个主要技能和两个终极技能。被动、主要、终极各选一个分支，两个常规技能可以同时学习。**八个候选不代表八个技能同时可用。** 具体效果、等级要求和消耗可在游戏内图鉴与技能面板查看。
 
-仓库内保留可直接构建的源码与游戏资源。地图存档、个人配置、Gradle 缓存和构建产物不在源码上传范围内；不要把此仓库当作完整的 Minecraft 游戏实例。
+| 模式 | 队伍规模 | 地图结构 |
+| --- | --- | --- |
+| 5v5 | 每方最多五人 | 三路兵线、分层防御塔、泉水、水晶及野区 |
+| 3v3 | 每方最多三人 | 独立配置的单中路地图，保留塔序、水晶和野区目标 |
 
-以下保留原 MDK 环境说明。
+草丛与视野影响目标发现，双方也可争夺野怪和资源点。地图设施、兵线路径、草丛、营地和小地图边界均可配置，服主可以按地图安排战场。
 
-Installation information
-=======
+十四名角色为：夜影、天刑、焚诀、墨尘、素岚、凌渊、寒泽、青萝、赤霄、云笙、朔、刻衡、伊珂和铆钉。例如：
 
-This template repository can be directly cloned to get you started with a new
-mod. Simply create a new repository cloned from this one, by following the
-instructions provided by [GitHub](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template).
+| 角色 | 机制示例 |
+| --- | --- |
+| 居合·朔 | 在收鞘与出鞘状态间切换，用格挡反击、突进和延迟刀痕组织连招 |
+| 时律·刻衡 | 布置局部缓时领域，减慢受支持目标的行动与独立弹体；技能冷却和效果到期仍按真实时间计算 |
+| 虹轨·伊珂 | 在定轨炮台与游走阵列之间选择，手动瞄准并逐次开火 |
+| 铆钉·战场筑垒师 | 在墙面部署战术锚点，配合牵引、队友护盾和撞墙控制作战 |
 
-Once you have your clone, simply open the repository in the IDE of your choice. The usual recommendation for an IDE is either IntelliJ IDEA or Eclipse.
+## 安装与版本要求
 
-If at any point you are missing libraries in your IDE, or you've run into problems you can
-run `gradlew --refresh-dependencies` to refresh the local cache. `gradlew clean` to reset everything 
-{this does not affect your code} and then start the process again.
+| 组件 | 当前要求 |
+| --- | --- |
+| Minecraft Java 版 | `26.3` |
+| Fabric Loader | `0.20.1` |
+| Fabric API | `0.166.2+26.3` |
+| Java | 运行至少 `25`；开发构建使用 JDK 25 |
+| 万象主模组 | `myriad-0.1.0.jar` |
 
-Mapping Names:
-============
-By default, the MDK is configured to use the official mapping names from Mojang for methods and fields 
-in the Minecraft codebase. These names are covered by a specific license. All modders should be aware of this
-license. For the latest license text, refer to the mapping file itself, or the reference copy here:
-https://github.com/NeoForged/NeoForm/blob/main/Mojang.md
+客户端和服务端都需要安装万象与上述 Fabric API，使用一致的模组版本。NeoForge 包不能用于这个 Fabric 实例。
 
-Additional Resources: 
-==========
-Community Documentation: https://docs.neoforged.net/  
-NeoForged Discord: https://discord.neoforged.net/
+安装时使用 Fabric 26.3 的 `myriad-0.1.0.jar` 主包；自行构建的方法见[开发与构建](#开发与构建)。不要将 `-sources.jar` 当作游戏模组安装。
+
+1. 新建一个独立的 Minecraft 26.3 Fabric 实例；服务器也使用独立目录和新世界。
+2. 将 `myriad-0.1.0.jar` 与匹配版本的 Fabric API 放入各自实例的 `mods/`，确认没有重复的万象或旧仙凡劫 JAR。
+3. 用该实例启动游戏或服务器。独立服务器首次启动需按 Minecraft 要求确认 EULA，再配置端口、白名单与管理员。
+4. 进入新世界，按下一节启用玩法。仓库包含模组源码与运行资源，**不包含正式 3v3/5v5 地图存档或完整游戏实例**。
+
+旧版本涉及内部身份及加载器迁移。先备份，勿用新包直接打开唯一一份旧世界，也不要把新旧模组装在同一个实例中。旧世界的处理见[地图与存档](#地图与存档)。
+
+## 第一次游玩
+
+### 没有地图：先体验角色
+
+单人世界需允许命令；服务器由管理员启用玩法、切换训练模式及管理开局。训练开关对整台服务器生效。
+
+在游戏聊天栏依次输入：
+
+```text
+/myriad mod on
+/myriad train on
+/myriad char shuo
+```
+
+这会开启玩法和训练模式，并选择朔。未配置大厅时玩家留在当前位置，可以找一块安全空地练习，无须导入地图。
+
+1. 打开“选项 → 控制 → 按键绑定”中的万象分类，为技能设置互不冲突的按键。**技能键默认未绑定**，技能面板中的 Q/W/E/R 表示槽位，不代表已绑定这些物理按键。
+2. 按 `C` 打开个人信息。初选角色有一个技能点，可在技能面板中选中朔的常规技能“纳刀”并确认加点，关闭面板后按自己绑定的一技能键施放。
+3. 输入 `/myriad train` 打开训练面板，可提升等级、获得金币、选择训练阵营，或开启无冷却、无限金币、无限法力。训练中换角会返还技能点，方便体验不同分支。
+4. 用 `/myriad choose` 打开角色选择界面，继续体验其他角色；完成后用 `/myriad mod off` 关闭玩法及训练开关。
+
+训练模式可跳过正式对局的施法阶段限制，但不会生成完整竞技地图。需要练习伤害时，可用 `/myriad jiaren create` 创建训练假人。
+
+### 有地图：组织一场对局
+
+先在副本中配置好对应模式的路线、塔、泉水、水晶等设施，再让参与者加入同一服务器。管理员在游戏内执行 `/myriad mod on`，输入 `/myriad start` 打开分队界面：
+
+1. 选择 5v5 或已配置完成的 3v3。3v3 配置缺失或不合法时，该模式不可选。
+2. 使用“随机开局”自动分队，或用界面中的“玄霄宗”“幽冥宗”按钮手动安排两队，再点击“开始游戏”。手动开局要求双方有人、人数差不超过一人，且不超出模式容量。
+3. 玩家按界面轮次选角。全员完成后传送泉水，十秒准备结束进入战斗；学习技能、购买属性与补给，按塔序推进并摧毁敌方水晶。
+4. 结束后查看结算。管理员可用 `/myriad restart` 重开，或 `/myriad mod off` 关闭玩法并清理本局。
+
+`/myriad start` 在装有模组的客户端会打开管理界面；服务器控制台中的 `myriad start` 则直接请求随机分队开局。控制台命令省略开头的 `/`。
+
+### 常用操作
+
+| 操作 | 默认键或入口 |
+| --- | --- |
+| 个人信息、技能学习、属性与补给 | `C` |
+| 商店 | `P` 或 `/myriad shop` |
+| 回城 | `B` |
+| 技能键 | 默认未绑定，需在控制设置中指定 |
+| 需要选点的技能 | 进入选点后，鼠标左键确认、右键取消 |
+| HUD / 小地图位置 | `/myriad hud` / `/myriad minimap` |
+| 当前对局状态 / 结算 | `/myriad status` / `/myriad results` |
+
+按键可以重绑，角色的特殊输入以技能说明为准。若界面没有同步数据，先确认服务器也安装了匹配版本的万象，且玩法已开启。
+
+## 地图与存档
+
+地图由地形和点位配置共同组成，需要服主单独准备。管理员可在主世界、对局尚未开始时，用 `/myriad settings` 打开设置，再进入地图设施编辑器，在实际位置设置设施和边界。
+
+两种模式保留独立的五份配置：
+
+- `myriad_lane_layout.json`：兵线路径、塔、泉水与水晶。
+- `myriad_brush_zones.json`：草丛范围。
+- `myriad_monster_spawns.json`：野怪与首领营地。
+- `myriad_vein_spawns.json`：资源点候选。
+- `myriad_minimap.json`：小地图边界。
+
+5v5 配置位于世界根目录；3v3 位于 `myriad_arenas/3v3/`。`myriad_lobby.json` 为两模式共享大厅，`myriad_arena_selection.json` 保存模式选择。编辑后正常停止服务器，重启并核对点位、模式及设施。
+
+沿用旧地图时，在备份副本中导入地图配置，按配置重建新设施，并核对地形和通行空间。**不支持导入 NeoForge 旧玩家等级、金币、角色、技能、旧个人 HUD 或旧 `myriad_match.json` 检查点**，也不要通过旧实体继续旧局。Fabric 玩家状态、个人 HUD 与对局使用独立数据。
+
+独立服务器保留新版本的对局检查点恢复功能；单人/LAN 世界由主持人保存退出后结束本局，重新打开不会续局。需要回退时，恢复匹配的加载器、模组、世界和配置整份备份。
+
+## 开发与构建
+
+使用 JDK 25，在仓库根目录执行。Gradle Wrapper 已固定为 9.7.0，Loom 为 1.18.4；版本声明见 [gradle.properties](gradle.properties) 与 [build.gradle](build.gradle)。
+
+macOS / Linux：
+
+```sh
+java -version
+bash ./gradlew build
+```
+
+Windows PowerShell：
+
+```powershell
+java -version
+.\gradlew.bat build
+```
+
+首次构建需要联网获取依赖。主包输出为 `build/libs/myriad-0.1.0.jar`，构建完成后可手动放入游戏或服务器的 `mods/`。
+
+开发运行入口：
+
+| 用途 | macOS / Linux | Windows PowerShell |
+| --- | --- | --- |
+| 启动客户端 | `bash ./gradlew runClient` | `.\gradlew.bat runClient` |
+| 启动独立服务器 | `bash ./gradlew runServer` | `.\gradlew.bat runServer` |
+
+开发客户端和服务器分别使用项目目录下的 `run-fabric-client/`、`run-fabric-server/`。服务端仍需确认 EULA 并配置端口、白名单与管理员。
+
+[GitHub Build](.github/workflows/build.yml) 在 push 和 pull request 时使用 JDK 25 执行构建，不自动运行游戏内测试、上传 JAR 附件或创建 Release。
+
+## 参与项目
+
+欢迎通过 [GitHub Issues](https://github.com/xOyMoveO/MYRIAD/issues) 反馈问题或提出建议。报告问题时，请附上 Minecraft、Fabric Loader、Fabric API 与万象版本，说明复现步骤、预期行为和实际结果；涉及界面或战斗表现时，可补充截图或录屏。
+
+代码修改请使用独立分支并提交 Pull Request。主要目录：
+
+| 路径 | 内容 |
+| --- | --- |
+| [src/main/java/com/myriad](src/main/java/com/myriad/) | 角色、战斗、对局、地图、网络与客户端代码 |
+| [src/main/resources](src/main/resources/) | 模组声明、语言、模型、纹理、音效与技能定义 |
+| [GLOSSARY.md](GLOSSARY.md) | 技能分支、缓时、战术锚点等领域术语 |
+
+## 许可
+
+万象自有代码采用 [MIT 许可证](LICENSE)。原创模型、贴图和音频保留所有权利，具体范围见[许可范围说明](src/main/resources/META-INF/LICENSE-SCOPE.txt)。第三方代码和素材分别遵循其原许可证，详见[第三方许可与素材来源](src/main/resources/META-INF/licenses/)。

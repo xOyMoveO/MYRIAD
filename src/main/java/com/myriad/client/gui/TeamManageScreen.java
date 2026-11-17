@@ -1,4 +1,5 @@
 package com.myriad.client.gui;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -6,7 +7,7 @@ import java.util.Map;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import com.myriad.network.Packets;
 
 import com.myriad.network.NetworkSetup;
 
@@ -32,7 +33,7 @@ public class TeamManageScreen extends Screen {
 
     public TeamManageScreen() {
         super(Component.translatable("screen.myriad.team.title"));
-        ClientPacketDistributor.sendToServer(new NetworkSetup.RequestTeamListPayload());
+        Packets.sendToServer(new NetworkSetup.RequestTeamListPayload());
     }
 
     /** 网络包回调（主线程）：刷新玩家列表 */
@@ -67,14 +68,14 @@ public class TeamManageScreen extends Screen {
         // 顶部操作按钮
         addRenderableWidget(Button.builder(
                         Component.translatable("screen.myriad.team.random"), btn -> {
-                            ClientPacketDistributor.sendToServer(new NetworkSetup.StartMatchPayload(0, arenaId));
+                            Packets.sendToServer(new NetworkSetup.StartMatchPayload(0, arenaId));
                             this.onClose();
                         })
                 .bounds(centerX - listW / 2, 56, 120, 20)
                 .build()).active = ready && !selecting;
         addRenderableWidget(Button.builder(
                         Component.translatable("screen.myriad.team.start"), btn -> {
-                            ClientPacketDistributor.sendToServer(new NetworkSetup.StartMatchPayload(1, arenaId));
+                            Packets.sendToServer(new NetworkSetup.StartMatchPayload(1, arenaId));
                             this.onClose();
                         })
                 .bounds(centerX + 20, 56, 120, 20)
@@ -102,17 +103,17 @@ public class TeamManageScreen extends Screen {
                     .bounds(listX, y, listW - 150, 18)
                     .build());
             addRenderableWidget(Button.builder(Component.translatable("faction.myriad.xuanxiao"), btn -> {
-                        ClientPacketDistributor.sendToServer(new NetworkSetup.SetTeamPayload(name, 1));
+                        Packets.sendToServer(new NetworkSetup.SetTeamPayload(name, 1));
                     })
                     .bounds(listX + listW - 146, y, 48, 18)
                     .build());
             addRenderableWidget(Button.builder(Component.translatable("faction.myriad.youming"), btn -> {
-                        ClientPacketDistributor.sendToServer(new NetworkSetup.SetTeamPayload(name, 2));
+                        Packets.sendToServer(new NetworkSetup.SetTeamPayload(name, 2));
                     })
                     .bounds(listX + listW - 94, y, 48, 18)
                     .build());
             addRenderableWidget(Button.builder(Component.translatable("screen.myriad.team.clear"), btn -> {
-                        ClientPacketDistributor.sendToServer(new NetworkSetup.SetTeamPayload(name, 0));
+                        Packets.sendToServer(new NetworkSetup.SetTeamPayload(name, 0));
                     })
                     .bounds(listX + listW - 42, y, 42, 18)
                     .build());
@@ -123,7 +124,7 @@ public class TeamManageScreen extends Screen {
     private void selectArena(String id) {
         selecting = true;
         rebuild();
-        ClientPacketDistributor.sendToServer(new NetworkSetup.SelectArenaPayload(id));
+        Packets.sendToServer(new NetworkSetup.SelectArenaPayload(id));
     }
 
     private void rebuild() {
@@ -157,7 +158,7 @@ public class TeamManageScreen extends Screen {
 
     @Override
     public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
-        if (event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
+        if (event.key() == InputConstants.KEY_ESCAPE) {
             onClose();
             return true;
         }

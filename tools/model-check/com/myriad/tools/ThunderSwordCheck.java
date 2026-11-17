@@ -9,7 +9,7 @@ import net.minecraft.client.resources.model.cuboid.*;
 import net.minecraft.world.item.ItemDisplayContext;
 import org.joml.Vector3f;
 
-/** Real 26.2 item parser and hand matrices; source, seven contexts and atlas validation. */
+/** Current Minecraft item parser and hand matrices; source, seven contexts and atlas validation. */
 public final class ThunderSwordCheck {
     static void require(boolean ok,String reason){if(!ok)throw new IllegalStateException(reason);}
     public static void main(String[] args)throws Exception{
@@ -23,7 +23,7 @@ public final class ThunderSwordCheck {
         require(elements.size()==169&&parts.size()==169,"All 169 V2 source cuboids retained");
         for(int i=0;i<parts.size();i++){
             var p=parts.get(i).getAsJsonObject();var e=elements.get(i).getAsJsonObject();
-            var cube=CuboidModel.GSON.fromJson(e,CuboidModelElement.class);
+            var cube=MinecraftModelParser.element(e);
             for(int axis=0;axis<3;axis++){
                 float from=cube.from().get(axis),to=cube.to().get(axis);
                 require(from<to&&from>=-16&&to<=32,"Positive cuboid dimensions in vanilla bounds: "+p.get("id"));
@@ -48,23 +48,23 @@ public final class ThunderSwordCheck {
         var connected=new HashSet<Integer>();connected.add(0);
         boolean changed=true;while(changed){changed=false;
             for(int i=0;i<elements.size();i++)if(!connected.contains(i)){
-                var a=CuboidModel.GSON.fromJson(elements.get(i),CuboidModelElement.class);
+                var a=MinecraftModelParser.element(elements.get(i));
                 for(int j:new ArrayList<>(connected)){
-                    var b=CuboidModel.GSON.fromJson(elements.get(j),CuboidModelElement.class);boolean touch=true;
+                    var b=MinecraftModelParser.element(elements.get(j));boolean touch=true;
                     for(int axis=0;axis<3;axis++)touch&=a.from().get(axis)<=b.to().get(axis)+1E-6&&b.from().get(axis)<=a.to().get(axis)+1E-6;
                     if(touch){connected.add(i);changed=true;break;}
                 }
             }
         }
         require(connected.size()==169,"Every layer and tassel strand physically touches the sword, no floating guard plates");
-        var grip=CuboidModel.GSON.fromJson(elements.get(0),CuboidModelElement.class);
+        var grip=MinecraftModelParser.element(elements.get(0));
         require(Math.abs(grip.to().x()-grip.from().x()-.8125)<1E-6&&Math.abs(grip.to().z()-grip.from().z()-.625)<1E-6,"Grip width -35%, depth -50%; length/centre preserved");
         for(var raw:elements){var e=raw.getAsJsonObject();if(e.get("name").getAsString().equals("blade_0")){
-            var cube=CuboidModel.GSON.fromJson(e,CuboidModelElement.class);
+            var cube=MinecraftModelParser.element(e);
             require(Math.abs(cube.to().z()-cube.from().z()-.125)<1E-6,"Steel blade core depth is one third of V1");
         }}
         try(var r=Files.newBufferedReader(assets.resolve("models/item/leitingjian.json"))){
-            var model=CuboidModel.fromStream(r);require(model.geometry()!=null,"MC26.2 accepts complete geometry");
+            var model=CuboidModel.fromStream(r);require(model.geometry()!=null,"current Minecraft accepts complete geometry");
             for(var context:List.of(ItemDisplayContext.FIRST_PERSON_RIGHT_HAND,ItemDisplayContext.FIRST_PERSON_LEFT_HAND,
                     ItemDisplayContext.THIRD_PERSON_RIGHT_HAND,ItemDisplayContext.THIRD_PERSON_LEFT_HAND,
                     ItemDisplayContext.GUI,ItemDisplayContext.GROUND,ItemDisplayContext.FIXED)){
@@ -88,6 +88,6 @@ public final class ThunderSwordCheck {
                 }
             }
         }
-        System.out.println("[MYRIAD-THUNDER-SWORD] PASS: MC26.2 actual item parser, 169 connected positive V2 source cubes, nine clean material regions, slim blade/grip, 256px atlas/UV, seven displays, centred +Y grip, no negative scales, existing LEITINGJIAN binding");
+        System.out.println("[MYRIAD-THUNDER-SWORD] PASS: current Minecraft actual item parser, 169 connected positive V2 source cubes, nine clean material regions, slim blade/grip, 256px atlas/UV, seven displays, centred +Y grip, no negative scales, existing LEITINGJIAN binding");
     }
 }

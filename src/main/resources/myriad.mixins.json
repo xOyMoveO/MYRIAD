@@ -9,15 +9,29 @@
     "LivingEntityMaxHealthMixin",
     "LivingEntityControlMixin",
     "LivingAttackTimeMixin",
-    "ArrowActionTimeMixin"
+    "ArrowActionTimeMixin",
+    "ServerPlayerTickMixin",
+    "ServerDamageMixin",
+    "PlayerNameMixin",
+    "PlayerDropMixin",
+    "PlayerSwapMixin",
+    "PlayerDamageMixin",
+    "ServerConnectionTickMixin"
   ],
   "client": [
     "ClientInputAccessor",
-    "ClientEntitySpawnMixin",
     "PlayerTabOverlayMixin",
     "ShuoHeldLightMixin",
     "ClientAttackTimeMixin",
-    "YikeArmPoseMixin"
+    "YikeArmPoseMixin",
+    "MyriadKeyboardMixin",
+    "MyriadMouseMixin",
+    "MyriadMinecraftClientMixin",
+    "MyriadLocalPlayerMixin",
+    "MyriadHandRendererMixin",
+    "MyriadCameraMixin",
+    "MyriadLivingRendererMixin",
+    "MyriadNameTagMixin"
   ],
   "injectors": {
     "defaultRequire": 1

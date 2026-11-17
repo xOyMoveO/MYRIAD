@@ -1,0 +1,1 @@
+{"stage":"read","arena":"5v5","dedicated":true,"passed":true,"checks":["5v5: actual dedicated restart restores selected arena, enabled flag and PLAYING checkpoint","5v5: actual restart restores the active map facilities and monsters exactly once","5v5: reconnected fixture identities retain their new match factions","5v5: off after restart removes restored map runtime"]}

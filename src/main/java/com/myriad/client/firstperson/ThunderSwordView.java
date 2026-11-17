@@ -14,8 +14,8 @@ import net.minecraft.world.entity.player.PlayerModelPart;
 import net.minecraft.world.entity.player.PlayerModelType;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.phys.HitResult;
-import net.neoforged.neoforge.client.event.InputEvent;
-import net.neoforged.neoforge.client.event.RenderHandEvent;
+import com.myriad.client.platform.AttackInput;
+import com.myriad.client.platform.HandRenderContext;
 
 /** Tianxing-only own-camera cosmetics; vanilla input and authoritative damage remain untouched. */
 public final class ThunderSwordView {
@@ -57,14 +57,14 @@ public final class ThunderSwordView {
         if(busy(mc))MOTION.reset();
     }
     /** Observe an unconsumed, recovered vanilla attack; never cancel or send an attack request. */
-    public static void onAttack(InputEvent.InteractionKeyMappingTriggered event){
+    public static void onAttack(AttackInput event){
         var mc=Minecraft.getInstance();
         if(!event.isAttack()||event.isCanceled()||!event.shouldSwingHand()||!enabled(mc)||busy(mc)
                 ||mc.player.getAttackStrengthScale(.5f)<1)return;
         if(mc.hitResult!=null&&mc.hitResult.getType()==HitResult.Type.BLOCK)return;
         checkOwner(mc);if(SKILL.active(mc.player.tickCount))return;MOTION.attack(mc.player.tickCount,mc.player.getCurrentItemAttackStrengthDelay());
     }
-    public static boolean render(RenderHandEvent event){
+    public static boolean render(HandRenderContext event){
         var mc=Minecraft.getInstance();
         if(!enabled(mc)){reset();return false;}
         if(event.isCanceled())return false;
@@ -87,7 +87,7 @@ public final class ThunderSwordView {
             stack.pushPose();try{
                 stack.mulPose(gesture?ThunderSkillRig.blade(skill,left):ThunderSwordRig.blade(frame,left));
                 // NONE prevents a second application of item display offsets after the palm attachment.
-                if(!gesture||skill.showBlade())mc.getEntityRenderDispatcher().getItemInHandRenderer().renderItem(mc.player,event.getItemStack(),
+                if(!gesture||skill.showBlade())com.myriad.client.platform.ClientItemRenderer.submit(mc.player,event.getItemStack(),
                         ItemDisplayContext.NONE,stack,event.getSubmitNodeCollector(),event.getPackedLight());
                 if(gesture&&skill.showBlade())ThunderSkillHandRenderer.submit(event,stack,ThunderSkillHandVfx.blade(skill,now));
             }finally{stack.popPose();}
@@ -99,7 +99,7 @@ public final class ThunderSwordView {
         if(!gesture&&!busy(mc))AttackTrailRenderer.submit(event,ThunderBasicTrail.mesh(MOTION,now,left,event.getEquipProgress()));
         event.setCanceled(true);return true;
     }
-    private static void submitArm(RenderHandEvent event,PoseStack stack,Minecraft mc,boolean slim,boolean left){
+    private static void submitArm(HandRenderContext event,PoseStack stack,Minecraft mc,boolean slim,boolean left){
         // Private copies of the tested vanilla skin mesh: never mutate shared third-person player parts.
         if(slim&&slimRoot==null)slimRoot=NightDaggerArmModel.bake(true);
         if(!slim&&wideRoot==null)wideRoot=NightDaggerArmModel.bake(false);

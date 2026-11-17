@@ -1,0 +1,314 @@
+{
+  "enabledLanes": [
+    "top",
+    "mid",
+    "bottom"
+  ],
+  "towerTiers": [
+    1,
+    2,
+    3
+  ],
+  "paths": {
+    "top": [
+      {
+        "x": 16,
+        "y": 64,
+        "z": 24,
+        "slot": 1
+      },
+      {
+        "x": 40,
+        "y": 64,
+        "z": 24,
+        "slot": 2
+      },
+      {
+        "x": 64,
+        "y": 64,
+        "z": 24,
+        "slot": 3
+      },
+      {
+        "x": 96,
+        "y": 64,
+        "z": 24,
+        "slot": 4
+      },
+      {
+        "x": 120,
+        "y": 64,
+        "z": 24,
+        "slot": 5
+      },
+      {
+        "x": 144,
+        "y": 64,
+        "z": 24,
+        "slot": 6
+      }
+    ],
+    "mid": [
+      {
+        "x": 16,
+        "y": 64,
+        "z": 64,
+        "slot": 1
+      },
+      {
+        "x": 40,
+        "y": 64,
+        "z": 64,
+        "slot": 2
+      },
+      {
+        "x": 64,
+        "y": 64,
+        "z": 64,
+        "slot": 3
+      },
+      {
+        "x": 96,
+        "y": 64,
+        "z": 64,
+        "slot": 4
+      },
+      {
+        "x": 120,
+        "y": 64,
+        "z": 64,
+        "slot": 5
+      },
+      {
+        "x": 144,
+        "y": 64,
+        "z": 64,
+        "slot": 6
+      }
+    ],
+    "bottom": [
+      {
+        "x": 16,
+        "y": 64,
+        "z": 104,
+        "slot": 1
+      },
+      {
+        "x": 40,
+        "y": 64,
+        "z": 104,
+        "slot": 2
+      },
+      {
+        "x": 64,
+        "y": 64,
+        "z": 104,
+        "slot": 3
+      },
+      {
+        "x": 96,
+        "y": 64,
+        "z": 104,
+        "slot": 4
+      },
+      {
+        "x": 120,
+        "y": 64,
+        "z": 104,
+        "slot": 5
+      },
+      {
+        "x": 144,
+        "y": 64,
+        "z": 104,
+        "slot": 6
+      }
+    ]
+  },
+  "laneCorners": {
+    "top": {
+      "x": 80,
+      "y": 64,
+      "z": 24
+    },
+    "bottom": {
+      "x": 80,
+      "y": 64,
+      "z": 104
+    }
+  },
+  "towers": [
+    {
+      "x": 64,
+      "y": 64,
+      "z": 24,
+      "faction": "xuanxiao",
+      "lane": "top",
+      "tier": 1
+    },
+    {
+      "x": 40,
+      "y": 64,
+      "z": 24,
+      "faction": "xuanxiao",
+      "lane": "top",
+      "tier": 2
+    },
+    {
+      "x": 16,
+      "y": 64,
+      "z": 24,
+      "faction": "xuanxiao",
+      "lane": "top",
+      "tier": 3
+    },
+    {
+      "x": 64,
+      "y": 64,
+      "z": 64,
+      "faction": "xuanxiao",
+      "lane": "mid",
+      "tier": 1
+    },
+    {
+      "x": 40,
+      "y": 64,
+      "z": 64,
+      "faction": "xuanxiao",
+      "lane": "mid",
+      "tier": 2
+    },
+    {
+      "x": 16,
+      "y": 64,
+      "z": 64,
+      "faction": "xuanxiao",
+      "lane": "mid",
+      "tier": 3
+    },
+    {
+      "x": 64,
+      "y": 64,
+      "z": 104,
+      "faction": "xuanxiao",
+      "lane": "bottom",
+      "tier": 1
+    },
+    {
+      "x": 40,
+      "y": 64,
+      "z": 104,
+      "faction": "xuanxiao",
+      "lane": "bottom",
+      "tier": 2
+    },
+    {
+      "x": 16,
+      "y": 64,
+      "z": 104,
+      "faction": "xuanxiao",
+      "lane": "bottom",
+      "tier": 3
+    },
+    {
+      "x": 96,
+      "y": 64,
+      "z": 24,
+      "faction": "youming",
+      "lane": "top",
+      "tier": 1
+    },
+    {
+      "x": 120,
+      "y": 64,
+      "z": 24,
+      "faction": "youming",
+      "lane": "top",
+      "tier": 2
+    },
+    {
+      "x": 144,
+      "y": 64,
+      "z": 24,
+      "faction": "youming",
+      "lane": "top",
+      "tier": 3
+    },
+    {
+      "x": 96,
+      "y": 64,
+      "z": 64,
+      "faction": "youming",
+      "lane": "mid",
+      "tier": 1
+    },
+    {
+      "x": 120,
+      "y": 64,
+      "z": 64,
+      "faction": "youming",
+      "lane": "mid",
+      "tier": 2
+    },
+    {
+      "x": 144,
+      "y": 64,
+      "z": 64,
+      "faction": "youming",
+      "lane": "mid",
+      "tier": 3
+    },
+    {
+      "x": 96,
+      "y": 64,
+      "z": 104,
+      "faction": "youming",
+      "lane": "bottom",
+      "tier": 1
+    },
+    {
+      "x": 120,
+      "y": 64,
+      "z": 104,
+      "faction": "youming",
+      "lane": "bottom",
+      "tier": 2
+    },
+    {
+      "x": 144,
+      "y": 64,
+      "z": 104,
+      "faction": "youming",
+      "lane": "bottom",
+      "tier": 3
+    }
+  ],
+  "fountains": [
+    {
+      "x": 8,
+      "y": 64,
+      "z": 72,
+      "faction": "xuanxiao"
+    },
+    {
+      "x": 152,
+      "y": 64,
+      "z": 72,
+      "faction": "youming"
+    }
+  ],
+  "crystals": [
+    {
+      "x": 8,
+      "y": 64,
+      "z": 56,
+      "faction": "xuanxiao"
+    },
+    {
+      "x": 152,
+      "y": 64,
+      "z": 56,
+      "faction": "youming"
+    }
+  ]
+}

@@ -1,10 +1,11 @@
 package com.myriad.client.gui;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import com.myriad.network.Packets;
 
 import com.myriad.client.ClientDataHolder;
 import com.myriad.network.NetworkSetup;
@@ -35,13 +36,13 @@ public class TrainScreen extends Screen {
 
         addRenderableWidget(Button.builder(
                         Component.translatable("screen.myriad.train.level"), btn ->
-                                ClientPacketDistributor.sendToServer(
+                                Packets.sendToServer(
                                         new NetworkSetup.TrainActionPayload("level", false)))
                 .bounds(x, y, w, 20).build());
         y += rowH;
         addRenderableWidget(Button.builder(
                         Component.translatable("screen.myriad.train.gold"), btn ->
-                                ClientPacketDistributor.sendToServer(
+                                Packets.sendToServer(
                                         new NetworkSetup.TrainActionPayload("gold", true)))
                 .bounds(x, y, w, 20).build());
         y += rowH;
@@ -50,32 +51,32 @@ public class TrainScreen extends Screen {
         xuanxiaoBtn = addRenderableWidget(Button.builder(
                         factionLabel("screen.myriad.train.faction_xuanxiao",
                                 ClientDataHolder.faction() == com.myriad.game.Faction.XUANXIAO), btn ->
-                                ClientPacketDistributor.sendToServer(
+                                Packets.sendToServer(
                                         new NetworkSetup.TrainActionPayload("faction_xuanxiao", true)))
                 .bounds(x, y, factionWidth, 20).build());
         youmingBtn = addRenderableWidget(Button.builder(
                         factionLabel("screen.myriad.train.faction_youming",
                                 ClientDataHolder.faction() == com.myriad.game.Faction.YOUMING), btn ->
-                                ClientPacketDistributor.sendToServer(
+                                Packets.sendToServer(
                                         new NetworkSetup.TrainActionPayload("faction_youming", true)))
                 .bounds(x + factionWidth + factionGap, y, factionWidth, 20).build());
         y += rowH + 8;
         // 开关：无冷却 / 无限金币 / 无限蓝（每 tick 实时刷新状态）
         Button cdBtn = addRenderableWidget(Button.builder(
                         toggleLabel("screen.myriad.train.nocooldown", ClientDataHolder.noCooldown()), btn ->
-                                ClientPacketDistributor.sendToServer(new NetworkSetup.TrainActionPayload(
+                                Packets.sendToServer(new NetworkSetup.TrainActionPayload(
                                         "nocooldown", !ClientDataHolder.noCooldown())))
                 .bounds(x, y, w, 20).build());
         y += rowH;
         Button goldBtn = addRenderableWidget(Button.builder(
                         toggleLabel("screen.myriad.train.nogold", ClientDataHolder.noGoldCost()), btn ->
-                                ClientPacketDistributor.sendToServer(new NetworkSetup.TrainActionPayload(
+                                Packets.sendToServer(new NetworkSetup.TrainActionPayload(
                                         "nogold", !ClientDataHolder.noGoldCost())))
                 .bounds(x, y, w, 20).build());
         y += rowH;
         Button manaBtn = addRenderableWidget(Button.builder(
                         toggleLabel("screen.myriad.train.nomana", ClientDataHolder.noMana()), btn ->
-                                ClientPacketDistributor.sendToServer(new NetworkSetup.TrainActionPayload(
+                                Packets.sendToServer(new NetworkSetup.TrainActionPayload(
                                         "nomana", !ClientDataHolder.noMana())))
                 .bounds(x, y, w, 20).build());
         this.cdBtn = cdBtn;
@@ -139,7 +140,7 @@ public class TrainScreen extends Screen {
 
     @Override
     public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
-        if (event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
+        if (event.key() == InputConstants.KEY_ESCAPE) {
             onClose();
             return true;
         }

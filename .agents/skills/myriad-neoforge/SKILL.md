@@ -1,11 +1,13 @@
 ---
 name: myriad-neoforge
-description: "开发、调试和验证《万象》（MYRIAD，原仙凡劫）NeoForge 模组的角色技能、玩法、网络同步、界面、分层特效、资源与平衡调整。适用于本项目及其开发规范维护，不用于其他 Minecraft 项目。"
+description: "开发、调试和验证《万象》（MYRIAD，原仙凡劫）Fabric 模组的角色技能、玩法、网络同步、界面、分层特效、资源与平衡调整。适用于本项目及其开发规范维护，不用于其他 Minecraft 项目。"
 ---
 
-# 万象（MYRIAD）NeoForge 开发规范
+# 万象（MYRIAD）Fabric 开发规范
 
-工程根目录为包含 `AGENTS.md`、`gradle.properties` 与 Gradle Wrapper 的当前检出目录；本文项目路径均相对该根目录。先读取 `AGENTS.md` 与 `docs/agents/domain.md`，再按其指引阅读 `docs/协作开发与内部命名.md` 及相关源码。Minecraft、NeoForge、Java 与模组版本以当前构建配置为准，不直接套用旧版接口。
+工程根目录为包含 `AGENTS.md`、`gradle.properties` 与 Gradle Wrapper 的当前检出目录；本文项目路径均相对该根目录。先读取 `AGENTS.md` 与 `docs/agents/domain.md`，再按其指引阅读 `docs/协作开发与内部命名.md` 及相关源码。Minecraft、Fabric Loader/API、Java 与模组版本以当前构建配置为准，不直接套用旧版接口。
+
+当前仅维护 Fabric / Minecraft 26.3，构建与专项入口见 `docs/fabric/README.md`。技能目录名 `myriad-neoforge` 是已有调用别名，不表示继续维护 NeoForge 版本。
 
 ## 名称与角色方向
 
@@ -76,9 +78,9 @@ description: "开发、调试和验证《万象》（MYRIAD，原仙凡劫）Neo
 ## 验证、记录与交付
 
 1. 追踪状态→服务端校验→效果→同步→客户端显示；持久状态另测保存、克隆/重连和清理。
-2. 修改代码通常在项目根执行 `bash ./gradlew build`（Windows 使用 `.\gradlew.bat build`）；角色技能相关优先跑隔离的 `runFirstGroupTestServer`，选点/motion覆盖当前空间验证入口。资源新增补齐模型/贴图/语言/声音定义和注册。只改技能说明或策划无需构建游戏。
+2. 修改代码通常在项目根执行 `bash ./gradlew build`（Windows 使用 `.\gradlew.bat build`）；角色技能相关优先跑 `runGameTestServer -PmyriadGameTests -PgameTestFilter=myriad:first_group`；各专项独立JVM串行执行，选点/motion覆盖当前空间验证入口。资源新增补齐模型/贴图/语言/声音定义和注册。只改技能说明或策划无需构建游戏。
 3. Java 工具链和 Gradle 缓存须检查当前环境；仅在依赖已缓存时使用 `--offline`。不依赖作者机器上的外部 init 脚本，也不擅自改变工程工具链。
-4. 专项通过不等于全量通过、客户端画面、延迟手感或实战平衡验收。地图专项可能需要外部世界 fixture；以当前配置和可用材料为准，只报告实际跑过的结果，不为了绿灯关闭无关断言。
+4. 专项通过不等于全量通过、客户端画面、延迟手感或实战平衡验收。地图专项使用仓库合成 fixture，见 `docs/fabric/arena-fixture.md`；原图及其副本与原图整局交给人操作。真实联机至少独立服务器加两个真实客户端，分别记录正式输入和权威结果；全部视觉、听感、手感、流畅性和平衡结论保持人工待验，收到人的明确结论后再更新。
 5. 网络新增/变更需处理协议和双端一致性，协议版本以源码为准。分别核对 JAR 内容、构建时间和安装状态。部署遵守根目录 `AGENTS.md` 的当前授权与身份迁移安全例外；从已确认配置获取实例与备份目录，检查运行状态、备份及 SHA256，不停止用户游戏。
 6. 已完成的玩法、平衡、UI、音效、视觉或内容更新，按根目录 `AGENTS.md` 及仓库既有日志约定追加当天玩家可读条目，保留历史；外部日志不可访问时如实报告待同步。写清玩家能感知的变化与未验收范围，不用内部类名代替更新说明。
 7. 系统或角色状态有实质变化时同步仓库相关交接和状态文档；外部状态文档按已确认位置访问，不可访问时报告待同步。策划与实现分开标注，原始策划未经要求不覆盖。仅规范维护写开发记录，不假称发生游戏更新。

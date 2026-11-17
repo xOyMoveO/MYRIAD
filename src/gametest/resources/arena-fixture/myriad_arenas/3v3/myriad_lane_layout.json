@@ -1,0 +1,112 @@
+{
+  "enabledLanes": [
+    "mid"
+  ],
+  "towerTiers": [
+    1,
+    2
+  ],
+  "paths": {
+    "mid": [
+      {
+        "x": 272,
+        "y": 64,
+        "z": 64,
+        "slot": 1
+      },
+      {
+        "x": 296,
+        "y": 64,
+        "z": 64,
+        "slot": 2
+      },
+      {
+        "x": 320,
+        "y": 64,
+        "z": 64,
+        "slot": 3
+      },
+      {
+        "x": 352,
+        "y": 64,
+        "z": 64,
+        "slot": 4
+      },
+      {
+        "x": 376,
+        "y": 64,
+        "z": 64,
+        "slot": 5
+      },
+      {
+        "x": 400,
+        "y": 64,
+        "z": 64,
+        "slot": 6
+      }
+    ]
+  },
+  "laneCorners": {},
+  "towers": [
+    {
+      "x": 320,
+      "y": 64,
+      "z": 64,
+      "faction": "xuanxiao",
+      "lane": "mid",
+      "tier": 1
+    },
+    {
+      "x": 296,
+      "y": 64,
+      "z": 64,
+      "faction": "xuanxiao",
+      "lane": "mid",
+      "tier": 2
+    },
+    {
+      "x": 352,
+      "y": 64,
+      "z": 64,
+      "faction": "youming",
+      "lane": "mid",
+      "tier": 1
+    },
+    {
+      "x": 376,
+      "y": 64,
+      "z": 64,
+      "faction": "youming",
+      "lane": "mid",
+      "tier": 2
+    }
+  ],
+  "fountains": [
+    {
+      "x": 264,
+      "y": 64,
+      "z": 72,
+      "faction": "xuanxiao"
+    },
+    {
+      "x": 408,
+      "y": 64,
+      "z": 72,
+      "faction": "youming"
+    }
+  ],
+  "crystals": [
+    {
+      "x": 264,
+      "y": 64,
+      "z": 56,
+      "faction": "xuanxiao"
+    },
+    {
+      "x": 408,
+      "y": 64,
+      "z": 56,
+      "faction": "youming"
+    }
+  ]
+}

@@ -3,7 +3,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
-const configPath = resolve(root, 'run-mcpfabric/config/mcpfabric.config.json');
+const runDirectory = resolve(root, process.env.MYRIAD_MCP_RUN_DIR ?? 'run-fabric-client');
+const configPath = resolve(runDirectory, 'config/mcpfabric.config.json');
 const config = JSON.parse(readFileSync(configPath, 'utf8'));
 if (config.host !== '127.0.0.1' || config.requireAuth !== true || !config.token) {
   throw new Error('The project bridge must use 127.0.0.1 and bearer authentication.');
@@ -20,4 +21,4 @@ process.env.MCPFABRIC_SCRIPTS = 'true';
 process.env.MCPFABRIC_CHANNEL = 'false';
 mkdirSync(process.env.MCPFABRIC_DATA_DIR, { recursive: true });
 process.chdir(root);
-await import(pathToFileURL(resolve(root, 'tools/mcpfabric/node_modules/mcpfabric-mcp-server/dist/index.js')).href);
+await import(pathToFileURL(resolve(process.env.MYRIAD_MCP_NODE_MODULES ?? resolve(root, 'tools/mcpfabric/node_modules'), 'mcpfabric-mcp-server/dist/index.js')).href);

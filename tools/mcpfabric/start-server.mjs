@@ -8,7 +8,8 @@ import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
-const config = JSON.parse(readFileSync(resolve(root, 'run-mcpfabric/config/mcpfabric.config.json'), 'utf8'));
+const runDirectory = resolve(root, process.env.MYRIAD_MCP_RUN_DIR ?? 'run-fabric-client');
+const config = JSON.parse(readFileSync(resolve(runDirectory, 'config/mcpfabric.config.json'), 'utf8'));
 if (config.host !== '127.0.0.1' || config.requireAuth !== true || !config.token) {
   throw new Error('The project bridge must use 127.0.0.1 and bearer authentication.');
 }
@@ -32,7 +33,7 @@ const tools = [
 
 const upstream = new Client({ name: 'myriad-mcpfabric-proxy', version: '1.0.0' });
 await upstream.connect(new StdioClientTransport({
-  command: process.execPath, args: [resolve(root, 'tools/mcpfabric/upstream-server.mjs')], cwd: root, stderr: 'inherit',
+  command: process.execPath, args: [resolve(root, 'tools/mcpfabric/upstream-server.mjs')], cwd: root, stderr: 'inherit', env: process.env,
 }));
 const server = new Server({ name: 'myriad-mcpfabric', version: '1.0.0' }, {
   capabilities: { tools: {} },

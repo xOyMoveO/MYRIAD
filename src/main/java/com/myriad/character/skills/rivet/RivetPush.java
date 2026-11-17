@@ -12,7 +12,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.myriad.network.Packets;
 import java.util.*;
 
 /** A short horizontal impulse with actual collision-shape contact and vanilla-sized step clearance. */
@@ -196,17 +196,17 @@ public final class RivetPush {
             target.move(net.minecraft.world.entity.MoverType.SELF, velocity);
             target.setDeltaMovement(Vec3.ZERO);
         } else target.setDeltaMovement(velocity);
-        target.hurtMarked = true;
+        target.syncVelocity=true;
         target.resetFallDistance();
-        if (target instanceof ServerPlayer player) PacketDistributor.sendToPlayer(player,
+        if (target instanceof ServerPlayer player) Packets.sendToPlayer(player,
                 new AbilityMotionPayload((float) velocity.x, (float) velocity.y, (float) velocity.z,
                         destination.x, destination.y, destination.z, 2));
     }
     private static void stop(LivingEntity target) {
         Vec3 v = new Vec3(0, target.getDeltaMovement().y, 0);
         target.setDeltaMovement(v);
-        target.hurtMarked = true;
-        if (target instanceof ServerPlayer player) PacketDistributor.sendToPlayer(player,
+        target.syncVelocity=true;
+        if (target instanceof ServerPlayer player) Packets.sendToPlayer(player,
                 new NetworkSetup.DashPayload(0, (float) v.y, 0, -1));
     }
     private static void root(AbilityRuntime.Cast c, LivingEntity target, int ticks) {

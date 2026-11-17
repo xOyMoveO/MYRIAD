@@ -3,7 +3,7 @@ package com.myriad.character.skills.tianxing.rework;
 import com.myriad.character.ability.*;
 import com.myriad.character.ability.AbilityRuntime.Cast;
 import com.myriad.network.ThunderSkillViewPayload;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.myriad.network.Packets;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** Role-owned first-person cue scheduling. Gameplay still belongs to each separate skill. */
@@ -14,7 +14,7 @@ public final class ThunderSkillPresentation {
         int token=SEQUENCE.updateAndGet(n->n==Integer.MAX_VALUE?1:n+1);play(c,action,ticks,token);return token;
     }
     public static void play(Cast c,int action,int ticks,int token){
-        PacketDistributor.sendToPlayer(c.player,new ThunderSkillViewPayload(action,ticks,c.now(),token));
+        Packets.sendToPlayer(c.player,new ThunderSkillViewPayload(action,ticks,c.now(),token));
     }
     /** Same interruptible charge/lock as existing skills; the completion cue is never predicted. */
     public static void charged(Cast c,int ticks,int ready,int fire,Runnable release){

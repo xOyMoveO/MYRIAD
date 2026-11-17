@@ -19,7 +19,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.*;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.*;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.myriad.network.Packets;
 import java.util.*;
 import java.util.function.*;
 
@@ -66,7 +66,7 @@ public final class AbilityRuntime {
     }
     public static void clear(ServerPlayer p){AbilityVisuals.cancel(p);
         com.myriad.combat.MagicBullet.clearFor(p.getUUID());
-        if(p.connection!=null)PacketDistributor.sendToPlayer(p,new NetworkSetup.MagicBulletCooldownPayload(0,1));
+        if(p.connection!=null)Packets.sendToPlayer(p,new NetworkSetup.MagicBulletCooldownPayload(0,1));
         com.myriad.character.skills.shuo.ShuoCombat.clear(p);
         com.myriad.character.skills.yike.YikeRework.clear(p);
         com.myriad.character.skills.rivet.RivetRework.clear(p);
@@ -83,7 +83,7 @@ public final class AbilityRuntime {
             }
             if(old.motionUntil>p.level().getGameTime())p.setDeltaMovement(Vec3.ZERO);
             com.myriad.combat.WindWallSystem.clearFor(p.getUUID());
-            PacketDistributor.sendToPlayer(p,new NetworkSetup.DashPayload(0,0,0,-1));}
+            Packets.sendToPlayer(p,new NetworkSetup.DashPayload(0,0,0,-1));}
         var d=PlayerDataProvider.get(p);
         for(String key:new ArrayList<>(d.getBuffs().keySet()))if((key.startsWith("g1_")&&!key.startsWith("g1_attribute_"))||key.startsWith("g2_"))d.setBuff(key,0);
         PlayerDataProvider.get(p).setPlacementType(0);
@@ -242,9 +242,9 @@ public final class AbilityRuntime {
         if(stop){
             var o=OWNERS.get(p.getUUID());if(o!=null){o.motionToken++;o.motionUntil=0;}
             // Stop a currently forced trajectory on both sides, while retaining downward gravity.
-            Vec3 v=new Vec3(0,Math.min(0,p.getDeltaMovement().y),0);p.setDeltaMovement(v);p.hurtMarked=true;
-            PacketDistributor.sendToPlayer(p,new NetworkSetup.DashPayload((float)v.x,(float)v.y,(float)v.z,-1));
-            PacketDistributor.sendToPlayer(p,new NetworkSetup.StarPullMotionPayload(0,0,0,0,0));
+            Vec3 v=new Vec3(0,Math.min(0,p.getDeltaMovement().y),0);p.setDeltaMovement(v);p.syncVelocity=true;
+            Packets.sendToPlayer(p,new NetworkSetup.DashPayload((float)v.x,(float)v.y,(float)v.z,-1));
+            Packets.sendToPlayer(p,new NetworkSetup.StarPullMotionPayload(0,0,0,0,0));
         }
     }
     public record Hit(ServerPlayer player,LivingEntity target,float amount,boolean basic,String skillId,boolean direct,DamageCalc.Kind kind){
@@ -377,7 +377,7 @@ public final class AbilityRuntime {
             if(!target.isAlive()||target.level()!=player.level()||!SkillTargets.ally(player,target)||amount<=0)return;
             float before=target.getHealth();CombatTelemetry.heal(target,Math.min(amount,Math.max(0,target.getMaxHealth()-before)),skill.role()+"_skill");
             float gained=Math.max(0,target.getHealth()-before);
-            if(gained>0){if(target instanceof ServerPlayer ally)PacketDistributor.sendToPlayer(ally,new NetworkSetup.HealFloatPayload(Math.max(1,Math.round(gained))));supported(target);}
+            if(gained>0){if(target instanceof ServerPlayer ally)Packets.sendToPlayer(ally,new NetworkSetup.HealFloatPayload(Math.max(1,Math.round(gained))));supported(target);}
         }
         private void supported(LivingEntity target){if(!skill.isPassive()){var passive=passive(player);if(passive!=null)passive.onSupport(context(player,passive),target);}}
         /** Honest cone, shared by blade and fan skills; never hits buildings or through walls. */
@@ -524,8 +524,8 @@ public final class AbilityRuntime {
         /** Release this owner's current motion lease, for an explicit stop/recast. */
         public void stopMotion(){
             owner.motionToken++;owner.motionUntil=0;
-            player.setDeltaMovement(Vec3.ZERO);player.hurtMarked=true;player.resetFallDistance();
-            PacketDistributor.sendToPlayer(player,new NetworkSetup.DashPayload(0,0,0,-1));
+            player.setDeltaMovement(Vec3.ZERO);player.syncVelocity=true;player.resetFallDistance();
+            Packets.sendToPlayer(player,new NetworkSetup.DashPayload(0,0,0,-1));
         }
         /** Stops at the earliest enemy body in each confirmed swept step, including ordinary mobs.
          * The next server/client velocity is clipped before it is sent; damage follows real contact. */
@@ -551,7 +551,7 @@ public final class AbilityRuntime {
                     if(now<=previous)return true;previous=now;
                     if(KnockbackBuffer.impulseToken(player)!=impulse){
                         owner.motionUntil=0;Vec3 v=player.getDeltaMovement();
-                        PacketDistributor.sendToPlayer(player,new NetworkSetup.DashPayload((float)v.x,(float)v.y,(float)v.z,-1));
+                        Packets.sendToPlayer(player,new NetworkSetup.DashPayload((float)v.x,(float)v.y,(float)v.z,-1));
                         ended=true;end.run();return false;
                     }
                     Vec3 pos=player.position();moved+=Math.max(0,pos.subtract(last).dot(direction));
@@ -576,8 +576,8 @@ public final class AbilityRuntime {
                     sendMotion(velocity,pos.add(velocity));return true;
                 }
                 void finish(){if(ended)return;ended=true;owner.motionUntil=0;
-                    player.setDeltaMovement(Vec3.ZERO);player.hurtMarked=true;player.resetFallDistance();
-                    PacketDistributor.sendToPlayer(player,new NetworkSetup.DashPayload(0,0,0,-1));end.run();}
+                    player.setDeltaMovement(Vec3.ZERO);player.syncVelocity=true;player.resetFallDistance();
+                    Packets.sendToPlayer(player,new NetworkSetup.DashPayload(0,0,0,-1));end.run();}
                 public void cancel(){if(token==owner.motionToken)finish();}
             }
             var task=new FirstDash();if(task.step(ActionTime.multiplier(player.getUUID(),start)))owner.tasks.add(task);
@@ -637,8 +637,8 @@ public final class AbilityRuntime {
                     if(ended)return;ended=true;
                     if(escort!=null)escort.finish(allowed);
                     if(token==owner.motionToken){owner.motionUntil=0;
-                        if(!preserveMotion){player.setDeltaMovement(Vec3.ZERO);player.hurtMarked=true;player.resetFallDistance();}
-                        Vec3 v=player.getDeltaMovement();PacketDistributor.sendToPlayer(player,new NetworkSetup.DashPayload((float)v.x,(float)v.y,(float)v.z,-1));}
+                        if(!preserveMotion){player.setDeltaMovement(Vec3.ZERO);player.syncVelocity=true;player.resetFallDistance();}
+                        Vec3 v=player.getDeltaMovement();Packets.sendToPlayer(player,new NetworkSetup.DashPayload((float)v.x,(float)v.y,(float)v.z,-1));}
                     end.run();
                 }
                 public void cancel(){finish(false,token!=owner.motionToken);}
@@ -662,7 +662,7 @@ public final class AbilityRuntime {
                 public boolean tick(long now){if(token!=owner.motionToken)return false;if(now==start||local&&now<=lastTick)return true;lastTick=now;
                     if(local&&KnockbackBuffer.impulseToken(player)!=impulse){
                         owner.motionUntil=0;Vec3 forced=player.getDeltaMovement();
-                        PacketDistributor.sendToPlayer(player,new NetworkSetup.DashPayload((float)forced.x,(float)forced.y,(float)forced.z,-1));
+                        Packets.sendToPlayer(player,new NetworkSetup.DashPayload((float)forced.x,(float)forced.y,(float)forced.z,-1));
                         return false;
                     }
                     double rate=local?ActionTime.multiplier(player.getUUID(),now):1;
@@ -679,15 +679,15 @@ public final class AbilityRuntime {
                     if(!AbilityTargeting.clearSweep(player,velocity)){finish();return false;}
                     sendMotion(velocity,turn?pos.add(direction.scale(delta.length()-moved)):destination);return true;}
                 void finish(){owner.motionUntil=0;Vec3 v=skill.requiresStandingPoint()?Vec3.ZERO:player.getDeltaMovement().scale(.12);
-                    player.setDeltaMovement(v);player.hurtMarked=true;player.resetFallDistance();
-                    PacketDistributor.sendToPlayer(player,new NetworkSetup.DashPayload((float)v.x,(float)v.y,(float)v.z,-1));end.run();}
+                    player.setDeltaMovement(v);player.syncVelocity=true;player.resetFallDistance();
+                    Packets.sendToPlayer(player,new NetworkSetup.DashPayload((float)v.x,(float)v.y,(float)v.z,-1));end.run();}
             }
             var dash=new Dash();Vec3 v=delta.scale((local?ActionTime.multiplier(player.getUUID(),now()):1)/ticks);
             if(!AbilityTargeting.clearSweep(player,v)){dash.finish();return;}
             sendMotion(v,destination);owner.tasks.add(dash);
         }
-        private void sendMotion(Vec3 velocity,Vec3 destination){player.setDeltaMovement(velocity);player.hurtMarked=true;player.resetFallDistance();
-            PacketDistributor.sendToPlayer(player,new com.myriad.network.AbilityMotionPayload((float)velocity.x,(float)velocity.y,(float)velocity.z,
+        private void sendMotion(Vec3 velocity,Vec3 destination){player.setDeltaMovement(velocity);player.syncVelocity=true;player.resetFallDistance();
+            Packets.sendToPlayer(player,new com.myriad.network.AbilityMotionPayload((float)velocity.x,(float)velocity.y,(float)velocity.z,
                     destination.x,destination.y,destination.z,3));}
         /** Arc motion is calculated against the actual position each tick; never teleports. */
         public void leap(Vec3 destination,int ticks,double height,Runnable landed){
@@ -710,18 +710,18 @@ public final class AbilityRuntime {
             double initialRate=local?ActionTime.multiplier(player.getUUID(),start):1;
             final double[] point={initialRate};final long impulse=KnockbackBuffer.impulseToken(player);final long[] lastTick={start};
             Runnable finish=()->{owner.motionUntil=0;player.setDeltaMovement(Vec3.ZERO);player.resetFallDistance();
-                PacketDistributor.sendToPlayer(player,new NetworkSetup.DashPayload(0,0,0,-1));
+                Packets.sendToPlayer(player,new NetworkSetup.DashPayload(0,0,0,-1));
                 if(precise&&player.position().distanceToSqr(destination)>.16)return;
                 if(safe(player.position()))landed.run();else whileActive(12,a->{
                     if(token!=owner.motionToken)return false;if(safe(player.position())){landed.run();return false;}return true;});};
             Task motion=time->{if(token!=owner.motionToken)return false;if(time<=lastTick[0])return true;lastTick[0]=time;
                 if(local&&KnockbackBuffer.impulseToken(player)!=impulse){owner.motionUntil=0;Vec3 forced=player.getDeltaMovement();
-                    PacketDistributor.sendToPlayer(player,new NetworkSetup.DashPayload((float)forced.x,(float)forced.y,(float)forced.z,-1));return false;}
+                    Packets.sendToPlayer(player,new NetworkSetup.DashPayload((float)forced.x,(float)forced.y,(float)forced.z,-1));return false;}
                 double rate=local?ActionTime.multiplier(player.getUUID(),time):1;age[0]+=rate;
                 if(local)owner.motionUntil=time+Math.max(2,(int)Math.ceil((ticks+8-age[0])/rate));
                 if(age[0]>ticks+8||data.getBuff("g1_root")>0||data.getBuff("g1_stun")>0){
                     if(precise){owner.motionUntil=0;player.setDeltaMovement(Vec3.ZERO);player.resetFallDistance();
-                        PacketDistributor.sendToPlayer(player,new NetworkSetup.DashPayload(0,0,0,-1));return false;}
+                        Packets.sendToPlayer(player,new NetworkSetup.DashPayload(0,0,0,-1));return false;}
                     finish.run();return false;}
                 if(age[0]>=ticks&&player.position().distanceToSqr(destination)<.01){finish.run();return false;}
                 point[0]+=rate;double t=Math.min(1,point[0]/ticks);
@@ -730,7 +730,7 @@ public final class AbilityRuntime {
                 if(precise&&velocity.length()>cap+4*height/ticks){
                     // A displaced/lagged body must not catch up with an arbitrarily large corrective impulse.
                     owner.motionUntil=0;player.setDeltaMovement(Vec3.ZERO);player.resetFallDistance();
-                    PacketDistributor.sendToPlayer(player,new NetworkSetup.DashPayload(0,0,0,-1));return false;
+                    Packets.sendToPlayer(player,new NetworkSetup.DashPayload(0,0,0,-1));return false;
                 }
                 if(!precise&&velocity.length()>cap)velocity=velocity.normalize().scale(cap);
                 if(!AbilityTargeting.clearSweep(player,velocity)){finish.run();return false;}

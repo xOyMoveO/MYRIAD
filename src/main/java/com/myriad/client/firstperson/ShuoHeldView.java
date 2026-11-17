@@ -33,8 +33,8 @@ public final class ShuoHeldView {
             if(arm==HumanoidArm.RIGHT||item.isEmpty())return false;
             stack.pushPose();try{
                 model.translateToHand(state,HumanoidArm.RIGHT,stack);
-                stack.mulPose(Axis.XP.rotationDegrees(-90));stack.mulPose(Axis.YP.rotationDegrees(180));stack.translate(1f/16,2f/16,-10f/16);
-                mc.getEntityRenderDispatcher().getItemInHandRenderer().renderItem(entity,item,ItemDisplayContext.THIRD_PERSON_RIGHT_HAND,stack,collector,light);
+                stack.rotate(Axis.XP.rotationDegrees(-90));stack.rotate(Axis.YP.rotationDegrees(180));stack.translate(1f/16,2f/16,-10f/16);
+                com.myriad.client.platform.ClientItemRenderer.submit(entity,item,ItemDisplayContext.THIRD_PERSON_RIGHT_HAND,stack,collector,light);
             }finally{stack.popPose();}
             return true;
         }
@@ -46,17 +46,16 @@ public final class ShuoHeldView {
         stack.pushPose();try{
             leftHand(model,state,stack,transforms);
             // Both meshes are centred at (8,8,8). Blade root is exactly 3.5 model units above grip.
-            var renderer=mc.getEntityRenderDispatcher().getItemInHandRenderer();
-            renderer.renderItem(entity,item,ItemDisplayContext.NONE,stack,collector,light);
+            com.myriad.client.platform.ClientItemRenderer.submit(entity,item,ItemDisplayContext.NONE,stack,collector,light);
             stack.translate(0,ShuoWeaponState.GRIP_TO_MOUTH,0);
-            renderer.renderItem(entity,ModItems.SHUO_SCABBARD.get().getDefaultInstance(),ItemDisplayContext.NONE,stack,collector,light);
+            com.myriad.client.platform.ClientItemRenderer.submit(entity,ModItems.SHUO_SCABBARD.get().getDefaultInstance(),ItemDisplayContext.NONE,stack,collector,light);
         }finally{stack.popPose();}
         return true;
     }
     /** Closed-only half turn in hand space: keep the fist pivot and downward pitch, point the sheath aft. */
     public static Matrix4f closedGrip(ItemTransforms itemTransforms){
         var held=new PoseStack();
-        held.mulPose(Axis.XP.rotationDegrees(-90));held.mulPose(Axis.YP.rotationDegrees(180));
+        held.rotate(Axis.XP.rotationDegrees(-90));held.rotate(Axis.YP.rotationDegrees(180));
         held.translate(-1f/16,2f/16,-10f/16);
         itemTransforms.getTransform(ItemDisplayContext.THIRD_PERSON_LEFT_HAND).apply(true,held.last());
         // ItemTransform.apply and NONE rendering each centre the mesh; undo just the former.

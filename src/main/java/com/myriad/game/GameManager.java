@@ -239,7 +239,7 @@ public class GameManager {
         PlayerData data = PlayerDataProvider.get(player);
         if (data != null && faction != null) {
             data.setFaction(faction);
-            player.refreshTabListName();
+            com.myriad.player.PlayerNames.refresh(player);
             if ((phase == Phase.PLAYING || phase == Phase.PICKING && pickCountdownEndTick >= 0)
                     && pendingPreparationBase.remove(player.getUUID())) {
                 LaneSystem.teleportPlayersToBases(server.overworld(), List.of(player));
@@ -302,7 +302,7 @@ public class GameManager {
             com.myriad.Myriad.LOGGER.info("[match] assign done, readback={}", data.getFaction());
         }
         player.sendSystemMessage(Component.translatable("message.myriad.team_assigned", faction.displayName()));
-        player.refreshTabListName();
+        com.myriad.player.PlayerNames.refresh(player);
     }
 
     /** 手动分配开局：使用当前 PlayerData 宗门直接开局，未分配玩家自动补入幽冥宗。 */
@@ -341,7 +341,7 @@ public class GameManager {
             if (f == null) {
                 f = xuanxiaoCount <= youmingCount ? Faction.XUANXIAO : Faction.YOUMING;
                 data.setFaction(f);
-                p.refreshTabListName();
+                com.myriad.player.PlayerNames.refresh(p);
                 if (f == Faction.XUANXIAO) xuanxiaoCount++; else youmingCount++;
             }
             assign(p, f);
@@ -404,7 +404,7 @@ public class GameManager {
         pickDeadlineTick = server.overworld().getGameTime() + PICK_TICKS;
         broadcast(Component.translatable("message.myriad.pick_start"));
         for (ServerPlayer p : server.getPlayerList().getPlayers()) {
-            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p,
+            com.myriad.network.Packets.sendToPlayer(p,
                     new com.myriad.network.NetworkSetup.OpenPickScreenPayload());
         }
         broadcastPickState();
@@ -627,7 +627,7 @@ public class GameManager {
         broadcastMatchStarted();
         // 通知客户端关闭选人界面
         for (ServerPlayer p : players) {
-            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p,
+            com.myriad.network.Packets.sendToPlayer(p,
                     new com.myriad.network.NetworkSetup.PickStatePayload(
                             1, "", "", "", -1, -1, java.util.Map.of(), java.util.Map.of()));
         }
@@ -666,7 +666,7 @@ public class GameManager {
         }
         for (ServerPlayer p : server.getPlayerList().getPlayers()) {
             Faction myF = factions.get(p.getUUID());
-            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p,
+            com.myriad.network.Packets.sendToPlayer(p,
                     new com.myriad.network.NetworkSetup.PickStatePayload(
                             pickCountdownEndTick >= 0 ? 1 : 0,
                             myF == null ? "" : myF.getName(),
@@ -790,7 +790,7 @@ public class GameManager {
             return;
         }
         int victimStreak = killStreaks.getOrDefault(victim.getUUID(), 0);
-        int priorDeaths=victim.getPersistentData().getIntOr("myriad_deaths_without_kill",0);
+        int priorDeaths=com.myriad.player.EntityState.data(victim).getIntOr("myriad_deaths_without_kill",0);
         int gap=PlayerDataProvider.get(victim).getLevel()-PlayerDataProvider.get(killer).getLevel();
         int reward = GlobalBalance.goldIncome(MatchBalance.killReward(false,MatchBalance.elapsed(killer),victimStreak,priorDeaths,gap));
         com.myriad.player.PlayerData killerData = PlayerDataProvider.get(killer);
@@ -802,7 +802,7 @@ public class GameManager {
         }
         killStreaks.put(killer.getUUID(), killStreaks.getOrDefault(killer.getUUID(), 0) + 1);
         killStreaks.remove(victim.getUUID());
-        killer.getPersistentData().putInt("myriad_deaths_without_kill",0);
+        com.myriad.player.EntityState.data(killer).putInt("myriad_deaths_without_kill",0);
         long now = killer.level().getGameTime();
         MultiKill prior = multiKills.get(killer.getUUID());
         int multiKill = prior != null && now - prior.lastKillTick <= 200
@@ -814,7 +814,7 @@ public class GameManager {
                     killer.getUUID(), killer.getName().getString(), victim.getUUID(),
                     victim.getName().getString(), multiKill);
             for (ServerPlayer viewer : server.getPlayerList().getPlayers()) {
-                net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(viewer, announcement);
+                com.myriad.network.Packets.sendToPlayer(viewer, announcement);
             }
         }
     }
@@ -824,11 +824,11 @@ public class GameManager {
         if (phase != Phase.PLAYING || factionOf(victim) == null) return;
         matchDeaths.merge(victim.getUUID(), 1, Integer::sum);
         multiKills.remove(victim.getUUID());
-        victim.refreshTabListName();
+        com.myriad.player.PlayerNames.refresh(victim);
         if (killerEntity instanceof ServerPlayer killer && killer != victim
                 && factionOf(killer) != null && factionOf(killer) != factionOf(victim)) {
             matchKills.merge(killer.getUUID(), 1, Integer::sum);
-            killer.refreshTabListName();
+            com.myriad.player.PlayerNames.refresh(killer);
         }
     }
 
@@ -971,11 +971,11 @@ public class GameManager {
                 }
             }
             if (current == null) {
-                net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+                com.myriad.network.Packets.sendToPlayer(player,
                         new com.myriad.network.NetworkSetup.VeinStatusPayload(false, 0, false, 0, 0, 0, 1));
             } else {
                 SpiritVein vein = current.getValue();
-                net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+                com.myriad.network.Packets.sendToPlayer(player,
                         new com.myriad.network.NetworkSetup.VeinStatusPayload(true, current.getKey(), vein.large,
                                 vein.xuanxiaoPlayers, vein.youmingPlayers, vein.progress, vein.captureTicks()));
             }
@@ -1111,7 +1111,7 @@ public class GameManager {
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             player.setCamera(player);
             player.setGameMode(GameType.ADVENTURE);
-            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, resultsPayload);
+            com.myriad.network.Packets.sendToPlayer(player, resultsPayload);
             player.sendSystemMessage(Component.translatable("message.myriad.results_click")
                     .withStyle(net.minecraft.network.chat.Style.EMPTY
                             .withColor(net.minecraft.ChatFormatting.AQUA)
@@ -1189,9 +1189,9 @@ public class GameManager {
             PlayerDataProvider.resetForHostSession(player);
             player.closeContainer();
             player.setGameMode(GameType.ADVENTURE);
-            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+            com.myriad.network.Packets.sendToPlayer(player,
                     new com.myriad.network.NetworkSetup.DashPayload(0, 0, 0, 0));
-            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+            com.myriad.network.Packets.sendToPlayer(player,
                     new com.myriad.network.NetworkSetup.PickStatePayload(
                             1, "", "", "", -1, -1, java.util.Map.of(), java.util.Map.of()));
             if (teleport) LobbySystem.teleportToLobby(player);
@@ -1246,7 +1246,7 @@ public class GameManager {
             return;
         }
         for (ServerPlayer p : server.getPlayerList().getPlayers()) {
-            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p,
+            com.myriad.network.Packets.sendToPlayer(p,
                     new com.myriad.network.NetworkSetup.MatchStartedPayload());
         }
     }

@@ -12,7 +12,6 @@ import java.awt.image.BufferedImage;
 import java.nio.file.*;
 import java.util.*;
 import java.util.List;
-import java.util.zip.ZipFile;
 import javax.imageio.ImageIO;
 import static com.myriad.character.ability.AbilityVfxGeometry.*;
 
@@ -81,7 +80,7 @@ public final class FlameStepPreview {
         var project=Path.of(args[0]);var out=Path.of(args[1]);Files.createDirectories(out);var assets=project.resolve("src/main/resources/assets/myriad");
         NightDaggerPreview.dagger=ImageIO.read(assets.resolve("textures/item/fenjue_flame_changdao.png").toFile());blade=NightDaggerPreview.loadBlade(assets,"lieyanjian");
         for(var entry:Map.of(64,"fenjue_pixel_slash",68,"fenjue_pixel_stream",70,"fenjue_crisp_slash").entrySet())textures.put(entry.getKey(),ImageIO.read(assets.resolve("textures/particle/vfx/"+entry.getValue()+".png").toFile()));
-        try(var zip=new ZipFile("E:/mod/.gradle/caches/neoformruntime/artifacts/minecraft_26.2_client.jar")){
+        try(var zip=MinecraftPreviewResources.open()){
             NightDaggerPreview.skin=ImageIO.read(zip.getInputStream(zip.getEntry("assets/minecraft/textures/entity/player/wide/steve.png")));
             var grass=ImageIO.read(zip.getInputStream(zip.getEntry("assets/minecraft/textures/block/grass_block_top.png")));
             var stone=ImageIO.read(zip.getInputStream(zip.getEntry("assets/minecraft/textures/block/stone_bricks.png")));

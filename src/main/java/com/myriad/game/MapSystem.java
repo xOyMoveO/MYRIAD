@@ -19,7 +19,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.storage.LevelResource;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.myriad.network.Packets;
 
 /**
  * 服务端权威小地图。四角按左上、右上、右下、左下设置，支持相对世界 X/Z 轴旋转的矩形。
@@ -76,7 +76,7 @@ public final class MapSystem {
         Geometry geometry = geometry();
         if (geometry == null) {
             NetworkSetup.MinimapSnapshotPayload empty = emptySnapshot();
-            for (ServerPlayer player : level.players()) PacketDistributor.sendToPlayer(player, empty);
+            for (ServerPlayer player : level.players()) Packets.sendToPlayer(player, empty);
             return;
         }
         GameManager manager = GameManager.get();
@@ -105,7 +105,7 @@ public final class MapSystem {
                 markers.add(new NetworkSetup.MinimapMarker(unit.kind(), NetworkSetup.factionId(unit.faction()),
                         (float) unit.x(), (float) unit.z(), new java.util.UUID(0L, 0L)));
             }
-            PacketDistributor.sendToPlayer(viewer, snapshot(paths, markers));
+            Packets.sendToPlayer(viewer, snapshot(paths, markers));
         }
     }
 

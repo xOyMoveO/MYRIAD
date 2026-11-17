@@ -3,7 +3,7 @@ package com.myriad.client.gui;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -12,7 +12,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import com.myriad.network.Packets;
 
 import com.myriad.character.CharacterType;
 import com.myriad.client.ClientDataHolder;
@@ -114,7 +114,7 @@ public class PickScreen extends Screen {
 
     @Override
     public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
-        if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
+        if (event.key() == InputConstants.KEY_ESCAPE) {
             return true;
         }
         return super.keyPressed(event);
@@ -501,13 +501,13 @@ public class PickScreen extends Screen {
 
     @Override
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
-        if (event.buttonInfo().button() == 1) {
+        if (event.buttonInfo().button() == InputConstants.MOUSE_BUTTON_RIGHT) {
             var state = ClientDataHolder.pickState();
             String id = state == null ? null : hitAnyCharacter(event.x(), event.y(), state);
             var type = id == null ? null : CharacterType.byId(id);
             if(type!=null){Minecraft.getInstance().setScreenAndShow(new CharacterGuideScreen(this,type));return true;}
         }
-        if (event.buttonInfo().button() != 0) {
+        if (event.buttonInfo().button() != InputConstants.MOUSE_BUTTON_LEFT) {
             return super.mouseClicked(event, doubleClick);
         }
         NetworkSetup.PickStatePayload state = ClientDataHolder.pickState();
@@ -529,7 +529,7 @@ public class PickScreen extends Screen {
             return super.mouseClicked(event, doubleClick);
         }
         if (hit != null && !hit.isEmpty() && !state.taken().containsKey(hit)) {
-            ClientPacketDistributor.sendToServer(new NetworkSetup.ChooseCharacterPayload(hit));
+            Packets.sendToServer(new NetworkSetup.ChooseCharacterPayload(hit));
             return true;
         }
         return super.mouseClicked(event, doubleClick);

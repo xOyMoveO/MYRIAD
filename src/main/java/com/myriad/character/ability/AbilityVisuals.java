@@ -3,7 +3,7 @@ package com.myriad.character.ability;
 import com.myriad.character.ability.AbilityRuntime.Cast;
 import com.myriad.network.AbilityVfxPayload;
 import com.myriad.game.VisionSystem;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.myriad.network.Packets;
 import net.minecraft.world.phys.Vec3;
 import static com.myriad.character.ability.AbilityVfxGeometry.*;
 
@@ -13,17 +13,17 @@ public final class AbilityVisuals {
     public static void cancel(net.minecraft.server.level.ServerPlayer player){
         var packet=new AbilityVfxPayload(player.getId(),-1,0,0,CANCEL,Vec3.ZERO,Vec3.ZERO,0,0,1,
                 player.level().getGameTime(),false);
-        for(var viewer:player.level().players())PacketDistributor.sendToPlayer(viewer,packet);
+        for(var viewer:player.level().players())Packets.sendToPlayer(viewer,packet);
     }
     /** Cancel this skill's visuals only; do not erase other active fields or passive blades. */
     public static void cancelSkill(Cast c){
         var packet=new AbilityVfxPayload(c.player.getId(),-1,theme(c),c.skill.index(),CANCEL,Vec3.ZERO,Vec3.ZERO,0,1,1,c.now(),false);
-        for(var viewer:c.player.level().players())PacketDistributor.sendToPlayer(viewer,packet);
+        for(var viewer:c.player.level().players())Packets.sendToPlayer(viewer,packet);
     }
     /** End just this projectile body, including already queued visual frames. No hidden coordinates. */
     public static void finishFlight(Cast c,int instance){
         var packet=new AbilityVfxPayload(c.player.getId(),-1,theme(c),c.skill.index(),CANCEL,Vec3.ZERO,Vec3.ZERO,0,2,1,c.now(),false,instance);
-        for(var viewer:c.player.level().players())PacketDistributor.sendToPlayer(viewer,packet);
+        for(var viewer:c.player.level().players())Packets.sendToPlayer(viewer,packet);
     }
     private static int theme(Cast c){return switch(c.skill.role()){
         case "yingxiao"->0;case "tianxing"->1;case "fenjue"->2;case "xuanchen"->3;case "sulan"->4;
@@ -46,13 +46,13 @@ public final class AbilityVisuals {
         var packet=new AbilityVfxPayload(c.player.getId(),anchor,theme(c),c.skill.index(),kind,from,to,
                 (float)radius,(float)angle,life,c.now(),personal,instance);
         if(!packet.valid())return;
-        if(personal){PacketDistributor.sendToPlayer(c.player,packet);return;}
+        if(personal){Packets.sendToPlayer(c.player,packet);return;}
         for(var viewer:c.player.level().players()) {
             if(viewer.position().distanceToSqr(from)>Math.pow(64+radius,2)
                     &&viewer.position().distanceToSqr(to)>Math.pow(64+radius,2))continue;
             var attached=anchor<0?null:c.player.level().getEntity(anchor);
             if(attached!=null&&!VisionSystem.canSee(viewer,attached))continue;
-            if(viewer==c.player||VisionSystem.canSee(viewer,c.player))PacketDistributor.sendToPlayer(viewer,packet);
+            if(viewer==c.player||VisionSystem.canSee(viewer,c.player))Packets.sendToPlayer(viewer,packet);
         }
     }
     private static Vec3 facing(Cast c,Vec3 at){return at.add(c.forward(1));}
@@ -103,9 +103,9 @@ public final class AbilityVisuals {
     }
     /** Event-confirmed impact; purely visual and rate-limited independently of damage. */
     public static void impact(Cast c,Vec3 at){
-        long previous=c.player.getPersistentData().getLongOr("myriad_g1_vfx_hit",-10);
+        long previous=com.myriad.player.EntityState.data(c.player).getLongOr("myriad_g1_vfx_hit",-10);
         if(previous<=c.now()&&c.now()-previous<3)return;
-        c.player.getPersistentData().putLong("myriad_g1_vfx_hit",c.now());
+        com.myriad.player.EntityState.data(c.player).putLong("myriad_g1_vfx_hit",c.now());
         emit(c,BURST,at,at.add(c.forward(1)),.55,0,7,false);
     }
     public static void field(Cast c,Vec3 at,double radius,int ticks){

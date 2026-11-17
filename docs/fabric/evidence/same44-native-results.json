@@ -1,0 +1,130 @@
+{
+  "date": "2026-11-17",
+  "kind": "native /test serial commands in one dedicated JVM",
+  "port": 25646,
+  "world": "/private/tmp/myriad-final44-same-server-final/synthetic-only",
+  "scope_stopped_by_user": true,
+  "source_sha256": {
+    "CombatRegressionTests.java": "3b96269456ded0009f9c4f59326a7624119a9b001e77351ebd81be7fa38ac7d8",
+    "WorldTimeChecks.java": "9337d549810028b0703d21642dd641970140b082bb540e4eb520bc0eba23c50e",
+    "KehengChecks.java": "d8e684d893388637a047b219c53f97ac643a46a0cecc162e1d6f93770b61e9f2",
+    "HeroActionTimeChecks.java": "cafbf099bbdb02fca2db8ce9f19113da1248e21b1f91e7310ef32f9cc8af71f6"
+  },
+  "passed": 5,
+  "failed": 1,
+  "server_crash": 1,
+  "not_run": 8,
+  "results": [
+    {
+      "name": "combat_regression",
+      "status": "passed",
+      "command": "execute positioned 30000 4 0 run test run myriad:combat_regression",
+      "details": [
+        "[10:26:38] [Server thread/INFO] (Minecraft) System chat: Game Test complete! 1 test(s) were run",
+        "[10:26:38] [Server thread/INFO] (Minecraft) System chat: All required tests passed :)",
+        "[10:26:38] [Server thread/INFO] (Minecraft) System chat: [Test coordinates: [30000, 4, 0] in overworld]"
+      ]
+    },
+    {
+      "name": "first_group",
+      "status": "failed",
+      "command": "execute positioned 31000 4 0 run test run myriad:first_group",
+      "details": [
+        "[10:26:46] [Server thread/ERROR] (Minecraft) myriad:first_group failed at 31000, 4, 3! Rank3 / S100: exactly one 620 hit inside 15x3, no damage behind/beyond/outside; target=0, hp=1000.0 on tick 30",
+        "[10:26:46] [Server thread/INFO] (Minecraft) System chat: Game Test complete! 1 test(s) were run",
+        "[10:26:46] [Server thread/INFO] (Minecraft) System chat: [Test coordinates: [31000, 4, 0] in overworld]"
+      ]
+    },
+    {
+      "name": "world_time",
+      "status": "passed",
+      "command": "execute positioned 32000 4 0 run test run myriad:world_time",
+      "details": [
+        "[10:26:52] [Server thread/INFO] (Minecraft) System chat: Game Test complete! 1 test(s) were run",
+        "[10:26:52] [Server thread/INFO] (Minecraft) System chat: All required tests passed :)",
+        "[10:26:52] [Server thread/INFO] (Minecraft) System chat: [Test coordinates: [32000, 4, 0] in overworld]"
+      ]
+    },
+    {
+      "name": "keheng",
+      "status": "passed",
+      "command": "execute positioned 33000 4 0 run test run myriad:keheng",
+      "details": [
+        "[10:27:03] [Server thread/INFO] (Minecraft) System chat: Game Test complete! 1 test(s) were run",
+        "[10:27:03] [Server thread/INFO] (Minecraft) System chat: All required tests passed :)",
+        "[10:27:03] [Server thread/INFO] (Minecraft) System chat: [Test coordinates: [33000, 4, 0] in overworld]"
+      ]
+    },
+    {
+      "name": "yike",
+      "status": "passed",
+      "command": "execute positioned 34000 4 0 run test run myriad:yike",
+      "details": [
+        "[10:27:15] [Server thread/INFO] (Minecraft) System chat: Game Test complete! 1 test(s) were run",
+        "[10:27:15] [Server thread/INFO] (Minecraft) System chat: All required tests passed :)",
+        "[10:27:15] [Server thread/INFO] (Minecraft) System chat: [Test coordinates: [34000, 4, 0] in overworld]"
+      ]
+    },
+    {
+      "name": "rivet",
+      "status": "passed",
+      "command": "execute positioned 35000 4 0 run test run myriad:rivet",
+      "details": [
+        "[10:27:56] [Server thread/INFO] (Minecraft) System chat: Game Test complete! 1 test(s) were run",
+        "[10:27:56] [Server thread/INFO] (Minecraft) System chat: All required tests passed :)",
+        "[10:27:56] [Server thread/INFO] (Minecraft) System chat: [Test coordinates: [35000, 4, 0] in overworld]"
+      ]
+    },
+    {
+      "name": "hero_action_time",
+      "status": "server_crash",
+      "command": "execute positioned 36000 4 0 run test run myriad:hero_action_time",
+      "details": [
+        "java.lang.IllegalStateException: net.minecraft.gametest.framework.GameTestAssertException: Same actual total damage, no catch-up/replay: sulan/5 attack base=58.5 slow=117.0 on tick 132",
+        "Caused by: net.minecraft.gametest.framework.GameTestAssertException: Same actual total damage, no catch-up/replay: sulan/5 attack base=58.5 slow=117.0 on tick 132",
+        "[10:28:07] [Server thread/ERROR] (Minecraft) This crash report has been saved to: /private/tmp/myriad-final44-same-server-final/crash-reports/crash-2026-11-17_10.28.07-server.txt"
+      ]
+    },
+    {
+      "name": "roster_delivery",
+      "status": "not_run",
+      "reason": "User narrowed scope; remaining queue cancelled"
+    },
+    {
+      "name": "roster_a",
+      "status": "not_run",
+      "reason": "User narrowed scope; remaining queue cancelled"
+    },
+    {
+      "name": "shuo_pilot",
+      "status": "not_run",
+      "reason": "User narrowed scope; remaining queue cancelled"
+    },
+    {
+      "name": "roster_b",
+      "status": "not_run",
+      "reason": "User narrowed scope; remaining queue cancelled"
+    },
+    {
+      "name": "melee_arc",
+      "status": "not_run",
+      "reason": "User narrowed scope; remaining queue cancelled"
+    },
+    {
+      "name": "arena_fixture",
+      "status": "not_run",
+      "reason": "User narrowed scope; remaining queue cancelled"
+    },
+    {
+      "name": "arena_tower_3v3",
+      "status": "not_run",
+      "reason": "User narrowed scope; remaining queue cancelled"
+    },
+    {
+      "name": "arena_tower_5v5",
+      "status": "not_run",
+      "reason": "User narrowed scope; remaining queue cancelled"
+    }
+  ],
+  "interpretation": "Two failures are not yet classified as production or fixture defects. Gradle successful exit does not establish GameTest acceptance."
+}

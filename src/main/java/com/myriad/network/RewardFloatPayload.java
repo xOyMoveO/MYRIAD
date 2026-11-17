@@ -12,6 +12,6 @@ public record RewardFloatPayload(double x,double y,double z,int gold,int xp) imp
     private static void write(RewardFloatPayload p,FriendlyByteBuf b) {b.writeDouble(p.x);b.writeDouble(p.y);b.writeDouble(p.z);b.writeVarInt(p.gold);b.writeVarInt(p.xp);}
     @Override public Type<? extends CustomPacketPayload> type(){return TYPE;}
     public static void send(ServerPlayer player,Entity killed,int gold,int xp) {
-        net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,new RewardFloatPayload(killed.getX(),killed.getY()+.8,killed.getZ(),gold,xp));
+        Packets.sendToPlayer(player,new RewardFloatPayload(killed.getX(),killed.getY()+.8,killed.getZ(),gold,xp));
     }
 }

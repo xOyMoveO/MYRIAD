@@ -1,0 +1,28 @@
+{
+  "source_sha": "73361fbde99151b494abd54c23251f770b2cb0bd",
+  "models": 46,
+  "item_definitions": 40,
+  "particle_definitions": 6,
+  "sound_events": 88,
+  "referenced_audio": 110,
+  "audio_files": 116,
+  "decoded_audio": 116,
+  "audio_bytes_unchanged_from_fixed_baseline": true,
+  "language_keys": {
+    "zh_cn": 1006,
+    "en_us": 1006
+  },
+  "literal_language_keys_checked": 269,
+  "missing_language_keys": {
+    "zh_cn": [],
+    "en_us": []
+  },
+  "placeholder_fields": {
+    "zh_cn": 133,
+    "en_us": 133
+  },
+  "license_files": 9,
+  "errors": [],
+  "passed": true,
+  "limits": "Static own-namespace references and full audio decode; runtime event receipt is recorded separately. No visual or listening conclusion."
+}

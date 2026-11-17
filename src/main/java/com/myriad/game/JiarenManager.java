@@ -69,7 +69,7 @@ public final class JiarenManager {
         villager.setCustomName(friendly ? Component.literal("友方灵偶").withStyle(net.minecraft.ChatFormatting.GREEN)
                 : Component.translatable("entity.myriad.jiaren"));
         villager.setCustomNameVisible(true);
-        villager.setInvulnerable(false);
+        villager.setPermanentlyInvulnerable(false);
         // 原版血量有上限（1024），假人血量走 mod 独立跟踪；原版血量保持满值避免误伤死亡
         villager.getAttribute(Attributes.MAX_HEALTH).setBaseValue(20.0);
         var physicalDefense = villager.getAttribute(com.myriad.registry.ModAttributes.PHYSICAL_DEFENSE);

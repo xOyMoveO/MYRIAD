@@ -7,7 +7,7 @@ import com.myriad.network.AbilityVfxPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.myriad.network.Packets;
 import java.util.*;
 import static com.myriad.character.ability.AbilityMeshBuilder.*;
 import static com.myriad.character.ability.AbilityVfxGeometry.*;
@@ -32,7 +32,7 @@ public final class RivetVfx {
         var p=new AbilityVfxPayload(c.player.getId(),-1,THEME,c.skill.index(),kind,from,to,(float)radius,(float)stage,life,c.now(),false);
         if(!p.valid())return;
         for(var viewer:c.player.level().players())if(viewer.position().distanceToSqr(from)<=Math.pow(64+radius,2)
-                &&(viewer==c.player||VisionSystem.canSeePosition(viewer,from)))PacketDistributor.sendToPlayer(viewer,p);
+                &&(viewer==c.player||VisionSystem.canSeePosition(viewer,from)))Packets.sendToPlayer(viewer,p);
     }
     private static void action(Cast c,int kind,Vec3 from,Vec3 to,double radius,double stage,int life){AbilityVisuals.emit(c,kind,from,to,radius,stage,life,false);}
     public static void hammerWindup(Cast c){

@@ -215,15 +215,15 @@ public final class QingLuoSkills extends Skill {
         }
     }
 
-    public static boolean interceptDamage(ServerPlayer victim, net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent event) {
+    public static boolean interceptDamage(ServerPlayer victim, com.myriad.combat.DamageContext event) {
         long now = victim.level().getGameTime();
         Long until = GROVE_INVULNERABLE.get(victim.getUUID());
-        if (until != null && until > now) { event.getContainer().setNewDamage(0); return true; }
+        if (until != null && until > now) { event.setAmount(0); return true; }
         return false;
     }
 
     /** 牵丝：青萝承伤时最多将比例伤害消耗友方现有护盾。 */
-    public static void onQingLuoIncoming(ServerPlayer victim, net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent event) {
+    public static void onQingLuoIncoming(ServerPlayer victim, com.myriad.combat.DamageContext event) {
         LinkState link = LINKS.get(victim.getUUID());
         if (link == null || link.until <= victim.level().getGameTime()) { LINKS.remove(victim.getUUID()); return; }
         ServerPlayer ally = victim.level().getServer().getPlayerList().getPlayer(link.targetId);
@@ -231,7 +231,7 @@ public final class QingLuoSkills extends Skill {
         float redirected = event.getAmount() * link.percent / 100F;
         float consumed = ModShieldSystem.consume(ally, redirected);
         if (consumed > 0) {
-            event.getContainer().setNewDamage(Math.max(0, event.getAmount() - consumed));
+            event.setAmount(Math.max(0, event.getAmount() - consumed));
             victim.level().playSound(null, ally.getX(), ally.getY() + .8, ally.getZ(),
                     SoundEvents.AMETHYST_CLUSTER_HIT, SoundSource.PLAYERS, .5F, 1.42F);
         }
@@ -301,7 +301,7 @@ public final class QingLuoSkills extends Skill {
         if (amount <= 0 || target.getHealth() >= target.getMaxHealth()) return;
         float actual = Math.min(amount, target.getMaxHealth() - target.getHealth());
         com.myriad.combat.CombatTelemetry.heal(target, actual, "qingluo_skill");
-        if (target instanceof ServerPlayer player) net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+        if (target instanceof ServerPlayer player) com.myriad.network.Packets.sendToPlayer(player,
                 new NetworkSetup.HealFloatPayload(Math.max(1, Math.round(actual))));
     }
 

@@ -6,7 +6,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 
-import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import com.myriad.combat.DamageContext;
 
 /**
  * 装备特殊机制效果引擎（服务端）：
@@ -46,7 +46,7 @@ public final class EquipmentEffects {
     }
 
     /** 受伤事件：兽皮足物理伤害减免 6% */
-    public static void onIncomingDamage(ServerPlayer victim, LivingIncomingDamageEvent event) {
+    public static void onIncomingDamage(ServerPlayer victim, DamageContext event) {
         PlayerData data = PlayerDataProvider.get(victim);
         if (data != null && com.myriad.character.rework.FirstGroupSkills.active(data.getCharacterId())) return;
         if (data == null || !hasEquip(data, "shoupizu") || event.getAmount() <= 0) {
@@ -56,7 +56,7 @@ public final class EquipmentEffects {
         if (!com.myriad.combat.NpcCombat.isMagic(event.getSource())
                 && !event.getSource().is(net.minecraft.world.damagesource.DamageTypes.MAGIC)
                 && !event.getSource().is(net.minecraft.world.damagesource.DamageTypes.INDIRECT_MAGIC)) {
-            event.getContainer().setNewDamage(event.getAmount() * 0.94f);
+            event.setAmount(event.getAmount() * 0.94f);
         }
     }
 

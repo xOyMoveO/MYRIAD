@@ -27,7 +27,7 @@ import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.myriad.network.Packets;
 
 /**
  * 玄阵·墨尘 R 大招【周天覆阵】：布下大范围法阵，持续数秒，
@@ -77,7 +77,7 @@ public class ZhouTianFuZhenSkill extends Skill {
       player.sendSystemMessage(Component.translatable("message.myriad.zhoutian_casting"));
       level.playSound(null, player.getX(), player.getY(), player.getZ(), com.myriad.registry.ModSounds.foley("wood"), SoundSource.PLAYERS, 0.5F, 0.7F);
       level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 0.4F, 0.8F);
-      PacketDistributor.sendToPlayer(player, new ZhouTianChannelPayload(40), new CustomPacketPayload[0]);
+      Packets.sendToPlayer(player, new ZhouTianChannelPayload(40), new CustomPacketPayload[0]);
    }
 
    public static void tick(ServerPlayer player, PlayerData data) {
@@ -242,7 +242,7 @@ public class ZhouTianFuZhenSkill extends Skill {
 
    public static void cancelChannel(ServerPlayer player) {
       if (CASTING.remove(player.getUUID()) != null) {
-         PacketDistributor.sendToPlayer(player, new ZhouTianChannelPayload(0), new CustomPacketPayload[0]);
+         Packets.sendToPlayer(player, new ZhouTianChannelPayload(0), new CustomPacketPayload[0]);
       }
    }
 

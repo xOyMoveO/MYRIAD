@@ -6,7 +6,6 @@ import java.awt.image.BufferedImage;
 import java.nio.file.*;
 import java.util.*;
 import java.util.List;
-import java.util.zip.ZipFile;
 import javax.imageio.ImageIO;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -50,7 +49,7 @@ public final class ShuoPreview {
         Path root=Path.of(args[0]),out=Path.of(args[1]);Files.createDirectories(out);Path assets=root.resolve("src/main/resources/assets/myriad");
         texture=ImageIO.read(assets.resolve("textures/item/shuo_crescent.png").toFile());NightDaggerPreview.dagger=texture;
         blade=NightDaggerPreview.loadBlade(assets,"shuo_sword");sheath=NightDaggerPreview.loadBlade(assets,"shuo_scabbard");
-        try(var zip=new ZipFile("E:/mod/.gradle/caches/neoformruntime/artifacts/minecraft_26.2_client.jar")){
+        try(var zip=MinecraftPreviewResources.open()){
             NightDaggerPreview.skin=ImageIO.read(zip.getInputStream(zip.getEntry("assets/minecraft/textures/entity/player/wide/steve.png")));
         }
         int samples=0;for(int action=0;action<=MAX_ACTION;action++)for(int n=0;n<=80;n++)for(boolean drawn:new boolean[]{false,true})for(boolean mirror:new boolean[]{false,true}){

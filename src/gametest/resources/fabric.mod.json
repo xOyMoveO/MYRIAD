@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "myriad_gametest",
+  "version": "${version}",
+  "name": "MYRIAD GameTests",
+  "license": "${mod_license}",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.myriad.game.MyriadGameTests",
+      "com.myriad.game.ArenaFixtureChecks"
+    ],
+    "client": [
+      "com.myriad.game.MyriadClientChecks"
+    ]
+  },
+  "mixins": [
+    "myriad-gametest.mixins.json"
+  ],
+  "depends": {
+    "myriad": "*",
+    "fabric-api": "*"
+  }
+}

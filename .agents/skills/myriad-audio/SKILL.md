@@ -1,17 +1,18 @@
 ---
 name: myriad-audio
-description: "Add, organize, and play sound effects in the 万象（MYRIAD） NeoForge mod. Use for Minecraft .ogg assets, sounds.json entries, SoundEvent registration, and gameplay-triggered audio; do not use for generating raw audio waveforms."
+description: "Add, organize, and play sound effects in the 万象（MYRIAD） Fabric mod. Use for Minecraft .ogg assets, sounds.json entries, SoundEvent registration, and gameplay-triggered audio; do not use for generating raw audio waveforms."
 ---
 
 # MYRIAD Audio
 
-Use this skill for audio work in the current MYRIAD checkout (NeoForge, mod ID `myriad`). Resolve project paths from the root containing `AGENTS.md` and `gradle.properties`; read those files and `docs/agents/domain.md` before integration. Read version requirements from the current build configuration. When the source sound needs a specification or generator prompt, use an available audio-generation skill or connected generator; `$audio-sfx-generation` is optional and may be absent.
+Use this skill for audio work in the current MYRIAD checkout (Fabric, mod ID `myriad`). Resolve project paths from the root containing `AGENTS.md` and `gradle.properties`; read those files and `docs/agents/domain.md` before integration. Read version requirements from the current build configuration. When the source sound needs a specification or generator prompt, use an available audio-generation skill or connected generator; `$audio-sfx-generation` is optional and may be absent.
 
 ## Asset contract
 
 - Store game sound files in `src/main/resources/assets/myriad/sounds/` as lowercase `.ogg` files. Use a readable category folder when it improves maintenance, for example `sounds/skill/yingxi_cast.ogg`.
 - Add every logical sound event to `src/main/resources/assets/myriad/sounds.json`. The event ID, JSON path, and Java identifier must agree.
 - Minecraft sound references omit the `sounds/` prefix and `.ogg` extension; an asset at `sounds/skill/yingxi_cast.ogg` is referenced as `myriad:skill/yingxi_cast`.
+- Preserve source and license text in `src/main/resources/META-INF/licenses/`, outside `assets/` resource paths.
 - Prefer mono effects and keep peak level below clipping. Short, distinctive feedback takes priority over high fidelity.
 
 ## Integration workflow
@@ -21,7 +22,7 @@ Use this skill for audio work in the current MYRIAD checkout (NeoForge, mod ID `
 3. Register a `SoundEvent` only when code needs a typed reusable event; otherwise use the established project style. Keep registration in a dedicated registry class rather than mixing it into unrelated gameplay classes.
 4. Play world-affecting sounds from the logical server so nearby players hear them consistently. Use client-only playback only for personal UI, prediction, or local camera feedback.
 5. Select `SoundSource` to match the intent (`PLAYERS`, `BLOCKS`, `HOSTILE`, or UI), with intentional volume and pitch ranges.
-6. Build the mod and, when possible, test the exact trigger in a client. Confirm the resource path has no missing-sound warning.
+6. Build the mod and, when possible, test the exact trigger in a client. Confirm the resource path has no missing-sound warning. `python tools/fabric/audit-resources.py` checks references and decodes all shipped audio. Record actual event receipt and SoundManager playback separately from listening quality; a human supplies listening, feel and balance conclusions.
 
 ## Naming
 

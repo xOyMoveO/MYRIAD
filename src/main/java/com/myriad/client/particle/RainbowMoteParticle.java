@@ -10,7 +10,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 
 /**
- * Bedrock Snowstorm 彩虹粒子的 NeoForge 实现：全亮、轻微上浮、生命周期内先显后隐。
+ * Bedrock Snowstorm 彩虹粒子的 Fabric 实现：全亮、轻微上浮、生命周期内先显后隐。
  * RGB 通过 count=0 粒子包的三个偏移量传递，便于服务端组合为彩虹环。
  */
 public final class RainbowMoteParticle extends SingleQuadParticle {

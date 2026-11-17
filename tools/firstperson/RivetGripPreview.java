@@ -176,14 +176,14 @@ public final class RivetGripPreview {
     }
     private static void save(BufferedImage image,Path path)throws Exception{ImageIO.write(image,"png",path.toFile());}
     public static void main(String[] args)throws Exception{
-        Path project=Path.of(args[0]),out=Path.of(args[1]),clientJar=Path.of(args[2]);baseline=args.length>3&&args[3].equals("--baseline");
+        Path project=Path.of(args[0]),out=Path.of(args[1]),clientJar=args.length>2?Path.of(args[2]):null;baseline=args.length>3&&args[3].equals("--baseline");
         finalEvidence=args.length>3&&args[3].equals("--final");Files.createDirectories(out);
         if(!baseline){var rig=Class.forName("com.myriad.character.skills.rivet.RivetWeaponRig");
             itemMethod=rig.getMethod("item",RivetWeaponMotion.Pose.class,boolean.class);
             handMethod=rig.getMethod("hand",RivetWeaponMotion.Pose.class,boolean.class,boolean.class);}
         Path assets=project.resolve("src/main/resources/assets/myriad");NightDaggerPreview.dagger=ImageIO.read(assets.resolve("textures/item/rivet_metal.png").toFile());
         hammer=NightDaggerPreview.loadBlade(assets,"rivet_hammer");
-        try(var zip=new ZipFile(clientJar.toFile())){
+        try(var zip=clientJar==null?MinecraftPreviewResources.open():new ZipFile(clientJar.toFile())){
             wideSkin=ImageIO.read(zip.getInputStream(zip.getEntry("assets/minecraft/textures/entity/player/wide/steve.png")));
             slimSkin=ImageIO.read(zip.getInputStream(zip.getEntry("assets/minecraft/textures/entity/player/slim/alex.png")));}
         String revision=baseline?"实装基线 485ddca":args.length>3&&args[3].equals("--final")?"最终 POV 修正":"POV 候选草图";

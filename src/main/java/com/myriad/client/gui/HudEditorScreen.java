@@ -1,5 +1,7 @@
 package com.myriad.client.gui;
 
+import com.mojang.blaze3d.platform.InputConstants;
+
 import com.myriad.client.HudLayoutConfig;
 import com.myriad.client.MinimapConfig;
 import com.myriad.client.MinimapOverlay;
@@ -62,13 +64,13 @@ public final class HudEditorScreen extends Screen {
         HudLayoutConfig.Element hit = elementAt(event.x(), event.y());
         if (hit == null) return false;
         selected = hit;
-        if (event.buttonInfo().button() == 1) {
+        if (event.buttonInfo().button() == InputConstants.MOUSE_BUTTON_RIGHT) {
             var state = HudLayoutConfig.state(hit);
             HudLayoutConfig.set(hit, state.x(), state.y(), state.scale(), !state.visible());
             rebuild();
             return true;
         }
-        if (event.buttonInfo().button() == 0) {
+        if (event.buttonInfo().button() == InputConstants.MOUSE_BUTTON_LEFT) {
             var state = HudLayoutConfig.state(hit);
             rebuild();
             dragging = hit;
@@ -82,7 +84,7 @@ public final class HudEditorScreen extends Screen {
 
     @Override
     public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
-        if (dragging == null || event.buttonInfo().button() != 0) {
+        if (dragging == null || event.buttonInfo().button() != InputConstants.MOUSE_BUTTON_LEFT) {
             return super.mouseDragged(event, deltaX, deltaY);
         }
         var state = HudLayoutConfig.state(dragging);
@@ -94,7 +96,7 @@ public final class HudEditorScreen extends Screen {
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
-        if (dragging != null && event.buttonInfo().button() == 0) {
+        if (dragging != null && event.buttonInfo().button() == InputConstants.MOUSE_BUTTON_LEFT) {
             dragging = null;
             setDragging(false);
             HudLayoutConfig.saveNow();

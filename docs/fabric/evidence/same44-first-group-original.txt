@@ -1,0 +1,223 @@
+
+> Configure project :
+Fabric Loom: 1.18.4
+
+> Task :compileJava UP-TO-DATE
+> Task :processResources UP-TO-DATE
+> Task :classes UP-TO-DATE
+> Task :compileGametestJava UP-TO-DATE
+> Task :generateLog4jConfig UP-TO-DATE
+> Task :generateDLIConfig UP-TO-DATE
+> Task :configureLaunch UP-TO-DATE
+> Task :processGametestResources UP-TO-DATE
+> Task :gametestClasses UP-TO-DATE
+
+> Task :runGameTestServer
+[10:02:40] [main/INFO] (FabricLoader/GameProvider) Loading Minecraft 26.3 with Fabric Loader 0.20.1
+[10:02:40] [main/INFO] (FabricLoader/Mappings) Mappings not present!
+[10:02:40] [main/INFO] (FabricLoader) Loading 45 mods:
+	- fabric-advancement-api-v1 1.0.1+38c7a2d55d
+	- fabric-api 0.166.2+26.3
+	- fabric-api-base 2.0.6+fcdff87f5d
+	- fabric-api-lookup-api-v1 2.0.24+3434d6d95d
+	- fabric-biome-api-v1 20.2.0+423307765d
+	- fabric-block-api-v1 3.1.0+0ae6f9115d
+	- fabric-block-getter-api-v2 2.0.9+3434d6d95d
+	- fabric-command-api-v2 3.1.2+fcdff87f5d
+	- fabric-content-registries-v0 15.0.7+74ed1ea55d
+	- fabric-convention-tags-v2 4.10.5+187b64905d
+	- fabric-crash-report-info-v1 1.0.7+fcdff87f5d
+	- fabric-creative-tab-api-v1 5.0.22+fcdff87f5d
+	- fabric-data-attachment-api-v1 2.2.35+af2d4d095d
+	- fabric-data-generation-api-v1 27.4.3+187b64905d
+	- fabric-debug-api-v1 1.0.5+5af7744b5d
+	- fabric-dimensions-v1 5.1.20+5af7744b5d
+	- fabric-entity-events-v1 6.0.4+3434d6d95d
+	- fabric-events-interaction-v0 5.3.10+b9b88df45d
+	- fabric-game-rule-api-v1 4.0.10+3434d6d95d
+	- fabric-gametest-api-v1 4.0.36+3434d6d95d
+	- fabric-item-api-v1 14.8.1+8f511c9f5d
+	- fabric-lifecycle-events-v1 4.1.9+ffef5f675d
+	- fabric-loot-api-v3 4.0.9+4068fd645d
+	- fabric-menu-api-v1 2.0.31+ed66f0a35d
+	- fabric-message-api-v1 7.1.0+3e5b46335d
+	- fabric-networking-api-v1 6.4.1+c58129785d
+	- fabric-object-builder-api-v1 24.1.13+e2f63d3e5d
+	- fabric-particles-v1 5.0.28+3434d6d95d
+	- fabric-permission-api-v1 1.0.8+fcdff87f5d
+	- fabric-recipe-api-v1 10.0.12+b9b88df45d
+	- fabric-registry-sync-v0 8.0.5+1ca9f6365d
+	- fabric-rendering-fluids-v1 6.0.6+3434d6d95d
+	- fabric-resource-conditions-api-v1 6.2.1+fd3b1d565d
+	- fabric-resource-loader-v0 3.3.27+4fc5413f5d
+	- fabric-resource-loader-v1 3.1.0+5af7744b5d
+	- fabric-serialization-api-v1 2.0.8+bb0d41e65d
+	- fabric-tag-api-v1 2.1.11+fcdff87f5d
+	- fabric-transfer-api-v1 8.0.27+c8357e785d
+	- fabric-transitive-access-wideners-v1 8.1.17+e2f63d3e5d
+	- fabricloader 0.20.1
+	- java 25
+	- minecraft 26.3
+	- mixinextras 0.5.5
+	- myriad 0.1.0
+	- myriad_gametest 0.1.0
+[10:02:40] [main/INFO] (FabricLoader/Mixin) SpongePowered MIXIN Subsystem Version=0.8.7 Source=file:/Users/vesgrae/.gradle/caches/modules-2/files-2.1/net.fabricmc/sponge-mixin/0.17.5+mixin.0.8.7/cef8519a91129d0c21fa03bb9378f0e8ca810e5/sponge-mixin-0.17.5+mixin.0.8.7.jar Service=Knot/Fabric Env=SERVER
+[10:02:40] [main/INFO] (FabricLoader/MixinExtras|Service) Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.5.5).
+[10:02:41] [main/WARN] (MacOperatingSystem) Unable to parse version 27.2 to a codename.
+[10:02:43] [main/INFO] (Minecraft) Environment: Environment[discoveryUrl=https://discovery.minecraftservices.com/minecraft/client, name=PROD]
+[10:02:43] [main/INFO] (FabricGameTestRunner) Starting test server
+[10:02:44] [Worker-Main-4/INFO] (Minecraft) Loaded 1866 advancements
+[10:02:44] [main/INFO] (BiomeModificationImpl) Applied 0 biome modifications to 0 of 67 new biomes in 459.2 μs
+[10:02:44] [Server thread/INFO] (Minecraft) Selecting global world spawn...
+[10:02:44] [Server thread/INFO] (Minecraft) Loading 0 persistent chunks...
+[10:02:44] [Server thread/INFO] (Minecraft) Preparing spawn area: 100%
+[10:02:44] [Server thread/INFO] (Minecraft) Time elapsed: 70 ms
+[10:02:44] [Server thread/INFO] (Minecraft) Will run tests matching myriad:first_group (1 tests)
+[10:02:44] [Server thread/INFO] (Minecraft) Started game test server
+[10:02:44] [Server thread/INFO] (Minecraft) 1 tests are now running at position 14575080, 4, -9166638!
+[10:02:44] [Server thread/INFO] (Minecraft) Running test environment '[unregistered]' batch 0 (1 tests)...
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [ ]
+[10:02:44] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-ELEMENT-VFX] PASS: 512 solid projectile stages, own material families, warning/active separation, atlas resources
+[10:02:44] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-KEHENG-VISUAL] PASS: 53 real textured stage frames, eight candidates/basic, physical needle faces/UV/LOD, alpha-correct exact boundaries, continuous phase and finite lifecycle
+[10:02:44] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-YIKE-VISUAL] PASS: 220 HD/pixel staged frames, three actual textured full/LOD models, 3D tip/UV/area/budgets, no parked bodies, exact wakes/bounds, unchanged authoritative prep/flow and finite cancellation
+[10:02:44] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-YIKE-SOLID-BEAM] PASS: 48 continuous white/blue faces in full/LOD, 4 directions, exact 22/near-wall endpoints, safe near plane, bounded radius and existing cancellation
+[10:02:44] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-RIVET-POLISH] PASS: 84 extra real contact stage/detail frames; four wall-normal attachments, real LOD, distinct wall/anchor stages, duplicate-solid suppression and authoritative pose lifecycle; no graphical acceptance
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-RIVET-GRIP] PASS: 2364 real pose/hand/skin matrix samples, welded palm, neutral wrist/handle relationship, directional backswing and forward-down strike, actual model operating-side vertices, positive winding and standard/underwater hand projection; offline geometry only
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-RIVET-ASSETS] PASS: 1024 production mesh stage/detail frames, finite vertices, <=192 faces, actual model material, expiry, wire and nine action icons; subjective presentation untested
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-ROSTER-VFX-TUNING] PASS: monotone bounded exposure, unchanged geometry/UV, 32 exact 1.4x full/LOD flight samples, fixed tips, frustum bounds and expiry
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-YIKE-WEAPON] PASS: staged fixed/mobile poses, confirmed progress, pause/slow/cancel, recoil, cleanup and view bases
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-VFX] PASS: 480 role/branch/shape recipes, budget, expiry, volume, short-life visibility, vertical/zero vectors, wire
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-NIGHT-GRAY-VFX] PASS: 48 unique RGBA frames, neutral palette, solid cores/gutters; 1440 mesh stages, phase, LOD, culling, travel and no stale blade
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-THUNDER-PIXEL-VFX] PASS: 48 native 256px frames, HD atlas/half-texel UV, 12MiB budget, palette/core/gutters; 1440 mesh stages, LOD, culling, phase, warning, forward crescent and no stale flight body
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-THUNDER-PROJECTILES] PASS: 24 real full/LOD meshes, +X-to-3D tip, exact source face counts, UV/bounds/area, clean atlas, stale/expiry, actual zh/en charge names
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-THUNDER-WAKE] PASS: 24 full/LOD/3D directions, decaying bounded planar wakes, exact clipped segment, finite TTL and ended body separation
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FENJUE-VFX] PASS: 48 distinct packed frames, shared palette/alpha/gutters, 1200 full/LOD/3D recipes, bounds/TTL/UV, phase and warning separation
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FENJUE-SLASH-AUDIO] PASS: two native mono OGG assets / two registered layers; actual success, cooldown, control and no-mana requests; original cost/CD, no generic duplicate
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FLAME-STEP-AUDIO-ASSETS] PASS: two mono48k OGGs/events, local range; actual stun/mana/cooldown/root/mod-off requests are silent
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-NIGHT-BASIC-NEEDLE] PASS: three unique basics/contact, role/mod gates; closed full/LOD needle, 4 travel directions, axis/scale/bounds/budgets, no stale body
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-NIGHT-SHIELD] PASS: real public R cast under CC, immediate cleanse; exact x1.7 ranks/strength and tooltip, other shield/buff preservation, normal cost/CD, invalid requests and no immunity
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-SHARED-CONTROL] PASS: real selected Sulan cast exposes shared interception
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-LEVEL-UP-BEAM] PASS: actual XP -> one beam/two sounds to self+ally only; enemy/unassigned/distant excluded, multi-rank/no false triggers, HP/mana preserved, follow/budgets/expiry
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-ROSTER-RETIREMENT] PASS: fourteen heroes/112 candidates, valid save/copy, ten rejected wire IDs/commands, no weapon remapping
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-RUNES-REMOVED] PASS: old saves, modifiers, shields, healing, level-up, wire roundtrip
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-IMPACT-AUDIO] PASS: 8 events / 24 mono Vorbis assets, CC0 credits, profile wire, contact cadence, mod-off, actual full-shield hit
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-VANILLA-MELEE] PASS: real Player.attack, full charge only / no weak hit, point target, vanilla cooldown, old packet rejected, stun/placement, ranged full-CD routing and mod-off
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-ACTION-REMOVAL] PASS: no retired player-action classes/assets/mixins, all fourteen attack routes preserved; new Night Shadow local first-person view is separate
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-NIGHT-FIRSTPERSON] PASS: 3-step chain, smooth reset/interruption, 4824 hand/grip poses, left/slim, no mirrored cull inversion, scoped assets
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-THUNDER-FIRSTPERSON] PASS: 4356 palm/grip poses, forward idle edge, actual cutting edge aligned with all three swing velocities (no broad-face slap), projected paths, left/slim, lifecycle/clock/duration
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FENJUE-FIRSTPERSON] PASS: 4356 skin/equip/hand palm attachments, real sharp-edge/travel alignment; descending/rising/horizontal paths, continuity/clock/lifecycle and bounded duration
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-BASIC-TRAIL] PASS: 1818 actual timeline/hand meshes, all nine attacks visible, themed materials/UV/budget, no idle/end/reset glow, deterministic FPS-independent samples and equip attachment
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FLAME-CROSS] PASS: 960 actual skill grip/edge poses, opposite rapid cuts, cue lifecycle, 60 tall painted image meshes, strong body and bounded TTL/LOD
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FLAME-STEP-VIEW] PASS: 720 grip/edge poses, left-pointing hold, actual-end release, early collision/cancel/replay/TTL; 112 side/finish meshes, UV/LOD/bounds, both sides and clear view
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FENJUE-MAJOR-VIEW] PASS: native HD alpha frames/gutters, four gestures, actual descent/landing, mirrored grip, token/cancel, grounded slabs/cliffs/voids, ambient light, mobile wire
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FLAME-FISSURE] PASS: 128 seed/heading/LOD cases, zero coplanar colour overlap after projection, shared tapered joints; native pipeline assertions run separately on the physical client
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FLAME-GHOST] PASS: real warning/field/charge renewal cases, late warning rejection, same-caster merge with enemy independence, one native frame per plane, brighter emissive image
+[10:02:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FLAME-GROUND] PASS: two true-alpha eight-frame native atlases, transparent gutters/holes, fixed-grid phases/loop, 224 four-skill timing/LOD cases, no old colour strips
+[10:02:46] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FLAME-HIT] PASS: native alpha eight-phase contact; 40 3D/crit/periodic/LOD cases, budgets/TTL; bounded target/AoE cadence; actual skill/basic shield-loss chain, invulnerable/mod-off/other-role exclusions, visible nearby audience and no duplicate generic hit
+[10:02:46] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FLAME-3D-AIM] PASS: 42 complete yaw/pitch directions, both painted arc sweeps including 6.5-block hits, SAT edge/body/plane exclusions, stable pole roll and VFX budgets
+[10:02:46] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FLAME-CRISP] PASS: 8 original crisp phases, actual painted pixels in upper 120-degree sector, exact circular contour, aligned layers, ground clearance and original forward plane
+[10:02:46] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-THUNDER-SKILL-VIEW] PASS: 4320 actual grip/skin/mirror poses, physical second grip/wipe, distinct cues, aiming, wire/stale/cancel, exact fan and warning
+[10:02:46] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-THUNDER-SKILL-RELEASE] PASS: six actual skill cues, preserved fees/CD, preview/confirm/cancel, rejected casts and no self-damage
+[10:02:46] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-THUNDER-THIRDSTRIKE] PASS: actual post-hit dispatch/health, all 5 ranks/two S values, exact x4 TRUE, unchanged two-target magic splash, no crit/recursion, timeout/switch/UI
+[10:02:46] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-NIGHT-SKILL-VIEW] PASS: seven distinct tracks, 4480 palm/grip poses, both arms/skins, forward knife, clasp/tap/arrival, local layers, stale/cancel/timeout/wire
+[10:02:46] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-NIGHT-SKILL-RELEASE] PASS: actual Q/W/E/R release cues, normal payment, no self-damage, no cue for preview/cancel/reject/no mana
+[10:02:46] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-SKILL-UI] PASS: 96 responsive scroll states, 1536 bounded tooltip states, four icon rows, all growth icons reachable, single/double-click spending contract
+[10:02:46] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-CHOOSE-UI] PASS: 30 real card-layout/scroll states at seven GUI sizes, complete roster coverage, separate hit areas and current/occupied availability; no live graphical acceptance
+[10:02:46] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-SHUO-BASIC-VFX] PASS: 2688 new recipe/LOD stages, old skill effects retired, 16 distinct temporal stages and bounded basic-only camera mesh
+[10:02:46] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-SHUO-DASH] PASS: 2688 motion/phase/direction/LOD samples, layered HD materials, endpoint bounds, style differentiation, owner readability and finite lifetime
+[10:02:46] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-SHUO-SILENT-LINE] PASS: 1200 path/direction/stage/LOD frames, exact endpoints, one seam/two cuts, seeded flourishes, phase continuity and finite expiry
+[10:02:47] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-SHUO-WORLD-VFX] PASS: 24576 authored phase/variant/direction/LOD samples, finite lifetime/UVs/bounds, no path overshoot, native HD alpha and horizontal closed guard
+[10:02:47] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-SHUO-BLADE-FOLLOW] PASS: 3636 skill pose/stance/mirror samples, exact authored edge/matrix, sheathed clipping, lifetime/cancellation and existing material budgets
+[10:02:47] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-SHUO-BRIGHTNESS] PASS: monotone all-layer exposure, color lift, finite alpha, unchanged geometry/UV/material and blade/core coverage
+[10:02:47] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-SHUO-RIG] PASS: 10504 paired skin grips / closed sheath alignment, proper rotations, cue lifecycle, atlas/skill icons and finite VFX
+[10:02:47] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-G1-SPATIAL] PASS: reticle, slabs, headroom, swept walls, motion-only, cleanup, endpoint clamp
+[10:02:47] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-CHARGE] PASS: start, motion lock, natural Y/landing preserved, horizontal displacement/new vertical knockup interrupt, stun, reset, role change, wire
+[10:02:47] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-LINGYUAN-SKILLS] PASS: 8 distinct layered profiles, early/mid/late, real passive count, resonance-ready cue, cross-packet charge growth
+[10:02:47] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-LINGYUAN-CRESCENT] PASS: 1314 actual sprite faces, 6 axes / 2 diagonals / zero fallback, near/far, three ages, convex front follows travel
+[10:02:47] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-LINGYUAN-FLIPBOOK] PASS: 6 atlases / 48 unique painted frames, alpha gutters, UV cells, 5 independent loop rates, one-shot stages, cross-packet continuity
+[10:02:47] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-LINGYUAN-MODEL] PASS: 186 source cuboids, 48-cuboid LOD, 7 flight axes, UV2D, 4 real loop layers, 72 recipe stages and warning separation
+[10:02:47] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-G2-VFX] PASS: 1920 mesh stages, own textures, warning/active separation, reduced detail and vertex bounds
+[10:02:47] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-G2] PASS: five roles, legacy migration, g2 persistence, point cancel, shield amount/nonstacking, parry, healing, formula text
+[10:02:47] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-G1-G2] PASS: 112 independent modules across 14 heroes, caps, alternatives, budgets, growth, economy, persistence, cancel
+[10:02:48] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-CHARGE-COMPLETE] PASS: real tick delay, release before continuation, single execution
+[10:02:48] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-SHARED-CONTROL-EXPIRY] PASS: real Shuo/rework input gates, no early payment, exact silence/freeze expiry and restored casts
+[10:02:48] [Server thread/INFO] (Minecraft) [_]
+[10:02:48] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-NIGHT-DASH] PASS: real 9-block / 5-tick Assault, 7-block Return preview and motion, no outward teleport/overshoot, swept walls, far single hits and 3-second return anchor
+[10:02:48] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-SHUO-HELD-STATE] PASS: actual equipment codec, original assets, exact grip-to-mouth, draw/8-tick return/reset and unchanged inventory/offhand
+[10:02:48] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FLAME-MAJOR-AUDIO] PASS: seven mono48k assets/events, actual no-mana/select/confirm/cooldown requests, real twelve-tick cage activation, cancelled cage silent, immediate armor shield/one ignition
+[10:02:48] [Server thread/INFO] (Minecraft) [X]
+[10:02:48] [Server thread/INFO] (Minecraft) ========= 1 GAME TESTS COMPLETE IN 4.283 s ======================
+[10:02:48] [Server thread/INFO] (Minecraft) 1 required tests failed :(
+[10:02:48] [Server thread/INFO] (Minecraft)    - myriad:first_group: No early damage hp=932.5 on tick 17
+[10:02:48] [Server thread/INFO] (Minecraft) ====================================================
+[10:02:48] [Server thread/INFO] (Minecraft) Stopping server
+[10:02:48] [Server thread/INFO] (Minecraft) Saving players
+[10:02:48] [Server thread/INFO] (Minecraft) Saving worlds
+[10:02:49] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[Test Level]'/minecraft:overworld
+[10:02:49] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[Test Level]'/minecraft:the_end
+[10:02:49] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[Test Level]'/minecraft:the_nether
+[10:02:49] [Server thread/INFO] (Minecraft) Game test server shutting down
+
+> Task :runGameTestServer FAILED
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':runGameTestServer' (registered by plugin 'fabric-loom').
+> Process 'command '/Library/Java/JavaVirtualMachines/jdk-25.jdk/Contents/Home/bin/java'' finished with non-zero exit value 1
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 10s
+7 actionable tasks: 1 executed, 6 up-to-date

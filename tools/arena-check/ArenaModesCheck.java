@@ -23,7 +23,7 @@ import net.minecraft.world.level.chunk.PalettedContainer;
 import net.minecraft.world.level.chunk.Strategy;
 import net.minecraft.world.level.storage.LevelData;
 
-/** Real Minecraft codecs, actual distributed map, and isolated lane/packet regressions. */
+/** Current Minecraft codecs and isolated lane/packet regressions; terrain checks require an explicit historical fixture. */
 public final class ArenaModesCheck {
     private static int checks;
     private static void check(boolean ok, String reason) { if (!ok) throw new AssertionError(reason); checks++; }
@@ -40,7 +40,7 @@ public final class ArenaModesCheck {
         check(!MatchArena.select(null, "typo"), "Invalid network mode rejected without mutation");
         check(MatchArena.Mode.DUEL.teamSize == 3 && MatchArena.Mode.RIFT.teamSize == 5, "Team limits");
         check(MatchArena.configuration(world, MatchArena.Mode.RIFT, "myriad_lane_layout.json").equals(world.resolve("myriad_lane_layout.json")), "Legacy config path unchanged");
-        check(MatchArena.singleLaneReady(world), "Distributed combined save is usable");
+        check(MatchArena.singleLaneReady(world), "Selected combined configuration is usable");
         check(!MatchArena.singleLaneReady(world.resolve("not-a-world")), "Missing profile rejected");
         var layout = JsonParser.parseString(Files.readString(MatchArena.configuration(world, MatchArena.Mode.DUEL, "myriad_lane_layout.json"))).getAsJsonObject();
         var enabled = LaneSystem.class.getDeclaredMethod("readEnabledLanes", JsonObject.class); enabled.setAccessible(true);
@@ -63,10 +63,14 @@ public final class ArenaModesCheck {
             check(((List<?>)routeMethod.invoke(null, LaneSystem.Lane.BOTTOM, faction)).isEmpty(), "No fallback bottom lane in 3v3");
             var route = (List<BlockPos>)routeMethod.invoke(null, LaneSystem.Lane.MID, faction);
             check(route.size() == layout.getAsJsonArray("towers").size()+2 && route.getFirst().equals(fountains.get(faction)), "Own-base-to-enemy-crystal route");
-            int lastX = route.getFirst().getX();
+            // Synthetic and historical maps can place the factions on opposite X sides.
+            // Check forward progress toward the actual enemy endpoint instead of a faction sign.
+            BlockPos start = route.getFirst(), end = route.getLast();
+            long dx = end.getX() - start.getX(), dz = end.getZ() - start.getZ(), lastProgress = 0;
             for (BlockPos p : route.subList(1, route.size())) {
-                check(faction == Faction.YOUMING ? p.getX() > lastX : p.getX() < lastX, "No backwards bend in single lane");
-                lastX = p.getX();
+                long progress = (p.getX() - start.getX()) * dx + (p.getZ() - start.getZ()) * dz;
+                check(progress > lastProgress, "No backwards bend in single lane");
+                lastProgress = progress;
             }
         }
         var ready = LaneSystem.class.getDeclaredMethod("towerLayoutReady"); ready.setAccessible(true);
@@ -111,8 +115,6 @@ public final class ArenaModesCheck {
             check(NetworkSetup.SelectArenaPayload.CODEC.decode(buf).equals(payload), "Selection packet roundtrip");
         } finally { buf.release(); }
 
-        var codec = PalettedContainer.codecRW(BlockState.CODEC,
-                Strategy.createForBlockStates(Block.BLOCK_STATE_REGISTRY), Blocks.AIR.defaultBlockState());
         buf = new FriendlyByteBuf(Unpooled.buffer());
         try {
             var markers = List.of(new NetworkSetup.MinimapMarker(8, 0, 4209.5F, 70.5F, new UUID(0,0)),
@@ -124,24 +126,28 @@ public final class ArenaModesCheck {
             check(NetworkSetup.MinimapSnapshotPayload.STREAM_CODEC.decode(buf).equals(payload) && !buf.isReadable(),
                     "Camp/boss/fountain coordinates roundtrip without protocol changes");
         } finally { buf.release(); }
-        var data = NbtIo.readCompressed(world.resolve("level.dat"), NbtAccounter.unlimitedHeap()).getCompoundOrEmpty("Data");
-        LevelData.RespawnData.CODEC.parse(NbtOps.INSTANCE, data.getCompoundOrEmpty("spawn")).getOrThrow();
         int chunks = 0, sections = 0;
-        try (var file = new RandomAccessFile(world.resolve("dimensions/minecraft/overworld/region/r.8.0.mca").toFile(), "r")) {
-            byte[] header = new byte[4096]; file.readFully(header);
-            for (int slot = 0; slot < 1024; slot++) {
-                int p = slot * 4, offset = ((header[p]&255)<<16) | ((header[p+1]&255)<<8) | (header[p+2]&255);
-                file.seek((long)offset*4096); int length = file.readInt(); check(file.readByte() == 2, "Zlib chunk compression");
-                byte[] compressed = new byte[length-1]; file.readFully(compressed);
-                var chunk = NbtIo.read(new DataInputStream(new InflaterInputStream(new ByteArrayInputStream(compressed))), NbtAccounter.unlimitedHeap());
-                check(chunk.getIntOr("xPos", -1) == 256+slot%32 && chunk.getIntOr("zPos", -1) == slot/32, "Translated chunk coordinates");
-                for (Tag tag : chunk.getListOrEmpty("sections")) {
-                    codec.parse(NbtOps.INSTANCE, ((CompoundTag)tag).getCompoundOrEmpty("block_states")).getOrThrow(); sections++;
+        if (args.length > 1 && args[1].equals("--terrain")) {
+            var codec = PalettedContainer.codecRW(BlockState.CODEC,
+                    Strategy.createForBlockStates(Block.BLOCK_STATE_REGISTRY), Blocks.AIR.defaultBlockState());
+            var data = NbtIo.readCompressed(world.resolve("level.dat"), NbtAccounter.unlimitedHeap()).getCompoundOrEmpty("Data");
+            LevelData.RespawnData.CODEC.parse(NbtOps.INSTANCE, data.getCompoundOrEmpty("spawn")).getOrThrow();
+            try (var file = new RandomAccessFile(world.resolve("dimensions/minecraft/overworld/region/r.8.0.mca").toFile(), "r")) {
+                byte[] header = new byte[4096]; file.readFully(header);
+                for (int slot = 0; slot < 1024; slot++) {
+                    int p = slot * 4, offset = ((header[p]&255)<<16) | ((header[p+1]&255)<<8) | (header[p+2]&255);
+                    file.seek((long)offset*4096); int length = file.readInt(); check(file.readByte() == 2, "Zlib chunk compression");
+                    byte[] compressed = new byte[length-1]; file.readFully(compressed);
+                    var chunk = NbtIo.read(new DataInputStream(new InflaterInputStream(new ByteArrayInputStream(compressed))), NbtAccounter.unlimitedHeap());
+                    check(chunk.getIntOr("xPos", -1) == 256+slot%32 && chunk.getIntOr("zPos", -1) == slot/32, "Translated chunk coordinates");
+                    for (Tag tag : chunk.getListOrEmpty("sections")) {
+                        codec.parse(NbtOps.INSTANCE, ((CompoundTag)tag).getCompoundOrEmpty("block_states")).getOrThrow(); sections++;
+                    }
+                    chunks++;
                 }
-                chunks++;
             }
+            check(chunks == 1024 && sections == 24576, "Complete arena and void buffer");
         }
-        check(chunks == 1024 && sections == 24576, "Complete arena and void buffer");
         System.out.println("ARENA_CHECK_PASS checks=" + checks + " chunks=" + chunks + " sections=" + sections);
     }
 }

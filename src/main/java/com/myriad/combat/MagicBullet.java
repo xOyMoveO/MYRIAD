@@ -119,7 +119,7 @@ public final class MagicBullet {
         b.characterId = PlayerDataProvider.get(player).getCharacterId();
         b.spiralPhase = 0;
         BULLETS.computeIfAbsent(player.getUUID(), k -> new ArrayList<>()).add(b);
-        net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+        com.myriad.network.Packets.sendToPlayer(player,
                 new com.myriad.network.NetworkSetup.MagicBulletCooldownPayload(remaining(player), total(player)));
         // 起手：枪口迸发 + 音效
         if ("yunsheng".equalsIgnoreCase(b.characterId)) {
@@ -143,7 +143,7 @@ public final class MagicBullet {
     public static void tickBullets(ServerPlayer player, PlayerData data) {
         var recovery=FIRE_CD.get(player.getUUID());
         if(recovery!=null){boolean ready=recovery.progress.advance(player.level().getGameTime(),ActionTime.multiplier(player.getUUID(),player.level().getGameTime()),recovery.totalTicks);
-            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,new com.myriad.network.NetworkSetup.MagicBulletCooldownPayload(remaining(player),total(player)));
+            com.myriad.network.Packets.sendToPlayer(player,new com.myriad.network.NetworkSetup.MagicBulletCooldownPayload(remaining(player),total(player)));
             if(ready)FIRE_CD.remove(player.getUUID());}
         List<Bullet> list = BULLETS.get(player.getUUID());
         if (list == null || list.isEmpty()) {

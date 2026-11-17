@@ -13,15 +13,11 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.attributes.*;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.*;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.tick.*;
 import java.util.*;
 import static com.myriad.combat.DamageCalc.Kind.MAGIC;
 
 /** Keheng's real-time field lifecycle and source publication. Does not change the world clock.
  * Actor rates and independent projectile sampling deliberately have separate entry points. */
-@EventBusSubscriber(modid=Myriad.MODID)
 public final class KehengTimeFields {
     private KehengTimeFields(){}
     private static final Identifier MOVE=Identifier.fromNamespaceAndPath("myriad","local_action_movement");
@@ -169,6 +165,6 @@ public final class KehengTimeFields {
         refreshPublished();var previous=PUBLISHED.remove(p.getUUID());if(previous!=null)for(var s:previous)ActionTime.remove(p.getUUID(),s.owner,s.key);
         var attr=p.getAttribute(Attributes.MOVEMENT_SPEED);if(attr!=null)attr.removeModifier(MOVE);ACTORS.remove(p.getUUID());
     }
-    @SubscribeEvent public static void clock(ServerTickEvent.Pre e){for(var level:e.getServer().getAllLevels())tick(level);}
-    @SubscribeEvent public static void movement(PlayerTickEvent.Pre e){if(e.getEntity() instanceof ServerPlayer p&&ModState.isEnabled())refreshActor(p);}
+    public static void clock(net.minecraft.server.MinecraftServer server){for(var level:server.getAllLevels())tick(level);}
+    public static void movement(net.minecraft.world.entity.player.Player subject){if(subject instanceof ServerPlayer p&&ModState.isEnabled())refreshActor(p);}
 }

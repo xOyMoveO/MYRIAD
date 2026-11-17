@@ -1,3 +1,52 @@
+# 万象 Fabric 26.3 客户端验证工具
+
+当前目标为 MC 26.3 / Fabric Loader 0.20.1 / Fabric API 0.166.2+26.3、Java 25。MCPFabric 使用官方 0.10.0+26.3 Fabric JAR，大小与 SHA512 固定在 `installation.json`。先核对已有文件；仅缺少这个测试模组时，从其中的官方 URL 下载并核验，不重下共享游戏资源。
+
+`client-adapter/` 是独立 Fabric 客户端测试模组，复用上游认证桥接及能力开关。通过 `KeyboardHandler.keyPress`、`MouseHandler.onButton` 发送真实 SDL 输入；技能、GUI 加点等仍由生产包和服务端校验。观察计数由测试 mixin 在真实处理函数入口采集。临时绑定使用未占用的 SDL F13–F24，1–20 tick 后恢复；鼠标 API 保持 0 左/1 右/2 中，内部映射到 SDL 常量。切世界、打开界面或玩家 STOP 会释放持有输入。
+
+先准备普通生产构建，再启动两个相互独立的客户端：
+
+```bash
+bash tools/mcpfabric/launch-client.sh pilot /path/to/mcpfabric-0.10.0+26.3.jar
+bash tools/mcpfabric/launch-client.sh observer /path/to/mcpfabric-0.10.0+26.3.jar
+```
+
+分别运行 `runClient` / `runObserver`，目录 `run-fabric-client/` / `run-fabric-observer/`，后者用户名为 `MyriadObserver`。桥接固定回环地址，端口为 25599 / 25600，令牌由各测试目录独立保存；关闭全局发现。第一次加入测试服由用户设置服务器条目，随后可通过 `list_worlds` / `join_world` 重连；只使用明确指定的新测试世界。不要用旧 `run-mcpfabric/` 存档或正式实例。
+
+启动入口先完整核验 `~/.local/share/minecraft/assets` 的索引 34、5149 项资源及 Loom 别名 `26.3-34`，成功后才跳过 `downloadAssets`。Loom 缓存使用指向共享库的链接；存在不同目录或不完整资源时停止并报告，不清空缓存。
+
+适配只单独输出到 `build/mcpfabric-adapter/myriad-acceptance-fabric26.3.jar`，运行时才复制到对应测试 `mods/`；普通 `build/libs/myriad-*.jar` 不包含适配、MCPFabric、令牌、fixture 或世界。可单独重建：
+
+```bash
+bash tools/mcpfabric/build-fabric-adapter.sh /path/to/mcpfabric-0.10.0+26.3.jar
+```
+
+Node 连接服务继续使用锁定的 0.10.0 协议。依赖已有则复用；没有时在 `tools/mcpfabric/` 运行 `npm ci --ignore-scripts`。默认连接 pilot，observer 通过环境变量选择：
+
+```bash
+node tools/mcpfabric/check-connection.mjs
+node tools/mcpfabric/call-tool.mjs myriad_state
+MYRIAD_MCP_RUN_DIR=run-fabric-observer node tools/mcpfabric/call-tool.mjs myriad_state
+node tools/mcpfabric/call-tool.mjs myriad_input '{"kind":"key","key":"key.myriad.skill_e"}'
+node tools/mcpfabric/call-tool.mjs myriad_release_inputs
+```
+
+先读 `get_status` / `myriad_state` 并确认 `aiPaused=false`；操作结束读回 `heldInputs=0`。独立适配还提供只读 RPC `myriad.presentation`，记录朔动作与能力 VFX 的生产接收时点、声音提交及返回值；这些记录不作画面或听感评价。输入回调计数只证明输入进入处理函数；学习等级、法力、冷却、位置、合法命中和服务端结果必须另行读回。截图或连续帧仅按明确指令采集，全部画面、音效听感、手感、流畅性和平衡结论由人验收。
+
+也可不启动 Node 服务，直接调用同一认证桥接（默认 pilot）：
+
+```bash
+python tools/mcpfabric/call-rpc.py info.status
+python tools/mcpfabric/call-rpc.py myriad.presentation
+python tools/mcpfabric/call-rpc.py myriad.state --run-dir run-fabric-observer
+```
+
+`--record /path/evidence.jsonl` 会追加时间、实例、参数和响应，凭据不进入记录。
+
+## 26.2 历史记录
+
+以下为旧 NeoForge 环境的历史事实，不能作为 Fabric 26.3 的验证结果；其中旧命令和目录不得用于当前启动。
+
 # 万象 MCPFabric 测试环境
 
 本项目使用 MCPFabric 0.10.0 的 NeoForge 26.2 模组和同版本 MCP 连接服务。文件来源、版本和模组 SHA512 见 `installation.json`。

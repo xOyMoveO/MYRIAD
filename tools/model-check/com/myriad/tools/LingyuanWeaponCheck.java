@@ -9,7 +9,7 @@ import net.minecraft.client.resources.model.cuboid.*;
 import net.minecraft.world.item.ItemDisplayContext;
 import org.joml.Vector3f;
 
-/** Uses the installed MC26.2 parser and real display transform, with no running client required. */
+/** Uses the installed current Minecraft parser and real display transform, with no running client required. */
 public final class LingyuanWeaponCheck {
     private static void require(boolean ok,String message){if(!ok)throw new IllegalStateException(message);}
     public static void main(String[] args)throws Exception{
@@ -37,7 +37,7 @@ public final class LingyuanWeaponCheck {
         var source=spec.getAsJsonArray("parts");var cubes=json.getAsJsonArray("elements");
         for(int i=0;i<cubes.size();i++){
             var part=source.get(i).getAsJsonObject();var cube=cubes.get(i).getAsJsonObject();
-            var actual=CuboidModel.GSON.fromJson(cube,CuboidModelElement.class);
+            var actual=MinecraftModelParser.element(cube);
             for(int axis=0;axis<3;axis++){
                 double offset=axis==1?10.5:0,lo=8+(part.getAsJsonArray("pos").get(axis).getAsDouble()+offset)*.2;
                 double hi=lo+part.getAsJsonArray("size").get(axis).getAsDouble()*.2;
@@ -52,6 +52,6 @@ public final class LingyuanWeaponCheck {
         require(rotations>10,"Source rotated microgeometry retained");
         var texture=ImageIO.read(assets.resolve("textures/item/lingyuan_jade_sword.png").toFile());
         require(texture.getWidth()==128&&texture.getHeight()==128,"Held atlas has native resolution");
-        System.out.println("[MYRIAD-LINGYUAN-HELD] PASS: actual MC26.2 model parser, 186 source parts, native Euler rotations, source UVs, 7 contexts, centred grip and texture");
+        System.out.println("[MYRIAD-LINGYUAN-HELD] PASS: actual Minecraft model parser, 186 source parts, native Euler rotations, source UVs, 7 contexts, centred grip and texture");
     }
 }

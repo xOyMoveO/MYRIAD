@@ -9,7 +9,6 @@ import java.awt.image.BufferedImage;
 import java.nio.file.*;
 import java.util.*;
 import java.util.List;
-import java.util.zip.ZipFile;
 import javax.imageio.ImageIO;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -106,7 +105,7 @@ public final class FlameSlashPreview {
         NightDaggerPreview.dagger=ImageIO.read(assets.resolve("textures/item/fenjue_flame_changdao.png").toFile());
         blade=NightDaggerPreview.loadBlade(assets,"lieyanjian");texture=ImageIO.read(assets.resolve("textures/particle/vfx/fenjue_crisp_slash.png").toFile());
         emberTexture=ImageIO.read(assets.resolve("textures/particle/vfx/fenjue_pixel_embers.png").toFile());
-        try(var zip=new ZipFile("E:/mod/.gradle/caches/neoformruntime/artifacts/minecraft_26.2_client.jar")){
+        try(var zip=MinecraftPreviewResources.open()){
             var glow=ImageIO.read(zip.getInputStream(zip.getEntry("assets/minecraft/textures/particle/glow.png")));
             core=new BufferedImage(1,1,BufferedImage.TYPE_INT_ARGB);core.setRGB(0,0,glow.getRGB(glow.getWidth()/2,glow.getHeight()/2));
             NightDaggerPreview.skin=ImageIO.read(zip.getInputStream(zip.getEntry("assets/minecraft/textures/entity/player/wide/steve.png")));

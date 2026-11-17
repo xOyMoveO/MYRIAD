@@ -5,17 +5,18 @@ import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
+const runDirectory = resolve(root, process.env.MYRIAD_MCP_RUN_DIR ?? 'run-fabric-client');
 const name = process.argv[2];
 if (!name) throw new Error('Usage: node tools/mcpfabric/call-tool.mjs TOOL [JSON_ARGUMENTS]');
 const client = new Client({ name: 'myriad-client-cli', version: '1.0.0' });
 try {
   await client.connect(new StdioClientTransport({
-    command: process.execPath, args: [resolve(root, 'tools/mcpfabric/start-server.mjs')], cwd: root, stderr: 'pipe',
+    command: process.execPath, args: [resolve(root, 'tools/mcpfabric/start-server.mjs')], cwd: root, stderr: 'pipe', env: process.env,
   }));
   const result = await client.callTool({ name, arguments: JSON.parse(process.argv[3] ?? '{}') });
   const images = result.content?.filter(item => item.type === 'image') ?? [];
   if (images.length) {
-    const dir = resolve(root, 'run-mcpfabric/screenshots');
+    const dir = resolve(runDirectory, 'screenshots');
     mkdirSync(dir, { recursive: true });
     for (const [i, image] of images.entries()) {
       const path = resolve(dir, `${name}-${Date.now()}-${i}.png`);

@@ -1,0 +1,22 @@
+{
+  "passed": true,
+  "assertions": 2339,
+  "checks": {
+    "flame_pipeline": {
+      "assertions": 4,
+      "passed": true
+    },
+    "shuo_arm_model": {
+      "assertions": 388,
+      "passed": true
+    },
+    "shuo_sheathed_grip": {
+      "assertions": 1939,
+      "passed": true
+    },
+    "shuo_held_transform": {
+      "assertions": 8,
+      "passed": true
+    }
+  }
+}

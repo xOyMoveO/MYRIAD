@@ -1,0 +1,15 @@
+MYRIAD license scope / 许可范围
+
+项目自有代码采用 MIT；原创模型、纹理、图标、音频等非代码素材保留所有权利（另有明确许可的除外）；第三方软件、工具、模板代码和素材沿用各自许可，不因本项目采用 MIT 而被重新许可。
+
+The MIT License in LICENSE applies only to code owned by MYRIAD contributors.
+Original models, textures, icons, audio and other non-code assets are All Rights
+Reserved unless an asset-specific notice explicitly provides another license.
+Third-party software, tools, template code and assets retain their original
+licenses and notices; they are not relicensed by the project's MIT License.
+
+Source and asset notices: META-INF/licenses/ in the release JAR
+(src/main/resources/META-INF/licenses/ in the source repository).
+The original NeoForged MDK license is preserved in licenses/neoforged-mdk.txt
+beside this scope notice. Third-party tools kept only in the source repository
+retain the licenses supplied in their own directories.

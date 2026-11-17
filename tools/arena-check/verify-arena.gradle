@@ -9,12 +9,15 @@ gradle.projectsEvaluated {
     }
     rootProject.tasks.register('verifyArenaModes', JavaExec) {
         dependsOn compileCheck
-        // Bootstrap requires an FML launcher for patched Minecraft. Use the matching vanilla
-        // 26.2 jar first for isolated codecs/route checks; mod classes and NeoForge types follow.
-        classpath = rootProject.files('D:/Minecraft/.minecraft/versions/myriad/myriad.jar', checkOutput) + rootProject.sourceSets.main.runtimeClasspath
+        // Resolve Minecraft and Fabric from this build; never prepend an installed instance JAR.
+        classpath = rootProject.files(checkOutput) + rootProject.sourceSets.main.runtimeClasspath
         mainClass = 'com.myriad.check.ArenaModesCheck'
         javaLauncher = rootProject.javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
-        args rootProject.findProperty('arenaCheckWorld') ?: 'E:/mod/maps/combined-reference-3v3-campgrounds-20261004-v4/Sect_Rift_25x25_Ready'
+        args rootProject.file(rootProject.findProperty('arenaCheckWorld') ?: 'src/gametest/resources/arena-fixture').absolutePath
+        if (rootProject.hasProperty('arenaCheckTerrain')) {
+            if (!rootProject.hasProperty('arenaCheckWorld')) throw new GradleException('Terrain comparison requires an explicit -ParenaCheckWorld path')
+            args '--terrain'
+        }
         jvmArgs '-Xmx1G'
     }
 }

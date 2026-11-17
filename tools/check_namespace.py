@@ -46,9 +46,21 @@ if args.jar:
             if name.endswith((".class", ".json", ".toml", ".cfg", ".mcmeta")):
                 if old.encode() in jar.read(name).lower():
                     errors.append("Old JAR identifier: " + name)
-        metadata = jar.read("META-INF/neoforge.mods.toml").decode()
-        if 'modId="myriad"' not in metadata:
-            errors.append("Wrong JAR modId")
+        metadata = json.loads(jar.read("fabric.mod.json"))
+        if metadata.get("id") != "myriad" or metadata.get("entrypoints") != {
+                "main": ["com.myriad.Myriad"], "client": ["com.myriad.MyriadClient"]}:
+            errors.append("Wrong Fabric identity or entrypoints")
+        if metadata.get("depends", {}).get("minecraft") != "=26.3":
+            errors.append("Wrong Fabric Minecraft target")
+        if "META-INF/neoforge.mods.toml" in names or "META-INF/accesstransformer.cfg" in names:
+            errors.append("Retired loader metadata in Fabric release JAR")
+        if jar.testzip() is not None:
+            errors.append("Invalid ZIP entry in release JAR")
+        if any(name.startswith(("com/myriad/acceptance/", "com/myriad/gametest/"))
+               or (name.startswith("com/myriad/game/") and ("Checks" in name or "Regression" in name or "MyriadGameTests" in name))
+               or "/test_instance/" in name or name == "myriad-gametest.mixins.json"
+               for name in names):
+            errors.append("Test adapter, fixture or regression code in release JAR")
         if any("data/myriad/test_instance/" + n + ".json" in names
                for n in ("team_signal", "control_shield", "death_recap", "match_contribution", "match_experience", "first_group", "combat_regression", "keheng", "yike", "rivet",
                          "roster_delivery", "world_time", "hero_action_time")):

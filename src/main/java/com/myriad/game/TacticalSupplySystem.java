@@ -91,7 +91,7 @@ public final class TacticalSupplySystem {
         }
         ItemStack bought = new ItemStack(offer.item, offer.count);
         Component itemName = bought.getHoverName();
-        if (!player.getInventory().add(bought)) player.drop(bought, false);
+        if (!player.getInventory().add(bought)) player.drop(bought, false, net.minecraft.util.Prediction.SERVER_ONLY);
         if (!free) data.spendGold(offer.price);
         PlayerDataProvider.syncToClient(player);
         player.sendSystemMessage(Component.translatable("message.myriad.supply_bought",

@@ -1,0 +1,379 @@
+
+> Configure project :
+Fabric Loom: 1.18.4
+
+> Task :compileJava UP-TO-DATE
+> Task :processResources UP-TO-DATE
+> Task :classes UP-TO-DATE
+> Task :compileGametestJava UP-TO-DATE
+> Task :generateLog4jConfig UP-TO-DATE
+> Task :generateDLIConfig UP-TO-DATE
+> Task :configureLaunch UP-TO-DATE
+> Task :processGametestResources UP-TO-DATE
+> Task :gametestClasses UP-TO-DATE
+
+> Task :runSameServer
+[10:25:36] [main/INFO] (FabricLoader/GameProvider) Loading Minecraft 26.3 with Fabric Loader 0.20.1
+[10:25:36] [main/INFO] (FabricLoader/Mappings) Mappings not present!
+[10:25:36] [main/INFO] (FabricLoader) Loading 45 mods:
+	- fabric-advancement-api-v1 1.0.1+38c7a2d55d
+	- fabric-api 0.166.2+26.3
+	- fabric-api-base 2.0.6+fcdff87f5d
+	- fabric-api-lookup-api-v1 2.0.24+3434d6d95d
+	- fabric-biome-api-v1 20.2.0+423307765d
+	- fabric-block-api-v1 3.1.0+0ae6f9115d
+	- fabric-block-getter-api-v2 2.0.9+3434d6d95d
+	- fabric-command-api-v2 3.1.2+fcdff87f5d
+	- fabric-content-registries-v0 15.0.7+74ed1ea55d
+	- fabric-convention-tags-v2 4.10.5+187b64905d
+	- fabric-crash-report-info-v1 1.0.7+fcdff87f5d
+	- fabric-creative-tab-api-v1 5.0.22+fcdff87f5d
+	- fabric-data-attachment-api-v1 2.2.35+af2d4d095d
+	- fabric-data-generation-api-v1 27.4.3+187b64905d
+	- fabric-debug-api-v1 1.0.5+5af7744b5d
+	- fabric-dimensions-v1 5.1.20+5af7744b5d
+	- fabric-entity-events-v1 6.0.4+3434d6d95d
+	- fabric-events-interaction-v0 5.3.10+b9b88df45d
+	- fabric-game-rule-api-v1 4.0.10+3434d6d95d
+	- fabric-gametest-api-v1 4.0.36+3434d6d95d
+	- fabric-item-api-v1 14.8.1+8f511c9f5d
+	- fabric-lifecycle-events-v1 4.1.9+ffef5f675d
+	- fabric-loot-api-v3 4.0.9+4068fd645d
+	- fabric-menu-api-v1 2.0.31+ed66f0a35d
+	- fabric-message-api-v1 7.1.0+3e5b46335d
+	- fabric-networking-api-v1 6.4.1+c58129785d
+	- fabric-object-builder-api-v1 24.1.13+e2f63d3e5d
+	- fabric-particles-v1 5.0.28+3434d6d95d
+	- fabric-permission-api-v1 1.0.8+fcdff87f5d
+	- fabric-recipe-api-v1 10.0.12+b9b88df45d
+	- fabric-registry-sync-v0 8.0.5+1ca9f6365d
+	- fabric-rendering-fluids-v1 6.0.6+3434d6d95d
+	- fabric-resource-conditions-api-v1 6.2.1+fd3b1d565d
+	- fabric-resource-loader-v0 3.3.27+4fc5413f5d
+	- fabric-resource-loader-v1 3.1.0+5af7744b5d
+	- fabric-serialization-api-v1 2.0.8+bb0d41e65d
+	- fabric-tag-api-v1 2.1.11+fcdff87f5d
+	- fabric-transfer-api-v1 8.0.27+c8357e785d
+	- fabric-transitive-access-wideners-v1 8.1.17+e2f63d3e5d
+	- fabricloader 0.20.1
+	- java 25
+	- minecraft 26.3
+	- mixinextras 0.5.5
+	- myriad 0.1.0
+	- myriad_gametest 0.1.0
+[10:25:36] [main/INFO] (FabricLoader/Mixin) SpongePowered MIXIN Subsystem Version=0.8.7 Source=file:/Users/vesgrae/.gradle/caches/modules-2/files-2.1/net.fabricmc/sponge-mixin/0.17.5+mixin.0.8.7/cef8519a91129d0c21fa03bb9378f0e8ca810e5/sponge-mixin-0.17.5+mixin.0.8.7.jar Service=Knot/Fabric Env=SERVER
+[10:25:36] [main/INFO] (FabricLoader/MixinExtras|Service) Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.5.5).
+[10:25:37] [main/WARN] (MacOperatingSystem) Unable to parse version 27.2 to a codename.
+[10:25:39] [main/INFO] (Minecraft) Environment: Environment[discoveryUrl=https://discovery.minecraftservices.com/minecraft/client, name=PROD]
+[10:25:40] [Worker-Main-3/INFO] (Minecraft) Loaded 1866 advancements
+[10:25:40] [main/INFO] (BiomeModificationImpl) Applied 0 biome modifications to 0 of 67 new biomes in 491.3 μs
+[10:25:40] [Server thread/INFO] (Minecraft) Starting minecraft server version 26.3
+[10:25:40] [Server thread/INFO] (Minecraft) Loading properties
+[10:25:40] [Server thread/INFO] (Minecraft) Default game type: SURVIVAL
+[10:25:40] [Server thread/INFO] (Minecraft) Generating keypair
+[10:25:40] [Server thread/INFO] (Minecraft) Starting Minecraft server on 127.0.0.1:25646
+[10:25:41] [Server thread/WARN] (Minecraft) **** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!
+[10:25:41] [Server thread/WARN] (Minecraft) The server will make no attempt to authenticate usernames. Beware.
+[10:25:41] [Server thread/WARN] (Minecraft) While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.
+[10:25:41] [Server thread/WARN] (Minecraft) To change this, set "online-mode" to "true" in the server.properties file.
+[10:25:41] [Server thread/INFO] (Minecraft) Preparing level "synthetic-only"
+[10:25:41] [Server thread/INFO] (Minecraft) Loading 0 persistent chunks...
+[10:25:41] [Server thread/INFO] (Minecraft) Time elapsed: 12 ms
+[10:25:41] [Server thread/INFO] (Minecraft) Done (0.105s)! For help, type "help"
+[10:25:41] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[synthetic-only]'/minecraft:overworld
+[10:25:41] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[synthetic-only]'/minecraft:the_nether
+[10:25:41] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[synthetic-only]'/minecraft:the_end
+[10:26:28] [Server thread/INFO] (Minecraft) System chat: Marked 12 chunks in minecraft:overworld from [1874, -1] to [1876, 2] to be force loaded
+[10:26:28] [Server thread/INFO] (Minecraft) System chat: Marked 12 chunks in minecraft:overworld from [1937, -1] to [1939, 2] to be force loaded
+[10:26:28] [Server thread/INFO] (Minecraft) System chat: Marked 12 chunks in minecraft:overworld from [1999, -1] to [2001, 2] to be force loaded
+[10:26:28] [Server thread/INFO] (Minecraft) System chat: Marked 12 chunks in minecraft:overworld from [2062, -1] to [2064, 2] to be force loaded
+[10:26:28] [Server thread/INFO] (Minecraft) System chat: Marked 12 chunks in minecraft:overworld from [2124, -1] to [2126, 2] to be force loaded
+[10:26:28] [Server thread/INFO] (Minecraft) System chat: Marked 12 chunks in minecraft:overworld from [2187, -1] to [2189, 2] to be force loaded
+[10:26:28] [Server thread/INFO] (Minecraft) System chat: Marked 12 chunks in minecraft:overworld from [2249, -1] to [2251, 2] to be force loaded
+[10:26:29] [Server thread/INFO] (Minecraft) System chat: Marked 12 chunks in minecraft:overworld from [2312, -1] to [2314, 2] to be force loaded
+[10:26:29] [Server thread/INFO] (Minecraft) System chat: Marked 12 chunks in minecraft:overworld from [2374, -1] to [2376, 2] to be force loaded
+[10:26:29] [Server thread/INFO] (Minecraft) System chat: Marked 12 chunks in minecraft:overworld from [2437, -1] to [2439, 2] to be force loaded
+[10:26:29] [Server thread/INFO] (Minecraft) System chat: Marked 12 chunks in minecraft:overworld from [2499, -1] to [2501, 2] to be force loaded
+[10:26:29] [Server thread/INFO] (Minecraft) System chat: Marked 12 chunks in minecraft:overworld from [2562, -1] to [2564, 2] to be force loaded
+[10:26:29] [Server thread/INFO] (Minecraft) System chat: Marked 12 chunks in minecraft:overworld from [2624, -1] to [2626, 2] to be force loaded
+[10:26:29] [Server thread/INFO] (Minecraft) System chat: Marked 12 chunks in minecraft:overworld from [2687, -1] to [2689, 2] to be force loaded
+[10:26:29] [Server thread/INFO] (Minecraft) System chat: Marked 12 chunks in minecraft:overworld from [2749, -1] to [2751, 2] to be force loaded
+[10:26:33] [Server thread/INFO] (Minecraft) System chat: Successfully filled 1476 block(s)
+[10:26:33] [Server thread/INFO] (Minecraft) System chat: Successfully filled 1476 block(s)
+[10:26:33] [Server thread/INFO] (Minecraft) System chat: Successfully filled 1476 block(s)
+[10:26:33] [Server thread/INFO] (Minecraft) System chat: Successfully filled 1476 block(s)
+[10:26:33] [Server thread/INFO] (Minecraft) System chat: Successfully filled 1476 block(s)
+[10:26:33] [Server thread/INFO] (Minecraft) System chat: Successfully filled 1476 block(s)
+[10:26:33] [Server thread/INFO] (Minecraft) System chat: Successfully filled 1476 block(s)
+[10:26:33] [Server thread/INFO] (Minecraft) System chat: Successfully filled 1476 block(s)
+[10:26:33] [Server thread/INFO] (Minecraft) System chat: Successfully filled 1476 block(s)
+[10:26:33] [Server thread/INFO] (Minecraft) System chat: Successfully filled 1476 block(s)
+[10:26:33] [Server thread/INFO] (Minecraft) System chat: Successfully filled 1476 block(s)
+[10:26:33] [Server thread/INFO] (Minecraft) System chat: Successfully filled 1476 block(s)
+[10:26:33] [Server thread/INFO] (Minecraft) System chat: Successfully filled 1476 block(s)
+[10:26:33] [Server thread/INFO] (Minecraft) System chat: Successfully filled 1476 block(s)
+[10:26:33] [Server thread/INFO] (Minecraft) System chat: Successfully filled 1476 block(s)
+[10:26:36] [Server thread/INFO] (Minecraft) System chat: Running 1 test(s)...
+[10:26:36] [Server thread/INFO] (Minecraft) Running test environment '[unregistered]' batch 0 (1 tests)...
+[10:26:36] [Server thread/INFO] (Minecraft) System chat: Starting environment [unregistered] batch 0
+[10:26:38] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-RUNES-REMOVED] PASS: old saves, modifiers, shields, healing, level-up, wire roundtrip
+[10:26:38] [Server thread/INFO] (Minecraft) System chat: Match over! Winner: Xuanxiao Sect
+[10:26:38] [Server thread/INFO] (Minecraft) System chat: Last match · 2 min 15 sec
+[10:26:38] [Server thread/INFO] (Minecraft) Named entity DefenseTowerEntity['Youming Sect Crystal 0/21000'/261, l='ServerLevel[synthetic-only]', x=30023.50, y=7.00, z=7.50] died: Youming Sect Crystal 0/21000 was slain by test-mock-player
+[10:26:38] [Server thread/INFO] (Minecraft) System chat: Game Test complete! 1 test(s) were run
+[10:26:38] [Server thread/INFO] (Minecraft) System chat: All required tests passed :)
+[10:26:38] [Server thread/INFO] (Minecraft) System chat: [Test coordinates: [30000, 4, 0] in overworld]
+[10:26:41] [Server thread/INFO] (Minecraft) System chat: Running 1 test(s)...
+[10:26:41] [Server thread/INFO] (Minecraft) Running test environment '[unregistered]' batch 0 (1 tests)...
+[10:26:41] [Server thread/INFO] (Minecraft) System chat: Starting environment [unregistered] batch 0
+[10:26:42] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-ELEMENT-VFX] PASS: 512 solid projectile stages, own material families, warning/active separation, atlas resources
+[10:26:42] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-KEHENG-VISUAL] PASS: 53 real textured stage frames, eight candidates/basic, physical needle faces/UV/LOD, alpha-correct exact boundaries, continuous phase and finite lifecycle
+[10:26:42] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-YIKE-VISUAL] PASS: 220 HD/pixel staged frames, three actual textured full/LOD models, 3D tip/UV/area/budgets, no parked bodies, exact wakes/bounds, unchanged authoritative prep/flow and finite cancellation
+[10:26:42] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-YIKE-SOLID-BEAM] PASS: 48 continuous white/blue faces in full/LOD, 4 directions, exact 22/near-wall endpoints, safe near plane, bounded radius and existing cancellation
+[10:26:42] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-RIVET-POLISH] PASS: 84 extra real contact stage/detail frames; four wall-normal attachments, real LOD, distinct wall/anchor stages, duplicate-solid suppression and authoritative pose lifecycle; no graphical acceptance
+[10:26:42] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-RIVET-GRIP] PASS: 2364 real pose/hand/skin matrix samples, welded palm, neutral wrist/handle relationship, directional backswing and forward-down strike, actual model operating-side vertices, positive winding and standard/underwater hand projection; offline geometry only
+[10:26:42] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-RIVET-ASSETS] PASS: 1024 production mesh stage/detail frames, finite vertices, <=192 faces, actual model material, expiry, wire and nine action icons; subjective presentation untested
+[10:26:42] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-ROSTER-VFX-TUNING] PASS: monotone bounded exposure, unchanged geometry/UV, 32 exact 1.4x full/LOD flight samples, fixed tips, frustum bounds and expiry
+[10:26:42] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-YIKE-WEAPON] PASS: staged fixed/mobile poses, confirmed progress, pause/slow/cancel, recoil, cleanup and view bases
+[10:26:42] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-VFX] PASS: 480 role/branch/shape recipes, budget, expiry, volume, short-life visibility, vertical/zero vectors, wire
+[10:26:42] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-NIGHT-GRAY-VFX] PASS: 48 unique RGBA frames, neutral palette, solid cores/gutters; 1440 mesh stages, phase, LOD, culling, travel and no stale blade
+[10:26:42] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-THUNDER-PIXEL-VFX] PASS: 48 native 256px frames, HD atlas/half-texel UV, 12MiB budget, palette/core/gutters; 1440 mesh stages, LOD, culling, phase, warning, forward crescent and no stale flight body
+[10:26:42] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-THUNDER-PROJECTILES] PASS: 24 real full/LOD meshes, +X-to-3D tip, exact source face counts, UV/bounds/area, clean atlas, stale/expiry, actual zh/en charge names
+[10:26:42] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-THUNDER-WAKE] PASS: 24 full/LOD/3D directions, decaying bounded planar wakes, exact clipped segment, finite TTL and ended body separation
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FENJUE-VFX] PASS: 48 distinct packed frames, shared palette/alpha/gutters, 1200 full/LOD/3D recipes, bounds/TTL/UV, phase and warning separation
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FENJUE-SLASH-AUDIO] PASS: two native mono OGG assets / two registered layers; actual success, cooldown, control and no-mana requests; original cost/CD, no generic duplicate
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FLAME-STEP-AUDIO-ASSETS] PASS: two mono48k OGGs/events, local range; actual stun/mana/cooldown/root/mod-off requests are silent
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-NIGHT-BASIC-NEEDLE] PASS: three unique basics/contact, role/mod gates; closed full/LOD needle, 4 travel directions, axis/scale/bounds/budgets, no stale body
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-NIGHT-SHIELD] PASS: real public R cast under CC, immediate cleanse; exact x1.7 ranks/strength and tooltip, other shield/buff preservation, normal cost/CD, invalid requests and no immunity
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-SHARED-CONTROL] PASS: real selected Sulan cast exposes shared interception
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-LEVEL-UP-BEAM] PASS: actual XP -> one beam/two sounds to self+ally only; enemy/unassigned/distant excluded, multi-rank/no false triggers, HP/mana preserved, follow/budgets/expiry
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-ROSTER-RETIREMENT] PASS: fourteen heroes/112 candidates, valid save/copy, ten rejected wire IDs/commands, no weapon remapping
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-RUNES-REMOVED] PASS: old saves, modifiers, shields, healing, level-up, wire roundtrip
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-IMPACT-AUDIO] PASS: 8 events / 24 mono Vorbis assets, CC0 credits, profile wire, contact cadence, mod-off, actual full-shield hit
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-VANILLA-MELEE] PASS: real Player.attack, full charge only / no weak hit, point target, vanilla cooldown, old packet rejected, stun/placement, ranged full-CD routing and mod-off
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-ACTION-REMOVAL] PASS: no retired player-action classes/assets/mixins, all fourteen attack routes preserved; new Night Shadow local first-person view is separate
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-NIGHT-FIRSTPERSON] PASS: 3-step chain, smooth reset/interruption, 4824 hand/grip poses, left/slim, no mirrored cull inversion, scoped assets
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-THUNDER-FIRSTPERSON] PASS: 4356 palm/grip poses, forward idle edge, actual cutting edge aligned with all three swing velocities (no broad-face slap), projected paths, left/slim, lifecycle/clock/duration
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FENJUE-FIRSTPERSON] PASS: 4356 skin/equip/hand palm attachments, real sharp-edge/travel alignment; descending/rising/horizontal paths, continuity/clock/lifecycle and bounded duration
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-BASIC-TRAIL] PASS: 1818 actual timeline/hand meshes, all nine attacks visible, themed materials/UV/budget, no idle/end/reset glow, deterministic FPS-independent samples and equip attachment
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FLAME-CROSS] PASS: 960 actual skill grip/edge poses, opposite rapid cuts, cue lifecycle, 60 tall painted image meshes, strong body and bounded TTL/LOD
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FLAME-STEP-VIEW] PASS: 720 grip/edge poses, left-pointing hold, actual-end release, early collision/cancel/replay/TTL; 112 side/finish meshes, UV/LOD/bounds, both sides and clear view
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FENJUE-MAJOR-VIEW] PASS: native HD alpha frames/gutters, four gestures, actual descent/landing, mirrored grip, token/cancel, grounded slabs/cliffs/voids, ambient light, mobile wire
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FLAME-FISSURE] PASS: 128 seed/heading/LOD cases, zero coplanar colour overlap after projection, shared tapered joints; native pipeline assertions run separately on the physical client
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FLAME-GHOST] PASS: real warning/field/charge renewal cases, late warning rejection, same-caster merge with enemy independence, one native frame per plane, brighter emissive image
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FLAME-GROUND] PASS: two true-alpha eight-frame native atlases, transparent gutters/holes, fixed-grid phases/loop, 224 four-skill timing/LOD cases, no old colour strips
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FLAME-HIT] PASS: native alpha eight-phase contact; 40 3D/crit/periodic/LOD cases, budgets/TTL; bounded target/AoE cadence; actual skill/basic shield-loss chain, invulnerable/mod-off/other-role exclusions, visible nearby audience and no duplicate generic hit
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FLAME-3D-AIM] PASS: 42 complete yaw/pitch directions, both painted arc sweeps including 6.5-block hits, SAT edge/body/plane exclusions, stable pole roll and VFX budgets
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FLAME-CRISP] PASS: 8 original crisp phases, actual painted pixels in upper 120-degree sector, exact circular contour, aligned layers, ground clearance and original forward plane
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-THUNDER-SKILL-VIEW] PASS: 4320 actual grip/skin/mirror poses, physical second grip/wipe, distinct cues, aiming, wire/stale/cancel, exact fan and warning
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-THUNDER-SKILL-RELEASE] PASS: six actual skill cues, preserved fees/CD, preview/confirm/cancel, rejected casts and no self-damage
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-THUNDER-THIRDSTRIKE] PASS: actual post-hit dispatch/health, all 5 ranks/two S values, exact x4 TRUE, unchanged two-target magic splash, no crit/recursion, timeout/switch/UI
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-NIGHT-SKILL-VIEW] PASS: seven distinct tracks, 4480 palm/grip poses, both arms/skins, forward knife, clasp/tap/arrival, local layers, stale/cancel/timeout/wire
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-NIGHT-SKILL-RELEASE] PASS: actual Q/W/E/R release cues, normal payment, no self-damage, no cue for preview/cancel/reject/no mana
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-SKILL-UI] PASS: 96 responsive scroll states, 1536 bounded tooltip states, four icon rows, all growth icons reachable, single/double-click spending contract
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-CHOOSE-UI] PASS: 30 real card-layout/scroll states at seven GUI sizes, complete roster coverage, separate hit areas and current/occupied availability; no live graphical acceptance
+[10:26:43] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-SHUO-BASIC-VFX] PASS: 2688 new recipe/LOD stages, old skill effects retired, 16 distinct temporal stages and bounded basic-only camera mesh
+[10:26:44] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-SHUO-DASH] PASS: 2688 motion/phase/direction/LOD samples, layered HD materials, endpoint bounds, style differentiation, owner readability and finite lifetime
+[10:26:44] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-SHUO-SILENT-LINE] PASS: 1200 path/direction/stage/LOD frames, exact endpoints, one seam/two cuts, seeded flourishes, phase continuity and finite expiry
+[10:26:44] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-SHUO-WORLD-VFX] PASS: 24576 authored phase/variant/direction/LOD samples, finite lifetime/UVs/bounds, no path overshoot, native HD alpha and horizontal closed guard
+[10:26:44] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-SHUO-BLADE-FOLLOW] PASS: 3636 skill pose/stance/mirror samples, exact authored edge/matrix, sheathed clipping, lifetime/cancellation and existing material budgets
+[10:26:44] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-SHUO-BRIGHTNESS] PASS: monotone all-layer exposure, color lift, finite alpha, unchanged geometry/UV/material and blade/core coverage
+[10:26:44] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-SHUO-RIG] PASS: 10504 paired skin grips / closed sheath alignment, proper rotations, cue lifecycle, atlas/skill icons and finite VFX
+[10:26:44] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-G1-SPATIAL] PASS: reticle, slabs, headroom, swept walls, motion-only, cleanup, endpoint clamp
+[10:26:44] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-CHARGE] PASS: start, motion lock, natural Y/landing preserved, horizontal displacement/new vertical knockup interrupt, stun, reset, role change, wire
+[10:26:44] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-LINGYUAN-SKILLS] PASS: 8 distinct layered profiles, early/mid/late, real passive count, resonance-ready cue, cross-packet charge growth
+[10:26:44] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-LINGYUAN-CRESCENT] PASS: 1314 actual sprite faces, 6 axes / 2 diagonals / zero fallback, near/far, three ages, convex front follows travel
+[10:26:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-LINGYUAN-FLIPBOOK] PASS: 6 atlases / 48 unique painted frames, alpha gutters, UV cells, 5 independent loop rates, one-shot stages, cross-packet continuity
+[10:26:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-LINGYUAN-MODEL] PASS: 186 source cuboids, 48-cuboid LOD, 7 flight axes, UV2D, 4 real loop layers, 72 recipe stages and warning separation
+[10:26:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-G2-VFX] PASS: 1920 mesh stages, own textures, warning/active separation, reduced detail and vertex bounds
+[10:26:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-G2] PASS: five roles, legacy migration, g2 persistence, point cancel, shield amount/nonstacking, parry, healing, formula text
+[10:26:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-G1-G2] PASS: 112 independent modules across 14 heroes, caps, alternatives, budgets, growth, economy, persistence, cancel
+[10:26:45] [Server thread/WARN] (Minecraft) Can't keep up! Is the server overloaded? Running 3233ms or 64 ticks behind
+[10:26:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-CHARGE-COMPLETE] PASS: real tick delay, release before continuation, single execution
+[10:26:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-SHARED-CONTROL-EXPIRY] PASS: real Shuo/rework input gates, no early payment, exact silence/freeze expiry and restored casts
+[10:26:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-NIGHT-DASH] PASS: real 9-block / 5-tick Assault, 7-block Return preview and motion, no outward teleport/overshoot, swept walls, far single hits and 3-second return anchor
+[10:26:45] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-SHUO-HELD-STATE] PASS: actual equipment codec, original assets, exact grip-to-mouth, draw/8-tick return/reset and unchanged inventory/offhand
+[10:26:46] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FLAME-MAJOR-AUDIO] PASS: seven mono48k assets/events, actual no-mana/select/confirm/cooldown requests, real twelve-tick cage activation, cancelled cage silent, immediate armor shield/one ignition
+[10:26:46] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FLAME-STEP-AUDIO] PASS: public dash start / actual normal and wall endpoints, no early/duplicate slash, controlled cancellation, no generic echo, unchanged damage/cost/CD
+[10:26:46] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FENJUE-RELEASE] PASS: actual 8-block motion, endpoint packets, six steps, wall and far single-hit; 13-tick / 6-block burst, unchanged formula/cost/CD, range and stun interruption
+[10:26:46] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-THUNDER-AUDIO] PASS: six registered events / twelve OGGs; actual arc/slash/judgment start, completion and interruption; no generic cast duplication
+[10:26:46] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-ABILITY-CONTRACT] PASS: real input + deferred commit, partial progress, source min/expiry, unpaid cancellation, resource/branch recheck, passive exactly once, root/stun/silence/forced movement, real timers/CD, dash/projectile/Thunder Arc and lifecycle cleanup
+[10:26:46] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-NIGHT-BLINK] PASS: actual selected R, 16 ticks, live rear-facing safe teleport + one hit/arrival, original payment; stun/dead/range/blocked/rejected paths and private cue cancellation
+[10:26:46] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-SHUO-DASH-EVENTS] PASS: real public dash, blocked-first-step silence, brief-control no false arrival, exactly-once phases and actual endpoints
+[10:26:46] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FLAME-SEA-AUDIO] PASS: confirmed takeoff, normal/downhill actual landing sound/VFX tick, low ceiling and controlled interruption have no fake impact
+[10:26:46] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-FENJUE-LEAP] PASS: public select/confirm, 14-block normal/downhill, actual 5-block height, ceiling rejects cost-free, no early impact, one landing hit/cue, controlled cancellation
+[10:26:46] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-THUNDER-CHAIN] PASS: actual W, 6-tick windup, ranks/S, all 4-block secondaries incl. vertical/boundary, lethal primary, no piercing/recursion, allies/buildings/LOS/range exclusions, wall and stun
+[10:26:46] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-THUNDER-SKILL-COMBAT] PASS: actual 10/12-tick windups, moving piercing slash once per target, ranks/S, 120-degree 8-block final-heading fan/all-target stun, allies/towers/LOS/obstacle/range, cancellation cue
+[10:26:46] [Server thread/ERROR] (Minecraft) myriad:first_group failed at 31000, 4, 3! Rank3 / S100: exactly one 620 hit inside 15x3, no damage behind/beyond/outside; target=0, hp=1000.0 on tick 30
+[10:26:46] [Server thread/INFO] (Minecraft) System chat: Game Test complete! 1 test(s) were run
+[10:26:46] [Server thread/INFO] (Minecraft) System chat: 1 required test(s) failed :(
+[10:26:46] [Server thread/INFO] (Minecraft) System chat: [Test coordinates: [31000, 4, 0] in overworld]
+[10:26:49] [Server thread/INFO] (Minecraft) System chat: Running 1 test(s)...
+[10:26:49] [Server thread/INFO] (Minecraft) Running test environment '[unregistered]' batch 0 (1 tests)...
+[10:26:49] [Server thread/INFO] (Minecraft) System chat: Starting environment [unregistered] batch 0
+[10:26:50] [Server thread/INFO] (Minecraft) System chat: test-mock-player has made the advancement [Take Aim]
+[10:26:52] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-WORLD-TIME] PASS: four lane kinds, nine ordinary camps, four bosses; actual Q against lane/camp/boss; vanilla ordinary/tipped/spectral flight, damage/effects, water/slope/wall/boundaries, ownership/sync and 1200/2400 budgets
+[10:26:52] [Server thread/INFO] (Minecraft) System chat: Game Test complete! 1 test(s) were run
+[10:26:52] [Server thread/INFO] (Minecraft) System chat: All required tests passed :)
+[10:26:52] [Server thread/INFO] (Minecraft) System chat: [Test coordinates: [32000, 4, 0] in overworld]
+[10:26:55] [Server thread/INFO] (Minecraft) System chat: Running 1 test(s)...
+[10:26:55] [Server thread/INFO] (Minecraft) Running test environment '[unregistered]' batch 0 (1 tests)...
+[10:26:55] [Server thread/INFO] (Minecraft) System chat: Starting environment [unregistered] batch 0
+[10:27:03] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-KEHENG] PASS: 42 real-cast scenarios (30 Keheng + 8 integration + 4 cover/edge); identity/growth/graph/save/melee, exact Q/W/field/follow/dome/corridor/echo resources and timings, actor/flight geometry, control/cleanse and lifecycle
+[10:27:03] [Server thread/INFO] (Minecraft) System chat: Game Test complete! 1 test(s) were run
+[10:27:03] [Server thread/INFO] (Minecraft) System chat: All required tests passed :)
+[10:27:03] [Server thread/INFO] (Minecraft) System chat: [Test coordinates: [33000, 4, 0] in overworld]
+[10:27:07] [Server thread/INFO] (Minecraft) System chat: Running 1 test(s)...
+[10:27:07] [Server thread/INFO] (Minecraft) Running test environment '[unregistered]' batch 0 (1 tests)...
+[10:27:07] [Server thread/INFO] (Minecraft) System chat: Starting environment [unregistered] batch 0
+[10:27:14] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-YIKE] PASS: 60 real-input cases, unpaid commit/recheck, W cancellation, fixed five/mobile four, real muzzle deadlines, exit CD, root/stun, six-jump cancel, heavy collision, physical basic, rolling barrier, shields/marks, S230 actual chain, beam turn, 3D centre visibility and cleanup
+[10:27:15] [Server thread/INFO] (Minecraft) System chat: Game Test complete! 1 test(s) were run
+[10:27:15] [Server thread/INFO] (Minecraft) System chat: All required tests passed :)
+[10:27:15] [Server thread/INFO] (Minecraft) System chat: [Test coordinates: [34000, 4, 0] in overworld]
+[10:27:20] [Server thread/INFO] (Minecraft) System chat: Running 1 test(s)...
+[10:27:20] [Server thread/INFO] (Minecraft) Running test environment '[unregistered]' batch 0 (1 tests)...
+[10:27:20] [Server thread/INFO] (Minecraft) System chat: Starting environment [unregistered] batch 0
+[10:27:20] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-RIVET-POLISH] PASS: 84 extra real contact stage/detail frames; four wall-normal attachments, real LOD, distinct wall/anchor stages, duplicate-solid suppression and authoritative pose lifecycle; no graphical acceptance
+[10:27:20] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-RIVET-GRIP] PASS: 2364 real pose/hand/skin matrix samples, welded palm, neutral wrist/handle relationship, directional backswing and forward-down strike, actual model operating-side vertices, positive winding and standard/underwater hand projection; offline geometry only
+[10:27:20] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-RIVET-ASSETS] PASS: 1024 production mesh stage/detail frames, finite vertices, <=192 faces, actual model material, expiry, wire and nine action icons; subjective presentation untested
+[10:27:20] [Server thread/INFO] (Minecraft) System chat: test-mock-player picked Shuo · Moon Draw
+[10:27:20] [Server thread/INFO] (Minecraft) System chat: test-mock-player picked Rivet · Battlefield Fortifier
+[10:27:20] [Server thread/INFO] (Minecraft) System chat: All characters picked! Battle starts in 10 s
+[10:27:20] [Server thread/INFO] (Myriad) [cast] test-mock-player rejected: phase=PICKING
+[10:27:20] [Server thread/INFO] (Myriad) [cast] test-mock-player rejected: phase=PICKING
+[10:27:20] [Server thread/INFO] (Myriad) [cast] test-mock-player rejected: phase=PICKING
+[10:27:20] [Server thread/INFO] (Myriad) [cast] test-mock-player rejected: phase=PICKING
+[10:27:20] [Server thread/INFO] (Myriad) [gm-tick] phase=PICKING gt=3500 dl=4099 cd=3699 cur=null
+[10:27:20] [Server thread/INFO] (Myriad) [gm-tick] phase=PICKING gt=3500 dl=4099 cd=3699 cur=null
+[10:27:21] [Server thread/INFO] (Myriad) [gm-tick] phase=PICKING gt=3520 dl=4099 cd=3699 cur=null
+[10:27:21] [Server thread/INFO] (Myriad) [gm-tick] phase=PICKING gt=3520 dl=4099 cd=3699 cur=null
+[10:27:22] [Server thread/INFO] (Myriad) [gm-tick] phase=PICKING gt=3540 dl=4099 cd=3699 cur=null
+[10:27:22] [Server thread/INFO] (Myriad) [gm-tick] phase=PICKING gt=3540 dl=4099 cd=3699 cur=null
+[10:27:23] [Server thread/INFO] (Myriad) [gm-tick] phase=PICKING gt=3560 dl=4099 cd=3699 cur=null
+[10:27:23] [Server thread/INFO] (Myriad) [gm-tick] phase=PICKING gt=3560 dl=4099 cd=3699 cur=null
+[10:27:24] [Server thread/INFO] (Myriad) [gm-tick] phase=PICKING gt=3580 dl=4099 cd=3699 cur=null
+[10:27:24] [Server thread/INFO] (Myriad) [gm-tick] phase=PICKING gt=3580 dl=4099 cd=3699 cur=null
+[10:27:25] [Server thread/INFO] (Myriad) [gm-tick] phase=PICKING gt=3600 dl=4099 cd=3699 cur=null
+[10:27:25] [Server thread/INFO] (Myriad) [gm-tick] phase=PICKING gt=3600 dl=4099 cd=3699 cur=null
+[10:27:26] [Server thread/INFO] (Myriad) [gm-tick] phase=PICKING gt=3620 dl=4099 cd=3699 cur=null
+[10:27:26] [Server thread/INFO] (Myriad) [gm-tick] phase=PICKING gt=3620 dl=4099 cd=3699 cur=null
+[10:27:27] [Server thread/INFO] (Myriad) [gm-tick] phase=PICKING gt=3640 dl=4099 cd=3699 cur=null
+[10:27:27] [Server thread/INFO] (Myriad) [gm-tick] phase=PICKING gt=3640 dl=4099 cd=3699 cur=null
+[10:27:28] [Server thread/INFO] (Myriad) [gm-tick] phase=PICKING gt=3660 dl=4099 cd=3699 cur=null
+[10:27:28] [Server thread/INFO] (Myriad) [gm-tick] phase=PICKING gt=3660 dl=4099 cd=3699 cur=null
+[10:27:29] [Server thread/INFO] (Myriad) [gm-tick] phase=PICKING gt=3680 dl=4099 cd=3699 cur=null
+[10:27:29] [Server thread/INFO] (Myriad) [gm-tick] phase=PICKING gt=3680 dl=4099 cd=3699 cur=null
+[10:27:30] [Server thread/INFO] (Minecraft) System chat: [Spirit Veins] Setup incomplete (attribute veins 0/3). Complete it, then restart.
+[10:27:30] [Server thread/INFO] (Minecraft) System chat: Match started!
+
+Xuanxiao Sect：
+- test-mock-player
+
+Youming Sect：
+- test-mock-player
+[10:27:30] [Server thread/INFO] (Minecraft) System chat: [Towers] Some tower positions are missing; lanes remain active. Complete 3 towers per lane for both factions before the next match.
+[10:27:56] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-RIVET32] PASS: 87 real-input scenes + 2 formal draft/preparation players; combinations=8, Q-wall=8/8; actual NPC shield absorption=150.0; tow-then-Q hits=1/1; maximum observed consecutive rooted ticks=20; maximum consecutive forced-movement-or-root ticks=35; visual/audio/feel acceptance excluded
+[10:27:56] [Server thread/INFO] (Minecraft) System chat: Game Test complete! 1 test(s) were run
+[10:27:56] [Server thread/INFO] (Minecraft) System chat: All required tests passed :)
+[10:27:56] [Server thread/INFO] (Minecraft) System chat: [Test coordinates: [35000, 4, 0] in overworld]
+[10:27:59] [Server thread/INFO] (Minecraft) System chat: Running 1 test(s)...
+[10:27:59] [Server thread/INFO] (Minecraft) Running test environment '[unregistered]' batch 0 (1 tests)...
+[10:27:59] [Server thread/INFO] (Minecraft) System chat: Starting environment [unregistered] batch 0
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] yingxiao/2 attack base=[5]/[61.5] slow=[7]/[61.5] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] yingxiao/4 attack base=[1]/[94.0] slow=[2]/[94.0] motion=5/7 positions=(0.0, 0.0, 9.0)/(0.0, 0.0, 8.999999999999986) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] yingxiao/5 attack base=[1]/[74.5] slow=[2]/[74.5] motion=4/7 positions=(0.0, 0.024999999999977263, 7.000385966594024)/(0.0, 0.024999999999991473, 7.000385966594024) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] yingxiao/6 attack base=[16]/[219.0] slow=[32]/[219.0] motion=-1/-1 positions=(0.0, 0.025000000000005684, 1.9799999761581404)/(0.0, 0.025000000000005684, 1.9799999761581404) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] tianxing/3 attack base=[9]/[79.5] slow=[17]/[79.5] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] tianxing/5 attack base=[12]/[123.5] slow=[23]/[123.5] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] tianxing/7 attack base=[12]/[245.0] slow=[24]/[245.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] xuanchen/2 attack base=[6]/[61.5] slow=[8]/[61.5] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] xuanchen/6 attack base=[36, 56, 76, 96]/[54.0, 54.0, 54.0, 54.0] slow=[52, 72, 92, 112]/[54.0, 54.0, 54.0, 54.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] sulan/2 attack base=[2]/[68.0] slow=[3]/[68.0] motion=7/12 positions=(0.0, 0.0, 6.0)/(0.0, 0.0, 6.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] sulan/5 attack base=[7]/[58.5] slow=[10, 19]/[58.5, 58.5] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] sulan/6 attack base=[14]/[196.0] slow=[28]/[196.0] motion=14/28 positions=(0.0, 0.0, 3.4285714285714306)/(0.0, 0.0, 3.428571428571445) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] lingyuan/2 attack base=[2]/[81.5] slow=[4]/[81.5] motion=8/13 positions=(0.0, 0.0, 6.0)/(0.0, 0.0, 6.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] lingyuan/4 attack base=[6, 9, 13]/[42.5, 42.5, 42.5] slow=[8, 15, 23]/[42.5, 42.5, 42.5] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] lingyuan/7 attack base=[30]/[336.0] slow=[60]/[336.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] hanze/2 attack base=[6, 10, 15]/[31.0, 31.0, 31.0] slow=[8, 17, 27]/[31.0, 31.0, 31.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] hanze/5 attack base=[6]/[101.5] slow=[8]/[101.5] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] hanze/4 attack base=[20]/[136.0] slow=[40]/[136.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] qingluo/3 attack base=[6]/[63.5] slow=[8]/[63.5] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] chixiao/3 attack base=[2]/[62.0] slow=[3]/[62.0] motion=8/13 positions=(0.0, 0.0, 7.0)/(0.0, 0.0, 7.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] chixiao/5 attack base=[6]/[101.5] slow=[8]/[101.5] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] chixiao/6 attack base=[14]/[195.5] slow=[21]/[195.5] motion=14/21 positions=(0.0, 0.025000000000005684, 6.001404406459798)/(0.0, 0.025000000000005684, 6.001404406459798) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] yunsheng/2 attack base=[12]/[68.5] slow=[16]/[68.5] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] yunsheng/6 attack base=[40, 60, 80, 100]/[52.5, 52.5, 52.5, 52.5] slow=[60, 80, 100, 120]/[52.5, 52.5, 52.5, 52.5] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] yunsheng/5 motion base=[]/[] slow=[]/[] motion=10/16 positions=(0.0, 0.024999999999977263, 6.001404406459795)/(0.0, 0.024999999999977263, 6.001404406459798) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] fenjue/2 attack base=[3, 7]/[43.0, 43.0] slow=[6, 14]/[43.0, 43.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] fenjue/3 attack base=[1]/[47.0] slow=[2]/[47.0] motion=6/9 positions=(0.0, 0.0, 7.9999999999999964)/(0.0, 0.0, 7.999999999999972) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] fenjue/5 attack base=[13]/[143.0] slow=[26]/[143.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] fenjue/6 attack base=[18, 38, 58, 78, 98]/[170.0, 36.0, 36.0, 36.0, 36.0] slow=[22, 42, 62, 82, 102]/[170.0, 36.0, 36.0, 36.0, 36.0] motion=18/22 positions=(0.0, 0.025000000000005684, 6.001404406459798)/(0.0, 0.025000000000005684, 6.001404406459798) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/4 attack base=[12, 22]/[71.40039, 47.59961] slow=[23, 36]/[71.40039, 47.59961] motion=16/30 positions=(0.0, 0.0, 7.0)/(0.0, 0.0, 7.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/5 attack base=[9, 15]/[81.299805, 54.200195] slow=[18, 30]/[81.299805, 54.200195] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/6 attack base=[29]/[368.0] slow=[46]/[368.0] motion=21/38 positions=(0.0, 0.0, 12.0)/(0.0, 0.0, 12.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/7 attack base=[4, 8, 12]/[118.0, 118.0, 187.0] slow=[8, 16, 24]/[118.0, 118.0, 187.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/5 drawn attack base=[0, 4]/[55.5, 55.5] slow=[0, 8]/[55.5, 55.5] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/2 drawn attack base=[0, 7]/[40.200195, 26.799805] slow=[0, 14]/[40.200195, 26.799805] motion=6/12 positions=(1.307669696790981, 0.0, -2.699999993352291)/(1.3076696967473254, 0.0, -2.6999999933553056) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/4 drawn attack base=[2]/[81.5] slow=[4]/[81.5] motion=5/10 positions=(0.0, 0.0, 4.0)/(0.0, 0.0, 4.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/6 drawn attack base=[6]/[276.0] slow=[10]/[276.0] motion=6/10 positions=(0.0, 0.0, 6.0)/(0.0, 0.0, 6.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/7 drawn attack base=[6]/[320.5] slow=[12]/[320.5] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/2 motion base=[]/[] slow=[]/[] motion=6/12 positions=(1.307669696790981, 0.0, -2.699999993352291)/(1.3076696967473254, 0.0, -2.6999999933553056) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/7 chase base=[4, 12]/[118.0, 118.0] slow=[8, 24]/[118.0, 118.0] motion=12/24 positions=(0.0, 0.0, 4.0)/(0.0, 0.0, 4.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] chixiao/6 forced base=[]/[] slow=[]/[] motion=4/4 positions=(0.5, 1.5522959183673635, 1.2860152299556713)/(0.5, 0.967984693877554, 0.643007614977833) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/2 drawn sheath base=[]/[] slow=[]/[] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=8/16
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] tianxing/6 real base=[8, 18, 28, 38, 48, 58]/[52.5, 52.5, 52.5, 52.5, 52.5, 52.5] slow=[8, 18, 28, 38, 48, 58]/[52.5, 52.5, 52.5, 52.5, 52.5, 52.5] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] xuanchen/7 real base=[14]/[203.0] slow=[14]/[203.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] fenjue/4 real base=[32, 52, 72, 92]/[31.0, 31.0, 31.0, 31.0] slow=[32, 52, 72, 92]/[31.0, 31.0, 31.0, 31.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] yunsheng/3 real base=[0, 40]/[44.0, 44.0] slow=[0, 40]/[44.0, 44.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] fenjue/2 boundary base=[3, 7]/[43.0, 43.0] slow=[6, 11]/[43.0, 43.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(8.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] fenjue/2 cancel base=[3]/[43.0] slow=[6]/[43.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/5 interrupt base=[]/[] slow=[]/[] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] fenjue/2 needle base=[3, 7]/[43.0, 43.0] slow=[4, 8]/[43.0, 43.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] fenjue/2 ally base=[3, 7]/[43.0, 43.0] slow=[3, 7]/[43.0, 43.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] fenjue/2 dot base=[3, 7, 23, 43, 63]/[43.0, 43.0, 1.7998047, 1.7998047, 1.7998047] slow=[6, 14, 26, 46, 66]/[43.0, 43.0, 1.7998047, 1.7998047, 1.7998047] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/2 drawn dome-finish base=[0, 7]/[40.200195, 26.799805] slow=[0, 20]/[40.200195, 26.799805] motion=6/17 positions=(1.307669696790981, 0.0, -2.699999993352291)/(1.2967724492991692, 0.0, -2.677499993410642) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/6 needle-finish base=[29]/[368.0] slow=[31]/[368.0] motion=21/21 positions=(0.0, 0.0, 12.0)/(0.0, 0.0, 11.999999999999972) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] yingxiao/2 basic base=[0, 20]/[66.50391, 66.50391] slow=[0, 40]/[66.50391, 66.50391] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] tianxing/2 basic base=[0, 20]/[66.50391, 66.50391] slow=[0, 40]/[66.50391, 66.50391] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] xuanchen/2 basic base=[5, 15]/[65.0, 65.0] slow=[7, 27]/[65.0, 65.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] sulan/2 basic base=[0, 20]/[66.50391, 66.50391] slow=[0, 40]/[66.50391, 66.50391] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] lingyuan/2 basic base=[0, 20]/[66.50391, 66.50391] slow=[0, 40]/[66.50391, 66.50391] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] hanze/2 basic base=[5, 15]/[78.0, 78.0] slow=[7, 27]/[78.0, 78.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] qingluo/2 basic base=[5, 15]/[65.0, 65.0] slow=[7, 27]/[65.0, 65.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] chixiao/2 basic base=[0, 20]/[66.50391, 66.50391] slow=[0, 40]/[66.50391, 66.50391] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] yunsheng/2 basic base=[5, 15]/[65.0, 65.0] slow=[7, 27]/[65.0, 65.0] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] fenjue/2 basic base=[0, 20]/[66.50391, 66.50391] slow=[0, 40]/[66.50391, 66.50391] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/INFO] (Minecraft) [STDOUT]: [MYRIAD-HERO-TRACE] shuo/2 basic base=[0, 20]/[66.50391, 66.50391] slow=[0, 40]/[66.50391, 66.50391] motion=-1/-1 positions=(0.0, 0.0, 0.0)/(0.0, 0.0, 0.0) sheath=-1/-1
+[10:28:06] [Server thread/ERROR] (Minecraft) Encountered an unexpected exception
+
+java.lang.IllegalStateException: net.minecraft.gametest.framework.GameTestAssertException: Same actual total damage, no catch-up/replay: sulan/5 attack base=58.5 slow=117.0 on tick 132
+	at knot//com.myriad.game.HeroActionTimeChecks$1.accept(HeroActionTimeChecks.java:138)
+	at knot//com.myriad.game.HeroActionTimeChecks$1.accept(HeroActionTimeChecks.java:79)
+	at knot//com.myriad.game.GameTestTicks.lambda$initialize$0(GameTestTicks.java:15)
+	at knot//net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.lambda$static$3(ServerTickEvents.java:55)
+	at knot//net.minecraft.server.MinecraftServer.handler$zib000$fabric-lifecycle-events-v1$onEndTick(MinecraftServer.java:4416)
+	at knot//net.minecraft.server.MinecraftServer.tickServer(MinecraftServer.java:1004)
+	at knot//net.minecraft.server.dedicated.DedicatedServer.tickServer(DedicatedServer.java:278)
+	at knot//net.minecraft.server.MinecraftServer.processPacketsAndTick(MinecraftServer.java:1013)
+	at knot//net.minecraft.server.MinecraftServer.runServer(MinecraftServer.java:752)
+	at knot//net.minecraft.server.MinecraftServer.lambda$spin$0(MinecraftServer.java:310)
+	at java.base/java.lang.Thread.run(Thread.java:1474)
+Caused by: net.minecraft.gametest.framework.GameTestAssertException: Same actual total damage, no catch-up/replay: sulan/5 attack base=58.5 slow=117.0 on tick 132
+	at knot//net.minecraft.gametest.framework.GameTestHelper.assertionException(GameTestHelper.java:96)
+	at knot//net.minecraft.gametest.framework.GameTestHelper.assertTrue(GameTestHelper.java:1131)
+	at knot//net.minecraft.gametest.framework.GameTestHelper.assertTrue(GameTestHelper.java:1136)
+	at knot//com.myriad.game.HeroActionTimeChecks.verify(HeroActionTimeChecks.java:215)
+	at knot//com.myriad.game.HeroActionTimeChecks$1.accept(HeroActionTimeChecks.java:134)
+	... 10 more
+[10:28:07] [Server thread/WARN] (MacOperatingSystem) Unable to parse version 27.2 to a codename.
+[10:28:07] [Server thread/ERROR] (Minecraft) This crash report has been saved to: /private/tmp/myriad-final44-same-server-final/crash-reports/crash-2026-11-17_10.28.07-server.txt
+[10:28:07] [Server thread/INFO] (Minecraft) Stopping server
+[10:28:07] [Server thread/INFO] (Minecraft) Saving players
+[10:28:07] [Server thread/INFO] (Minecraft) Saving worlds
+[10:28:07] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[synthetic-only]'/minecraft:overworld
+[10:28:08] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[synthetic-only]'/minecraft:the_nether
+[10:28:08] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[synthetic-only]'/minecraft:the_end
+
+BUILD SUCCESSFUL in 2m 33s
+7 actionable tasks: 1 executed, 6 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.0/userguide/configuration_cache_enabling.html

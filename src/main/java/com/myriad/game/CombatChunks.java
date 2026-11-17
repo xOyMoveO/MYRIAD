@@ -5,16 +5,16 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.world.level.ChunkPos;
-import net.neoforged.neoforge.registries.DeferredRegister;
 
 /** Short-lived simulation tickets: only active combatants keep nearby chunks ticking. */
 public final class CombatChunks {
     private CombatChunks() {}
-    public static final DeferredRegister<TicketType> TYPES =
-            DeferredRegister.create(Registries.TICKET_TYPE, "myriad");
-    private static final java.util.function.Supplier<TicketType> COMBAT = TYPES.register("combat",
-            () -> new TicketType(60L, TicketType.FLAG_LOADING | TicketType.FLAG_SIMULATION
-                    | TicketType.FLAG_KEEP_DIMENSION_ACTIVE));
+    public static void initialize() { }
+    private static final java.util.function.Supplier<TicketType> COMBAT = registerCombat();
+    private static java.util.function.Supplier<TicketType> registerCombat() {
+        var ticket = net.minecraft.core.Registry.register(net.minecraft.core.registries.BuiltInRegistries.TICKET_TYPE, net.minecraft.resources.Identifier.fromNamespaceAndPath("myriad", "combat"), new TicketType(60L, TicketType.FLAG_LOADING | TicketType.FLAG_SIMULATION | TicketType.FLAG_KEEP_DIMENSION_ACTIVE));
+        return () -> ticket;
+    }
     public static void hold(ServerLevel level, BlockPos pos) {
         level.getChunkSource().addTicketWithRadius(COMBAT.get(), new ChunkPos(pos.getX() >> 4, pos.getZ() >> 4), 2);
     }

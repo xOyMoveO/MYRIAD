@@ -6,7 +6,7 @@ import com.myriad.game.VisionSystem;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.myriad.network.Packets;
 import static com.myriad.character.ability.AbilityVfxGeometry.*;
 
 /** Original prismatic recipes: explicit stages, owned flights and visibility-safe attached marks. */
@@ -56,14 +56,14 @@ public final class YikeVfx {
     public static void basicFlight(AbilityRuntime.Cast c,Vec3 from,Vec3 to,int instance){send(c.player,new AbilityVfxPayload(c.player.getId(),-1,THEME,2,FLIGHT,from,to,.065f,BASIC,2,c.now(),false,instance));}
     public static void finish(AbilityRuntime.Cast c,int instance){sendAll(c.player,new AbilityVfxPayload(c.player.getId(),-1,THEME,c.skill.index(),CANCEL,Vec3.ZERO,Vec3.ZERO,0,2,1,c.now(),false,instance));}
     public static void cancel(ServerPlayer p,int index){sendAll(p,new AbilityVfxPayload(p.getId(),-1,THEME,index,CANCEL,Vec3.ZERO,Vec3.ZERO,0,1,1,p.level().getGameTime(),false));}
-    private static void sendAll(ServerPlayer p,AbilityVfxPayload packet){for(var viewer:p.level().players())PacketDistributor.sendToPlayer(viewer,packet);}
+    private static void sendAll(ServerPlayer p,AbilityVfxPayload packet){for(var viewer:p.level().players())Packets.sendToPlayer(viewer,packet);}
     private static void send(ServerPlayer p,AbilityVfxPayload packet){
         if(!packet.valid())return;
         for(var viewer:p.level().players()){
             if(viewer.position().distanceToSqr(packet.from())>Math.pow(64+packet.radius(),2)&&viewer.position().distanceToSqr(packet.to())>Math.pow(64+packet.radius(),2))continue;
             if(viewer!=p&&!VisionSystem.canSeePosition(viewer,packet.from())&&!VisionSystem.canSeePosition(viewer,packet.to()))continue;
             if(packet.anchor()>=0&&p.level().getEntity(packet.anchor()) instanceof LivingEntity target&&!VisionSystem.canSee(viewer,target))continue;
-            PacketDistributor.sendToPlayer(viewer,packet);
+            Packets.sendToPlayer(viewer,packet);
         }
     }
 }

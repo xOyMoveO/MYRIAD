@@ -5,20 +5,27 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 
 import com.myriad.Myriad;
-import net.neoforged.neoforge.registries.DeferredItem;
-import net.neoforged.neoforge.registries.DeferredRegister;
 
 /** 物品注册（武器、补给与玩法道具） */
 public final class ModItems {
     private ModItems() {}
 
-    public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(Myriad.MODID);
-    public static final DeferredItem<Item> MINION_MELEE_RED = ITEMS.registerSimpleItem("minion_melee_red");
-    public static final DeferredItem<Item> MINION_MELEE_BLUE = ITEMS.registerSimpleItem("minion_melee_blue");
-    public static final DeferredItem<Item> MINION_RANGED_RED = ITEMS.registerSimpleItem("minion_ranged_red");
-    public static final DeferredItem<Item> MINION_RANGED_BLUE = ITEMS.registerSimpleItem("minion_ranged_blue");
-    public static final DeferredItem<Item> MINION_MAGIC_RED = ITEMS.registerSimpleItem("minion_magic_red");
-    public static final DeferredItem<Item> MINION_MAGIC_BLUE = ITEMS.registerSimpleItem("minion_magic_blue");
+    /** Forces synchronous registration of this class's static entries during mod initialization. */
+    public static void initialize() { }
+    private static <T extends Item> java.util.function.Supplier<T> registerItem(String id, java.util.function.Function<Item.Properties, T> factory) {
+        var key = net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.Identifier.fromNamespaceAndPath(Myriad.MODID, id));
+        T item = net.minecraft.core.Registry.register(net.minecraft.core.registries.BuiltInRegistries.ITEM, key, factory.apply(new Item.Properties().setId(key)));
+        return () -> item;
+    }
+    private static java.util.function.Supplier<Item> registerSimpleItem(String id) { return registerItem(id, Item::new); }
+    private static java.util.function.Supplier<Item> registerSimpleItem(String id, java.util.function.UnaryOperator<Item.Properties> properties) { return registerItem(id, p -> new Item(properties.apply(p))); }
+    private static java.util.function.Supplier<BlockItem> registerSimpleBlockItem(String id, java.util.function.Supplier<? extends net.minecraft.world.level.block.Block> block) { return registerItem(id, p -> new BlockItem(block.get(), p)); }
+    public static final java.util.function.Supplier<Item> MINION_MELEE_RED = registerSimpleItem("minion_melee_red");
+    public static final java.util.function.Supplier<Item> MINION_MELEE_BLUE = registerSimpleItem("minion_melee_blue");
+    public static final java.util.function.Supplier<Item> MINION_RANGED_RED = registerSimpleItem("minion_ranged_red");
+    public static final java.util.function.Supplier<Item> MINION_RANGED_BLUE = registerSimpleItem("minion_ranged_blue");
+    public static final java.util.function.Supplier<Item> MINION_MAGIC_RED = registerSimpleItem("minion_magic_red");
+    public static final java.util.function.Supplier<Item> MINION_MAGIC_BLUE = registerSimpleItem("minion_magic_blue");
 
     public static Item minion(com.myriad.game.Faction faction, int kind) {
         boolean red = faction == com.myriad.game.Faction.XUANXIAO;
@@ -30,43 +37,43 @@ public final class ModItems {
     }
 
     /** 灵源水晶：灵源能量的具象化物品（阶段2接入炼器/装备合成） */
-    public static final DeferredItem<Item> SPIRIT_CRYSTAL = ITEMS.registerSimpleItem("spirit_crystal");
+    public static final java.util.function.Supplier<Item> SPIRIT_CRYSTAL = registerSimpleItem("spirit_crystal");
 
     /** 凌渊初始武器：使用 Durandal 材质模型，不带原版剑属性。 */
-    public static final DeferredItem<Item> LINGYUAN_SWORD = ITEMS.registerSimpleItem("lingyuan_sword");
+    public static final java.util.function.Supplier<Item> LINGYUAN_SWORD = registerSimpleItem("lingyuan_sword");
 
     /** 六名既有角色的专属初始武器；战斗属性仍由模组角色系统接管。 */
-    public static final DeferredItem<Item> RIVET_HAMMER=ITEMS.registerSimpleItem("rivet_hammer");
-    public static final DeferredItem<Item> HENGKE=ITEMS.registerSimpleItem("hengke");
-    public static final DeferredItem<Item> YINGCI = ITEMS.registerSimpleItem("yingci");
-    public static final DeferredItem<Item> LEITINGJIAN = ITEMS.registerSimpleItem("leitingjian");
-    public static final DeferredItem<com.myriad.item.ShuoSwordItem> SHUO_SWORD=ITEMS.registerItem("shuo_sword",com.myriad.item.ShuoSwordItem::new);
-    public static final DeferredItem<Item> HONG_LIE_FRAME=ITEMS.registerSimpleItem("hong_lie_frame");
-    public static final DeferredItem<Item> HONG_LIE_PETAL=ITEMS.registerSimpleItem("hong_lie_petal");
-    public static final DeferredItem<Item> HONG_LIE_RING=ITEMS.registerSimpleItem("hong_lie_ring");
-    public static final DeferredItem<Item> HONG_LIE=ITEMS.registerSimpleItem("hong_lie");
-    public static final DeferredItem<Item> SHUO_SCABBARD=ITEMS.registerSimpleItem("shuo_scabbard");
-    public static final DeferredItem<Item> LIEYANJIAN = ITEMS.registerSimpleItem("lieyanjian");
-    public static final DeferredItem<Item> ZHENQI = ITEMS.registerSimpleItem("zhenqi");
-    public static final DeferredItem<Item> SHUANGBING = ITEMS.registerSimpleItem("shuangbing");
-    public static final DeferredItem<Item> FENGREN = ITEMS.registerSimpleItem("fengren");
+    public static final java.util.function.Supplier<Item> RIVET_HAMMER=registerSimpleItem("rivet_hammer");
+    public static final java.util.function.Supplier<Item> HENGKE=registerSimpleItem("hengke");
+    public static final java.util.function.Supplier<Item> YINGCI = registerSimpleItem("yingci");
+    public static final java.util.function.Supplier<Item> LEITINGJIAN = registerSimpleItem("leitingjian");
+    public static final java.util.function.Supplier<com.myriad.item.ShuoSwordItem> SHUO_SWORD=registerItem("shuo_sword",com.myriad.item.ShuoSwordItem::new);
+    public static final java.util.function.Supplier<Item> HONG_LIE_FRAME=registerSimpleItem("hong_lie_frame");
+    public static final java.util.function.Supplier<Item> HONG_LIE_PETAL=registerSimpleItem("hong_lie_petal");
+    public static final java.util.function.Supplier<Item> HONG_LIE_RING=registerSimpleItem("hong_lie_ring");
+    public static final java.util.function.Supplier<Item> HONG_LIE=registerSimpleItem("hong_lie");
+    public static final java.util.function.Supplier<Item> SHUO_SCABBARD=registerSimpleItem("shuo_scabbard");
+    public static final java.util.function.Supplier<Item> LIEYANJIAN = registerSimpleItem("lieyanjian");
+    public static final java.util.function.Supplier<Item> ZHENQI = registerSimpleItem("zhenqi");
+    public static final java.util.function.Supplier<Item> SHUANGBING = registerSimpleItem("shuangbing");
+    public static final java.util.function.Supplier<Item> FENGREN = registerSimpleItem("fengren");
     /** 丹心·青萝初始法器：青萝丹杖。 */
-    public static final DeferredItem<Item> QINGLUO_STAFF = ITEMS.registerSimpleItem("qingluo_staff");
+    public static final java.util.function.Supplier<Item> QINGLUO_STAFF = registerSimpleItem("qingluo_staff");
     /** 破军·赤霄初始武器：赤霄战刃。 */
-    public static final DeferredItem<Item> CHIXIAO_BLADE = ITEMS.registerSimpleItem("chixiao_blade");
+    public static final java.util.function.Supplier<Item> CHIXIAO_BLADE = registerSimpleItem("chixiao_blade");
     /** 灵契·云笙初始法器：灵契玉铃。 */
-    public static final DeferredItem<Item> YUNSHENG_BELL = ITEMS.registerSimpleItem("yunsheng_bell");
+    public static final java.util.function.Supplier<Item> YUNSHENG_BELL = registerSimpleItem("yunsheng_bell");
     /** 寒泽冰锥术的展示专用物品，仅由飞行弹体的 ItemDisplay 使用。 */
-    public static final DeferredItem<Item> HANZE_ICE_SPIKE = ITEMS.registerSimpleItem("hanze_ice_spike");
+    public static final java.util.function.Supplier<Item> HANZE_ICE_SPIKE = registerSimpleItem("hanze_ice_spike");
 
-    public static final DeferredItem<Item> TOWER_01_BLUE = ITEMS.registerSimpleItem("tower_01_qingque");
-    public static final DeferredItem<Item> TOWER_02_BLUE = ITEMS.registerSimpleItem("tower_02_yunlei");
-    public static final DeferredItem<Item> TOWER_03_BLUE = ITEMS.registerSimpleItem("tower_03_tianque");
-    public static final DeferredItem<Item> TOWER_01_RED = ITEMS.registerSimpleItem("tower_01_qingque_red");
-    public static final DeferredItem<Item> TOWER_02_RED = ITEMS.registerSimpleItem("tower_02_yunlei_red");
-    public static final DeferredItem<Item> TOWER_03_RED = ITEMS.registerSimpleItem("tower_03_tianque_red");
-    public static final DeferredItem<Item> CRYSTAL_BLUE = ITEMS.registerSimpleItem("crystal_lingyuan");
-    public static final DeferredItem<Item> CRYSTAL_RED = ITEMS.registerSimpleItem("crystal_lingyuan_red");
+    public static final java.util.function.Supplier<Item> TOWER_01_BLUE = registerSimpleItem("tower_01_qingque");
+    public static final java.util.function.Supplier<Item> TOWER_02_BLUE = registerSimpleItem("tower_02_yunlei");
+    public static final java.util.function.Supplier<Item> TOWER_03_BLUE = registerSimpleItem("tower_03_tianque");
+    public static final java.util.function.Supplier<Item> TOWER_01_RED = registerSimpleItem("tower_01_qingque_red");
+    public static final java.util.function.Supplier<Item> TOWER_02_RED = registerSimpleItem("tower_02_yunlei_red");
+    public static final java.util.function.Supplier<Item> TOWER_03_RED = registerSimpleItem("tower_03_tianque_red");
+    public static final java.util.function.Supplier<Item> CRYSTAL_BLUE = registerSimpleItem("crystal_lingyuan");
+    public static final java.util.function.Supplier<Item> CRYSTAL_RED = registerSimpleItem("crystal_lingyuan_red");
 
     public static Item defenseTower(com.myriad.game.Faction faction, int tier) {
         boolean red = faction == com.myriad.game.Faction.XUANXIAO;
@@ -79,18 +86,18 @@ public final class ModItems {
     }
 
     /** 对局战术补给与视野饰品。 */
-    public static final DeferredItem<Item> BLOOD_PILL = ITEMS.registerSimpleItem(
+    public static final java.util.function.Supplier<Item> BLOOD_PILL = registerSimpleItem(
             "blood_pill", properties -> properties.stacksTo(16));
-    public static final DeferredItem<Item> MANA_PILL = ITEMS.registerSimpleItem(
+    public static final java.util.function.Supplier<Item> MANA_PILL = registerSimpleItem(
             "mana_pill", properties -> properties.stacksTo(16));
-    public static final DeferredItem<Item> SPIRIT_SNARE = ITEMS.registerSimpleItem(
+    public static final java.util.function.Supplier<Item> SPIRIT_SNARE = registerSimpleItem(
             "spirit_snare", properties -> properties.stacksTo(8));
-    public static final DeferredItem<Item> SCOUT_TOTEM = ITEMS.registerSimpleItem(
+    public static final java.util.function.Supplier<Item> SCOUT_TOTEM = registerSimpleItem(
             "scout_totem", properties -> properties.stacksTo(1));
-    public static final DeferredItem<Item> TRUE_SIGHT_CHARM = ITEMS.registerSimpleItem(
+    public static final java.util.function.Supplier<Item> TRUE_SIGHT_CHARM = registerSimpleItem(
             "true_sight_charm", properties -> properties.stacksTo(1));
     /** 手持时展开轻量战术示意图，不属于消耗品。 */
-    public static final DeferredItem<Item> TACTICAL_MAP = ITEMS.registerSimpleItem(
+    public static final java.util.function.Supplier<Item> TACTICAL_MAP = registerSimpleItem(
             "tactical_map", properties -> properties.stacksTo(1));
 
     /** 角色 ID 对应的专属初始武器物品，客户端与服务端共同使用，避免锁定逻辑产生不同物品。 */
@@ -132,9 +139,9 @@ public final class ModItems {
                 || stack.is(LINGYUAN_SWORD.get());
     }
 
-    public static final DeferredItem<BlockItem> SPIRIT_CORE_ITEM =
-            ITEMS.registerSimpleBlockItem("spirit_core", ModBlocks.SPIRIT_CORE);
+    public static final java.util.function.Supplier<BlockItem> SPIRIT_CORE_ITEM =
+            registerSimpleBlockItem("spirit_core", ModBlocks.SPIRIT_CORE);
 
-    public static final DeferredItem<BlockItem> DELIVERY_PORTAL_ITEM =
-            ITEMS.registerSimpleBlockItem("delivery_portal", ModBlocks.DELIVERY_PORTAL);
+    public static final java.util.function.Supplier<BlockItem> DELIVERY_PORTAL_ITEM =
+            registerSimpleBlockItem("delivery_portal", ModBlocks.DELIVERY_PORTAL);
 }

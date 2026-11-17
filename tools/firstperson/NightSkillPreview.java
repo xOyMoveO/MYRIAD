@@ -8,7 +8,6 @@ import java.awt.image.BufferedImage;
 import java.nio.file.*;
 import java.util.*;
 import java.util.List;
-import java.util.zip.ZipFile;
 import javax.imageio.ImageIO;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -89,7 +88,7 @@ public final class NightSkillPreview {
     public static void main(String[] args)throws Exception{
         Path assets=Path.of(args[0]).resolve("src/main/resources/assets/myriad"),out=Path.of(args[1]);Files.createDirectories(out);
         NightDaggerPreview.dagger=ImageIO.read(assets.resolve("textures/item/yingxiao_shadow_dagger.png").toFile());NightDaggerPreview.blade=NightDaggerPreview.loadBlade(assets);
-        try(var zip=new ZipFile("E:/mod/.gradle/caches/neoformruntime/artifacts/minecraft_26.2_client.jar")){
+        try(var zip=MinecraftPreviewResources.open()){
             NightDaggerPreview.skin=ImageIO.read(zip.getInputStream(zip.getEntry("assets/minecraft/textures/entity/player/wide/steve.png")));
         }
         String[] names={"blade","slash","wake","smoke","seal","impact"};

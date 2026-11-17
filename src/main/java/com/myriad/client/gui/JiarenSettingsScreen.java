@@ -7,7 +7,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import com.myriad.network.Packets;
 
 /** 训练假人双防设置：右键假人打开，提交后由服务端校验实体、距离和 0~1000 范围。 */
 public final class JiarenSettingsScreen extends Screen {
@@ -62,7 +62,7 @@ public final class JiarenSettingsScreen extends Screen {
         try {
             float physical = Float.parseFloat(physicalBox.getValue());
             float magic = Float.parseFloat(magicBox.getValue());
-            ClientPacketDistributor.sendToServer(
+            Packets.sendToServer(
                     new NetworkSetup.SetJiarenDefensesPayload(entityId, physical, magic));
             onClose();
         } catch (NumberFormatException ignored) {

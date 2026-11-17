@@ -59,7 +59,7 @@ public final class ShuoVfxPreview {
         art=ImageIO.read(assets.resolve("textures/particle/vfx/shuo_basic_hd.png").toFile());
         var atlas=com.google.gson.JsonParser.parseString(Files.readString(assets.resolve("particles/ability_mesh.json"))).getAsJsonObject().getAsJsonArray("textures");
         String[] first=atlas.get(0).getAsString().split(":");
-        if(first[0].equals("minecraft"))try(var zip=new java.util.zip.ZipFile("E:/mod/.gradle/caches/neoformruntime/artifacts/minecraft_26.2_client.jar")){
+        if(first[0].equals("minecraft"))try(var zip=MinecraftPreviewResources.open()){
             point=ImageIO.read(zip.getInputStream(zip.getEntry("assets/minecraft/textures/particle/"+first[1]+".png")));
         }else point=ImageIO.read(assets.resolve("textures/particle/"+first[1]+".png").toFile());
         var colors=List.of(new Color(32,49,66),new Color(104,139,65),new Color(215,227,239));

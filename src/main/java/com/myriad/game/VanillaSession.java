@@ -26,7 +26,7 @@ public final class VanillaSession {
         p.totalExperience=s.xp;p.experienceLevel=s.level;p.experienceProgress=s.progress;
         var board=p.level().getServer().getScoreboard();board.removePlayerFromTeam(p.getScoreboardName());
         if(s.team!=null && board.getPlayerTeam(s.team)!=null)board.addPlayerToTeam(p.getScoreboardName(),board.getPlayerTeam(s.team));
-        p.containerMenu.broadcastChanges();p.refreshTabListName();
+        p.containerMenu.broadcastChanges();com.myriad.player.PlayerNames.refresh(p);
     }
     public static void clear(){SAVED.clear();}
 }

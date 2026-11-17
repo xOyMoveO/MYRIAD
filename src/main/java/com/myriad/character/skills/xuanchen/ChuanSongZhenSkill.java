@@ -89,7 +89,7 @@ public class ChuanSongZhenSkill extends Skill {
       stand.setInvisible(true);
       stand.setNoGravity(true);
       stand.setNoBasePlate(true);
-      stand.setInvulnerable(true);
+      stand.setPermanentlyInvulnerable(true);
       stand.setPos(pos.x, pos.y, pos.z);
       level.addFreshEntity(com.myriad.game.ModEntityTracker.markGenerated(stand));
       Scoreboard sb = level.getScoreboard();

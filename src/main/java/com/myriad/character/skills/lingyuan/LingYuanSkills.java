@@ -41,7 +41,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.myriad.network.Packets;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -145,7 +145,7 @@ public final class LingYuanSkills extends Skill {
             // 参考影袭：只推进水平方向 motion，绝不直接传送坐标或改写 Y 坐标。
             player.setDeltaMovement(dir.x * .92, player.getDeltaMovement().y, dir.z * .92);
             // 和影袭相同地同时通知客户端推进，避免玩家实体的服务端速度被客户端输入覆盖。
-            PacketDistributor.sendToPlayer(player, new DashPayload((float) dir.x, 0.0F, (float) dir.z, 7));
+            Packets.sendToPlayer(player, new DashPayload((float) dir.x, 0.0F, (float) dir.z, 7));
             level.playSound(null, player.getX(), player.getY(), player.getZ(),
                     SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, .8F, 1.2F);
             level.playSound(null, player.getX(), player.getY(), player.getZ(),

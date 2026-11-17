@@ -7,7 +7,7 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.client.event.RenderHandEvent;
+import com.myriad.client.platform.HandRenderContext;
 import java.util.*;
 
 /** Existing authored textures in a bounded local view layer. Never world-space floating particles. */
@@ -15,7 +15,7 @@ final class NightSkillHandRenderer {
     private static final String[] TEXTURES={"night_gray_blade","night_gray_slash","night_gray_wake","night_gray_smoke","night_gray_seal","night_gray_impact","night_shadow_needle"};
     private static final Identifier[] IDS=Arrays.stream(TEXTURES).map(n->Identifier.fromNamespaceAndPath("myriad","textures/particle/vfx/"+n+".png")).toArray(Identifier[]::new);
     private NightSkillHandRenderer(){}
-    static void submit(RenderHandEvent event,PoseStack stack,List<Quad> quads){
+    static void submit(HandRenderContext event,PoseStack stack,List<Quad> quads){
         if(quads.isEmpty())return;
         var groups=new LinkedHashMap<Integer,List<Quad>>();
         for(var q:quads)groups.computeIfAbsent(q.material(),k->new ArrayList<>()).add(q);

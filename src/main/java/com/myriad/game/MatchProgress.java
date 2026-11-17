@@ -9,10 +9,10 @@ import java.nio.file.StandardCopyOption;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.storage.LevelResource;
 
-/** World-local checkpoint; player progression uses NeoForge's persistent attachment. */
+/** World-local checkpoint; player progression uses Fabric's persistent attachment. */
 public final class MatchProgress {
     public static final Gson JSON = new GsonBuilder().enableComplexMapKeySerialization().create();
-    private static Path path(MinecraftServer s) { return s.getWorldPath(LevelResource.ROOT).resolve("myriad_match.json"); }
+    private static Path path(MinecraftServer s) { return s.getWorldPath(LevelResource.ROOT).resolve("myriad_fabric_match.json"); }
     public static void save(MinecraftServer server) {
         if (GameManager.get()==null || Boolean.getBoolean("myriad.combatTests")) return;
         try {
@@ -36,14 +36,7 @@ public final class MatchProgress {
     }
     public static void load(MinecraftServer server) {
         if (!server.isDedicatedServer()) {
-            ModState.setEnabled(false);
-            TrainingMode.setEnabled(false);
-            TrainingMode.setNoCooldown(false);
-            TrainingMode.setNoGoldCost(false);
-            TrainingMode.setNoMana(false);
-            HeroRespawnSystem.clear();
-            com.myriad.player.PlayerDataProvider.clearModGeneratedState(server);
-            ModEntityTracker.clearGenerated(server);
+            openHostSession(server);
             return;
         }
         if(!Files.isRegularFile(path(server)) || Boolean.getBoolean("myriad.combatTests"))return;
@@ -65,17 +58,33 @@ public final class MatchProgress {
                 MonsterManager.restore(server.overworld(),root.getAsJsonObject("monsters"));
                 HeroRespawnSystem.restore(root.get("respawns"));
             }
-        } catch(Exception e) { throw new IllegalStateException("Failed to restore myriad_match.json; preserve the checkpoint before retrying",e); }
+        } catch(Exception e) { throw new IllegalStateException("Failed to restore myriad_fabric_match.json; preserve the checkpoint before retrying",e); }
     }
 
     /** Host leaving a local/LAN world ends the session before the final checkpoint. */
     public static void onServerStopping(MinecraftServer server) {
         if (!server.isDedicatedServer()) {
-            GameManager.create();
-            GameManager.get().setServer(server);
-            HeroRespawnSystem.clear();
-            LaneSystem.tick(server.overworld());
+            endHostSession(server);
         }
         save(server);
+    }
+
+    /** Local/LAN world sessions intentionally do not resume a checkpoint. */
+    static void openHostSession(MinecraftServer server) {
+        ModState.setEnabled(false);
+        TrainingMode.setEnabled(false);
+        TrainingMode.setNoCooldown(false);
+        TrainingMode.setNoGoldCost(false);
+        TrainingMode.setNoMana(false);
+        HeroRespawnSystem.clear();
+        com.myriad.player.PlayerDataProvider.clearModGeneratedState(server);
+        ModEntityTracker.clearGenerated(server);
+    }
+
+    static void endHostSession(MinecraftServer server) {
+        GameManager.create();
+        GameManager.get().setServer(server);
+        HeroRespawnSystem.clear();
+        LaneSystem.tick(server.overworld());
     }
 }

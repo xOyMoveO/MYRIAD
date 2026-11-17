@@ -6,18 +6,20 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 
 import com.myriad.Myriad;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
 
 /** 创造模式标签页 */
 public final class ModCreativeTabs {
     private ModCreativeTabs() {}
 
-    public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS =
-            DeferredRegister.create(Registries.CREATIVE_MODE_TAB, Myriad.MODID);
+    /** Forces synchronous registration of this class's static entries during mod initialization. */
+    public static void initialize() { }
+    private static java.util.function.Supplier<CreativeModeTab> register(String name, java.util.function.Supplier<CreativeModeTab> factory) {
+        var tab = net.minecraft.core.Registry.register(net.minecraft.core.registries.BuiltInRegistries.CREATIVE_MODE_TAB, net.minecraft.resources.Identifier.fromNamespaceAndPath(Myriad.MODID, name), factory.get());
+        return () -> tab;
+    }
 
-    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> MYRIAD_TAB =
-            CREATIVE_MODE_TABS.register("main", () -> CreativeModeTab.builder()
+    public static final java.util.function.Supplier<CreativeModeTab> MYRIAD_TAB =
+            register("main", () -> net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab.builder()
                     .title(Component.translatable("itemGroup.myriad"))
                     .icon(() -> new ItemStack(ModItems.SPIRIT_CRYSTAL.get()))
                     .displayItems((parameters, output) -> {

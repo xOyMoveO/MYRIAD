@@ -8,7 +8,6 @@ import java.awt.image.BufferedImage;
 import java.nio.file.*;
 import java.util.*;
 import java.util.List;
-import java.util.zip.ZipFile;
 import javax.imageio.ImageIO;
 import net.minecraft.client.model.geom.ModelPart;
 import org.joml.Matrix4f;
@@ -88,7 +87,7 @@ public final class FastTrailPreview {
     }
     public static void main(String[] args)throws Exception{
         Path project=Path.of(args[0]),out=Path.of(args[1]),assets=project.resolve("src/main/resources/assets/myriad");Files.createDirectories(out);
-        try(var zip=new ZipFile("E:/mod/.gradle/caches/neoformruntime/artifacts/minecraft_26.2_client.jar")){
+        try(var zip=MinecraftPreviewResources.open()){
             NightDaggerPreview.skin=ImageIO.read(zip.getInputStream(zip.getEntry("assets/minecraft/textures/entity/player/wide/steve.png")));
             textures.put(0,ImageIO.read(zip.getInputStream(zip.getEntry("assets/minecraft/textures/particle/glow.png"))));
         }

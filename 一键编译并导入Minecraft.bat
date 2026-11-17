@@ -1,53 +1,48 @@
 @echo off
-setlocal EnableExtensions EnableDelayedExpansion
+setlocal EnableExtensions
 
-cd /d "%~dp0"
+cd /d "%~dp0" || exit /b 1
 
-rem Use the verified local Gradle distribution. Network access is disabled.
-set "GRADLE_BIN=C:\Users\Administrator\.gradle\wrapper\dists\gradle-9.7.0-bin\d4tj7w02tcgubx9zk9hbippn6\gradle-9.7.0\bin\gradle.bat"
-set "TARGET_MODS=D:\Minecraft\.minecraft\versions\xianfanjie\mods"
-set "TARGET_JAR=%TARGET_MODS%\myriad-0.1.0.jar"
-
-if not exist "%GRADLE_BIN%" (
-    echo ERROR: Local Gradle 9.7.0 was not found.
-    echo Expected: %GRADLE_BIN%
-    pause
-    exit /b 1
+rem Legacy filename: this entry builds files for manual import; it does not install.
+set "BUILD_MODE="
+if not "%~2"=="" goto usage
+if not "%~1"=="" (
+    if /I not "%~1"=="--offline" goto usage
+    set "BUILD_MODE=--offline"
 )
 
-if not exist "%TARGET_MODS%\" (
-    echo ERROR: Minecraft mods folder was not found.
-    echo Expected: %TARGET_MODS%
-    pause
-    exit /b 1
-)
-
-echo [1/2] Building mod offline...
-call "%GRADLE_BIN%" build --offline
+python --version >nul 2>&1
 if errorlevel 1 (
-    echo ERROR: Build failed. No file was copied.
+    echo ERROR: Python is required to validate and stage the Fabric release.
     pause
     exit /b 1
 )
 
-set "MOD_JAR="
-for /f "delims=" %%F in ('dir /b /a-d /o-d "build\libs\myriad-*.jar" ^| findstr /v /i /c:"-sources.jar" /c:"-dev.jar"') do (
-    if not defined MOD_JAR set "MOD_JAR=%%F"
-)
-
-if not defined MOD_JAR (
-    echo ERROR: No mod JAR was found in build\libs.
-    pause
-    exit /b 1
-)
-
-echo [2/2] Copying !MOD_JAR!...
-copy /Y "build\libs\!MOD_JAR!" "%TARGET_JAR%" >nul
+echo Builds a Fabric release for manual import. No Minecraft instance is changed.
+echo [1/2] Building with the repository Gradle Wrapper...
+call "%~dp0gradlew.bat" build %BUILD_MODE%
 if errorlevel 1 (
-    echo ERROR: Copy failed. Close Minecraft and try again.
+    echo ERROR: Build failed. No release was staged.
     pause
     exit /b 1
 )
 
-echo DONE: %TARGET_JAR%
+echo [2/2] Validating and staging the Fabric release...
+python "%~dp0tools\fabric\prepare-ci-release.py"
+if errorlevel 1 (
+    echo ERROR: Release validation failed. Do not import a previous staged package.
+    pause
+    exit /b 1
+)
+
+echo READY FOR MANUAL IMPORT: "%CD%\build\ci-release"
+echo This folder contains the release JAR, SHA256 and release.json.
+echo After backing up, import the JAR into a confirmed Minecraft 26.3 Fabric test instance.
+echo Existing Minecraft packages, configuration and worlds were not changed.
 pause
+exit /b 0
+
+:usage
+echo Usage: "%~nx0" [--offline]
+echo Builds and validates files for manual import in build\ci-release; does not install.
+exit /b 1

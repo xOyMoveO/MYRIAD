@@ -5,7 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
-import net.neoforged.neoforge.client.gui.GuiLayer;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
 
 import com.myriad.character.CharacterType;
 import com.myriad.character.Skill;
@@ -16,7 +16,7 @@ import com.myriad.network.NetworkSetup.PlayerDataPayload;
 /**
  * 游戏内 HUD：阵营 / 等级 / 经验 / 金币 / 法力 / 携带灵源 / 对局计分 / 技能栏。
  */
-public class HudOverlay implements GuiLayer {
+public class HudOverlay implements HudElement {
     public static final HudOverlay INSTANCE = new HudOverlay();
 
     /** 攻击目标生命显示：entityId + 显示截止时间（毫秒） */
@@ -84,7 +84,7 @@ public class HudOverlay implements GuiLayer {
     }
 
     @Override
-    public void render(GuiGraphicsExtractor gui, DeltaTracker delta) {
+    public void extractRenderState(GuiGraphicsExtractor gui, DeltaTracker delta) {
         if (!ClientDataHolder.modEnabled() || !ClientDataHolder.inGame()) {
             return;
         }

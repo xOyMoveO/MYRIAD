@@ -16,7 +16,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.myriad.network.Packets;
 
 import com.myriad.character.Skill;
 import com.myriad.combat.DamageCalc;
@@ -69,7 +69,7 @@ public class JiFengTuCiSkill extends Skill {
         dash.lastPos = player.position();
         dash.remainingTicks = (int) Math.round(DASH_RANGE / DASH_SPEED);
         DASHES.put(player.getUUID(), dash);
-        PacketDistributor.sendToPlayer(player,
+        Packets.sendToPlayer(player,
                 new DashPayload((float) flat.x, 0f, (float) flat.z, dash.remainingTicks),
                 new CustomPacketPayload[0]);
         player.setDeltaMovement(flat.x * DASH_SPEED, 0, flat.z * DASH_SPEED);

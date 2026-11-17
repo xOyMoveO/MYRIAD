@@ -476,7 +476,7 @@ public final class LaneSystem {
         };
         if(state.kind==Kind.CRYSTAL)damage=144;
         if(target instanceof ServerPlayer hero) {
-            var tag=tower.getPersistentData();
+            var tag=com.myriad.player.EntityState.data(tower);
             String id=hero.getUUID().toString();
             int stacks=id.equals(tag.getStringOr("myriad_tower_target",""))
                     && now-tag.getLongOr("myriad_tower_hit",-1000)<=60?tag.getIntOr("myriad_tower_stacks",0)+1:0;
@@ -484,7 +484,7 @@ public final class LaneSystem {
             damage*=MatchBalance.towerScale(MatchBalance.elapsed(hero),stacks);
         } else {
             // 小兵不吃连续锁定递增；提高塔下清兵效率，不改变对英雄的伤害。
-            tower.getPersistentData().remove("myriad_tower_target");
+            com.myriad.player.EntityState.data(tower).remove("myriad_tower_target");
             damage *= 1.80F;
         }
         com.myriad.combat.NpcCombat.towerHit(target, tower, damage, .04F,
@@ -894,15 +894,15 @@ public final class LaneSystem {
     /** 由伤害事件在最终伤害计算后调用；返回 true 表示目标属于兵线系统。 */
     public static boolean absorbIncomingDamage(LivingEntity target,
             net.minecraft.world.damagesource.DamageSource source,
-            net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent event) {
+            com.myriad.combat.DamageContext event) {
         UnitState state = UNITS.get(target.getUUID());
         if (state == null) return false;
         Faction attacker = factionOf(source.getEntity());
         if(state.kind==Kind.CRYSTAL&&(GameManager.get()==null||GameManager.get().getPhase()!=GameManager.Phase.PLAYING)){
-            event.getContainer().setNewDamage(0);return true;
+            event.setAmount(0);return true;
         }
         if (attacker == null || attacker == state.faction || (state.tower() && !isTowerVulnerable(state))) {
-            event.getContainer().setNewDamage(0.0F);
+            event.setAmount(0.0F);
             return true;
         }
         float amount = Math.max(0.0F, event.getAmount());
@@ -925,10 +925,10 @@ public final class LaneSystem {
         state.health = Math.max(0.0F, state.health - amount);
         updateName(target, state);
         if (source.getEntity() instanceof ServerPlayer player) {
-            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+            com.myriad.network.Packets.sendToPlayer(player,
                     new NetworkSetup.JiarenHpPayload(target.getId(), state.health, state.maxHealth));
         }
-        event.getContainer().setNewDamage(state.health <= 0 ? 2048.0F : 0.0F);
+        event.setAmount(state.health <= 0 ? 2048.0F : 0.0F);
         return true;
     }
 
@@ -992,7 +992,7 @@ public final class LaneSystem {
             if (server != null) {
                 for (ServerPlayer player : server.getPlayerList().getPlayers()) {
                     if (factionOf(player) == state.faction) {
-                        net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+                        com.myriad.network.Packets.sendToPlayer(player,
                                 new com.myriad.network.TowerAlertPayload(
                                         state.lane.id, state.towerTier));
                     }

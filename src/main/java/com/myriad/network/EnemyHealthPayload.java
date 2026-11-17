@@ -13,10 +13,10 @@ public record EnemyHealthPayload(List<Entry> entries) implements CustomPacketPay
     public record Entry(int entityId, float health, float maximum, boolean ally) {}
     public static final Type<EnemyHealthPayload> TYPE = new Type<>(Identifier.parse("myriad:enemy_health"));
     public static final StreamCodec<FriendlyByteBuf, EnemyHealthPayload> CODEC = StreamCodec.ofMember(
-            EnemyHealthPayload::write, b -> new EnemyHealthPayload(b.readList(
+            EnemyHealthPayload::write, b -> new EnemyHealthPayload(PayloadBuffers.readList(b,
                     buf -> new Entry(buf.readVarInt(), buf.readFloat(), buf.readFloat(), buf.readBoolean()))));
     private static void write(EnemyHealthPayload p, FriendlyByteBuf b) {
-        b.writeCollection(p.entries, (buf, e) -> {
+        PayloadBuffers.writeCollection(b, p.entries, (buf, e) -> {
             buf.writeVarInt(e.entityId); buf.writeFloat(e.health); buf.writeFloat(e.maximum);
             buf.writeBoolean(e.ally);
         });

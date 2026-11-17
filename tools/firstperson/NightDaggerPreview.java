@@ -10,7 +10,6 @@ import java.awt.image.BufferedImage;
 import java.nio.file.*;
 import java.util.*;
 import java.util.List;
-import java.util.zip.ZipFile;
 import javax.imageio.*;
 import javax.imageio.metadata.IIOMetadataNode;
 import net.minecraft.client.model.geom.builders.*;
@@ -42,7 +41,7 @@ public final class NightDaggerPreview {
         }
         for(var e:json.getAsJsonArray("elements")) {
             var element=e.getAsJsonObject();
-            var cube=CuboidModel.GSON.fromJson(element,CuboidModelElement.class);
+            var cube=MinecraftModelParser.element(element);
             float[] a=floats(element.getAsJsonArray("from")), b=floats(element.getAsJsonArray("to"));
             for(var face:element.getAsJsonObject("faces").entrySet()) {
                 int[][] c=switch(face.getKey()) {
@@ -177,7 +176,7 @@ public final class NightDaggerPreview {
         Path project=Path.of(args[0]);output=Path.of(args[1]);Files.createDirectories(output);
         Path assets=project.resolve("src/main/resources/assets/myriad");
         dagger=ImageIO.read(assets.resolve("textures/item/yingxiao_shadow_dagger.png").toFile());blade=loadBlade(assets);
-        try(var zip=new ZipFile("E:/mod/.gradle/caches/neoformruntime/artifacts/minecraft_26.2_client.jar")) {
+        try(var zip=MinecraftPreviewResources.open()) {
             skin=ImageIO.read(zip.getInputStream(zip.getEntry("assets/minecraft/textures/entity/player/wide/steve.png")));
         }
         var motion=new NightDaggerMotion();var stills=new ArrayList<BufferedImage>();

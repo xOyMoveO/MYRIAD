@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "myriad:roster_b",
+  "environment": {"type": "minecraft:difficulty", "difficulty": "peaceful"},
+  "structure": "myriad:roster_b_empty",
+  "max_ticks": 220
+}

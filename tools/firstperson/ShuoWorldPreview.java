@@ -67,7 +67,7 @@ public final class ShuoWorldPreview {
         Path root=Path.of(args[0]).resolve("src/main/resources/assets/myriad/textures/particle/vfx"),out=Path.of(args[1]);Files.createDirectories(out);
         String[] names={"shuo_basic_hd","shuo_guard_hd","shuo_stream_hd","shuo_impact_hd"};for(int i=0;i<4;i++)ShuoVfxPreview.materials.put(75+i,ImageIO.read(root.resolve(names[i]+".png").toFile()));
         var white=new BufferedImage(1,1,BufferedImage.TYPE_INT_ARGB);white.setRGB(0,0,0xFFFFFFFF);ShuoVfxPreview.materials.put(99,white);
-        try(var zip=new java.util.zip.ZipFile("E:/mod/.gradle/caches/neoformruntime/artifacts/minecraft_26.2_client.jar")){
+        try(var zip=MinecraftPreviewResources.open()){
             var atlas=com.google.gson.JsonParser.parseString(Files.readString(root.getParent().getParent().getParent().resolve("particles/ability_mesh.json"))).getAsJsonObject().getAsJsonArray("textures");
             String name=atlas.get(0).getAsString().split(":")[1];ShuoVfxPreview.materials.put(0,ImageIO.read(zip.getInputStream(zip.getEntry("assets/minecraft/textures/particle/"+name+".png"))));
         }

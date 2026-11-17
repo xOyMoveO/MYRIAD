@@ -13,8 +13,8 @@ import net.minecraft.world.entity.player.PlayerModelPart;
 import net.minecraft.world.entity.player.PlayerModelType;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.phys.HitResult;
-import net.neoforged.neoforge.client.event.InputEvent;
-import net.neoforged.neoforge.client.event.RenderHandEvent;
+import com.myriad.client.platform.AttackInput;
+import com.myriad.client.platform.HandRenderContext;
 import org.joml.Matrix4f;
 
 /** Shuo only: visible skin hands share the item's actual grip matrices. No third-person rig. */
@@ -42,13 +42,13 @@ public final class ShuoView {
     public static void tick(){var mc=Minecraft.getInstance();if(!enabled(mc)||menu(mc)){reset();return;}check(mc);
         if(!MOTION.active(mc.player.tickCount))predictedDrawn=drawn();
     }
-    public static void onAttack(InputEvent.InteractionKeyMappingTriggered e){var mc=Minecraft.getInstance();
+    public static void onAttack(AttackInput e){var mc=Minecraft.getInstance();
         if(!e.isAttack()||e.isCanceled()||!e.shouldSwingHand()||!enabled(mc)||menu(mc)||ClientDataHolder.isChanneling()
             ||ClientDataHolder.buffTicks("g1_stun")>0||ClientDataHolder.buffTicks("g1_shuo_sheathing")>0||mc.player.getAttackStrengthScale(.5f)<1
             ||mc.hitResult!=null&&mc.hitResult.getType()==HitResult.Type.BLOCK)return;
         check(mc);MOTION.basic(mc.player.tickCount,drawn()||predictedDrawn);
     }
-    public static boolean render(RenderHandEvent e){var mc=Minecraft.getInstance();if(!enabled(mc)){reset();return false;}
+    public static boolean render(HandRenderContext e){var mc=Minecraft.getInstance();if(!enabled(mc)){reset();return false;}
         if(e.isCanceled()||menu(mc))return false;check(mc);
         if(e.getHand()==InteractionHand.OFF_HAND){e.setCanceled(true);return true;}
         double now=mc.player.tickCount+e.getPartialTick();boolean held=drawn()||predictedDrawn;var f=MOTION.frame(now,held);
@@ -60,14 +60,14 @@ public final class ShuoView {
         AttackTrailRenderer.submit(e,ShuoTrail.build(f,mirror));
         AttackTrailRenderer.submit(e,ShuoSkillTrail.build(MOTION,now,mirror));e.setCanceled(true);return true;
     }
-    private static void arm(RenderHandEvent e,Matrix4f hand,boolean slim,boolean left){var mc=Minecraft.getInstance();int i=(slim?2:0)+(left?1:0);
+    private static void arm(HandRenderContext e,Matrix4f hand,boolean slim,boolean left){var mc=Minecraft.getInstance();int i=(slim?2:0)+(left?1:0);
         if(ARMS[i]==null)ARMS[i]=ShuoArmModel.bake(slim,left);var model=ARMS[i];
         model.resetPose();model.setPos(0,0,0);model.setRotation(0,0,0);model.visible=true;
         model.getChild(left?"left_sleeve":"right_sleeve").visible=mc.player.isModelPartShown(left?PlayerModelPart.LEFT_SLEEVE:PlayerModelPart.RIGHT_SLEEVE);
         var stack=e.getPoseStack();stack.pushPose();try{stack.mulPose(new Matrix4f(hand).mul(NightDaggerRig.arm(slim,left)));
             e.getSubmitNodeCollector().submitModelPart(model,stack,RenderTypes.entityTranslucent(mc.player.getSkin().body().texturePath()),e.getPackedLight(),OverlayTexture.NO_OVERLAY,null);
         }finally{stack.popPose();}}
-    private static void item(RenderHandEvent e,Matrix4f at,net.minecraft.world.item.ItemStack item){var mc=Minecraft.getInstance();var stack=e.getPoseStack();stack.pushPose();try{
-        stack.mulPose(at);mc.getEntityRenderDispatcher().getItemInHandRenderer().renderItem(mc.player,item,ItemDisplayContext.NONE,stack,e.getSubmitNodeCollector(),e.getPackedLight());
+    private static void item(HandRenderContext e,Matrix4f at,net.minecraft.world.item.ItemStack item){var mc=Minecraft.getInstance();var stack=e.getPoseStack();stack.pushPose();try{
+        stack.mulPose(at);com.myriad.client.platform.ClientItemRenderer.submit(mc.player,item,ItemDisplayContext.NONE,stack,e.getSubmitNodeCollector(),e.getPackedLight());
     }finally{stack.popPose();}}
 }

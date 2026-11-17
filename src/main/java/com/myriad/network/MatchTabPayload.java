@@ -14,11 +14,11 @@ public record MatchTabPayload(long elapsedTicks, List<Entry> players) implements
     public record Entry(UUID id, String name, String character, int faction, int level, int kills, int deaths, int gold) {}
     public static final Type<MatchTabPayload> TYPE = new Type<>(Identifier.parse("myriad:match_tab"));
     public static final StreamCodec<FriendlyByteBuf, MatchTabPayload> CODEC = StreamCodec.ofMember(
-            MatchTabPayload::write, b -> new MatchTabPayload(b.readLong(), b.readList(v -> new Entry(
+            MatchTabPayload::write, b -> new MatchTabPayload(b.readLong(), PayloadBuffers.readList(b, v -> new Entry(
                     v.readUUID(), v.readUtf(), v.readUtf(), v.readVarInt(), v.readVarInt(), v.readVarInt(), v.readVarInt(), v.readVarInt()))));
     private static void write(MatchTabPayload p, FriendlyByteBuf b) {
         b.writeLong(p.elapsedTicks);
-        b.writeCollection(p.players, (v,e) -> { v.writeUUID(e.id); v.writeUtf(e.name); v.writeUtf(e.character);
+        PayloadBuffers.writeCollection(b, p.players, (v,e) -> { v.writeUUID(e.id); v.writeUtf(e.name); v.writeUtf(e.character);
             v.writeVarInt(e.faction); v.writeVarInt(e.level); v.writeVarInt(e.kills); v.writeVarInt(e.deaths); v.writeVarInt(e.gold); });
     }
     @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
@@ -32,6 +32,6 @@ public record MatchTabPayload(long elapsedTicks, List<Entry> players) implements
                     d == null ? 0 : d.getMatchGoldEarned());
         }).toList();
         var packet = new MatchTabPayload(gm == null ? -1 : gm.getMatchElapsedTicks(server.overworld().getGameTime()), entries);
-        for (var player : server.getPlayerList().getPlayers()) net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, packet);
+        for (var player : server.getPlayerList().getPlayers()) Packets.sendToPlayer(player, packet);
     }
 }

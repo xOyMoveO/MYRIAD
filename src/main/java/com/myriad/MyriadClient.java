@@ -1,21 +1,12 @@
 package com.myriad;
 
-import org.lwjgl.glfw.GLFW;
-
 import com.mojang.blaze3d.platform.InputConstants;
 
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.neoforge.client.event.InputEvent;
-import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
-import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
-import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
-import net.neoforged.neoforge.common.NeoForge;
+import com.myriad.client.platform.AttackInput;
+import com.myriad.network.Packets;
 
 import com.myriad.character.CharacterType;
 import com.myriad.client.HudOverlay;
@@ -28,96 +19,70 @@ import com.myriad.client.gui.InfoScreen;
 import com.myriad.network.NetworkSetup;
 import com.myriad.registry.ModParticles;
 
-// This class will not load on dedicated servers. Accessing client side code from here is safe.
-@Mod(value = Myriad.MODID, dist = Dist.CLIENT)
-public class MyriadClient {
+@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
     /** 仙凡劫专属按键分类（设置-按键控制中独立一栏） */
     public static final KeyMapping.Category KEY_CATEGORY = KeyMapping.Category
             .register(Identifier.fromNamespaceAndPath(Myriad.MODID, "keys"));
 
     public static final KeyMapping KEY_SKILL_Q =
-            new KeyMapping("key.myriad.skill_q", GLFW.GLFW_KEY_UNKNOWN, KEY_CATEGORY);
+            new KeyMapping("key.myriad.skill_q", InputConstants.UNKNOWN.getValue(), KEY_CATEGORY);
     public static final KeyMapping KEY_SKILL_W =
-            new KeyMapping("key.myriad.skill_w", GLFW.GLFW_KEY_UNKNOWN, KEY_CATEGORY);
+            new KeyMapping("key.myriad.skill_w", InputConstants.UNKNOWN.getValue(), KEY_CATEGORY);
     public static final KeyMapping KEY_SKILL_E =
-            new KeyMapping("key.myriad.skill_e", GLFW.GLFW_KEY_UNKNOWN, KEY_CATEGORY);
+            new KeyMapping("key.myriad.skill_e", InputConstants.UNKNOWN.getValue(), KEY_CATEGORY);
     public static final KeyMapping KEY_SKILL_R =
-            new KeyMapping("key.myriad.skill_r", GLFW.GLFW_KEY_UNKNOWN, KEY_CATEGORY);
+            new KeyMapping("key.myriad.skill_r", InputConstants.UNKNOWN.getValue(), KEY_CATEGORY);
     public static final KeyMapping KEY_SKILL_F =
-            new KeyMapping("key.myriad.skill_f", GLFW.GLFW_KEY_UNKNOWN, KEY_CATEGORY);
+            new KeyMapping("key.myriad.skill_f", InputConstants.UNKNOWN.getValue(), KEY_CATEGORY);
     /** 个人信息界面 */
     public static final KeyMapping KEY_INFO =
-            new KeyMapping("key.myriad.info", GLFW.GLFW_KEY_C, KEY_CATEGORY);
+            new KeyMapping("key.myriad.info", InputConstants.KEY_C, KEY_CATEGORY);
     public static final KeyMapping KEY_RECALL =
-            new KeyMapping("key.myriad.recall", GLFW.GLFW_KEY_B, KEY_CATEGORY);
+            new KeyMapping("key.myriad.recall", InputConstants.KEY_B, KEY_CATEGORY);
     /** 装备商店界面 */
     public static final KeyMapping KEY_SHOP =
-            new KeyMapping("key.myriad.shop", GLFW.GLFW_KEY_P, KEY_CATEGORY);
+            new KeyMapping("key.myriad.shop", InputConstants.KEY_P, KEY_CATEGORY);
 
-    public MyriadClient(IEventBus modEventBus) {
-        // 注册游戏内 HUD
-        modEventBus.addListener(MyriadClient::onRegisterGuiLayers);
-        // 注册自定义键位
-        modEventBus.addListener(MyriadClient::onRegisterKeyMappings);
-        modEventBus.addListener(MyriadClient::onRegisterParticleProviders);
-        modEventBus.addListener(com.myriad.client.particle.AbilityMeshParticle::registerGroup);
-        modEventBus.addListener((net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers event) ->
-                event.registerEntityRenderer(com.myriad.registry.ModEntities.BASE_CRYSTAL.get(),net.minecraft.client.renderer.entity.NoopRenderer::new));
-        modEventBus.addListener((net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers event) ->
-                event.registerEntityRenderer(com.myriad.registry.ModEntities.SIEGE_MINION.get(), com.myriad.client.SiegeMinionRenderer::new));
-        modEventBus.addListener((net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers event) ->
-                event.registerEntityRenderer(com.myriad.registry.ModEntities.LANE_MINION.get(), com.myriad.client.MinionRenderer::new));
-        modEventBus.addListener((net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers event) ->
-                event.registerEntityRenderer(com.myriad.registry.ModEntities.DEFENSE_TOWER.get(),
-                        net.minecraft.client.renderer.entity.NoopRenderer::new));
-        // 按键施法（客户端事件总线）
-        NeoForge.EVENT_BUS.addListener(MyriadClient::onKeyInput);
-        NeoForge.EVENT_BUS.addListener(com.myriad.client.SkillChargeClient::input);
-        // 客户端指令（职业选择界面等）
-        NeoForge.EVENT_BUS.addListener(MyriadClient::onRegisterClientCommands);
-        // 冲刺 FOV 效果（影袭等快速位移时镜头前冲感）
-        NeoForge.EVENT_BUS.addListener(MyriadClient::onComputeFov);
-        // 客户端冲刺推进（影袭协同，aiStep 前设置速度）
-        NeoForge.EVENT_BUS.addListener(MyriadClient::onClientPlayerTick);
-        // 在原版玩家输入与物理处理完成后再写入 motion，避免被 aiStep 覆盖。
-        NeoForge.EVENT_BUS.addListener(MyriadClient::onClientPlayerTickPost);
-        // 受伤包可能在玩家 tick 之后抵达；每帧提取相机状态前再次清除受击倾斜。
-        NeoForge.EVENT_BUS.addListener(MyriadClient::onRenderFramePre);
-        // 完全隐身：隐形玩家（含装备/手持物）完全不渲染
-        NeoForge.EVENT_BUS.addListener(MyriadClient::onRenderLivingPre);
-        // 远程使用武器显隐提示完整恢复；近战保留原版武器显示。
-        NeoForge.EVENT_BUS.addListener(MyriadClient::onRenderHand);
-        NeoForge.EVENT_BUS.addListener(com.myriad.client.firstperson.KehengView::attack);
-        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingIn event) ->
-                com.myriad.client.ClientDataHolder.resetConnection());
-        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) ->
-                com.myriad.client.ClientDataHolder.resetConnection());
-        // 名称标签不能穿过实体视线中的方块显示（队友共享视野也遵守这条规则）。
-        NeoForge.EVENT_BUS.addListener(MyriadClient::onRenderNameTagCanRender);
-        // 轮回之息：复活期间头顶俯视视角
-        // 周天覆阵引导：灵魂出窍式侧视自己视角
-        NeoForge.EVENT_BUS.addListener(com.myriad.client.ZhoutianChannelView::onCamera);
-        // 寒泽 R 千里冰封：头顶 10 格俯视施法者
-        NeoForge.EVENT_BUS.addListener(com.myriad.client.HanzeFrostView::onCamera);
-        // 墨尘 E 墨灵护阵布阵：左键确认 / 右键取消（点击被消费，不再触发原版攻击/使用）
-        NeoForge.EVENT_BUS.addListener(MyriadClient::onMouseButton);
-        // 普攻输入由服务端接管：近战挥空同样提交挥砍，动作由确认包播放。
-        NeoForge.EVENT_BUS.addListener(MyriadClient::onInteractionKeyMapping);
-        // New, explicitly scoped local first-person dagger view; no shared/third-person action system.
-        NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.LOWEST,
-                com.myriad.client.firstperson.NightDaggerView::onAttack);
-        NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.LOWEST,
-                com.myriad.client.firstperson.ThunderSwordView::onAttack);
-        NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.LOWEST,
-                com.myriad.client.firstperson.FlameDaoView::onAttack);
-        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.LOWEST,
-                com.myriad.client.firstperson.ShuoView::onAttack);
+    @Override
+    public void onInitializeClient() {
+        NetworkSetup.registerClient();
+        onRegisterGuiLayers();
+        onRegisterKeyMappings();
+        onRegisterParticleProviders();
+        com.myriad.client.particle.AbilityMeshParticle.registerGroup();
+        net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(
+                com.myriad.registry.ModEntities.BASE_CRYSTAL.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
+        net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(
+                com.myriad.registry.ModEntities.SIEGE_MINION.get(), com.myriad.client.SiegeMinionRenderer::new);
+        net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(
+                com.myriad.registry.ModEntities.LANE_MINION.get(), com.myriad.client.MinionRenderer::new);
+        net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(
+                com.myriad.registry.ModEntities.DEFENSE_TOWER.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
+        net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents.ALLOW_COMMAND.register(
+                MyriadClient::allowCommand);
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.JOIN.register(
+                (handler, sender, client) -> com.myriad.client.ClientDataHolder.resetConnection());
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT.register(
+                (handler, client) -> com.myriad.client.ClientDataHolder.resetConnection());
+    }
+
+    /** Called at Minecraft.startAttack, including keyboard or mouse rebound attacks. */
+    public static boolean attack() {
+        AttackInput event = new AttackInput();
+        onInteractionKeyMapping(event);
+        com.myriad.client.firstperson.KehengView.attack(event);
+        com.myriad.client.firstperson.NightDaggerView.onAttack(event);
+        com.myriad.client.firstperson.ThunderSwordView.onAttack(event);
+        com.myriad.client.firstperson.FlameDaoView.onAttack(event);
+        com.myriad.client.firstperson.ShuoView.onAttack(event);
+        return event.isCanceled();
     }
 
     /**
      * 近战完全交还原版攻击输入；仅远程专属普攻使用自定义请求。
      */
-    private static void onInteractionKeyMapping(InputEvent.InteractionKeyMappingTriggered event) {
+    private static void onInteractionKeyMapping(AttackInput event) {
         if (!com.myriad.client.ClientDataHolder.modEnabled()) return;
         if (!event.isAttack()) return;
         Minecraft mc = Minecraft.getInstance();
@@ -140,12 +105,12 @@ public class MyriadClient {
         }
 
         if("yike".equals(com.myriad.client.ClientDataHolder.characterId())){
-            ClientPacketDistributor.sendToServer(new NetworkSetup.BasicAttackPayload(-1));
+            Packets.sendToServer(new NetworkSetup.BasicAttackPayload(-1));
             event.setSwingHand(false);event.setCanceled(true);return;
         }
         AttackRay ray = findCurrentAttackTarget(mc);
         if (ray.target != null) {
-            net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(
+            com.myriad.network.Packets.sendToServer(
                     new NetworkSetup.BasicAttackPayload(ray.target.getId()));
         }
         // 左键仅作为模组普攻媒介；无论命中或挥空都不进入原版攻击/挖掘链。
@@ -194,49 +159,50 @@ public class MyriadClient {
 
     private record AttackRay(net.minecraft.world.entity.Entity target, boolean blockTarget) { }
 
-    private static void onRegisterParticleProviders(RegisterParticleProvidersEvent event) {
-        event.registerSpriteSet(ModParticles.ABILITY_MESH.get(), com.myriad.client.particle.AbilityMeshParticle.Provider::new);
+    private static void onRegisterParticleProviders() {
+        var event = net.fabricmc.fabric.api.client.particle.v1.ParticleProviderRegistry.getInstance();
+        event.register(ModParticles.ABILITY_MESH.get(), com.myriad.client.particle.AbilityMeshParticle.Provider::new);
 
-        event.registerSpriteSet(ModParticles.SULAN_BLADE_ARC.get(), SulanBladeArcParticle.Provider::new);
-        event.registerSpriteSet(ModParticles.SPIRIT_MOTE.get(), SpiritMoteParticle.Provider::new);
+        event.register(ModParticles.SULAN_BLADE_ARC.get(), SulanBladeArcParticle.Provider::new);
+        event.register(ModParticles.SPIRIT_MOTE.get(), SpiritMoteParticle.Provider::new);
 
-        event.registerSpriteSet(ModParticles.RAINBOW_MOTE.get(), RainbowMoteParticle.Provider::new);
-        event.registerSpriteSet(ModParticles.WIND1_LARGE.get(), sprites ->
+        event.register(ModParticles.RAINBOW_MOTE.get(), RainbowMoteParticle.Provider::new);
+        event.register(ModParticles.WIND1_LARGE.get(), sprites ->
                 new Wind1Particle.Provider(sprites, true));
-        event.registerSpriteSet(ModParticles.WIND1_SMALL.get(), sprites ->
+        event.register(ModParticles.WIND1_SMALL.get(), sprites ->
                 new Wind1Particle.Provider(sprites, false));
     }
 
     /** 鼠标拦截：
      *  布阵阶段：左键 = 确认布阵，右键 = 取消布阵；
      *  法师手持初始武器：右键 = 发射魔法弹（拦截原版点击，不被实体/方块交互吞掉） */
-    private static void onMouseButton(net.neoforged.neoforge.client.event.InputEvent.MouseButton.Pre event) {
+    public static void onMouseButton(com.myriad.client.platform.MouseInput event) {
         if (event.getAction() != InputConstants.PRESS) {
             return;
         }
         if (Minecraft.getInstance().gui.screen() != null) {
             return;
         }
-        if (event.getButton() == org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT
+        if (event.getButton() == InputConstants.MOUSE_BUTTON_LEFT
                 && com.myriad.client.RespawnSpectatorView.isActive()) {
             event.setCanceled(true);
-            ClientPacketDistributor.sendToServer(new com.myriad.network.CycleSpectatorPayload());
+            Packets.sendToServer(new com.myriad.network.CycleSpectatorPayload());
             return;
         }
         int placementType = com.myriad.client.ClientDataHolder.placementType();
         if (placementType != 0) {
-            if (event.getButton() == org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            if (event.getButton() == InputConstants.MOUSE_BUTTON_LEFT) {
                 event.setCanceled(true);
-                ClientPacketDistributor.sendToServer(new NetworkSetup.ConfirmPlacementPayload());
-            } else if (event.getButton() == org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+                Packets.sendToServer(new NetworkSetup.ConfirmPlacementPayload());
+            } else if (event.getButton() == InputConstants.MOUSE_BUTTON_RIGHT) {
                 event.setCanceled(true);
-                ClientPacketDistributor.sendToServer(new NetworkSetup.CancelPlacementPayload());
+                Packets.sendToServer(new NetworkSetup.CancelPlacementPayload());
             }
             return;
         }
 
         // 法师（墨尘、寒泽、青萝）手持初始武器：右键发射魔法弹（墨尘指向传送阵时保留交互）
-        if (event.getButton() == org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+        if (event.getButton() == InputConstants.MOUSE_BUTTON_RIGHT) {
             net.minecraft.client.player.LocalPlayer lp = Minecraft.getInstance().player;
             if (lp != null && !com.myriad.client.ClientDataHolder.characterId().isEmpty()
                     && ("xuanchen".equalsIgnoreCase(com.myriad.client.ClientDataHolder.characterId())
@@ -266,19 +232,18 @@ public class MyriadClient {
                     return;
                 }
                 event.setCanceled(true);
-                ClientPacketDistributor.sendToServer(new NetworkSetup.MagicBulletFirePayload());
+                Packets.sendToServer(new NetworkSetup.MagicBulletFirePayload());
             }
         }
     }
 
     /** 完全隐身：隐身状态玩家取消渲染；轮回之息复活期间自身半透明虚化 */
-    private static void onRenderLivingPre(
-            net.neoforged.neoforge.client.event.RenderLivingEvent.Pre<?, ?, ?> event) {
-        if (!com.myriad.client.ClientDataHolder.modEnabled()) return;
+    public static boolean hideLiving(
+            net.minecraft.client.renderer.entity.state.LivingEntityRenderState state) {
+        if (!com.myriad.client.ClientDataHolder.modEnabled()) return false;
         var viewer = Minecraft.getInstance().player;
         if (viewer != null && viewer.isSpectator()
-                && com.myriad.client.ClientDataHolder.syncedCounter("hero_respawn") <= 0) return;
-        net.minecraft.client.renderer.entity.state.EntityRenderState state = event.getRenderState();
+                && com.myriad.client.ClientDataHolder.syncedCounter("hero_respawn") <= 0) return false;
         if (com.myriad.client.ClientDataHolder.buffs().getOrDefault("hero_respawn", 0) > 0) {
             var mc = Minecraft.getInstance();
             // A dead player may watch allies, never scout enemies with the spectator camera.
@@ -287,12 +252,10 @@ public class MyriadClient {
                 var target = mc.level.getEntity(deadViewAvatar.id);
                 if (target != mc.player && (mc.player.getTeam() == null || target == null
                         || target.getTeam() != mc.player.getTeam())) {
-                    event.setCanceled(true);
-                    return;
+                    return true;
                 }
             } else {
-                event.setCanceled(true);
-                return;
+                return true;
             }
         }
         if (state instanceof net.minecraft.client.renderer.entity.state.AvatarRenderState avatar
@@ -300,16 +263,16 @@ public class MyriadClient {
                 && Minecraft.getInstance().player != null
                 && avatar.id != Minecraft.getInstance().player.getId()
                 && !com.myriad.client.FogOfWarClient.shouldRenderPlayer(avatar.id)) {
-            event.setCanceled(true);
-            return;
+            return true;
         }
         if (state.isInvisible && state.entityType == net.minecraft.world.entity.EntityTypes.PLAYER) {
-            event.setCanceled(true);
+            return true;
         }
+        return false;
     }
 
     /** 远程恢复期间隐藏第一人称专属武器；原版近战不隐藏。 */
-    private static void onRenderHand(net.neoforged.neoforge.client.event.RenderHandEvent event) {
+    public static void onRenderHand(com.myriad.client.platform.HandRenderContext event) {
         if (com.myriad.client.firstperson.RivetWeaponView.render(event)) return;
         if (com.myriad.client.firstperson.YikeWeaponView.render(event)) return;
         if (com.myriad.client.firstperson.ShuoView.render(event)) return;
@@ -331,26 +294,23 @@ public class MyriadClient {
      * 战争迷雾只控制“是否知道目标存在”，名称仍需满足真实视线。
      * 因此队友共享到的玩家、发光显形的玩家都可以被渲染，但隔墙时只保留实体轮廓，不渲染名字。
      */
-    private static void onRenderNameTagCanRender(
-            net.neoforged.neoforge.client.event.RenderNameTagEvent.CanRender event) {
+    public static boolean hideNameTag(
+            net.minecraft.world.entity.Entity target) {
         net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
-        if (mc.player == null || mc.level == null) return;
-        net.minecraft.world.entity.Entity target = event.getEntity();
-        if (!com.myriad.client.ClientDataHolder.modEnabled()) return;
+        if (mc.player == null || mc.level == null) return false;
+        if (!com.myriad.client.ClientDataHolder.modEnabled()) return false;
         if (!(target instanceof net.minecraft.world.entity.player.Player)
                 && target instanceof net.minecraft.world.entity.LivingEntity && target.hasCustomName()
                 && target.getCustomName().getString().matches(".*[0-9]+\\s*/\\s*[0-9]+.*")
                 && !com.myriad.network.EnemyHealthPayload.inRange(mc.player.distanceToSqr(target))) {
-            event.setCanRender(net.minecraft.util.TriState.FALSE);
-            return;
+            return true;
         }
         if (target instanceof net.minecraft.world.entity.player.Player other && other != mc.player
                 && (mc.player.getTeam() == null || mc.player.getTeam() != other.getTeam())) {
-            event.setCanRender(net.minecraft.util.TriState.FALSE);
-            return;
+            return true;
         }
         if (!(target instanceof net.minecraft.world.entity.player.Player)
-                || target == mc.player || target.level() != mc.level) return;
+                || target == mc.player || target.level() != mc.level) return false;
         net.minecraft.world.phys.Vec3 start = mc.player.getEyePosition();
         net.minecraft.world.phys.Vec3 end = target.position().add(0, target.getBbHeight() * .85 + .25, 0);
         net.minecraft.world.phys.BlockHitResult hit = mc.level.clip(new net.minecraft.world.level.ClipContext(
@@ -358,12 +318,12 @@ public class MyriadClient {
                 net.minecraft.world.level.ClipContext.Fluid.NONE, mc.player));
         if (hit.getType() != net.minecraft.world.phys.HitResult.Type.MISS
                 && hit.getLocation().distanceToSqr(start) + .01 < start.distanceToSqr(end)) {
-            event.setCanRender(net.minecraft.util.TriState.FALSE);
+            return true;
         }
+        return false;
     }
 
-    private static void onClientPlayerTick(net.neoforged.neoforge.event.tick.PlayerTickEvent.Pre event) {
-        if (event.getEntity() instanceof net.minecraft.client.player.LocalPlayer local) {
+    public static void beforePlayerTick(net.minecraft.client.player.LocalPlayer local) {
             com.myriad.client.firstperson.NightDaggerView.tick();
             com.myriad.client.firstperson.ThunderSwordView.tick();
             com.myriad.client.firstperson.FlameDaoView.tick();
@@ -372,22 +332,19 @@ public class MyriadClient {
             com.myriad.client.StarPullController.tick();
             com.myriad.client.RespawnSpectatorView.enforceFirstPerson();
             lockWeaponSlot(local);
-        }
     }
 
-    private static void onClientPlayerTickPost(net.neoforged.neoforge.event.tick.PlayerTickEvent.Post event) {
-        if (event.getEntity() instanceof net.minecraft.client.player.LocalPlayer local) {
+    public static void afterPlayerTick(net.minecraft.client.player.LocalPlayer local) {
             com.myriad.client.DashController.tick();
             // 模组战斗禁用原版受击镜头摇晃；仅清除本地渲染计时，不干预服务端受伤与无敌帧。
             if (com.myriad.client.ClientDataHolder.modEnabled()) local.hurtTime = 0;
-        }
     }
 
     /**
      * 帧级兜底：受伤动画包可能在 PlayerTick.Post 之后、当前帧相机状态提取之前抵达。
      * 在 RenderFrame.Pre 清除本地 hurtTime，保证原版 bobHurt 从第一帧起就不会产生倾斜。
      */
-    private static void onRenderFramePre(net.neoforged.neoforge.client.event.RenderFrameEvent.Pre event) {
+    public static void beforeRenderFrame() {
         if (!com.myriad.client.ClientDataHolder.modEnabled()) return;
         net.minecraft.client.player.LocalPlayer player = Minecraft.getInstance().player;
         if (player != null) player.hurtTime = 0;
@@ -492,124 +449,62 @@ public class MyriadClient {
     private static float fovCurrent = 1.0f;
 
     /** 冲刺时 FOV 平滑放大（镜头前冲动感）；疾跑不触发 */
-    private static void onComputeFov(net.neoforged.neoforge.client.event.ViewportEvent.ComputeFov event) {
+    public static float computeFov(float fov) {
         var mc = Minecraft.getInstance();
         if (!com.myriad.client.ClientDataHolder.modEnabled() || mc.player == null) {
             fovCurrent = 1.0f;
-            return;
+            return fov;
         }
         fovFast = com.myriad.client.DashController.isDashing();
         // 平滑过渡（每帧逼近 25%）
         float target = fovFast ? 1.08f : 1.0f;
         fovCurrent += (target - fovCurrent) * 0.25f;
         if (Math.abs(fovCurrent - target) < .001f) fovCurrent = target;
-        event.setFOV(event.getFOV() * fovCurrent);
+        return fov * fovCurrent;
     }
 
-    private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
-        event.registerAboveAll(Identifier.fromNamespaceAndPath(Myriad.MODID, "hud"), HudOverlay.INSTANCE);
-        // 血量条 → 文本（生命 hp/max）；饱食度条 → 文本（法力 mana/max）
-        wrapStatusLayer(event, net.neoforged.neoforge.client.gui.VanillaGuiLayers.PLAYER_HEALTH, StatusOverlay.HEALTH);
-        wrapStatusLayer(event, net.neoforged.neoforge.client.gui.VanillaGuiLayers.FOOD_LEVEL, StatusOverlay.MANA);
-        // 原版经验等级/经验条 → 游戏等级/经验文本
-        wrapStatusLayer(event, net.neoforged.neoforge.client.gui.VanillaGuiLayers.EXPERIENCE_LEVEL, StatusOverlay.LEVEL);
-        wrapStatusLayer(event, net.neoforged.neoforge.client.gui.VanillaGuiLayers.CONTEXTUAL_INFO_BAR_BACKGROUND,
-                StatusOverlay.NOOP);
-        wrapStatusLayer(event, net.neoforged.neoforge.client.gui.VanillaGuiLayers.CONTEXTUAL_INFO_BAR,
-                StatusOverlay.NOOP);
+    private static void onRegisterGuiLayers() {
+        net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry.addLast(
+                Identifier.fromNamespaceAndPath(Myriad.MODID,"hud"), HudOverlay.INSTANCE);
+        wrapStatusLayer(net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements.HEALTH_BAR, StatusOverlay.HEALTH);
+        wrapStatusLayer(net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements.FOOD_BAR, StatusOverlay.MANA);
+        wrapStatusLayer(net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements.EXPERIENCE_LEVEL, StatusOverlay.LEVEL);
+        wrapStatusLayer(net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements.INFO_BAR, StatusOverlay.NOOP);
+        wrapStatusLayer(net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements.INFO_BAR_FOREGROUND, StatusOverlay.NOOP);
     }
 
-    private static void wrapStatusLayer(RegisterGuiLayersEvent event, Identifier id,
-            net.neoforged.neoforge.client.gui.GuiLayer replacement) {
-        event.wrapLayer(id, original -> (gui, delta) -> {
+    private static void wrapStatusLayer(Identifier id,
+            net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement replacement) {
+        net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry.replaceElement(id, original -> (gui, delta) -> {
             if (com.myriad.client.ClientDataHolder.modEnabled()
-                    && com.myriad.client.ClientDataHolder.inGame()) replacement.render(gui, delta);
-            else original.render(gui, delta);
+                    && com.myriad.client.ClientDataHolder.inGame()) replacement.extractRenderState(gui, delta);
+            else original.extractRenderState(gui, delta);
         });
     }
 
-    private static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
-        event.registerCategory(KEY_CATEGORY);
-        event.register(KEY_SKILL_Q);
-        event.register(KEY_SKILL_W);
-        event.register(KEY_SKILL_E);
-        event.register(KEY_SKILL_R);
-        event.register(KEY_SKILL_F);
-        event.register(KEY_INFO);
-        event.register(KEY_SHOP);
-        event.register(KEY_RECALL);
+    private static void onRegisterKeyMappings() {
+        for (KeyMapping key : new KeyMapping[]{KEY_SKILL_Q, KEY_SKILL_W, KEY_SKILL_E, KEY_SKILL_R,
+                KEY_SKILL_F, KEY_INFO, KEY_SHOP, KEY_RECALL})
+            net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper.registerKeyMapping(key);
     }
 
-    /** 客户端指令：/myriad choose 打开职业选择界面；/myriad start 打开开局管理界面 */
-    private static void onRegisterClientCommands(
-            net.neoforged.neoforge.client.event.RegisterClientCommandsEvent event) {
-        event.getDispatcher().register(net.minecraft.commands.Commands.literal("myriad")
-                .then(net.minecraft.commands.Commands.literal("choose")
-                        .executes(ctx -> {
-                            if (Minecraft.getInstance().player != null) {
-                                Minecraft.getInstance().setScreenAndShow(
-                                        new com.myriad.client.gui.CharacterSelectScreen());
-                            }
-                            return 1;
-                        }))
-                .then(net.minecraft.commands.Commands.literal("start")
-                        .executes(ctx -> {
-                            if (Minecraft.getInstance().player != null) {
-                                Minecraft.getInstance().setScreenAndShow(
-                                        new com.myriad.client.gui.TeamManageScreen());
-                            }
-                            return 1;
-                        }))
-                .then(net.minecraft.commands.Commands.literal("settings")
-                        .executes(ctx -> {
-                            if (Minecraft.getInstance().player != null) {
-                                Minecraft.getInstance().setScreenAndShow(
-                                        new com.myriad.client.gui.SettingsScreen());
-                            }
-                            return 1;
-                        }))
-                .then(net.minecraft.commands.Commands.literal("minimap")
-                        .executes(ctx -> {
-                            if (Minecraft.getInstance().player != null) {
-                                Minecraft.getInstance().setScreenAndShow(
-                                        new com.myriad.client.gui.MinimapPositionScreen(null));
-                            }
-                            return 1;
-                        }))
-                .then(net.minecraft.commands.Commands.literal("hud")
-                        .executes(ctx -> {
-                            if (Minecraft.getInstance().player != null) {
-                                Minecraft.getInstance().setScreenAndShow(
-                                        new com.myriad.client.gui.HudEditorScreen(null));
-                            }
-                            return 1;
-                        }))
-                .then(net.minecraft.commands.Commands.literal("results")
-                        .executes(ctx -> {
-                            com.myriad.client.MatchResultsStore.open();
-                            return 1;
-                        }))
-                .then(net.minecraft.commands.Commands.literal("shop")
-                        .executes(ctx -> {
-                            if (Minecraft.getInstance().player != null) {
-                                Minecraft.getInstance().setScreenAndShow(
-                                        new com.myriad.client.gui.ShopScreen());
-                            }
-                            return 1;
-                        }))
-                .then(net.minecraft.commands.Commands.literal("train")
-                        .executes(ctx -> {
-                            if (Minecraft.getInstance().player != null) {
-                                Minecraft.getInstance().setScreenAndShow(
-                                        new com.myriad.client.gui.TrainScreen());
-                            }
-                            return 1;
-                        }))
-                .then(net.minecraft.commands.Commands.literal("wind_test")
-                        .executes(ctx -> {
-                            playWind1Test();
-                            return 1;
-                        })));
+    /** Exact GUI aliases leave the shared /myriad server command tree available. */
+    private static boolean allowCommand(String command) {
+        Minecraft mc=Minecraft.getInstance();
+        if(mc.player==null)return true;
+        switch(command.strip()) {
+            case "myriad choose" -> mc.setScreenAndShow(new com.myriad.client.gui.CharacterSelectScreen());
+            case "myriad start" -> mc.setScreenAndShow(new com.myriad.client.gui.TeamManageScreen());
+            case "myriad settings" -> mc.setScreenAndShow(new com.myriad.client.gui.SettingsScreen());
+            case "myriad minimap" -> mc.setScreenAndShow(new com.myriad.client.gui.MinimapPositionScreen(null));
+            case "myriad hud" -> mc.setScreenAndShow(new com.myriad.client.gui.HudEditorScreen(null));
+            case "myriad results" -> com.myriad.client.MatchResultsStore.open();
+            case "myriad shop" -> mc.setScreenAndShow(new com.myriad.client.gui.ShopScreen());
+            case "myriad train" -> mc.setScreenAndShow(new com.myriad.client.gui.TrainScreen());
+            case "myriad wind_test" -> playWind1Test();
+            default -> { return true; }
+        }
+        return false;
     }
 
     /** 客户端预览 Wind1.efkproj 的近似效果，不发送服务器包。 */
@@ -643,20 +538,20 @@ public class MyriadClient {
         }
     }
 
-    private static void onKeyInput(InputEvent.Key event) {
+    public static void onKeyInput(com.myriad.client.platform.KeyInput event) {
         if (event.getAction() != InputConstants.PRESS) {
             return;
         }
         // 开局选人阶段：屏蔽 ESC（选择期间无法退出界面）
         if (com.myriad.client.ClientDataHolder.pickActive()
-                && event.getKey() == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
+                && event.getKey() == InputConstants.KEY_ESCAPE) {
             return;
         }
         // 初始武器锁定：选中槽 0 时抢先消费丢弃键（无法丢弃影刺）
         net.minecraft.client.player.LocalPlayer lp = Minecraft.getInstance().player;
         if (lp != null && !com.myriad.client.ClientDataHolder.characterId().isEmpty()
                 && lp.getInventory().getSelectedSlot() == 0
-                && Minecraft.getInstance().options.keyDrop.matches(event.getKeyEvent())) {
+                && event.matches(Minecraft.getInstance().options.keyDrop)) {
             Minecraft.getInstance().options.keyDrop.consumeClick();
             return;
         }
@@ -687,7 +582,7 @@ public class MyriadClient {
         }
         int slot = -1;
         if (KEY_RECALL.consumeClick()) {
-            ClientPacketDistributor.sendToServer(new NetworkSetup.RecallPayload());
+            Packets.sendToServer(new NetworkSetup.RecallPayload());
             return;
         }
         // This is a PRESS event, not a client tick: consumeClick can consume a stale
@@ -695,22 +590,23 @@ public class MyriadClient {
         for (KeyMapping key : new KeyMapping[]{KEY_SKILL_Q, KEY_SKILL_W, KEY_SKILL_E, KEY_SKILL_R, KEY_SKILL_F}) {
             while (key.consumeClick()) { }
         }
-        if (KEY_SKILL_Q.matches(event.getKeyEvent())) {
+        if (event.matches(KEY_SKILL_Q)) {
             slot = CharacterType.SLOT_Q;
-        } else if (KEY_SKILL_W.matches(event.getKeyEvent())) {
+        } else if (event.matches(KEY_SKILL_W)) {
             slot = CharacterType.SLOT_W;
-        } else if (KEY_SKILL_E.matches(event.getKeyEvent())) {
+        } else if (event.matches(KEY_SKILL_E)) {
             slot = CharacterType.SLOT_E;
-        } else if (KEY_SKILL_R.matches(event.getKeyEvent())) {
+        } else if (event.matches(KEY_SKILL_R)) {
             slot = CharacterType.SLOT_R;
-        } else if (KEY_SKILL_F.matches(event.getKeyEvent())) {
+        } else if (event.matches(KEY_SKILL_F)) {
             slot = CharacterType.SLOT_F;
         }
         if (slot >= 0) {
             Minecraft mc = Minecraft.getInstance();
             // 回风步默认也绑定 W；若技能键与前进键相同，不能把这次施法按键误当成移动输入。
             boolean castKeyIsForward = slot == CharacterType.SLOT_W
-                    && KEY_SKILL_W.getKey().equals(mc.options.keyUp.getKey());
+                    && net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper.getBoundKeyOf(KEY_SKILL_W)
+                            .equals(net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper.getBoundKeyOf(mc.options.keyUp));
             float forward = (!castKeyIsForward && mc.options.keyUp.isDown() ? 1.0F : 0.0F)
                     - (mc.options.keyDown.isDown() ? 1.0F : 0.0F);
             float left = (mc.options.keyLeft.isDown() ? 1.0F : 0.0F)
@@ -733,7 +629,7 @@ public class MyriadClient {
                     }
                 }
             }
-            ClientPacketDistributor.sendToServer(new NetworkSetup.CastSkillPayload(slot, moveX, moveZ));
+            Packets.sendToServer(new NetworkSetup.CastSkillPayload(slot, moveX, moveZ));
         }
     }
 }

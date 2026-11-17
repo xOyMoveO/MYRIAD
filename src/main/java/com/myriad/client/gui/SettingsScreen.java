@@ -1,4 +1,5 @@
 package com.myriad.client.gui;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -6,7 +7,7 @@ import java.util.Map;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import com.myriad.network.Packets;
 
 import com.myriad.network.NetworkSetup;
 
@@ -29,7 +30,7 @@ public class SettingsScreen extends Screen {
 
     public SettingsScreen() {
         super(Component.translatable("screen.myriad.settings.title"));
-        ClientPacketDistributor.sendToServer(new NetworkSetup.RequestGameSettingsPayload());
+        Packets.sendToServer(new NetworkSetup.RequestGameSettingsPayload());
     }
 
     /** 网络包回调（主线程）：刷新设置值 */
@@ -65,20 +66,20 @@ public class SettingsScreen extends Screen {
                     .build());
             addRenderableWidget(Button.builder(Component.literal("-"), btn -> {
                         int v = values.getOrDefault(key, 0) - step;
-                        ClientPacketDistributor.sendToServer(new NetworkSetup.UpdateSettingPayload(key, v));
+                        Packets.sendToServer(new NetworkSetup.UpdateSettingPayload(key, v));
                     })
                     .bounds(listX + 210, y, 40, 18)
                     .build());
             addRenderableWidget(Button.builder(Component.literal("+"), btn -> {
                         int v = values.getOrDefault(key, 0) + step;
-                        ClientPacketDistributor.sendToServer(new NetworkSetup.UpdateSettingPayload(key, v));
+                        Packets.sendToServer(new NetworkSetup.UpdateSettingPayload(key, v));
                     })
                     .bounds(listX + 254, y, 40, 18)
                     .build());
             addRenderableWidget(Button.builder(Component.literal("重置"), btn -> {
                         int def = key.equals("matchDuration") ? 1800
                                 : key.equals("targetScore") ? 500 : 60;
-                        ClientPacketDistributor.sendToServer(new NetworkSetup.UpdateSettingPayload(key, def));
+                        Packets.sendToServer(new NetworkSetup.UpdateSettingPayload(key, def));
                     })
                     .bounds(listX + 298, y, 42, 18)
                     .build());
@@ -94,7 +95,7 @@ public class SettingsScreen extends Screen {
                 .bounds(listX, startY + SETTINGS.length * ROW_H + 34, listW, 20)
                 .build());
         addRenderableWidget(Button.builder(Component.translatable("screen.myriad.map_editor.open"), btn ->
-                        ClientPacketDistributor.sendToServer(new NetworkSetup.RequestMapFacilityEditorPayload()))
+                        Packets.sendToServer(new NetworkSetup.RequestMapFacilityEditorPayload()))
                 .bounds(listX, startY + SETTINGS.length * ROW_H + 58, listW, 20)
                 .build());
     }
@@ -119,7 +120,7 @@ public class SettingsScreen extends Screen {
 
     @Override
     public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
-        if (event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
+        if (event.key() == InputConstants.KEY_ESCAPE) {
             onClose();
             return true;
         }

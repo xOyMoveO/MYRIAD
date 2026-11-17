@@ -9,7 +9,7 @@ import net.minecraft.client.resources.model.cuboid.*;
 import net.minecraft.world.item.ItemDisplayContext;
 import org.joml.Vector3f;
 
-/** Offline actual MC26.2 parser/transform check, not a live hand-render acceptance. */
+/** Offline actual Minecraft parser/transform check, not a live hand-render acceptance. */
 public final class FenjueChangdaoCheck {
     static void require(boolean ok,String reason){if(!ok)throw new IllegalStateException(reason);}
     public static void main(String[] args)throws Exception{
@@ -25,7 +25,7 @@ public final class FenjueChangdaoCheck {
         var cubes=new ArrayList<CuboidModelElement>();
         for(int i=0;i<parts.size();i++){
             var p=parts.get(i).getAsJsonObject();var e=elements.get(i).getAsJsonObject();
-            var cube=CuboidModel.GSON.fromJson(e,CuboidModelElement.class);cubes.add(cube);
+            var cube=MinecraftModelParser.element(e);cubes.add(cube);
             for(int axis=0;axis<3;axis++){
                 float from=cube.from().get(axis),to=cube.to().get(axis);
                 require(from<to&&from>=-16&&to<=32,"Positive dimensions in vanilla bounds");
@@ -64,7 +64,7 @@ public final class FenjueChangdaoCheck {
         require(connected.size()==cubes.size(),"All layers connected to grip");
         require(Math.abs(cubes.getFirst().to().x()-cubes.getFirst().from().x()-.8125)<1E-6&&Math.abs(cubes.getFirst().to().z()-cubes.getFirst().from().z()-.625)<1E-6,"Slim centred grip");
         try(var reader=Files.newBufferedReader(assets.resolve("models/item/lieyanjian.json"))){
-            var model=CuboidModel.fromStream(reader);require(model.geometry()!=null,"MC26.2 accepts complete model");
+            var model=CuboidModel.fromStream(reader);require(model.geometry()!=null,"current Minecraft accepts complete model");
             for(var context:List.of(ItemDisplayContext.FIRST_PERSON_RIGHT_HAND,ItemDisplayContext.FIRST_PERSON_LEFT_HAND,
                     ItemDisplayContext.THIRD_PERSON_RIGHT_HAND,ItemDisplayContext.THIRD_PERSON_LEFT_HAND,
                     ItemDisplayContext.GUI,ItemDisplayContext.GROUND,ItemDisplayContext.FIXED)){
@@ -85,6 +85,6 @@ public final class FenjueChangdaoCheck {
                 }
             }
         }
-        System.out.println("[MYRIAD-FENJUE-CHANGDAO] PASS: real MC26.2 parser; 423 connected positive source cubes; embedded/exported clean atlas; seven contexts; centred slim grip; GUI padding; actual LIEYANJIAN route");
+        System.out.println("[MYRIAD-FENJUE-CHANGDAO] PASS: real current Minecraft parser; 423 connected positive source cubes; embedded/exported clean atlas; seven contexts; centred slim grip; GUI padding; actual LIEYANJIAN route");
     }
 }

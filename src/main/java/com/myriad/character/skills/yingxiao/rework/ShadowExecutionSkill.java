@@ -36,7 +36,7 @@ public final class ShadowExecutionSkill extends AbilitySkill {
             if(!c.player.teleportTo(c.player.level(),at.x,at.y,at.z,java.util.Set.of(),yaw,pitch,true)){
                 NightSkillPresentation.cancel(c);return;
             }
-            c.player.setDeltaMovement(Vec3.ZERO);c.player.hurtMarked=true;c.player.resetFallDistance();
+            c.player.setDeltaMovement(Vec3.ZERO);c.player.syncVelocity=true;c.player.resetFallDistance();
             AbilityVisuals.burst(c,from.add(0,.4,0),.9);
             AbilityVisuals.burst(c,at.add(0,.35,0),.75);
             NightSkillPresentation.play(c,NightSkillViewPayload.STRIKE,10);

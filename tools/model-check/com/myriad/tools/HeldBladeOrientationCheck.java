@@ -67,7 +67,7 @@ public final class HeldBladeOrientationCheck {
         check(task.resolve("backup/lingyuan_item_before.json"),
                 project.resolve("src/main/resources/assets/myriad/models/item/lingyuan_sword.json"), false);
         check(task.resolve("backup/night_item_before.json"),
-                Path.of("E:/mod/role_assets/yingxiao/20261106/reverse_grip/assets/myriad/models/item/yingxiao_shadow_dagger.json"), true);
-        System.out.println("[MYRIAD-HELD-EDGE] PASS: actual MC26.2 transforms; Lingyuan and night first-person local shaft twist; night third-person exact player screenshot grip; both hands; non-hand contexts unchanged");
+                args.length > 2 ? Path.of(args[2]) : project.resolve("src/main/resources/assets/myriad/models/item/yingxiao_shadow_dagger.json"), true);
+        System.out.println("[MYRIAD-HELD-EDGE] PASS: actual Minecraft transforms; Lingyuan and night first-person local shaft twist; night third-person exact player screenshot grip; both hands; non-hand contexts unchanged");
     }
 }

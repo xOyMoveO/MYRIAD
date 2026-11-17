@@ -7,7 +7,7 @@ import com.myriad.player.PlayerDataProvider;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.myriad.network.Packets;
 import java.util.*;
 import static com.myriad.character.ability.AbilityVfxGeometry.BURST;
 
@@ -50,9 +50,9 @@ public final class FlameHitVisuals {
         Vec3 at=contact(p,target);if(!visible(p,target,at))return;
         if(!CADENCES.computeIfAbsent(p,ignored->new Cadence()).allow(target.getUUID(),p.level().getGameTime(),periodic))return;
         var packet=recipe(p.getId(),at,at.subtract(p.getEyePosition()),critical,periodic,p.level().getGameTime());
-        PacketDistributor.sendToPlayer(p,packet);
+        Packets.sendToPlayer(p,packet);
         for(var viewer:p.level().players())if(viewer!=p&&viewer.position().distanceToSqr(at)<=48*48
-                &&VisionSystem.canSee(viewer,p)&&visible(viewer,target,at))PacketDistributor.sendToPlayer(viewer,packet);
+                &&VisionSystem.canSee(viewer,p)&&visible(viewer,target,at))Packets.sendToPlayer(viewer,packet);
     }
     private static boolean visible(ServerPlayer viewer,LivingEntity target,Vec3 at){return VisionSystem.canSee(viewer,target)&&VisionSystem.canSeePosition(viewer,at);}
     public static void clear(ServerPlayer p){CADENCES.remove(p);}

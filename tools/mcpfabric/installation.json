@@ -1,11 +1,14 @@
 {
   "upstream": "https://github.com/denfry/mcpfabric",
-  "mod_version": "0.10.0+26.2-neoforge",
-  "mod_url": "https://cdn.modrinth.com/data/eA63YgUh/versions/719fUXc7/mcpfabric-neoforge-0.10.0%2B26.2.jar",
-  "mod_sha512": "fb959d17619466512650d132b1090037510f38650569120170a7dae64a1a4c6998a33cfec32f50b51cd8996690d9a0fe3b35d5f54ae04e2c89ea950355390702",
-  "minecraft": "26.2",
-  "neoforge": "26.2.0.88",
+  "mod_version": "0.10.0+26.3",
+  "mod_url": "https://cdn.modrinth.com/data/eA63YgUh/versions/7CFkrsmI/mcpfabric-0.10.0%2B26.3.jar",
+  "mod_size": 317405,
+  "mod_sha512": "4db052e21fda03eae05aef973a53a87db3fdf44d0291a5639f2635f82d71f2136aa3d35987bd6fe9ffb9e8538cea53d7b30be18f8c6b8ffa8357b14834dbccd2",
+  "minecraft": "26.3",
+  "fabric_loader": "0.20.1",
+  "fabric_api": "0.166.2+26.3",
   "mcp_package": "mcpfabric-mcp-server@0.10.0",
-  "asset_index": "32",
-  "asset_index_sha1": "941b1ea6afb4a472d164c0d12e3e3272bf3435f8"
+  "asset_index": "34",
+  "loom_asset_index": "26.3-34",
+  "asset_index_sha1": "e99f9973047785b5a9d52eaf72020b97545053c9"
 }

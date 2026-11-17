@@ -7,7 +7,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.core.Holder;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.sounds.*;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.myriad.network.Packets;
 
 /** Team-private presentation for an actual XP level increase, never world-broadcast particles/audio. */
 public final class LevelUpPresentation {
@@ -37,7 +37,7 @@ public final class LevelUpPresentation {
         // Mock/off-list players need no broadcast; ordinary connected players are in level.players().
     }
     private static void send(ServerPlayer subject,ServerPlayer viewer,AbilityVfxPayload packet,long seed){
-        PacketDistributor.sendToPlayer(viewer,packet);
+        Packets.sendToPlayer(viewer,packet);
         // Both layers are sent only to the approved audience. Positional attenuation stays local.
         viewer.connection.send(new ClientboundSoundPacket(Holder.direct(ModSounds.UI_LEVEL_UP.get()),SoundSource.PLAYERS,
                 subject.getX(),subject.getY()+1,subject.getZ(),.55f,1.18f,seed));

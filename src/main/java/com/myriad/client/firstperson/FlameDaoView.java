@@ -13,8 +13,8 @@ import net.minecraft.world.entity.player.PlayerModelPart;
 import net.minecraft.world.entity.player.PlayerModelType;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.phys.HitResult;
-import net.neoforged.neoforge.client.event.InputEvent;
-import net.neoforged.neoforge.client.event.RenderHandEvent;
+import com.myriad.client.platform.AttackInput;
+import com.myriad.client.platform.HandRenderContext;
 
 /** Fenjue-only first-person cosmetics. No packets, attack cancellation, hit logic or player-model edits. */
 public final class FlameDaoView {
@@ -73,7 +73,7 @@ public final class FlameDaoView {
         if(busy(mc)){MOTION.reset();SLASH.interrupt();STEP.interrupt();}
     }
     /** Lowest-priority observer: a consumed click, weak attempt or mining never advances the chain. */
-    public static void onAttack(InputEvent.InteractionKeyMappingTriggered event){
+    public static void onAttack(AttackInput event){
         var mc=Minecraft.getInstance();
         if(!event.isAttack()||event.isCanceled()||!event.shouldSwingHand()||!enabled(mc)||busy(mc)
                 ||mc.player.getAttackStrengthScale(.5f)<1)return;
@@ -81,7 +81,7 @@ public final class FlameDaoView {
         checkOwner(mc);if(SKILL.active(mc.player.tickCount)||SLASH.active(mc.player.tickCount)||STEP.active(mc.player.tickCount))return;
         MOTION.attack(mc.player.tickCount,mc.player.getCurrentItemAttackStrengthDelay());
     }
-    public static boolean render(RenderHandEvent event){
+    public static boolean render(HandRenderContext event){
         var mc=Minecraft.getInstance();
         if(!enabled(mc)){reset();return false;}
         if(event.isCanceled())return false;
@@ -120,7 +120,7 @@ public final class FlameDaoView {
             }finally{stack.popPose();}
             stack.pushPose();try{
                 stack.mulPose(FlameDaoRig.wrist(frame.pose(),event.getEquipProgress(),left).mul(FlameDaoRig.blade(frame,left)));
-                mc.getEntityRenderDispatcher().getItemInHandRenderer().renderItem(mc.player,event.getItemStack(),
+                com.myriad.client.platform.ClientItemRenderer.submit(mc.player,event.getItemStack(),
                         ItemDisplayContext.NONE,stack,event.getSubmitNodeCollector(),event.getPackedLight());
             }finally{stack.popPose();}
         }finally{stack.popPose();}
@@ -128,19 +128,19 @@ public final class FlameDaoView {
         else if(!slash)AttackTrailRenderer.submit(event,FlameBasicTrail.mesh(MOTION,now,left,event.getEquipProgress()));
         event.setCanceled(true);return true;
     }
-    private static void renderSkill(RenderHandEvent event,FlameSkillMotion.Frame f,double now){
+    private static void renderSkill(HandRenderContext event,FlameSkillMotion.Frame f,double now){
         var mc=Minecraft.getInstance();boolean left=mc.player.getMainArm()==HumanoidArm.LEFT,slim=mc.player.getSkin().model()==PlayerModelType.SLIM;
         arm(event,f.main(),FlameDaoRig.hand(f.main(),0,left),slim,left);
         if(f.showBlade()){
             var stack=event.getPoseStack();stack.pushPose();try{
                 stack.mulPose(FlameSkillRig.main(f,left).mul(FlameSkillRig.blade(f,left)));
-                mc.getEntityRenderDispatcher().getItemInHandRenderer().renderItem(mc.player,event.getItemStack(),ItemDisplayContext.NONE,stack,event.getSubmitNodeCollector(),event.getPackedLight());
+                com.myriad.client.platform.ClientItemRenderer.submit(mc.player,event.getItemStack(),ItemDisplayContext.NONE,stack,event.getSubmitNodeCollector(),event.getPackedLight());
             }finally{stack.popPose();}
         }
         if(f.showOff())arm(event,f.off(),FlameSkillRig.off(f,left),slim,!left);
         AttackTrailRenderer.submit(event,FlameSkillHandVfx.build(f,now,left));
     }
-    private static void arm(RenderHandEvent event,FlameDaoMotion.Pose pose,org.joml.Matrix4f hand,boolean slim,boolean left){
+    private static void arm(HandRenderContext event,FlameDaoMotion.Pose pose,org.joml.Matrix4f hand,boolean slim,boolean left){
         var mc=Minecraft.getInstance();int index=(slim?2:0)+(left?1:0);
         if(ARMS[index]==null)ARMS[index]=FlameDaoArmModel.bake(slim,left);
         var parts=ARMS[index];parts.pose(hand);var model=parts.model();model.resetPose();model.setPos(0,0,0);model.setRotation(0,0,0);model.visible=true;
