@@ -1,0 +1,2 @@
+execute in minecraft:overworld positioned -152.5 81 39.5 as @a[distance=..6,gamemode=!adventure,gamemode=!spectator] unless data entity @s respawn{dimension:"minecraft:overworld",pos:[I;-153,81,39],forced:1b} run spawnpoint @s -153 81 39 -90 0
+execute in minecraft:overworld positioned 153.5 81 -38.5 as @a[distance=..6,gamemode=!adventure,gamemode=!spectator] unless data entity @s respawn{dimension:"minecraft:overworld",pos:[I;153,81,-39],forced:1b} run spawnpoint @s 153 81 -39 90 0
