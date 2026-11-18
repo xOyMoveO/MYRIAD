@@ -109,7 +109,7 @@
 
 ## 地图与存档
 
-可以在 [樱隙前线](maps/cherry-rift-frontline/)下载浮岛建筑地图。存档自带静态野怪模型和两座可设置重生点、恢复生命值的复活泉，可在 Minecraft 26.3 单人世界中游览。
+可以在 [樱隙前线](maps/cherry-rift-frontline/)下载浮岛建筑地图，并查看[露天平地的测量口径](maps/cherry-rift-frontline/README.md#露天平地)。存档自带静态野怪模型和两座可设置重生点、恢复生命值的复活泉，可在 Minecraft 26.3 Fabric 单人世界中游览。
 
 地图由地形和点位配置共同组成，需要服主单独准备。管理员可在主世界、对局尚未开始时，用 `/myriad settings` 打开设置，再进入地图设施编辑器，在实际位置设置设施和边界。
 
