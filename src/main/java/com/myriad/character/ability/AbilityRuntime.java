@@ -227,6 +227,7 @@ public final class AbilityRuntime {
     }
     /** One-time cleanse, not future control immunity; invoked only after normal cast validation/payment. */
     public static void cleanseControls(ServerPlayer p){
+        com.myriad.combat.DeathRecaps.endControls(p,p.level().getGameTime());
         boolean stop=controlled(p);
         com.myriad.character.skills.keheng.KehengTimeFields.cleanse(p);
         com.myriad.character.skills.rivet.RivetPush.cleanse(p);
@@ -403,7 +404,9 @@ public final class AbilityRuntime {
         public void root(LivingEntity t,int ticks,boolean stun){
             t.addEffect(new MobEffectInstance(MobEffects.SLOWNESS,ticks,6,false,false));
             if(t instanceof ServerPlayer hero){double ten=Math.clamp(t.getAttributeValue(ModAttributes.TENACITY),0,60)/100;
-                PlayerDataProvider.get(hero).setBuff(stun?"g1_stun":"g1_root",Math.max(1,(int)Math.ceil(ticks*(1-ten))));}
+                int duration=Math.max(1,(int)Math.ceil(ticks*(1-ten)));
+                PlayerDataProvider.get(hero).setBuff(stun?"g1_stun":"g1_root",duration);
+                com.myriad.combat.DeathRecaps.control(player,hero,skill.getId(),stun?5:4,now(),duration);}
         }
         public void ring(Vec3 at,double radius,boolean personal){AbilityVisuals.seal(this,at,radius,personal);}
         public int color(){return switch(skill.role()){case "yingxiao"->0x808080;case "tianxing"->0x80C7FF;case "fenjue"->0xFF853D;case "xuanchen"->0xE7D6A0;default->0x9CF0C4;};}

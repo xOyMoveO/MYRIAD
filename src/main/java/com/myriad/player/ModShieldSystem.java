@@ -190,6 +190,16 @@ public final class ModShieldSystem {
         return total;
     }
 
+    public static float displayValue(LivingEntity entity) {
+        var layers = LAYERS.get(entity.getUUID());
+        if (layers == null) return 0;
+        var live = new HashMap<String, ShieldLayer>();
+        long now = entity.level().getGameTime();
+        for (var entry : layers.entrySet()) if (entry.getValue().expiresAt > now) live.put(entry.getKey(), entry.getValue());
+        float value = total(live);
+        return Float.isFinite(value) ? Math.max(0, value) : Float.MAX_VALUE;
+    }
+
     public static boolean hasSource(LivingEntity entity, String source) {
         Map<String, ShieldLayer> layers = LAYERS.get(entity.getUUID());
         if (layers == null) return false;

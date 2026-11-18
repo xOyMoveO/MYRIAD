@@ -370,7 +370,7 @@ public final class MapFacilityEditorScreen extends Screen {
     private static List<String> buildMonsterTypes() {
         List<String> result = new ArrayList<>();
         for (MonsterType type : MonsterType.values()) {
-            if (!type.isLargeBoss()) result.add(type.getId());
+            if (type.canUseFixedSpawn()) result.add(type.getId());
         }
         result.add("large_random");
         return List.copyOf(result);

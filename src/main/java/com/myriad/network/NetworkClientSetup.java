@@ -54,6 +54,12 @@ final class NetworkClientSetup {
                 payload.victimName(), payload.multiKill()));
         ClientPlayNetworking.registerGlobalReceiver(MatchTabPayload.TYPE,
                 (payload, context) -> com.myriad.client.MatchTabOverlay.update(payload));
+        ClientPlayNetworking.registerGlobalReceiver(TeamSignalsPayload.TYPE,
+                (payload, context) -> com.myriad.client.TeamSignalClient.receive(payload));
+        ClientPlayNetworking.registerGlobalReceiver(DeathRecapPayload.TYPE,
+                (payload, context) -> com.myriad.client.DeathRecapStore.receive(payload));
+        ClientPlayNetworking.registerGlobalReceiver(ControlStatusPayload.TYPE,
+                (payload, context) -> com.myriad.client.ControlStatusOverlay.receive(payload));
         ClientPlayNetworking.registerGlobalReceiver(EnemyHealthPayload.TYPE,
                 (payload, context) -> com.myriad.client.EnemyHealthBars.update(payload));
         ClientPlayNetworking.registerGlobalReceiver(RewardFloatPayload.TYPE,

@@ -338,6 +338,8 @@ public final class YunShengSkills extends Skill {
                 DamageCalc.dealSkillDamage(owner, target,
                         (float)(320 + (pending.level - 1) * 72 + pending.sp * 2.80), Kind.MAGIC, 3);
                 com.myriad.combat.SilenceSystem.apply(target, 30);
+                if (target instanceof ServerPlayer silenced)
+                    com.myriad.combat.DeathRecaps.control(owner,silenced,"zhongshengguizong",6,now,30);
             }
         }
         PULLS.put(owner.getUUID(), new PullState(pending.center, now + 12, pulled));

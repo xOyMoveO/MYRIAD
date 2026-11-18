@@ -21,6 +21,9 @@ public final class CombatRegressionTests {
     public static void register() {
         register("faction_identity",FactionIdentityChecks::run);
         register("training_ui",TrainingUiChecks::run);
+        register("combat_feedback",CombatFeedbackChecks::run);
+        register("match_economy", MatchEconomyChecks::run);
+        register("cherry_rift_camps", CherryRiftCampChecks::run);
         register("arena_switch", ArenaSwitchRegression::run);
         register("combat_regression", CombatRegressionTests::run);
         register("world_time", WorldTimeChecks::run);

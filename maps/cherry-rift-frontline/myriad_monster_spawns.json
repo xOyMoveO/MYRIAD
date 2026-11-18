@@ -1,0 +1,17 @@
+{
+  "points": [
+    {"id":"west_garden_hare_1","type":"cherry_frost_hare","x":-81,"y":81,"z":-72},
+    {"id":"west_garden_hare_2","type":"cherry_frost_hare","x":-73,"y":81,"z":-66},
+    {"id":"west_garden_jade_beast","type":"cherry_jade_beast","x":-111,"y":81,"z":-64},
+    {"id":"west_industry_walker","type":"cherry_heavy_walker","x":-111,"y":81,"z":80},
+    {"id":"west_industry_scout_1","type":"cherry_scout_bot","x":-87,"y":81,"z":88},
+    {"id":"west_industry_scout_2","type":"cherry_scout_bot","x":-79,"y":81,"z":84},
+    {"id":"east_industry_scout_1","type":"cherry_scout_bot","x":79,"y":81,"z":-84},
+    {"id":"east_industry_scout_2","type":"cherry_scout_bot","x":87,"y":81,"z":-88},
+    {"id":"east_industry_walker","type":"cherry_heavy_walker","x":111,"y":81,"z":-80},
+    {"id":"east_garden_hare","type":"cherry_frost_hare","x":77,"y":81,"z":48},
+    {"id":"east_garden_fox","type":"cherry_dusk_fox","x":84,"y":81,"z":53},
+    {"id":"east_garden_jade_beast","type":"cherry_jade_beast","x":109,"y":81,"z":50},
+    {"id":"boss_island_rift_crab","type":"cherry_rift_crab","x":0,"y":81,"z":88}
+  ]
+}

@@ -118,7 +118,7 @@ public final class MapSystem {
             float x = camp.pos().getX() + 0.5F;
             float z = camp.pos().getZ() + 0.5F;
             if (!geometry.contains(x, z)) continue;
-            result.add(new NetworkSetup.MinimapMarker(camp.largeRandom()
+            result.add(new NetworkSetup.MinimapMarker(camp.boss()
                     ? NetworkSetup.MinimapMarker.BOSS : NetworkSetup.MinimapMarker.CAMP,
                     0, x, z, new java.util.UUID(0L, 0L)));
         }

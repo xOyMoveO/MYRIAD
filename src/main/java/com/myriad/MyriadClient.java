@@ -26,6 +26,11 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
     public static final KeyMapping.Category KEY_CATEGORY = KeyMapping.Category
             .register(Identifier.fromNamespaceAndPath(Myriad.MODID, "keys"));
 
+    public static final KeyMapping KEY_SIGNAL = new KeyMapping("key.myriad.team_signal",
+            InputConstants.Type.MOUSE, InputConstants.MOUSE_BUTTON_MIDDLE, KEY_CATEGORY);
+    public static final KeyMapping KEY_DEATH_RECAP =
+            new KeyMapping("key.myriad.death_recap", InputConstants.KEY_J, KEY_CATEGORY);
+
     public static final KeyMapping KEY_SKILL_Q =
             new KeyMapping("key.myriad.skill_q", InputConstants.UNKNOWN.getValue(), KEY_CATEGORY);
     public static final KeyMapping KEY_SKILL_W =
@@ -60,6 +65,8 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
                 com.myriad.registry.ModEntities.LANE_MINION.get(), com.myriad.client.MinionRenderer::new);
         net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(
                 com.myriad.registry.ModEntities.DEFENSE_TOWER.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
+        net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(
+                com.myriad.registry.ModEntities.CHERRY_RIFT_MONSTER.get(), com.myriad.client.CherryRiftMonsterRenderer::new);
         net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents.ALLOW_COMMAND.register(
                 MyriadClient::allowCommand);
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(client->{
@@ -187,6 +194,12 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
             return;
         }
         if (Minecraft.getInstance().gui.screen() != null) {
+            return;
+        }
+        if (new com.myriad.client.platform.KeyInput(event.getAction(), event.getButton()).matches(KEY_SIGNAL)
+                && com.myriad.client.TeamSignalClient.available()) {
+            event.setCanceled(true);
+            com.myriad.client.gui.TeamSignalWheel.open();
             return;
         }
         if (event.getButton() == InputConstants.MOUSE_BUTTON_LEFT
@@ -490,7 +503,7 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
 
     private static void onRegisterKeyMappings() {
         for (KeyMapping key : new KeyMapping[]{KEY_SKILL_Q, KEY_SKILL_W, KEY_SKILL_E, KEY_SKILL_R,
-                KEY_SKILL_F, KEY_INFO, KEY_SHOP, KEY_RECALL})
+                KEY_SKILL_F, KEY_INFO, KEY_SHOP, KEY_RECALL, KEY_SIGNAL, KEY_DEATH_RECAP})
             net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper.registerKeyMapping(key);
     }
 
@@ -505,6 +518,7 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
             case "myriad minimap" -> ()->mc.setScreenAndShow(new com.myriad.client.gui.MinimapPositionScreen(null));
             case "myriad hud" -> ()->mc.setScreenAndShow(new com.myriad.client.gui.HudEditorScreen(null));
             case "myriad results" -> com.myriad.client.MatchResultsStore::open;
+            case "myriad recap" -> com.myriad.client.DeathRecapStore::open;
             case "myriad shop" -> ()->mc.setScreenAndShow(new com.myriad.client.gui.ShopScreen());
             case "myriad train" -> ()->mc.setScreenAndShow(new com.myriad.client.gui.TrainScreen());
             default -> null;
@@ -566,6 +580,16 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
         // mod 未开启时：模组按键全部不生效
         if (!com.myriad.client.ClientDataHolder.modEnabled()) {
             return;
+        }
+        if (Minecraft.getInstance().gui.screen() == null) {
+            if (event.matches(KEY_SIGNAL) && com.myriad.client.TeamSignalClient.available()) {
+                com.myriad.client.gui.TeamSignalWheel.open();
+                return;
+            }
+            if (event.matches(KEY_DEATH_RECAP)) {
+                com.myriad.client.DeathRecapStore.open();
+                return;
+            }
         }
         if (KEY_INFO.consumeClick()) {
             if (Minecraft.getInstance().gui.screen() == null && Minecraft.getInstance().player != null) {

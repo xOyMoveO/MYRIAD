@@ -78,6 +78,7 @@ public final class MonsterManager {
     private static double initialHealth(MonsterType type,int generation) { return type.getHealth()*growthMultiplier(generation); }
     private static final long SMALL_MONSTER_FIRST_SPAWN_TICKS = 30L * 20L;
     private static final long MEDIUM_MONSTER_FIRST_SPAWN_TICKS = 60L * 20L;
+    private static final long FIXED_BOSS_FIRST_SPAWN_TICKS = 6L * 60L * 20L;
     private static final long FIRST_BOSS_SPAWN_TICKS = 8L * 60L * 20L;
     private static final long BOSS_SPAWN_INTERVAL_TICKS = 5L * 60L * 20L;
     private static final MonsterType[] LARGE_BOSSES = {
@@ -90,7 +91,12 @@ public final class MonsterManager {
         boolean largeRandom() { return type == null; }
     }
 
-    public record SpawnPointInfo(String id, BlockPos pos, String typeId, boolean largeRandom) {}
+    public record SpawnPointInfo(String id, BlockPos pos, String typeId, boolean largeRandom) {
+        public boolean boss() {
+            MonsterType type = MonsterType.byId(typeId);
+            return largeRandom || (type != null && type.isLargeBoss());
+        }
+    }
 
     private record PendingRespawn(MonsterType type, long at, String pointId) {}
 
@@ -172,22 +178,24 @@ public final class MonsterManager {
         spawnInternal(level, pos, type, null, false, 0);
     }
 
-    private static void spawnConfigured(ServerLevel level, SpawnPoint point, MonsterType type,
+    private static boolean spawnConfigured(ServerLevel level, SpawnPoint point, MonsterType type,
             boolean randomBoss) {
         int generation = SPAWN_GENERATIONS.getOrDefault(point.id(), 0);
-        spawnInternal(level, point.pos(), type, point.id(), randomBoss, generation);
+        if (!spawnInternal(level, point.pos(), type, point.id(), randomBoss, generation)) return false;
         SPAWN_GENERATIONS.put(point.id(), generation + 1);
+        return true;
     }
 
-    private static void spawnInternal(ServerLevel level, BlockPos pos, MonsterType type,
+    private static boolean spawnInternal(ServerLevel level, BlockPos pos, MonsterType type,
             String pointId, boolean randomBoss, int generation) {
         CombatChunks.prepare(level, pos);
         // 26.2 rejects hostile entity creation itself on peaceful, before checkDespawn runs.
         net.minecraft.world.entity.Entity e = type.getEntityType().create(level,
                 new net.minecraft.world.entity.EntitySpawnRequest(EntitySpawnReason.MOB_SUMMONED, true));
         if (!(e instanceof Mob mob)) {
-            return;
+            return false;
         }
+        if (mob instanceof CherryRiftMonsterEntity cherry) cherry.configure(type);
         mob.setPos(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
         // 原版生命仅作为存活代理；真实生命由 State.modHealth 管理。
         double scaledHealth = initialHealth(type,generation);
@@ -202,7 +210,7 @@ public final class MonsterManager {
             atk.setBaseValue(type.getAttack()*growth);
         }
         AttributeInstance scale = mob.getAttribute(Attributes.SCALE);
-        if (scale != null && type.isLargeBoss()) scale.setBaseValue(1.35);
+        if (scale != null && type.isLargeBoss() && type.cherryModel() == null) scale.setBaseValue(1.35);
         AttributeInstance physicalDefense = mob.getAttribute(com.myriad.registry.ModAttributes.PHYSICAL_DEFENSE);
         if (physicalDefense != null) physicalDefense.setBaseValue(type.getPhysicalDefense()*growth);
         AttributeInstance magicDefense = mob.getAttribute(com.myriad.registry.ModAttributes.MAGIC_RESISTANCE);
@@ -216,7 +224,7 @@ public final class MonsterManager {
         mob.setPersistenceRequired();
         if (!level.addFreshEntity(ModEntityTracker.markGenerated(mob))) {
             com.myriad.Myriad.LOGGER.error("[monster] failed to spawn {} at {}", type, pos);
-            return;
+            return false;
         }
         State state = new State(pos, type, pointId, randomBoss, generation);
         state.entity = mob;
@@ -226,6 +234,7 @@ public final class MonsterManager {
         if (stand != null) {
             stand.discard();
         }
+        return true;
     }
 
     /** 每 tick：野怪仇恨/寻敌/回血回点 + 重生 + 倒计时显示刷新 */
@@ -304,17 +313,29 @@ public final class MonsterManager {
         }
     }
 
-    /** 小型点在开局 30 秒、中型点在开局 60 秒完成本局首次生成。 */
+    /** 首次生成时间按营地类型区分。 */
     private static void spawnInitialConfiguredMonsters(ServerLevel level, long elapsed) {
         for (SpawnPoint point : SPAWN_POINTS.values()) {
             MonsterType type = point.type();
             if (point.largeRandom() || type == null || INITIAL_SPAWNED_POINTS.contains(point.id())) continue;
             long firstSpawnAt = type.isSmallMonster() ? SMALL_MONSTER_FIRST_SPAWN_TICKS
-                    : type.isMediumMonster() ? MEDIUM_MONSTER_FIRST_SPAWN_TICKS : Long.MAX_VALUE;
+                    : type.isMediumMonster() ? MEDIUM_MONSTER_FIRST_SPAWN_TICKS : FIXED_BOSS_FIRST_SPAWN_TICKS;
             if (elapsed < firstSpawnAt || !isPointFree(point.id())) continue;
-            spawnConfigured(level, point, type, false);
-            INITIAL_SPAWNED_POINTS.add(point.id());
+            if (spawnConfigured(level, point, type, false)) INITIAL_SPAWNED_POINTS.add(point.id());
         }
+    }
+
+    /** Preview follows normal camp ownership and respawn rules; a real match resets it. */
+    public static int previewFixedSpawnPoints(ServerLevel level) {
+        GameManager manager = GameManager.get();
+        if (!ModState.isEnabled() || !TrainingMode.isEnabled() || manager == null
+                || manager.getPhase() != GameManager.Phase.WAITING || level != level.getServer().overworld()) return 0;
+        int spawned = 0;
+        for (SpawnPoint point : SPAWN_POINTS.values()) {
+            if (!point.largeRandom() && isPointFree(point.id())
+                    && spawnConfigured(level, point, point.type(), false)) spawned++;
+        }
+        return spawned;
     }
 
     private static void resetForMatch(ServerLevel level, long matchStart) {
@@ -344,8 +365,7 @@ public final class MonsterManager {
         if (candidates.isEmpty()) return false;
         Collections.shuffle(freePoints);
         Collections.shuffle(candidates);
-        spawnConfigured(level, freePoints.getFirst(), candidates.getFirst(), true);
-        return true;
+        return spawnConfigured(level, freePoints.getFirst(), candidates.getFirst(), true);
     }
 
     private static boolean isPointFree(String pointId) {
@@ -547,7 +567,7 @@ public final class MonsterManager {
 
     public static boolean setSpawnPoint(String id, BlockPos pos, MonsterType type, boolean largeRandom) {
         if (server == null || id == null || !id.matches("[A-Za-z0-9_-]{1,32}") || pos == null) return false;
-        if (!largeRandom && (type == null || type.isLargeBoss())) return false;
+        if (!largeRandom && (type == null || !type.canUseFixedSpawn())) return false;
         SPAWN_POINTS.put(id, new SpawnPoint(id, pos.immutable(), largeRandom ? null : type));
         saveSpawnPoints();
         return true;
@@ -605,7 +625,7 @@ public final class MonsterManager {
                 String typeId = value.get("type").getAsString();
                 MonsterType type = "large_random".equals(typeId) ? null : MonsterType.byId(typeId);
                 if (!id.matches("[A-Za-z0-9_-]{1,32}") || (type == null && !"large_random".equals(typeId))
-                        || (type != null && type.isLargeBoss())) continue;
+                        || (type != null && !type.canUseFixedSpawn())) continue;
                 BlockPos pos = new BlockPos(value.get("x").getAsInt(), value.get("y").getAsInt(),
                         value.get("z").getAsInt());
                 SPAWN_POINTS.put(id, new SpawnPoint(id, pos, type));
@@ -681,14 +701,15 @@ public final class MonsterManager {
                 MatchMessages.send(killer, MatchMessages.Tone.SUCCESS,
                         Component.translatable("message.myriad.buff_beast"));
             } else {
-                grantTeamBossBuff(killer, type.getBuff(), now + 90L * 20L);
+                grantTeamBossBuff(killer, type, now + 90L * 20L);
             }
         }
         PlayerDataProvider.syncToClient(killer);
     }
 
     /** 大型野怪奖励只发给击杀者所在阵营；未开对局时仅奖励击杀者。 */
-    private static void grantTeamBossBuff(ServerPlayer killer, String buff, long until) {
+    private static void grantTeamBossBuff(ServerPlayer killer, MonsterType type, long until) {
+        String buff = type.getBuff();
         GameManager manager = GameManager.get();
         Faction faction = manager == null ? null : manager.factionOf(killer);
         for (ServerPlayer player : ((ServerLevel) killer.level()).getServer().getPlayerList().getPlayers()) {
@@ -706,6 +727,7 @@ public final class MonsterManager {
             PlayerDataProvider.syncToClient(player);
         }
         MatchMessages.send(killer, MatchMessages.Tone.SUCCESS,
-                Component.translatable("message.myriad.buff_" + buff));
+                Component.translatable(type == MonsterType.CHERRY_RIFT_CRAB
+                        ? "message.myriad.cherry_rift_crab_buff" : "message.myriad.buff_" + buff));
     }
 }

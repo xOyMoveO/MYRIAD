@@ -169,7 +169,7 @@ public final class DamageCalc {
         }
         markSkillHit(target, roll.crit(), kind);
         if (basic) markBasicAttack(attacker, target);
-        target.hurt(source, roll.damage());
+        DeathRecaps.typedHurt(target, source, roll.damage(), kind);
         clearSkillHit(target);
         if (basic) clearBasicAttack(attacker, target);
         return roll;
@@ -179,7 +179,7 @@ public final class DamageCalc {
     public static float dealDamageTo(LivingEntity target, DamageSource source, float base, Kind kind) {
         if (target instanceof com.myriad.game.DefenseTowerEntity) return 0;
         float damage = base * (float) mitigation(null, target, kind);
-        target.hurt(source, damage);
+        DeathRecaps.typedHurt(target, source, damage, kind);
         return damage;
     }
 

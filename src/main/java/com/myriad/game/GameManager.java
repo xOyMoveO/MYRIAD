@@ -542,11 +542,15 @@ public class GameManager {
         if (matchStartTime < 0) return;
         long elapsed = gameTime - matchStartTime;
         if (elapsed <= 0 || elapsed % 100 != 0) return;
+        var awards = new java.util.LinkedHashMap<ServerPlayer, Integer>();
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             if (factionOf(player) == null) continue;
-            PlayerData data = PlayerDataProvider.get(player);
-            if (data == null) continue;
-            data.addGold(GlobalBalance.goldIncome(MatchBalance.farmReward(player, 10, false)));
+            if (PlayerDataProvider.get(player) == null) continue;
+            awards.put(player, GlobalBalance.goldIncome(MatchBalance.farmReward(player, 10, false)));
+        }
+        for (var award : awards.entrySet()) {
+            ServerPlayer player = award.getKey();
+            PlayerDataProvider.get(player).addGold(award.getValue());
             PlayerDataProvider.syncToClient(player);
         }
         com.myriad.network.MatchTabPayload.sync(server);

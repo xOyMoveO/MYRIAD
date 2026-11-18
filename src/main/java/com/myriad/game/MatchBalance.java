@@ -1,7 +1,6 @@
 package com.myriad.game;
 
 import com.myriad.player.PlayerDataProvider;
-import com.myriad.registry.EquipmentRegistry;
 import net.minecraft.server.level.ServerPlayer;
 
 /** Bounded economy and objective scaling. Values are shared by runtime and regression tests. */
@@ -35,20 +34,23 @@ public final class MatchBalance {
     public static int pigGold(long ticks) { return 160+(int)(240*Math.min(1,Math.max(0,ticks)/9600.0)); }
     public static boolean isUnderdog(int ownLevel,int enemyLevel) { return enemyLevel-ownLevel>=2; }
     public static int farmReward(ServerPlayer p,int base,boolean xp) {
-        var m=GameManager.get(); var d=PlayerDataProvider.get(p);
-        if(m==null||m.getPhase()!=GameManager.Phase.PLAYING||TrainingMode.isEnabled()||m.factionOf(p)==null)return base;
-        double ownLevel=0,enemyLevel=0,ownWealth=0,enemyWealth=0; int own=0,enemy=0;
+        var m=GameManager.get();
+        if(!ModState.isEnabled()||m==null||m.getPhase()!=GameManager.Phase.PLAYING||TrainingMode.isEnabled())return base;
+        Faction faction=m.factionOf(p);
+        if(faction==null)return base;
+        double enemyLevel=0,ownIncome=0,enemyIncome=0; int own=0,enemy=0;
         for(var other:p.level().getServer().getPlayerList().getPlayers()) {
-            if(m.factionOf(other)==null)continue;
-            var od=PlayerDataProvider.get(other); if(od.getCharacterId()==null)continue;
-            double wealth=od.getGold();
-            for(String id:od.getEquipmentSlots()) {var e=EquipmentRegistry.get(id);if(e!=null)wealth+=e.price();}
-            if(m.factionOf(other)==m.factionOf(p)){own++;ownLevel+=od.getLevel();ownWealth+=wealth;}
-            else{enemy++;enemyLevel+=od.getLevel();enemyWealth+=wealth;}
+            Faction otherFaction=m.factionOf(other);
+            if(otherFaction==null)continue;
+            var data=PlayerDataProvider.get(other);
+            if(data.getCharacterId()==null)continue;
+            if(otherFaction==faction){own++;ownIncome+=data.getMatchGoldEarned();}
+            else{enemy++;enemyLevel+=data.getLevel();enemyIncome+=data.getMatchGoldEarned();}
         }
         if(own==0||enemy==0)return base;
-        double bonus=xp?Math.min(.45,Math.max(0,enemyLevel/enemy-d.getLevel())*.15)
-                :Math.min(.45,Math.max(0,(enemyWealth/enemy-ownWealth/own)/Math.max(500,enemyWealth/enemy))*.9);
+        double averageEnemyIncome=enemyIncome/enemy;
+        double bonus=xp?Math.min(.45,Math.max(0,enemyLevel/enemy-PlayerDataProvider.get(p).getLevel())*.15)
+                :Math.min(.45,Math.max(0,(averageEnemyIncome-ownIncome/own)/Math.max(500,averageEnemyIncome))*.9);
         return (int)Math.round(base*(1+bonus));
     }
 }

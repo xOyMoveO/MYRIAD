@@ -17,9 +17,12 @@ public abstract class PlayerDamageMixin {
     private void myriad$damage(ServerLevel level,DamageSource source,float amount,Operation<Void> original) {
         LivingEntity entity=(LivingEntity)(Object)this;
         var transaction=new DamageContext(entity,source,amount);
+        com.myriad.combat.DeathRecaps.incoming(transaction);
         PlayerDataProvider.onIncomingDamage(transaction);
         float before=entity.getHealth();
         if(!transaction.isCanceled()&&transaction.getAmount()>0)original.call(level,source,transaction.getAmount());
-        PlayerDataProvider.onDamageApplied(entity,source,Math.max(0,before-entity.getHealth()));
+        float lost = Math.max(0, before - entity.getHealth());
+        com.myriad.combat.DeathRecaps.afterHealth(transaction, lost);
+        PlayerDataProvider.onDamageApplied(entity,source,lost);
     }
 }

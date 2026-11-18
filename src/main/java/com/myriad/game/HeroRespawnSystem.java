@@ -101,6 +101,7 @@ public final class HeroRespawnSystem {
             Packets.sendToPlayer(player, new SpectatorTargetPayload(false, ""));
             player.teleportTo(waiting.point.x, waiting.point.y, waiting.point.z);
             player.setGameMode(GameType.ADVENTURE);
+            com.myriad.combat.DeathRecaps.lifeStarted(player.getUUID());
             com.myriad.player.PlayerHealthSystem.fill(player);
             player.clearFire();
             player.resetFallDistance();

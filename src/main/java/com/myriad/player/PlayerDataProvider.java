@@ -1616,6 +1616,7 @@ public final class PlayerDataProvider {
                             damageFloat.type()==com.myriad.client.DamageFloater.TYPE_TRUE?2:0);
                 }
                 if (entity instanceof ServerPlayer shieldedPlayer) {
+                    com.myriad.combat.DeathRecaps.shield(event, absorbed);
                     com.myriad.combat.CombatTelemetry.recordShieldDamage(
                             shieldedPlayer, absorbed, event.getSource().getEntity());
                 }
@@ -1826,6 +1827,7 @@ public final class PlayerDataProvider {
                 return cancelled;
             }
 
+            com.myriad.combat.DeathRecaps.died(player, source);
             net.minecraft.world.entity.Entity credited = creditedKiller(player, source.getEntity());
             if (manager != null) {
                 manager.recordHeroDeath(player, credited);
@@ -1912,6 +1914,15 @@ public final class PlayerDataProvider {
                             return 1;
                         })))
                 .then(Commands.literal("mob")
+                        .then(Commands.literal("preview")
+                                .requires(src -> src.permissions().hasPermission(Permissions.COMMANDS_MODERATOR))
+                                .executes(ctx -> {
+                                    int spawned = com.myriad.game.MonsterManager.previewFixedSpawnPoints(
+                                            ctx.getSource().getLevel());
+                                    ctx.getSource().sendSuccess(() -> Component.translatable(
+                                            "message.myriad.mob_preview", spawned), false);
+                                    return spawned;
+                                }))
                         .then(Commands.literal("spawnpoint")
                                 .requires(src -> src.permissions().hasPermission(Permissions.COMMANDS_MODERATOR))
                                 .then(Commands.literal("set")
@@ -1920,7 +1931,7 @@ public final class PlayerDataProvider {
                                                         .suggests((ctx, builder) -> {
                                                             for (com.myriad.game.MonsterType t
                                                                     : com.myriad.game.MonsterType.values()) {
-                                                                if (!t.isLargeBoss()) builder.suggest(t.getId());
+                                                                if (t.canUseFixedSpawn()) builder.suggest(t.getId());
                                                             }
                                                             return builder.buildFuture();
                                                         })
@@ -2145,7 +2156,7 @@ public final class PlayerDataProvider {
         }
         com.myriad.game.MonsterType type = largeRandom ? null
                 : com.myriad.game.MonsterType.byId(typeId);
-        if (!largeRandom && (type == null || type.isLargeBoss())) {
+        if (!largeRandom && (type == null || !type.canUseFixedSpawn())) {
             source.sendFailure(Component.translatable("message.myriad.invalid_monster"));
             return 0;
         }

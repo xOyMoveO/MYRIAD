@@ -117,9 +117,13 @@ public class PlayerData {
     }
 
     public void addGold(int amount) {
+        addWalletGold(amount);
+        if (amount > 0 && !com.myriad.game.TrainingMode.isEnabled())
+            this.matchGoldEarned = (int)Math.min(Integer.MAX_VALUE, (long)this.matchGoldEarned + amount);
+    }
+
+    public void addWalletGold(int amount) {
         this.gold = (int)Math.clamp((long)this.gold + amount, 0, Integer.MAX_VALUE);
-        if (amount > 0) this.matchGoldEarned = Math.min(Integer.MAX_VALUE,
-                (int)Math.min(Integer.MAX_VALUE, (long)this.matchGoldEarned + amount));
     }
 
     public int getMatchGoldEarned() { return matchGoldEarned; }
