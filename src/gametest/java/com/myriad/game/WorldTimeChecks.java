@@ -38,7 +38,7 @@ final class WorldTimeChecks {
         final AbstractArrow[] launched=new AbstractArrow[2];final long start=f.h.getLevel().getGameTime();
         java.util.function.IntConsumer prepare=index->{try{
             f.now=f.h.getLevel().getGameTime();f.target.setPos(f.origin.add(0,0,12));f.owner.setPos(f.origin.add(-30,0,-5));
-            current[0]=index==0?f.minion("MELEE",Faction.YOUMING):f.monster(index==1?MonsterType.SPRING_REEF_GUARDIAN:MonsterType.AZURE_HORN_GUARDIAN);
+            current[0]=index==0?f.minion("MELEE",Faction.DESTRUCTION):f.monster(index==1?MonsterType.SPRING_REEF_GUARDIAN:MonsterType.AZURE_HORN_GUARDIAN);
             if(MonsterManager.isMonster(current[0]))MonsterManager.onAttacked(current[0],f.target,1);
             Vec3 at=current[0].position();f.tickNpc(current[0]);step[0]=at.subtract(current[0].position()).horizontalDistance();
             current[0].setPos(f.origin);hp[0]=KehengTimeFields.health(current[0]);
@@ -89,12 +89,12 @@ final class WorldTimeChecks {
     }
     private static void npcCases(Fixture f)throws Exception {
         for(String kind:List.of("MELEE","RANGED","MAGIC","SIEGE")) {
-            Mob mob=f.minion(kind,Faction.YOUMING);int cooldown=kind.equals("MELEE")?22:kind.equals("SIEGE")?30:36;
+            Mob mob=f.minion(kind,Faction.DESTRUCTION);int cooldown=kind.equals("MELEE")?22:kind.equals("SIEGE")?30:36;
             npcMovement(f,mob,"lane "+kind);
             npcRecovery(f,mob,cooldown,"lane "+kind);
             f.removeMob(mob);
         }
-        Mob friend=f.minion("MELEE",Faction.XUANXIAO);f.field(.5);
+        Mob friend=f.minion("MELEE",Faction.GUARDIAN);f.field(.5);
         f.h.assertTrue(KehengTimeFields.managedNpcRate(friend,f.now)==1,"Allied minions are exempt from an actual field");
         f.removeMob(friend);f.clearFields();
         for(MonsterType type:MonsterType.values()) {
@@ -281,7 +281,7 @@ final class WorldTimeChecks {
         void prepare(){
             origin=Vec3.atBottomCenterOf(h.absolutePos(new BlockPos(-90,65,-60)));
             for(int x=-10;x<=20;x++)for(int z=-8;z<=30;z++)block(x,-1,z,Blocks.STONE);
-            owner=player(origin.add(-30,0,-5),Faction.XUANXIAO,"keheng");target=player(origin.add(0,0,12),Faction.XUANXIAO,"shuo");enemy=player(origin.add(18,0,-6),Faction.YOUMING,"shuo");
+            owner=player(origin.add(-30,0,-5),Faction.GUARDIAN,"keheng");target=player(origin.add(0,0,12),Faction.GUARDIAN,"shuo");enemy=player(origin.add(18,0,-6),Faction.DESTRUCTION,"shuo");
         }
         ServerPlayer player(Vec3 at,Faction faction,String role){
             var p=(ServerPlayer)h.makeMockServerPlayer(GameType.SURVIVAL);

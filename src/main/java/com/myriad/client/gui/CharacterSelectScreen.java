@@ -30,6 +30,9 @@ public final class CharacterSelectScreen extends Screen {
     }
     @Override public boolean isPauseScreen(){return false;}
     private boolean available(String id){return CharacterType.byId(id)!=null&&CharacterChoiceLayout.available(id,ClientDataHolder.characterId(),ClientDataHolder.takenCharacters());}
+    private boolean canConfirm(){
+        return CharacterChoiceLayout.canConfirm(ClientDataHolder.modEnabled(), available(selectedId));
+    }
     @Override protected void init(){
         var roles=CharacterType.playableValues();
         current=ClientDataHolder.characterId();taken=Map.copyOf(ClientDataHolder.takenCharacters());
@@ -50,19 +53,18 @@ public final class CharacterSelectScreen extends Screen {
         }));
         confirm=addRenderableWidget(new PanelButton(layout.confirm(),Component.translatable("screen.myriad.choose.confirm"),b->{
             // Read the latest sync again, never a map captured when the window opened.
-            if(!available(selectedId))return;
+            if(!canConfirm())return;
             Packets.sendToServer(new NetworkSetup.ChooseCharacterPayload(selectedId));onClose();
         }));
-        confirm.active=available(selectedId);
+        confirm.active=canConfirm();
         addRenderableWidget(new PanelButton(layout.close(),Component.literal("×"),b->onClose()));
     }
     @Override public void tick(){
-        if(!ClientDataHolder.modEnabled()){onClose();return;}
         if(!current.equals(ClientDataHolder.characterId())||!taken.equals(ClientDataHolder.takenCharacters()))rebuild();
-        if(confirm!=null)confirm.active=available(selectedId);
+        if(confirm!=null)confirm.active=canConfirm();
     }
     private void rebuild(){clearWidgets();init();}
-    private void select(String id){selectedId=id;detailScroll=detailMaximum=0;if(confirm!=null)confirm.active=available(id);}
+    private void select(String id){selectedId=id;detailScroll=detailMaximum=0;if(confirm!=null)confirm.active=canConfirm();}
     private void scrollBy(int delta){
         int next=Math.clamp(scrollRow+delta,0,layout.maxScroll());
         if(next!=scrollRow){scrollRow=next;rebuild();}
@@ -92,8 +94,14 @@ public final class CharacterSelectScreen extends Screen {
     }
     private void drawDetails(GuiGraphicsExtractor g,CharacterType role,SkillChoiceLayout.Box b,int mx,int my){
         fit(g,Component.translatable(role.nameKey()).getString(),b.x()+9,b.y()+10,b.w()-18,GOLD);
-        String state=role.getId().equals(current)?"screen.myriad.choose.current":available(role.getId())?"screen.myriad.choose.preview":"screen.myriad.choose.occupied";
-        fit(g,Component.translatable(state).getString(),b.x()+9,b.y()+25,b.w()-18,available(role.getId())?JADE:MUTED);
+        String state=ClientDataHolder.get()==null?"screen.myriad.choose.syncing"
+                :!ClientDataHolder.modEnabled()?"screen.myriad.choose.require_mod"
+                :role.getId().equals(current)?"screen.myriad.choose.current"
+                :available(role.getId())?"screen.myriad.choose.preview":"screen.myriad.choose.occupied";
+        var status=Component.translatable(state);
+        fit(g,status.getString(),b.x()+9,b.y()+25,b.w()-18,canConfirm()?JADE:MUTED);
+        if(mx>=b.x()+9&&mx<b.right()-9&&my>=b.y()+25&&my<b.y()+39)
+            g.setComponentTooltipForNextFrame(font,List.of(status),mx,my);
         g.fill(b.x()+8,b.y()+39,b.right()-8,b.y()+40,0xFF385C65);
         var v=layout.skillViewport();if(v.h()<=0)return;
         detailScroll=Math.clamp(detailScroll,0,detailMaximum);int y=v.y()+3-detailScroll;

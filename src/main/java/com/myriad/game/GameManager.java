@@ -22,7 +22,7 @@ import com.myriad.player.PlayerData;
 import com.myriad.player.PlayerDataProvider;
 
 /**
- * 单局对战管理器：宗门分配、角色选择、地图目标与胜负判定。
+ * 单局对战管理器：阵营分配、角色选择、地图目标与胜负判定。
  * 随服务器生命周期创建/销毁（ServerStartingEvent / ServerStoppedEvent）。
  */
 public class GameManager {
@@ -43,7 +43,7 @@ public class GameManager {
     public enum Phase {
         /** 等待开局 */
         WAITING,
-        /** 角色选择阶段（幽冥宗先选，轮流 30 秒，角色唯一） */
+        /** 角色选择阶段（毁灭先选，轮流 30 秒，角色唯一） */
         PICKING,
         /** 对局进行中 */
         PLAYING,
@@ -58,8 +58,10 @@ public class GameManager {
     private final java.util.Set<UUID> pendingPreparationBase = new java.util.HashSet<>();
     private Phase phase = Phase.WAITING;
     private Faction winner = null;
-    private int xuanxiaoScore = 0;
-    private int youmingScore = 0;
+    @com.google.gson.annotations.SerializedName(value="guardianScore",alternate={"xuanxiaoScore"})
+    private int guardianScore = 0;
+    @com.google.gson.annotations.SerializedName(value="destructionScore",alternate={"youmingScore"})
+    private int destructionScore = 0;
     private long matchStartTime = -1;
     public static final int ATTRIBUTE_VEIN_COUNT = 3;
     public static final int LARGE_VEIN_CANDIDATE_COUNT = 2;
@@ -112,7 +114,7 @@ public class GameManager {
         }
     }
     /** 阵营伤害增益（天道威压）：阵营 -> 到期游戏刻（可叠加层数记录） */
-    /** 角色选择：轮次顺序（幽冥宗先选，再玄霄宗，各宗门按加入顺序） */
+    /** 角色选择：轮次顺序（毁灭先选，再守护，各阵营按加入顺序） */
     private final List<UUID> pickOrder = new ArrayList<>();
     private int pickIndex = 0;
     /** 当前选择者截止游戏刻（30 秒后自动选） */
@@ -159,12 +161,12 @@ public class GameManager {
         return winner;
     }
 
-    public int getXuanxiaoScore() {
-        return xuanxiaoScore;
+    public int getGuardianScore() {
+        return guardianScore;
     }
 
-    public int getYoumingScore() {
-        return youmingScore;
+    public int getDestructionScore() {
+        return destructionScore;
     }
 
     /** 当前对局已经进行的 tick；不在对局中返回 -1。 */
@@ -217,17 +219,17 @@ public class GameManager {
         }
         Faction faction = factions.get(player.getUUID());
         if (faction == null && phase == Phase.PLAYING) {
-            // 对局中途加入：补人数较少的宗门。
-            long xuanxiaoCount = factions.values().stream().filter(f -> f == Faction.XUANXIAO).count();
-            long youmingCount = factions.values().stream().filter(f -> f == Faction.YOUMING).count();
-            if (Math.min(xuanxiaoCount, youmingCount) >= MatchArena.active().teamSize) {
+            // 对局中途加入：补人数较少的阵营。
+            long guardianCount = factions.values().stream().filter(f -> f == Faction.GUARDIAN).count();
+            long destructionCount = factions.values().stream().filter(f -> f == Faction.DESTRUCTION).count();
+            if (Math.min(guardianCount, destructionCount) >= MatchArena.active().teamSize) {
                 PlayerDataProvider.get(player).setFaction(null);
                 player.setGameMode(GameType.SPECTATOR);
                 LobbySystem.teleportToLobby(player);
                 player.sendSystemMessage(Component.translatable("message.myriad.arena_full"));
                 return;
             }
-            faction = xuanxiaoCount <= youmingCount ? Faction.XUANXIAO : Faction.YOUMING;
+            faction = guardianCount <= destructionCount ? Faction.GUARDIAN : Faction.DESTRUCTION;
             assign(player, faction);
             PlayerData lateData = PlayerDataProvider.get(player);
             lateData.setGold(500);
@@ -257,7 +259,7 @@ public class GameManager {
         if (phase == Phase.WAITING) factions.remove(player.getUUID());
     }
 
-    /** 开局：按加入顺序将玩家均衡分配到玄霄宗与幽冥宗。 */
+    /** 开局：按加入顺序将玩家均衡分配到守护与毁灭。 */
     public void startMatch(MinecraftServer server) {
         this.server = server;
         List<ServerPlayer> players = new ArrayList<>(server.getPlayerList().getPlayers());
@@ -274,19 +276,19 @@ public class GameManager {
                         .toList());
         factions.clear();
         java.util.Collections.shuffle(players);
-        // 对称 PvP：自动均分两宗门；奇数人数时玄霄宗多一人。
-        int xuanxiaoCount = Math.max(1, (players.size() + 1) / 2);
-        xuanxiaoCount = Math.min(xuanxiaoCount, players.size() - 1);
+        // 对称 PvP：自动均分两阵营；奇数人数时守护多一人。
+        int guardianCount = Math.max(1, (players.size() + 1) / 2);
+        guardianCount = Math.min(guardianCount, players.size() - 1);
         boolean swap = server.overworld().getRandom().nextBoolean();
         for (int i = 0; i < players.size(); i++) {
-            assign(players.get(i), (i < xuanxiaoCount) != swap ? Faction.XUANXIAO : Faction.YOUMING);
+            assign(players.get(i), (i < guardianCount) != swap ? Faction.GUARDIAN : Faction.DESTRUCTION);
         }
         // 开局重置：清空背包其余物品，仅保留初始武器
         for (ServerPlayer p : players) {
             PlayerDataProvider.resetInitialInventory(p);
         }
-        xuanxiaoScore = 0;
-        youmingScore = 0;
+        guardianScore = 0;
+        destructionScore = 0;
         winner = null;
         resetMatchObjectives();
         beginPicking(server);
@@ -305,7 +307,7 @@ public class GameManager {
         com.myriad.player.PlayerNames.refresh(player);
     }
 
-    /** 手动分配开局：使用当前 PlayerData 宗门直接开局，未分配玩家自动补入幽冥宗。 */
+    /** 手动分配开局：使用当前 PlayerData 阵营直接开局，未分配玩家自动补入毁灭。 */
     public void startMatchWithCurrent(MinecraftServer server) {
         this.server = server;
         List<ServerPlayer> players = new ArrayList<>(server.getPlayerList().getPlayers());
@@ -315,22 +317,22 @@ public class GameManager {
             }
             return;
         }
-        int xuanxiaoCount = 0;
-        int youmingCount = 0;
+        int guardianCount = 0;
+        int destructionCount = 0;
         if (!arenaCapacityAllows(players)) return;
         for (ServerPlayer p : players) {
             PlayerData data = PlayerDataProvider.get(p);
-            if (data != null && data.getFaction() == Faction.XUANXIAO) {
-                xuanxiaoCount++;
-            } else if (data != null && data.getFaction() == Faction.YOUMING) {
-                youmingCount++;
+            if (data != null && data.getFaction() == Faction.GUARDIAN) {
+                guardianCount++;
+            } else if (data != null && data.getFaction() == Faction.DESTRUCTION) {
+                destructionCount++;
             }
         }
-        if (xuanxiaoCount == 0 || youmingCount == 0 || Math.abs(xuanxiaoCount - youmingCount) > 1) {
+        if (guardianCount == 0 || destructionCount == 0 || Math.abs(guardianCount - destructionCount) > 1) {
             broadcast(Component.translatable("message.myriad.team_need_both"));
             return;
         }
-        if (Math.max(xuanxiaoCount, youmingCount) > MatchArena.active().teamSize) {
+        if (Math.max(guardianCount, destructionCount) > MatchArena.active().teamSize) {
             broadcast(Component.translatable("message.myriad.arena_team_capacity", MatchArena.active().teamSize));
             return;
         }
@@ -339,10 +341,10 @@ public class GameManager {
             PlayerData data = PlayerDataProvider.get(p);
             Faction f = data == null ? null : data.getFaction();
             if (f == null) {
-                f = xuanxiaoCount <= youmingCount ? Faction.XUANXIAO : Faction.YOUMING;
+                f = guardianCount <= destructionCount ? Faction.GUARDIAN : Faction.DESTRUCTION;
                 data.setFaction(f);
                 com.myriad.player.PlayerNames.refresh(p);
-                if (f == Faction.XUANXIAO) xuanxiaoCount++; else youmingCount++;
+                if (f == Faction.GUARDIAN) guardianCount++; else destructionCount++;
             }
             assign(p, f);
         }
@@ -350,14 +352,14 @@ public class GameManager {
         for (ServerPlayer p : players) {
             PlayerDataProvider.resetInitialInventory(p);
         }
-        xuanxiaoScore = 0;
-        youmingScore = 0;
+        guardianScore = 0;
+        destructionScore = 0;
         winner = null;
         resetMatchObjectives();
         beginPicking(server);
     }
 
-    // ---- 角色选择阶段：幽冥宗先选，轮流 30 秒，每个角色仅一人可选 ----
+    // ---- 角色选择阶段：毁灭先选，轮流 30 秒，每个角色仅一人可选 ----
 
     /** 进入角色选择阶段（训练模式跳过，直接开局） */
     private void beginPicking(MinecraftServer server) {
@@ -375,22 +377,22 @@ public class GameManager {
         }
         pickOrder.clear();
         pendingPreparationBase.clear();
-        List<UUID> youming = new ArrayList<>();
-        List<UUID> xuanxiao = new ArrayList<>();
+        List<UUID> destruction = new ArrayList<>();
+        List<UUID> guardian = new ArrayList<>();
         for (UUID uid : joinOrder) {
             Faction f = factions.get(uid);
-            if (f == Faction.YOUMING) {
-                youming.add(uid);
-            } else if (f == Faction.XUANXIAO) {
-                xuanxiao.add(uid);
+            if (f == Faction.DESTRUCTION) {
+                destruction.add(uid);
+            } else if (f == Faction.GUARDIAN) {
+                guardian.add(uid);
             }
         }
         // Opening side picks one, then alternate two consecutive picks per side.
         int y = 0, x = 0;
-        if (!youming.isEmpty()) pickOrder.add(youming.get(y++));
-        while (y < youming.size() || x < xuanxiao.size()) {
-            for (int n = 0; n < 2 && x < xuanxiao.size(); n++) pickOrder.add(xuanxiao.get(x++));
-            for (int n = 0; n < 2 && y < youming.size(); n++) pickOrder.add(youming.get(y++));
+        if (!destruction.isEmpty()) pickOrder.add(destruction.get(y++));
+        while (y < destruction.size() || x < guardian.size()) {
+            for (int n = 0; n < 2 && x < guardian.size(); n++) pickOrder.add(guardian.get(x++));
+            for (int n = 0; n < 2 && y < destruction.size(); n++) pickOrder.add(destruction.get(y++));
         }
         pickIndex = 0;
         charPicks.clear();
@@ -415,7 +417,7 @@ public class GameManager {
         return pickIndex >= 0 && pickIndex < pickOrder.size() ? pickOrder.get(pickIndex) : null;
     }
 
-    /** 对称宗门选人：双方共享全部角色池，仍保持角色唯一。 */
+    /** 对称阵营选人：双方共享全部角色池，仍保持角色唯一。 */
     public boolean onPick(ServerPlayer player, com.myriad.character.CharacterType type) {
         if (phase != Phase.PICKING || type == null || !player.getUUID().equals(currentPicker())) {
             return false;
@@ -854,36 +856,36 @@ public class GameManager {
         }
         for (Map.Entry<Integer, SpiritVein> entry : spiritVeins.entrySet()) {
             SpiritVein vein = entry.getValue();
-            int xuanxiao = 0, youming = 0;
+            int guardian = 0, destruction = 0;
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
                 if (!player.isAlive() || player.isSpectator() || player.level() != server.overworld()
                         || player.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(vein.pos))
                                 > vein.radius() * vein.radius()) continue;
                 Faction faction = factionOf(player);
-                if (faction == Faction.XUANXIAO) xuanxiao++;
-                if (faction == Faction.YOUMING) youming++;
+                if (faction == Faction.GUARDIAN) guardian++;
+                if (faction == Faction.DESTRUCTION) destruction++;
             }
-            vein.xuanxiaoPlayers = xuanxiao;
-            vein.youmingPlayers = youming;
+            vein.guardianPlayers = guardian;
+            vein.destructionPlayers = destruction;
             if (vein.owner == null) {
-                if (xuanxiao > youming) {
-                    int step = youming > 0 ? (gameTime % 2 == 0 ? 1 : 0) : 1;
+                if (guardian > destruction) {
+                    int step = destruction > 0 ? (gameTime % 2 == 0 ? 1 : 0) : 1;
                     vein.progress = Math.min(vein.captureTicks(), vein.progress + step);
-                } else if (youming > xuanxiao) {
-                    int step = xuanxiao > 0 ? (gameTime % 2 == 0 ? 1 : 0) : 1;
+                } else if (destruction > guardian) {
+                    int step = guardian > 0 ? (gameTime % 2 == 0 ? 1 : 0) : 1;
                     vein.progress = Math.max(-vein.captureTicks(), vein.progress - step);
                 }
             } else {
-                int ownerPlayers = vein.owner == Faction.XUANXIAO ? xuanxiao : youming;
-                int enemyPlayers = vein.owner == Faction.XUANXIAO ? youming : xuanxiao;
+                int ownerPlayers = vein.owner == Faction.GUARDIAN ? guardian : destruction;
+                int enemyPlayers = vein.owner == Faction.GUARDIAN ? destruction : guardian;
                 if (enemyPlayers > 0 && ownerPlayers == 0) {
                     vein.contestedTicks++;
                     if (vein.contestedTicks <= GameRules.VEIN_CONTEST_GRACE_TICKS) {
-                        vein.progress = vein.owner == Faction.XUANXIAO ? vein.captureTicks() : -vein.captureTicks();
+                        vein.progress = vein.owner == Faction.GUARDIAN ? vein.captureTicks() : -vein.captureTicks();
                     } else if (vein.contestedTicks == GameRules.VEIN_CONTEST_GRACE_TICKS + 1) {
                         vein.progress = 0;
                     } else {
-                        vein.progress = vein.owner == Faction.XUANXIAO
+                        vein.progress = vein.owner == Faction.GUARDIAN
                                 ? Math.max(-vein.captureTicks(), vein.progress - 1)
                                 : Math.min(vein.captureTicks(), vein.progress + 1);
                     }
@@ -891,12 +893,12 @@ public class GameManager {
                     vein.contestedTicks = Math.max(0, vein.contestedTicks - 1);
                 } else {
                     vein.contestedTicks = 0;
-                    vein.progress = vein.owner == Faction.XUANXIAO ? vein.captureTicks() : -vein.captureTicks();
+                    vein.progress = vein.owner == Faction.GUARDIAN ? vein.captureTicks() : -vein.captureTicks();
                 }
             }
             if (gameTime % 10 == 0) spawnSpiritVeinCircle(server.overworld(), vein, gameTime);
-            Faction newOwner = vein.progress >= vein.captureTicks() ? Faction.XUANXIAO
-                    : vein.progress <= -vein.captureTicks() ? Faction.YOUMING : null;
+            Faction newOwner = vein.progress >= vein.captureTicks() ? Faction.GUARDIAN
+                    : vein.progress <= -vein.captureTicks() ? Faction.DESTRUCTION : null;
             if (newOwner != null && newOwner != vein.owner) {
                 vein.owner = newOwner;
                 refreshSpiritVeinBonuses();
@@ -905,7 +907,7 @@ public class GameManager {
                         Component.translatable("message.myriad.vein_captured", veinName,
                         newOwner.displayName(), vein.large ? 30 : 10, vein.large ? 20 : 5));
             }
-            int enemyPlayers = vein.owner == Faction.XUANXIAO ? youming : xuanxiao;
+            int enemyPlayers = vein.owner == Faction.GUARDIAN ? destruction : guardian;
             if (vein.owner != null && Math.abs(vein.progress) == vein.captureTicks()
                     && enemyPlayers == 0 && gameTime % GameRules.VEIN_INCOME_PULSE_TICKS == 0) {
                 rewardSpiritVeinPulse(vein.owner, vein);
@@ -923,7 +925,7 @@ public class GameManager {
         for (SpiritVein vein : spiritVeins.values()) {
             if (vein.owner != faction || player.distanceToSqr(
                     net.minecraft.world.phys.Vec3.atCenterOf(vein.pos)) > rangeSqr) continue;
-            int enemies = faction == Faction.XUANXIAO ? vein.youmingPlayers : vein.xuanxiaoPlayers;
+            int enemies = faction == Faction.GUARDIAN ? vein.destructionPlayers : vein.guardianPlayers;
             return enemies > 0 ? 2 : 1;
         }
         return 0;
@@ -934,8 +936,7 @@ public class GameManager {
             SpiritVein vein, long gameTime) {
         double radius = vein.large ? LARGE_VEIN_EFFECT_RADIUS : SMALL_VEIN_EFFECT_RADIUS;
         int points = vein.large ? 64 : 40;
-        int color = vein.owner == Faction.XUANXIAO ? 0xFF594F
-                : vein.owner == Faction.YOUMING ? 0x55BFFF : 0xFFD85A;
+        int color = vein.owner == null ? 0xFFD85A : vein.owner.rgb();
         DustParticleOptions primary = new DustParticleOptions(color, vein.large ? 1.5F : 1.2F);
         DustParticleOptions accent = new DustParticleOptions(0xF4FFFF, vein.large ? .9F : .7F);
         double phase = (gameTime % 80) * Math.PI / 40.0;
@@ -977,7 +978,7 @@ public class GameManager {
                 SpiritVein vein = current.getValue();
                 com.myriad.network.Packets.sendToPlayer(player,
                         new com.myriad.network.NetworkSetup.VeinStatusPayload(true, current.getKey(), vein.large,
-                                vein.xuanxiaoPlayers, vein.youmingPlayers, vein.progress, vein.captureTicks()));
+                                vein.guardianPlayers, vein.destructionPlayers, vein.progress, vein.captureTicks()));
             }
         }
     }
@@ -996,7 +997,7 @@ public class GameManager {
         }
     }
 
-    /** 月=法强、火=物攻、木=物防与法防；控制权转移时移除旧宗门并赋予新宗门。 */
+    /** 月=法强、火=物攻、木=物防与法防；控制权转移时移除旧阵营并赋予新阵营。 */
     private void refreshSpiritVeinBonuses() {
         if (server == null) return;
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
@@ -1050,8 +1051,8 @@ public class GameManager {
 
     private void addTeamScore(Faction faction, int amount) {
         if (phase != Phase.PLAYING) return;
-        if (faction == Faction.XUANXIAO) xuanxiaoScore += amount;
-        else youmingScore += amount;
+        if (faction == Faction.GUARDIAN) guardianScore += amount;
+        else destructionScore += amount;
         syncAll(); // The crystal, not legacy objective score, decides victory.
     }
 
@@ -1062,14 +1063,14 @@ public class GameManager {
             return;
         }
         if (gameTime - matchStartTime >= GameRules.matchDurationTicks()) {
-            if (xuanxiaoScore == youmingScore) {
+            if (guardianScore == destructionScore) {
                 phase = Phase.ENDED;
                 matchEndTime = gameTime;
                 broadcast(MatchMessages.Tone.NEUTRAL,
-                        Component.translatable("message.myriad.match_draw", xuanxiaoScore));
+                        Component.translatable("message.myriad.match_draw", guardianScore));
                 syncAll();
             } else {
-                endMatch(xuanxiaoScore > youmingScore ? Faction.XUANXIAO : Faction.YOUMING);
+                endMatch(guardianScore > destructionScore ? Faction.GUARDIAN : Faction.DESTRUCTION);
             }
         }
     }
@@ -1135,8 +1136,10 @@ public class GameManager {
         private Faction owner;
         private int progress;
         private int contestedTicks;
-        private int xuanxiaoPlayers;
-        private int youmingPlayers;
+        @com.google.gson.annotations.SerializedName(value="guardianPlayers",alternate={"xuanxiaoPlayers"})
+        private int guardianPlayers;
+        @com.google.gson.annotations.SerializedName(value="destructionPlayers",alternate={"youmingPlayers"})
+        private int destructionPlayers;
 
         private SpiritVein(BlockPos pos, boolean large, SpiritAffinity affinity) {
             this.pos = pos;
@@ -1155,8 +1158,8 @@ public class GameManager {
             owner = null;
             progress = 0;
             contestedTicks = 0;
-            xuanxiaoPlayers = 0;
-            youmingPlayers = 0;
+            guardianPlayers = 0;
+            destructionPlayers = 0;
         }
     }
 
@@ -1180,7 +1183,7 @@ public class GameManager {
         BaseRules.clear();
         pickOrder.clear(); pendingPreparationBase.clear(); charPicks.clear(); heroDamage.clear(); damageTaken.clear(); healingReceived.clear();
         pickIndex = 0; pickDeadlineTick = -1; pickCountdownEndTick = -1;
-        matchStartTime = -1; matchEndTime = -1; xuanxiaoScore = 0; youmingScore = 0;
+        matchStartTime = -1; matchEndTime = -1; guardianScore = 0; destructionScore = 0;
         pendingRoundReset.addAll(joinOrder);
         factions.clear();
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
@@ -1221,22 +1224,22 @@ public class GameManager {
 
     /** 开局广播：阵容信息（换行多行） */
     private void broadcastLineups(List<ServerPlayer> players) {
-        StringBuilder xuanxiao = new StringBuilder();
-        StringBuilder youming = new StringBuilder();
+        StringBuilder guardian = new StringBuilder();
+        StringBuilder destruction = new StringBuilder();
         for (ServerPlayer p : players) {
             Faction f = factions.get(p.getUUID());
-            if (f == Faction.XUANXIAO) {
-                xuanxiao.append("\n- ").append(p.getName().getString());
+            if (f == Faction.GUARDIAN) {
+                guardian.append("\n- ").append(p.getName().getString());
             } else {
-                youming.append("\n- ").append(p.getName().getString());
+                destruction.append("\n- ").append(p.getName().getString());
             }
         }
         Component body = Component.translatable("message.myriad.match_start")
                 .copy()
-                .append(Component.literal("\n\n")).append(Faction.XUANXIAO.displayName()).append(Component.literal("："))
-                .append(Component.literal(xuanxiao.toString()))
-                .append(Component.literal("\n\n")).append(Faction.YOUMING.displayName()).append(Component.literal("："))
-                .append(Component.literal(youming.toString()));
+                .append(Component.literal("\n\n")).append(Faction.GUARDIAN.displayName()).append(Component.literal("："))
+                .append(Component.literal(guardian.toString()))
+                .append(Component.literal("\n\n")).append(Faction.DESTRUCTION.displayName()).append(Component.literal("："))
+                .append(Component.literal(destruction.toString()));
         broadcast(body);
     }
 

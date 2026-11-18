@@ -1,0 +1,13 @@
+{
+  "pack": {
+    "description": "Sakura Rift Arena Creature Models",
+    "min_format": [
+      97,
+      1
+    ],
+    "max_format": [
+      97,
+      1
+    ]
+  }
+}

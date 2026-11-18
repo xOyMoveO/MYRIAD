@@ -65,7 +65,7 @@ final class ThunderChainChecks {
     }
     private static Fixture fixture(GameTestHelper h,int index){
         Vec3 origin=Vec3.atBottomCenterOf(h.absolutePos(new BlockPos(95,100+index*12,40)));
-        var players=new ArrayList<ServerPlayer>();var caster=player(h,origin,Faction.XUANXIAO,players,false);
+        var players=new ArrayList<ServerPlayer>();var caster=player(h,origin,Faction.GUARDIAN,players,false);
         var d=PlayerDataProvider.get(caster);d.setCharacterId("tianxing");d.setLevel(20);d.setMana(700);
         int rank=index==1?5:1;float strength=index==1?100:0;
         d.setSkillLevel("g1_tianxing_n2",rank);caster.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(strength);
@@ -74,16 +74,16 @@ final class ThunderChainChecks {
         if(index==2){
             var pig=h.spawn(net.minecraft.world.entity.EntityTypes.PIG,new BlockPos(2,6,2));
             pig.setPos(contact);pig.setNoAi(true);pig.setNoGravity(true);pig.getAttribute(Attributes.MAX_HEALTH).setBaseValue(1000);pig.setHealth(1000);primary=pig;
-        }else primary=player(h,contact,Faction.YOUMING,players,true);
+        }else primary=player(h,contact,Faction.DESTRUCTION,players,true);
         var chained=new ArrayList<ServerPlayer>();
         // More than two targets, including an out-of-plane and exact four-block target.
         for(Vec3 delta:List.of(new Vec3(2,0,0),new Vec3(2,0,2),new Vec3(0,3,0),new Vec3(0,0,4)))
-            chained.add(player(h,contact.add(delta),Faction.YOUMING,players,true));
+            chained.add(player(h,contact.add(delta),Faction.DESTRUCTION,players,true));
         var excluded=new ArrayList<LivingEntity>();
-        excluded.add(player(h,contact.add(-2,0,0),Faction.XUANXIAO,players,true));
-        excluded.add(player(h,contact.add(4.1,0,0),Faction.YOUMING,players,true));
-        excluded.add(player(h,contact.add(5.5,0,0),Faction.YOUMING,players,true)); // Near a secondary, not the primary.
-        excluded.add(player(h,contact.add(-3,0,-2),Faction.YOUMING,players,true));
+        excluded.add(player(h,contact.add(-2,0,0),Faction.GUARDIAN,players,true));
+        excluded.add(player(h,contact.add(4.1,0,0),Faction.DESTRUCTION,players,true));
+        excluded.add(player(h,contact.add(5.5,0,0),Faction.DESTRUCTION,players,true)); // Near a secondary, not the primary.
+        excluded.add(player(h,contact.add(-3,0,-2),Faction.DESTRUCTION,players,true));
         var tower=h.spawn(ModEntities.DEFENSE_TOWER.get(),new BlockPos(2,6,2));tower.setPos(contact.add(3,0,1));tower.setHealth(1000);excluded.add(tower);
         var blocks=new HashMap<BlockPos,BlockState>();
         // Between the primary and the last enemy, while that enemy remains visible from the caster.

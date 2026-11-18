@@ -21,6 +21,7 @@ import com.myriad.registry.ModParticles;
 
 @net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
+    private static final com.myriad.client.DeferredScreenRequest SCREEN_REQUEST=new com.myriad.client.DeferredScreenRequest();
     /** 仙凡劫专属按键分类（设置-按键控制中独立一栏） */
     public static final KeyMapping.Category KEY_CATEGORY = KeyMapping.Category
             .register(Identifier.fromNamespaceAndPath(Myriad.MODID, "keys"));
@@ -61,10 +62,15 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
                 com.myriad.registry.ModEntities.DEFENSE_TOWER.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
         net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents.ALLOW_COMMAND.register(
                 MyriadClient::allowCommand);
+        net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(client->{
+            var screen=client.gui.screen();
+            boolean chat=screen instanceof net.minecraft.client.gui.screens.ChatScreen;
+            SCREEN_REQUEST.tick(client.player==null?null:client.getConnection(),client.level,chat,screen!=null&&!chat);
+        });
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.JOIN.register(
-                (handler, sender, client) -> com.myriad.client.ClientDataHolder.resetConnection());
+                (handler, sender, client) -> {SCREEN_REQUEST.clear();com.myriad.client.ClientDataHolder.resetConnection();});
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT.register(
-                (handler, client) -> com.myriad.client.ClientDataHolder.resetConnection());
+                (handler, client) -> {SCREEN_REQUEST.clear();com.myriad.client.ClientDataHolder.resetConnection();});
     }
 
     /** Called at Minecraft.startAttack, including keyboard or mouse rebound attacks. */
@@ -492,18 +498,20 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
     private static boolean allowCommand(String command) {
         Minecraft mc=Minecraft.getInstance();
         if(mc.player==null)return true;
-        switch(command.strip()) {
-            case "myriad choose" -> mc.setScreenAndShow(new com.myriad.client.gui.CharacterSelectScreen());
-            case "myriad start" -> mc.setScreenAndShow(new com.myriad.client.gui.TeamManageScreen());
-            case "myriad settings" -> mc.setScreenAndShow(new com.myriad.client.gui.SettingsScreen());
-            case "myriad minimap" -> mc.setScreenAndShow(new com.myriad.client.gui.MinimapPositionScreen(null));
-            case "myriad hud" -> mc.setScreenAndShow(new com.myriad.client.gui.HudEditorScreen(null));
-            case "myriad results" -> com.myriad.client.MatchResultsStore.open();
-            case "myriad shop" -> mc.setScreenAndShow(new com.myriad.client.gui.ShopScreen());
-            case "myriad train" -> mc.setScreenAndShow(new com.myriad.client.gui.TrainScreen());
-            case "myriad wind_test" -> playWind1Test();
-            default -> { return true; }
-        }
+        Runnable open=switch(command.strip()) {
+            case "myriad choose" -> ()->mc.setScreenAndShow(new com.myriad.client.gui.CharacterSelectScreen());
+            case "myriad start" -> ()->mc.setScreenAndShow(new com.myriad.client.gui.TeamManageScreen());
+            case "myriad settings" -> ()->mc.setScreenAndShow(new com.myriad.client.gui.SettingsScreen());
+            case "myriad minimap" -> ()->mc.setScreenAndShow(new com.myriad.client.gui.MinimapPositionScreen(null));
+            case "myriad hud" -> ()->mc.setScreenAndShow(new com.myriad.client.gui.HudEditorScreen(null));
+            case "myriad results" -> com.myriad.client.MatchResultsStore::open;
+            case "myriad shop" -> ()->mc.setScreenAndShow(new com.myriad.client.gui.ShopScreen());
+            case "myriad train" -> ()->mc.setScreenAndShow(new com.myriad.client.gui.TrainScreen());
+            default -> null;
+        };
+        if(open==null){if(command.strip().equals("myriad wind_test")){playWind1Test();return false;}return true;}
+        // Vanilla clears ChatScreen after ALLOW_COMMAND returns. Defer until a later client tick.
+        SCREEN_REQUEST.submit(mc.getConnection(),mc.level,open);
         return false;
     }
 

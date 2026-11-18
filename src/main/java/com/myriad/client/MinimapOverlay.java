@@ -22,8 +22,8 @@ public final class MinimapOverlay {
     private static final int BORDER = 0xFFE4C56A;
     private static final int BACKGROUND = 0xC9131B22;
     private static final int GRID = 0x3F8EA5AD;
-    private static final int XUANXIAO = 0xFFFF625C;
-    private static final int YOUMING = 0xFF59C7FF;
+    private static final int GUARDIAN = com.myriad.game.Faction.GUARDIAN.argb();
+    private static final int DESTRUCTION = com.myriad.game.Faction.DESTRUCTION.argb();
     private static final Identifier MELEE_ICON = icon("melee_minion");
     private static final Identifier RANGED_ICON = icon("ranged_minion");
     private static final Identifier MAGIC_ICON = icon("magic_minion");
@@ -100,7 +100,7 @@ public final class MinimapOverlay {
             if (uv[0] < 0 || uv[0] > 1 || uv[1] < 0 || uv[1] > 1) return;
             int px = left + (int) Math.round(uv[0] * (width - 1));
             int py = top + (int) Math.round(uv[1] * (height - 1));
-            int color = marker.factionId() == 1 ? XUANXIAO : YOUMING;
+            int color = marker.factionId() == 1 ? GUARDIAN : DESTRUCTION;
             switch (marker.kind()) {
                 case 0 -> renderPlayerFace(gui, marker, px, py, 8, color, false);
                 case 1 -> renderPlayerFace(gui, marker, px, py, 10, color, true);
@@ -145,7 +145,7 @@ public final class MinimapOverlay {
 
     private static void renderLegend(GuiGraphicsExtractor gui, Font font, int x, int y) {
         for (int kind : new int[]{8, 9, 10}) {
-            if (kind == 10) renderFountain(gui, x + 4, y + 4, YOUMING);
+            if (kind == 10) renderFountain(gui, x + 4, y + 4, GUARDIAN);
             else renderCamp(gui, x + 4, y + 4, kind == 9);
             Component label = Component.translatable("hud.myriad.minimap_" + switch (kind) {
                 case 8 -> "camp";

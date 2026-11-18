@@ -92,7 +92,7 @@ final class FenjueLeapChecks {
             @Override public void send(net.minecraft.network.protocol.Packet<?> packet){if(packet instanceof net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket cp&&cp.payload() instanceof FlameSkillViewPayload cue)cues.add(cue);}
         };p.connection.handleAcceptPlayerLoad(new net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket());p.setPos(origin);p.setNoGravity(true);p.setYRot(0);p.setXRot(0);
         if(index==1){var aim=target.add(0,-.025,0).subtract(p.getEyePosition());p.setXRot((float)Math.toDegrees(Math.atan2(-aim.y,aim.z)));}
-        var d=PlayerDataProvider.get(p);d.setFaction(Faction.XUANXIAO);d.setCharacterId("fenjue");d.setLevel(20);d.setMana(700);
+        var d=PlayerDataProvider.get(p);d.setFaction(Faction.GUARDIAN);d.setCharacterId("fenjue");d.setLevel(20);d.setMana(700);
         var skill=FirstGroupSkills.node("fenjue",6);d.setSkillLevel(skill.getId(),1);
         p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(100);p.getAttribute(ModAttributes.COOLDOWN_REDUCTION).setBaseValue(0);
         p.getAttribute(Attributes.MAX_HEALTH).setBaseValue(1000);p.setHealth(1000);d.setModMaxHealth(1000);d.setModHealthInitialized(true);

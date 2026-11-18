@@ -54,7 +54,7 @@ public final class LevelSystem {
         }
         Faction faction = data.getFaction();
         if (faction == null) {
-            faction = Faction.XUANXIAO; // 未分宗门时仍使用相同成长规则，实际开局前不产生经验
+            faction = Faction.GUARDIAN; // 未分阵营时仍使用相同成长规则，实际开局前不产生经验
         }
         data.setXp(data.getXp() + amount);
         int xp = data.getXp();

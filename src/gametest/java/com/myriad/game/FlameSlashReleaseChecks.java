@@ -55,7 +55,7 @@ final class FlameSlashReleaseChecks {
                     h.getLevel().setBlockAndUpdate(at,(y==-1?Blocks.STONE:Blocks.AIR).defaultBlockState());
                 }
                 actor.setNoGravity(true);actor.setPos(origin);h.getLevel().addNewPlayer(actor);
-                var d=PlayerDataProvider.get(actor);d.setCharacterId("fenjue");d.setLevel(20);d.setFaction(Faction.XUANXIAO);
+                var d=PlayerDataProvider.get(actor);d.setCharacterId("fenjue");d.setLevel(20);d.setFaction(Faction.GUARDIAN);
                 actor.getAttribute(Attributes.MAX_HEALTH).setBaseValue(1000);actor.setHealth(1000);d.setModMaxHealth(1000);d.setModHealthInitialized(true);
                 actor.getAttribute(ModAttributes.CRIT_CHANCE).setBaseValue(0);actor.getAttribute(ModAttributes.COOLDOWN_REDUCTION).setBaseValue(0);
                 d.setSkillLevel(skill.getId(),1);

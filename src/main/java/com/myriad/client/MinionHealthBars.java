@@ -38,7 +38,7 @@ public final class MinionHealthBars {
             float fraction = Math.clamp(health / maximum, 0, 1);
             float distance = (float) Math.sqrt(offset.lengthSqr());
             float scale = Math.clamp(8.0F / Math.max(8.0F, distance), .45F, 1.0F);
-            boolean ally = faction != null && (minion.style() < 3) == (faction == Faction.XUANXIAO);
+            boolean ally = faction != null && (minion.style() < 3) == (faction == Faction.GUARDIAN);
             int fill = ally ? 0xFF55D985 : fraction <= .25F ? 0xFFFFB24D : 0xFFF26A68;
             int empty = ally ? 0xDD173D2A : 0xDD491F29;
             String label = Integer.toString(Math.round(health));

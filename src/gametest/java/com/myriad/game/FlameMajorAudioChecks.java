@@ -82,7 +82,7 @@ final class FlameMajorAudioChecks {
         p.connection=new net.minecraft.server.network.ServerGamePacketListenerImpl(h.getLevel().getServer(),con,p,net.minecraft.server.network.CommonListenerCookie.createInitial(p.getGameProfile(),false)){
             @Override public void send(net.minecraft.network.protocol.Packet<?> packet){}
         };p.connection.handleAcceptPlayerLoad(new net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket());p.setNoGravity(true);p.setPos(net.minecraft.world.phys.Vec3.atBottomCenterOf(h.absolutePos(new BlockPos(170+i*8,230,70))));
-        p.setYRot(0);p.setXRot(0);var d=PlayerDataProvider.get(p);d.setCharacterId("fenjue");d.setLevel(20);d.setMana(700);d.setFaction(Faction.XUANXIAO);return p;
+        p.setYRot(0);p.setXRot(0);var d=PlayerDataProvider.get(p);d.setCharacterId("fenjue");d.setLevel(20);d.setMana(700);d.setFaction(Faction.GUARDIAN);return p;
     }
     private static void cleanup(GameTestHelper h,List<ServerPlayer> players,Map<BlockPos,BlockState> saved){players.forEach(p->{AbilityRuntime.clear(p);p.discard();});saved.forEach((at,s)->h.getLevel().setBlockAndUpdate(at,s));}
 }

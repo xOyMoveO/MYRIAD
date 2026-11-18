@@ -23,7 +23,7 @@ import com.myriad.player.PlayerData;
 
 /**
  * 风部·素岚 W 技能【灵风标记】：标记一名敌方，使其 10 秒内持续发光
- * 并暴露位置给全幽冥宗队友；目标受到的所有伤害提升 10%，
+ * 并暴露位置给所有队友；目标受到的所有伤害提升 10%，
  * 且被标记期间受到 15% 减速（持续 8 秒）。施法时从施法者释放一个灵球飞向目标。
  */
 public class LingFengBiaoJiSkill extends Skill {

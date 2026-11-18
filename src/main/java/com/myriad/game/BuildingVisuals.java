@@ -51,8 +51,8 @@ public final class BuildingVisuals {
         return spawn(level, base, ModItems.defenseTower(faction, tier), 3, 8);
     }
     public static ItemDisplay crystal(ServerLevel level, Vec3 base, Faction faction) {
-        return spawn(level, base, faction == Faction.XUANXIAO
-                ? ModItems.CRYSTAL_RED.get() : ModItems.CRYSTAL_BLUE.get(), 4, 5);
+        return spawn(level, base, faction == Faction.GUARDIAN
+                ? ModItems.CRYSTAL_BLUE.get() : ModItems.CRYSTAL_RED.get(), 4, 5);
     }
     private static ItemDisplay spawn(ServerLevel level, Vec3 base, Item item, float width, float height) {
         ItemDisplay display = EntityTypes.ITEM_DISPLAY.create(level, EntitySpawnReason.MOB_SUMMONED);

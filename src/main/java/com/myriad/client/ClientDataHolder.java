@@ -40,7 +40,10 @@ public final class ClientDataHolder {
             DashController.start(0, 0, 0, 0);
             com.myriad.client.FogOfWarClient.update(false, java.util.List.of());
             var mc = Minecraft.getInstance();
-            if (mc.gui.screen() != null && mc.gui.screen().getClass().getPackageName().equals("com.myriad.client.gui"))
+            if (mc.gui.screen() != null && !(mc.gui.screen() instanceof com.myriad.client.gui.TrainScreen)
+                    && !(mc.gui.screen() instanceof com.myriad.client.gui.CharacterSelectScreen)
+                    && !(mc.gui.screen() instanceof com.myriad.client.gui.CharacterGuideScreen guide && guide.isChoosePreview())
+                    && mc.gui.screen().getClass().getPackageName().equals("com.myriad.client.gui"))
                 mc.setScreenAndShow(null);
         }
         net.minecraft.client.player.LocalPlayer p = Minecraft.getInstance().player;
@@ -96,9 +99,9 @@ public final class ClientDataHolder {
         }
         return switch (data.factionId()) {
             case 1 -> net.minecraft.network.chat.Component.translatable(
-                    "faction.myriad.xuanxiao").getString();
+                    "faction.myriad.guardian").getString();
             case 2 -> net.minecraft.network.chat.Component.translatable(
-                    "faction.myriad.youming").getString();
+                    "faction.myriad.destruction").getString();
             default -> "-";
         };
     }
@@ -108,8 +111,8 @@ public final class ClientDataHolder {
             return null;
         }
         return switch (data.factionId()) {
-            case 1 -> Faction.XUANXIAO;
-            case 2 -> Faction.YOUMING;
+            case 1 -> Faction.GUARDIAN;
+            case 2 -> Faction.DESTRUCTION;
             default -> null;
         };
     }
@@ -127,7 +130,7 @@ public final class ClientDataHolder {
 
     /** 角色 id（未选择为空串） */
     public static String characterId() {
-        return data == null ? "" : data.characterId();
+        return data == null || data.characterId() == null ? "" : data.characterId();
     }
 
     /** 技能槽位剩余冷却（刻），0 表示就绪 */

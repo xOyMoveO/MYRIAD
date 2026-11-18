@@ -35,13 +35,17 @@ public final class MatchResultsScreen extends Screen {
         return true;
     }
 
+    private static Component teamName(String id){
+        var team=com.myriad.game.Faction.byId(id);
+        return team==null?Component.literal("—"):team.displayName();
+    }
     @Override public void extractRenderState(GuiGraphicsExtractor gui, int mouseX, int mouseY, float partialTick) {
         gui.fill(0, 0, width, height, 0xED08111C);
         int panelWidth = Math.min(620, width - 20);
         int left = (width - panelWidth) / 2;
         gui.text(font, title, (width - font.width(title)) / 2, 10, 0xFFFFD77A);
         Component summary = Component.translatable("screen.myriad.match_results.summary",
-                Component.translatable("faction.myriad." + results.winner()),
+                teamName(results.winner()),
                 results.durationSeconds() / 60, results.durationSeconds() % 60);
         gui.text(font, summary, (width - font.width(summary)) / 2, 24, 0xFFE6F1F5);
 
@@ -56,8 +60,9 @@ public final class MatchResultsScreen extends Screen {
         for (NetworkSetup.MatchResultEntry entry : entries) {
             if (!entry.faction().equals(currentFaction)) {
                 currentFaction = entry.faction();
-                Component faction = Component.translatable("faction.myriad." + currentFaction);
-                int color = "xuanxiao".equals(currentFaction) ? 0xFFFF6A6A : 0xFF65C7FF;
+                Component faction = teamName(currentFaction);
+                com.myriad.game.Faction team=com.myriad.game.Faction.byId(currentFaction);
+                int color = team==null?0xFFAAAAAA:team.argb();
                 gui.fill(left, y, left + panelWidth, y + 17, 0xCC152536);
                 gui.text(font, faction, left + 7, y + 4, color);
                 y += 20;

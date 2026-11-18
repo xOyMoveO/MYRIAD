@@ -33,9 +33,9 @@ public class PickScreen extends Screen {
     private static final int TAKEN_COLOR = 0xFF9E9E9E;
     private static final int BG_COLOR = 0xF50A121E;
     private static final int PANEL_BORDER = 0xFFB0B0B0;
-    private static final int COLOR_XUANXIAO = 0xFFEC7975;
-    private static final int COLOR_YOUMING = 0xFF6BC8E7;
-    /** 收尾/入边动画：被选角色缩小移到屏幕两侧竖排（玄霄宗左/幽冥宗右） */
+    private static final int COLOR_GUARDIAN = Faction.GUARDIAN.argb();
+    private static final int COLOR_DESTRUCTION = Faction.DESTRUCTION.argb();
+    /** 收尾/入边动画：被选角色缩小移到屏幕两侧竖排（守护左/毁灭右） */
     private static final int TARGET_SIZE = 30;
     private static final int TARGET_GAP = 12;
     private static final float ANIM_TICKS = 24f;
@@ -226,13 +226,13 @@ public class PickScreen extends Screen {
         for(int team=1;team<=2;team++){
             final int faction=team;
             var players=com.myriad.client.MatchTabOverlay.players().stream().filter(p->p.faction()==faction).toList();
-            int w=rosterWidth(),x=team==1?8:width-8-w,accent=team==1?COLOR_XUANXIAO:COLOR_YOUMING;
+            int w=rosterWidth(),x=team==1?8:width-8-w,accent=team==1?COLOR_GUARDIAN:COLOR_DESTRUCTION;
             gui.fill(x,58,x+w,height-8,0xCF0C2028);
             gui.fill(x,58,x+w,60,accent);
             gui.fill(x,60,x+1,height-8,0xFF82805E);
             gui.fill(x+w-1,60,x+w,height-8,0xFF82805E);
             gui.fill(x,height-9,x+w,height-8,0xFF82805E);
-            String title=factionLabel(team==1?"xuanxiao":"youming");
+            String title=factionLabel(team==1?"guardian":"destruction");
             gui.text(font,font.plainSubstrByWidth(title,w-12),x+6,66,accent);
             int rowHeight=Math.min(48,Math.max(12,(height-98)/Math.max(1,players.size())));
             float scale=Math.min(1,rowHeight/40F);
@@ -292,7 +292,7 @@ public class PickScreen extends Screen {
     }
 
     private static int accentOf(Faction faction) {
-        return faction == Faction.XUANXIAO ? COLOR_XUANXIAO : COLOR_YOUMING;
+        return faction == Faction.GUARDIAN ? COLOR_GUARDIAN : COLOR_DESTRUCTION;
     }
 
     private static int withAlpha(int argb, int alpha) {
@@ -337,7 +337,7 @@ public class PickScreen extends Screen {
         }
     }
 
-    /** 已选角色：播放“移向屏幕边缘”动画并绘制在对应宗门一侧。 */
+    /** 已选角色：播放“移向屏幕边缘”动画并绘制在对应阵营一侧。 */
     private void drawPickedEdges(GuiGraphicsExtractor gui, net.minecraft.client.gui.Font font,
             NetworkSetup.PickStatePayload state) {
         long now = Minecraft.getInstance().level == null ? 0 : Minecraft.getInstance().level.getGameTime();
@@ -370,11 +370,11 @@ public class PickScreen extends Screen {
         }
     }
 
-    /** 角色在其宗门一侧屏幕边缘的目标位置（玄霄宗左，幽冥宗右）。 */
+    /** 角色在其阵营一侧屏幕边缘的目标位置（守护左，毁灭右）。 */
     private int[] edgePos(CharacterType t) {
         List<CharacterType> panel = charsOf(t.getFaction());
         int idx = panel.indexOf(t);
-        int tx = t.getFaction() == Faction.XUANXIAO ? 8 : this.width - 8 - TARGET_SIZE;
+        int tx = t.getFaction() == Faction.GUARDIAN ? 8 : this.width - 8 - TARGET_SIZE;
         int maxGap = panel.size() <= 1 ? TARGET_GAP
                 : Math.max(2, (this.height - 16 - panel.size() * TARGET_SIZE) / (panel.size() - 1));
         int gap = Math.min(TARGET_GAP, maxGap);
@@ -391,7 +391,7 @@ public class PickScreen extends Screen {
                 false, false, true, accentOf(t.getFaction()));
         String name = Component.translatable(t.nameKey()).getString();
         int nameY = ep[1] + TARGET_SIZE / 2 - 4;
-        if (t.getFaction() == Faction.XUANXIAO) {
+        if (t.getFaction() == Faction.GUARDIAN) {
             gui.text(font, Component.literal(name).withStyle(net.minecraft.ChatFormatting.BOLD),
                     ep[0] + TARGET_SIZE + 6, nameY, TEXT_COLOR);
         } else {

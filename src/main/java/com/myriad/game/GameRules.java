@@ -7,9 +7,9 @@ public final class GameRules {
     private GameRules() {}
 
     // ---- 胜负条件（可在开局前通过 /myriad settings 修改） ----
-    /** 双方宗门通过占领灵脉获得的胜利分数 */
+    /** 双方阵营通过占领灵脉获得的胜利分数 */
     public static int TEAM_TARGET_SCORE = 500;
-    /** 对局时长上限（秒）：到时积分更高的宗门胜利（30 分钟） */
+    /** 对局时长上限（秒）：到时积分更高的阵营胜利（30 分钟） */
     public static int MATCH_DURATION_SECONDS = 1800;
 
     // ---- 灵脉争夺节奏 ----

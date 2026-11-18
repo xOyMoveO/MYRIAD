@@ -3,7 +3,7 @@ package com.myriad.game;
 /**
  * 训练模式（服务端全局开关，命令 /myriad train on|off / GUI）。
  * 开启后：跳过正式对局阶段校验，只要已选择角色即可施放技能；玩家仍可选择
- * 玄霄宗或幽冥宗，技能、普攻和战术装置沿用正式对局的敌我规则。
+ * 守护或毁灭，技能、普攻和战术装置沿用正式对局的敌我规则。
  * 额外开关（train on 后默认全部关闭，由训练 GUI 单独开启）：
  *  - 无冷却：技能施放不进入冷却；
  *  - 无限金币：商店购买不消耗金币；
@@ -22,6 +22,7 @@ public final class TrainingMode {
     }
 
     public static void setEnabled(boolean value) {
+        if(!value)noCooldown=noGoldCost=noMana=false;
         enabled = value;
     }
 

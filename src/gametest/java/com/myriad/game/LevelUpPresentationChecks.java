@@ -22,11 +22,11 @@ final class LevelUpPresentationChecks {
         boolean mod=ModState.isEnabled(),training=TrainingMode.isEnabled();var viewers=new ArrayList<Viewer>();
         try{
             ModState.setEnabled(true);TrainingMode.setEnabled(true);
-            var actor=viewer(h,Faction.XUANXIAO,0);viewers.add(actor);
-            var ally=viewer(h,Faction.XUANXIAO,3);viewers.add(ally);
-            var enemy=viewer(h,Faction.YOUMING,3);viewers.add(enemy);
+            var actor=viewer(h,Faction.GUARDIAN,0);viewers.add(actor);
+            var ally=viewer(h,Faction.GUARDIAN,3);viewers.add(ally);
+            var enemy=viewer(h,Faction.DESTRUCTION,3);viewers.add(enemy);
             var unassigned=viewer(h,null,3);viewers.add(unassigned);
-            var distant=viewer(h,Faction.XUANXIAO,90);viewers.add(distant);
+            var distant=viewer(h,Faction.GUARDIAN,90);viewers.add(distant);
             h.assertTrue(h.getLevel().players().contains(actor.player),"The subject participates in the actual level player list");
             var d=PlayerDataProvider.get(actor.player);d.setCharacterId("yingxiao");d.setLevel(1);d.setXp(0);d.refundAllSkillPointsForTraining();
             CharacterType.applyInitialAttributes(actor.player,CharacterType.YINGXIAO);

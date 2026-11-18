@@ -17,7 +17,7 @@ import com.myriad.player.PlayerDataProvider;
 /**
  * 灵源汲取与运输流程（策划案2.1节）。
  * <p>
- * 旧版玄霄宗灵源运输流程；对称占点模式下不再启用；
+ * 旧版守护灵源运输流程；对称占点模式下不再启用；
  * 成功后获得"携带灵源"状态（减速 + 发光），运回己方传送阵交付计分。
  */
 public final class SpiritFlow {
@@ -129,7 +129,7 @@ public final class SpiritFlow {
             player.sendSystemMessage(Component.translatable("message.myriad.match_not_playing"));
             return;
         }
-        if (manager.factionOf(player) != Faction.XUANXIAO) {
+        if (manager.factionOf(player) != Faction.GUARDIAN) {
             player.sendSystemMessage(Component.translatable("message.myriad.deliver_wrong_team"));
             return;
         }

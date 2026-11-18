@@ -33,7 +33,7 @@ public final class ArenaSwitchRegression {
             LaneSystem.initialize(server); MonsterManager.initialize(server);
             VisionSystem.initialize(server); MapSystem.initialize(server);
             byte[] originalLayout = Files.readAllBytes(root.resolve(files[0]));
-            var originalBase = LaneSystem.respawnPoint(Faction.YOUMING);
+            var originalBase = LaneSystem.respawnPoint(Faction.DESTRUCTION);
             var originalVeins = manager.spiritVeinSpawnSnapshot(false);
             var rollVeins = GameManager.class.getDeclaredMethod("rollSpiritVeins"); rollVeins.setAccessible(true);
             helper.assertTrue((boolean)rollVeins.invoke(manager), "Original 5v5 veins are configured");
@@ -43,7 +43,7 @@ public final class ArenaSwitchRegression {
             helper.assertTrue(!((Map<?,?>)field(MonsterManager.class, null, "STATES")).isEmpty(), "Previous arena NPC created");
             helper.assertTrue(MatchArena.select(server, "3v3"), "Server accepts 3v3 while waiting");
             helper.assertTrue(((Map<?,?>)field(MonsterManager.class, null, "STATES")).isEmpty(), "Switch clears NPC runtime");
-            helper.assertTrue(LaneSystem.respawnPoint(Faction.YOUMING).equals(new BlockPos(4128,65,96)), "3v3 base replaces 5v5 base");
+            helper.assertTrue(LaneSystem.respawnPoint(Faction.DESTRUCTION).equals(new BlockPos(4128,65,96)), "3v3 base replaces 5v5 base");
             helper.assertTrue(MonsterManager.spawnPointInfos().size() == 13, "Only 3v3 monster camps and boss pit active");
             helper.assertTrue(VisionSystem.brushInfos().size() == 12 && MapSystem.corner(1).getX() == 4096, "Grass and minimap switched together");
             var editor = MapFacilityEditor.snapshotEntries(server);
@@ -61,11 +61,11 @@ public final class ArenaSwitchRegression {
             byte[] duelMonsterConfig = Files.readAllBytes(profile.resolve(files[1]));
             MonsterManager.initialize(server);
             helper.assertTrue(MonsterManager.spawnPointInfos().size()==13, "All monster points survive disk reload");
-            var crystal = LaneSystem.crystalPoint(Faction.YOUMING);
-            helper.assertTrue(LaneSystem.setCrystalPoint(Faction.YOUMING, crystal.offset(1,0,0)), "3v3 crystal editable");
+            var crystal = LaneSystem.crystalPoint(Faction.DESTRUCTION);
+            helper.assertTrue(LaneSystem.setCrystalPoint(Faction.DESTRUCTION, crystal.offset(1,0,0)), "3v3 crystal editable");
             LaneSystem.initialize(server);
-            helper.assertTrue(LaneSystem.crystalPoint(Faction.YOUMING).equals(crystal.offset(1,0,0)), "Crystal position persisted and reloaded");
-            LaneSystem.setCrystalPoint(Faction.YOUMING, crystal);
+            helper.assertTrue(LaneSystem.crystalPoint(Faction.DESTRUCTION).equals(crystal.offset(1,0,0)), "Crystal position persisted and reloaded");
+            LaneSystem.setCrystalPoint(Faction.DESTRUCTION, crystal);
             helper.assertTrue(java.util.Arrays.equals(originalLayout, Files.readAllBytes(root.resolve(files[0]))),
                     "Editing 3v3 crystal preserves 5v5 layout");
             helper.assertTrue(java.util.Arrays.equals(originalMonsterConfig, Files.readAllBytes(root.resolve(files[1])))
@@ -87,7 +87,7 @@ public final class ArenaSwitchRegression {
                     "Tower/crystal/fountain markers work without loaded building entities");
             @SuppressWarnings("unchecked")
             var destroyedTowers = (java.util.Set<String>)field(LaneSystem.class, null, "DESTROYED_TOWERS");
-            destroyedTowers.add("youming/mid/1");
+            destroyedTowers.add("destruction/mid/1");
             helper.assertTrue(LaneSystem.minimapFacilities().stream().filter(p -> p.kind() == 4).count() == 3,
                     "Destroyed tower icon removed, not restored from layout");
             destroyedTowers.clear();
@@ -121,7 +121,7 @@ public final class ArenaSwitchRegression {
             MatchArena.shutdown(); MatchArena.initialize(server);
             helper.assertTrue(MatchArena.active()==MatchArena.Mode.DUEL, "World selection persists across lifecycle reload");
             helper.assertTrue(MatchArena.select(server,"5v5"), "Switch back without changing world");
-            helper.assertTrue(LaneSystem.respawnPoint(Faction.YOUMING).equals(originalBase), "Original 5v5 base restored");
+            helper.assertTrue(LaneSystem.respawnPoint(Faction.DESTRUCTION).equals(originalBase), "Original 5v5 base restored");
             helper.assertTrue((boolean)field(GameManager.class, manager, "spiritVeinsEnabled")
                     && manager.spiritVeinSpawnSnapshot(false).equals(originalVeins), "5v5 retains its original veins");
             var legacyEditor = MapFacilityEditor.snapshotEntries(server);

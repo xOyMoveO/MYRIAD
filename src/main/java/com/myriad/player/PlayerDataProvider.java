@@ -152,8 +152,8 @@ public final class PlayerDataProvider {
                 (int) data.getMana(),
                 data.getCarrying(),
                 NetworkSetup.factionId(data.getFaction()),
-                manager == null ? 0 : manager.getXuanxiaoScore(),
-                manager == null ? 0 : manager.getYoumingScore(),
+                manager == null ? 0 : manager.getGuardianScore(),
+                manager == null ? 0 : manager.getDestructionScore(),
                 manager == null ? 0 : NetworkSetup.phaseId(manager.getPhase()),
                 data.getCharacterId() == null ? "" : data.getCharacterId(),
                 NetworkSetup.cooldownOf(data, CharacterType.SLOT_Q),
@@ -535,10 +535,10 @@ public final class PlayerDataProvider {
         PlayerData data = get(player);
         Faction faction = data == null ? null : data.getFaction();
         int color;
-        if (faction == Faction.XUANXIAO) {
-            color = 0xFFFF5555;
-        } else if (faction == Faction.YOUMING) {
-            color = 0xFF55AAFF;
+        if (faction == Faction.GUARDIAN) {
+            color = Faction.GUARDIAN.argb();
+        } else if (faction == Faction.DESTRUCTION) {
+            color = Faction.DESTRUCTION.argb();
         } else {
             color = 0xFFFFFFFF;
         }
@@ -869,7 +869,7 @@ public final class PlayerDataProvider {
         ensureTacticalMap(player);
     }
 
-    /** 宗门战图是对局基础工具：可自由换手，但丢失后会自动补回。 */
+    /** 阵营战图是对局基础工具：可自由换手，但丢失后会自动补回。 */
     private static void ensureTacticalMap(ServerPlayer player) {
         net.minecraft.world.entity.player.Inventory inv = player.getInventory();
         for (int i = 0; i < inv.getContainerSize(); i++) {
@@ -955,7 +955,7 @@ public final class PlayerDataProvider {
                 .withStyle(net.minecraft.ChatFormatting.BOLD);
     }
 
-    /** 开局重置初始物品：仅保留初始武器和不可消耗的宗门战图。 */
+    /** 开局重置初始物品：仅保留初始武器和不可消耗的阵营战图。 */
     public static void resetInitialInventory(ServerPlayer player) {
         net.minecraft.world.entity.player.Inventory inv = player.getInventory();
         for (int i = 1; i < inv.getContainerSize(); i++) {
@@ -1723,7 +1723,7 @@ public final class PlayerDataProvider {
         return look.x * toAttacker.x + look.z * toAttacker.z < -1.0E-6;
     }
 
-    /** 阵营判定：玩家、兵线单位和防御塔均遵守宗门友军规则。 */
+    /** 阵营判定：玩家、兵线单位和防御塔均遵守阵营友军规则。 */
     private static boolean isAlly(ServerPlayer caster, LivingEntity other) {
         GameManager manager = GameManager.get();
         if (manager == null) {
@@ -2053,16 +2053,16 @@ public final class PlayerDataProvider {
                         return 0;
                     }
                     ctx.getSource().sendSuccess(() -> Component.translatable("message.myriad.status",
-                            manager.getPhase().name(), manager.getXuanxiaoScore(),
-                            GameRules.TEAM_TARGET_SCORE, manager.getYoumingScore()), false);
+                            manager.getPhase().name(), manager.getGuardianScore(),
+                            GameRules.TEAM_TARGET_SCORE, manager.getDestructionScore()), false);
                     return 1;
                 }))
                 .then(Commands.literal("team")
                         .requires(src -> src.permissions().hasPermission(Permissions.COMMANDS_MODERATOR))
                         .then(Commands.argument("faction", StringArgumentType.word())
                                 .suggests((ctx, builder) -> {
-                                    builder.suggest("xuanxiao");
-                                    builder.suggest("youming");
+                                    builder.suggest("guardian");
+                                    builder.suggest("destruction");
                                     return builder.buildFuture();
                                 })
                                 .executes(ctx -> {
@@ -2232,7 +2232,7 @@ public final class PlayerDataProvider {
             operation.then(Commands.literal("crystal")
                     .then(Commands.argument("faction", StringArgumentType.word())
                             .suggests((ctx, builder) -> {
-                                builder.suggest("xuanxiao"); builder.suggest("youming");
+                                builder.suggest("guardian"); builder.suggest("destruction");
                                 return builder.buildFuture();
                             })
                             .executes(ctx -> configureLaneCrystal(ctx.getSource(), clear,
@@ -2251,7 +2251,7 @@ public final class PlayerDataProvider {
             operation.then(Commands.literal("tower")
                     .then(Commands.argument("faction", StringArgumentType.word())
                             .suggests((ctx, builder) -> {
-                                builder.suggest("xuanxiao"); builder.suggest("youming");
+                                builder.suggest("guardian"); builder.suggest("destruction");
                                 return builder.buildFuture();
                             })
                             .then(Commands.argument("lane", StringArgumentType.word())
@@ -2416,7 +2416,7 @@ public final class PlayerDataProvider {
         return Math.max(1, lines.size());
     }
 
-    private static void assignTeam(ServerPlayer player, Faction faction) {
+    public static void assignTeam(ServerPlayer player, Faction faction) {
         // Consume a pending round reset before writing the administrator's new choice.
         if (GameManager.get() != null) {
             GameManager.get().onPlayerJoin(player);
@@ -2524,41 +2524,9 @@ public final class PlayerDataProvider {
         }
     }
 
-    /** 训练模式 GUI 操作（仅训练模式）：升级、金币、宗门与训练开关。 */
+    /** 训练模式 GUI 操作（仅训练模式）：升级、金币、阵营与训练开关。 */
     public static void trainAction(ServerPlayer player, String type, boolean value) {
-        if (!com.myriad.game.TrainingMode.isEnabled()) {
-            return;
-        }
-        PlayerData data = get(player);
-        if (data == null) {
-            return;
-        }
-        switch (type) {
-            case "level" -> {
-                LevelSystem.addXp(player, data, LevelSystem.xpToNext(data.getLevel()));
-            }
-            case "gold" -> {
-                data.addGold(value ? 10000 : 1000);
-                player.sendSystemMessage(Component.translatable("message.myriad.gold_set", data.getGold()));
-            }
-            case "faction_xuanxiao" -> {
-                assignTeam(player, Faction.XUANXIAO);
-                player.sendSystemMessage(Component.translatable(
-                        "message.myriad.team_assigned", Faction.XUANXIAO.displayName()));
-            }
-            case "faction_youming" -> {
-                assignTeam(player, Faction.YOUMING);
-                player.sendSystemMessage(Component.translatable(
-                        "message.myriad.team_assigned", Faction.YOUMING.displayName()));
-            }
-            case "nocooldown" -> com.myriad.game.TrainingMode.setNoCooldown(value);
-            case "nogold" -> com.myriad.game.TrainingMode.setNoGoldCost(value);
-            case "nomana" -> com.myriad.game.TrainingMode.setNoMana(value);
-            default -> {
-                return;
-            }
-        }
-        syncToClient(player);
+        com.myriad.game.TrainingActions.apply(player,type,value);
     }
 
     /** 模组开关广播：通知全体并同步客户端状态；关闭时重置全体为原版属性，开启时恢复模组初始属性 */
@@ -2589,14 +2557,14 @@ public final class PlayerDataProvider {
 
     // ---- 开局管理 UI（服务端处理） ----
 
-    /** 发送在线玩家与宗门列表（factionId 0=未分配 1=玄霄宗 2=幽冥宗） */
+    /** 发送在线玩家与阵营列表（factionId 0=未分配 1=守护 2=毁灭） */
     public static void sendTeamList(ServerPlayer requester) {
         java.util.Map<String, Integer> teams = new java.util.HashMap<>();
         MinecraftServer server = ((net.minecraft.server.level.ServerLevel) requester.level()).getServer();
         for (ServerPlayer p : server.getPlayerList().getPlayers()) {
             PlayerData d = get(p);
             Faction f = d == null ? null : d.getFaction();
-            teams.put(p.getName().getString(), f == null ? 0 : (f == Faction.XUANXIAO ? 1 : 2));
+            teams.put(p.getName().getString(), f == null ? 0 : (f == Faction.GUARDIAN ? 1 : 2));
         }
         com.myriad.network.Packets.sendToPlayer(requester,
                 new NetworkSetup.TeamListPayload(teams, com.myriad.game.MatchArena.active().id,
@@ -2637,7 +2605,7 @@ public final class PlayerDataProvider {
         if (target == null) {
             return;
         }
-        Faction faction = factionId == 1 ? Faction.XUANXIAO : factionId == 2 ? Faction.YOUMING : null;
+        Faction faction = factionId == 1 ? Faction.GUARDIAN : factionId == 2 ? Faction.DESTRUCTION : null;
         assignTeam(target, faction);
         sendTeamList(admin);
     }
@@ -2665,7 +2633,7 @@ public final class PlayerDataProvider {
         if (mode == 0) {
             manager.startMatch(server);
         } else {
-            // 手动模式：未分配玩家自动补幽冥宗，双方必须均有玩家。
+            // 手动模式：未分配玩家自动补毁灭，双方必须均有玩家。
             manager.startMatchWithCurrent(server);
         }
         sendTeamList(admin);

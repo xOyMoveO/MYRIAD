@@ -17,9 +17,10 @@ public final class MatchTeams {
             var team = scoreboard.getPlayerTeam(id);
             if (team == null) {
                 team = scoreboard.addPlayerTeam(id);
-                team.setColor(java.util.Optional.of(faction == Faction.XUANXIAO ? TeamColor.RED : TeamColor.AQUA));
                 team.setNameTagVisibility(Team.Visibility.HIDE_FOR_OTHER_TEAMS);
             }
+            team.setColor(java.util.Optional.of(faction == Faction.GUARDIAN ? TeamColor.BLUE : TeamColor.RED));
+            team.setDisplayName(faction.displayName());
             if (old != team) scoreboard.addPlayerToTeam(player.getScoreboardName(), team);
         }
     }

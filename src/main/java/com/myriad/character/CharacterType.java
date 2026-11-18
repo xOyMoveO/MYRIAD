@@ -39,10 +39,10 @@ import com.myriad.game.Faction;
  * 角色表（策划案第三节）：1 被动 + 若干主动技能。
  * 技能槽位通用按键：0=Q, 1=W, 2=E, 3=R, 4=F，预留至 5 个；
  * 未填写的槽位返回 null，由调用方跳过。
- * 当前角色池由玄霄宗与幽冥宗共享，旧归属字段仅保留阵营侧展示位置。
+ * 当前角色池由守护与毁灭共享，旧归属字段仅保留阵营侧展示位置。
  */
 public enum CharacterType {
-    YIKE("yike",Faction.XUANXIAO,new Skill[0]) {
+    YIKE("yike",Faction.GUARDIAN,new Skill[0]) {
         @Override public double initialHp(){return 550;}
         @Override public double growthHp(){return 75;}
         @Override public double initialAd(){return 65;}
@@ -55,7 +55,7 @@ public enum CharacterType {
         @Override public double initialHpRegen(){return 2;}
         @Override public double initialManaRegen(){return 4;}
     },
-    YINGXIAO("yingxiao", Faction.XUANXIAO, new Skill[] { new YingXiaoPassiveSkill() },
+    YINGXIAO("yingxiao", Faction.GUARDIAN, new Skill[] { new YingXiaoPassiveSkill() },
             new YingXiSkill(), new HuaYingSkill(), new YingShaSkill(), new LingDunSkill()) {
         @Override public double initialHpRegen() { return 3.5; }
         @Override public double initialManaRegen() { return 9.1; }
@@ -132,7 +132,7 @@ public enum CharacterType {
         }
     },
 
-    TIANXING("tianxing", Faction.YOUMING, new Skill[] { new TianXingPassiveSkill() },
+    TIANXING("tianxing", Faction.DESTRUCTION, new Skill[] { new TianXingPassiveSkill() },
             new ShanLeiSkill(), new LeiJieZhanSkill(), new TianLeiHuTiSkill(), new JiuTianShenLeiSkill()) {
         @Override public double initialSp() { return 0.0; }
         @Override
@@ -221,7 +221,7 @@ public enum CharacterType {
         }
     },
 
-    FENJUE("fenjue", Faction.YOUMING, new Skill[] { new FenJuePassiveSkill() },
+    FENJUE("fenjue", Faction.DESTRUCTION, new Skill[] { new FenJuePassiveSkill() },
             new LieYanZhanSkill(), new RongYanLaoLongSkill(), new FenJueBaoFaSkill(), new FenTianHuoHaiSkill()) {
         @Override public double initialSp() { return 0.0; }
         @Override
@@ -311,7 +311,7 @@ public enum CharacterType {
         }
     },
 
-    XUANCHEN("xuanchen", Faction.XUANXIAO, new Skill[] { new XuanChenPassiveSkill() },
+    XUANCHEN("xuanchen", Faction.GUARDIAN, new Skill[] { new XuanChenPassiveSkill() },
             new LingFuSkill(), new ChuanSongZhenSkill(), new MoYangHuZhenSkill(), new ZhouTianFuZhenSkill()) {
         @Override
         public double initialHp() {
@@ -404,7 +404,7 @@ public enum CharacterType {
         }
     },
 
-    SULAN("sulan", Faction.YOUMING, new Skill[] { new SuLanPassiveSkill() },
+    SULAN("sulan", Faction.DESTRUCTION, new Skill[] { new SuLanPassiveSkill() },
             new JiFengTuCiSkill(), new LingFengBiaoJiSkill(), new FengQiangSkill(), new YuFengQianLiSkill()) {
         @Override public double initialSp() { return 0.0; }
         @Override
@@ -494,7 +494,7 @@ public enum CharacterType {
         }
     },
 
-    LINGYUAN("lingyuan", Faction.XUANXIAO, new Skill[] { new LingYuanSkills(LingYuanSkills.Type.PASSIVE) },
+    LINGYUAN("lingyuan", Faction.GUARDIAN, new Skill[] { new LingYuanSkills(LingYuanSkills.Type.PASSIVE) },
             new LingYuanSkills(LingYuanSkills.Type.Q), new LingYuanSkills(LingYuanSkills.Type.W),
             new LingYuanSkills(LingYuanSkills.Type.E), new LingYuanSkills(LingYuanSkills.Type.R)) {
         @Override public double initialSp() { return 30.0; }
@@ -517,7 +517,7 @@ public enum CharacterType {
         @Override public double growthMp() { return 0.0; }
     },
 
-    HANZE("hanze", Faction.YOUMING, new Skill[] { new HanzeSkills(HanzeSkills.Type.PASSIVE) },
+    HANZE("hanze", Faction.DESTRUCTION, new Skill[] { new HanzeSkills(HanzeSkills.Type.PASSIVE) },
             new HanzeSkills(HanzeSkills.Type.Q), new HanzeSkills(HanzeSkills.Type.W),
             new HanzeSkills(HanzeSkills.Type.E), new HanzeSkills(HanzeSkills.Type.R)) {
         @Override public double initialHp() { return 740.0; }
@@ -540,7 +540,7 @@ public enum CharacterType {
         @Override public double growthMp() { return 0.0; }
     },
 
-    QINGLUO("qingluo", Faction.XUANXIAO, new Skill[] { new QingLuoSkills(QingLuoSkills.Type.PASSIVE) },
+    QINGLUO("qingluo", Faction.GUARDIAN, new Skill[] { new QingLuoSkills(QingLuoSkills.Type.PASSIVE) },
             new QingLuoSkills(QingLuoSkills.Type.Q), new QingLuoSkills(QingLuoSkills.Type.W),
             new QingLuoSkills(QingLuoSkills.Type.E), new QingLuoSkills(QingLuoSkills.Type.R)) {
         @Override public double initialHp() { return 580.0; }
@@ -563,7 +563,7 @@ public enum CharacterType {
         @Override public double growthMp() { return 0.0; }
     },
 
-    CHIXIAO("chixiao", Faction.YOUMING, new Skill[] { new ChiXiaoSkills(ChiXiaoSkills.Type.PASSIVE) },
+    CHIXIAO("chixiao", Faction.DESTRUCTION, new Skill[] { new ChiXiaoSkills(ChiXiaoSkills.Type.PASSIVE) },
             new ChiXiaoSkills(ChiXiaoSkills.Type.Q), new ChiXiaoSkills(ChiXiaoSkills.Type.W),
             new ChiXiaoSkills(ChiXiaoSkills.Type.E), new ChiXiaoSkills(ChiXiaoSkills.Type.R)) {
         @Override public double initialHp() { return 700.0; }
@@ -586,7 +586,7 @@ public enum CharacterType {
         @Override public double growthMp() { return 0.0; }
     },
 
-    YUNSHENG("yunsheng", Faction.XUANXIAO, new Skill[] { new YunShengSkills(YunShengSkills.Type.PASSIVE) },
+    YUNSHENG("yunsheng", Faction.GUARDIAN, new Skill[] { new YunShengSkills(YunShengSkills.Type.PASSIVE) },
             new YunShengSkills(YunShengSkills.Type.Q), new YunShengSkills(YunShengSkills.Type.W),
             new YunShengSkills(YunShengSkills.Type.E), new YunShengSkills(YunShengSkills.Type.R)) {
         @Override public double initialHp() { return 600.0; }
@@ -609,7 +609,7 @@ public enum CharacterType {
         @Override public double growthMp() { return 0.0; }
     },
 
-    KEHENG("keheng",Faction.XUANXIAO,new Skill[0]) {
+    KEHENG("keheng",Faction.GUARDIAN,new Skill[0]) {
         @Override public double initialHp(){return 600;}
         @Override public double growthHp(){return 85;}
         @Override public double initialAd(){return 65;}
@@ -623,7 +623,7 @@ public enum CharacterType {
         @Override public double initialManaRegen(){return 4;}
     },
 
-    SHUO("shuo",Faction.XUANXIAO,new Skill[0]) {
+    SHUO("shuo",Faction.GUARDIAN,new Skill[0]) {
         @Override public double initialHp(){return 640;}
         @Override public double initialAd(){return 65;}
         @Override public double initialSp(){return 30;}
@@ -637,7 +637,7 @@ public enum CharacterType {
         @Override public double growthHp(){return 100;}
     },
 
-    RIVET("rivet",Faction.XUANXIAO,new Skill[0]) {
+    RIVET("rivet",Faction.GUARDIAN,new Skill[0]) {
         @Override public double initialHp(){return 700;}
         @Override public double growthHp(){return 110;}
         @Override public double initialAd(){return 65;}
