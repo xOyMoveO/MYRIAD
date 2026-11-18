@@ -16,7 +16,7 @@ final class SkillChoiceUiChecks {
             for (int height : new int[]{180, 240, 270, 344, 360, 480}) {
                 var base = SkillChoiceLayout.create(width, height, 0);
                 var panel = base.panel();
-                h.assertTrue(panel.w() <= 300, "Panel width follows the compact content limit");
+                h.assertTrue(panel.w() <= 480, "Responsive panel retains a bounded readable size");
                 h.assertTrue(base.titleY() > panel.y() + panel.h() * .18 && base.viewport().y() >= base.statusY() + 12,
                         "Header clears the complete sword crest before the four rows begin");
                 h.assertTrue(base.primary().bottom() <= panel.bottom() - 14,
@@ -91,11 +91,22 @@ final class SkillChoiceUiChecks {
                     var moved = base.attribute(index, requested);
                     h.assertTrue(base.canHit(moved, moved.x() + moved.w() / 2, moved.y() + moved.h() / 2),
                             "All five growth icons are reachable and fit horizontally");
+                    if(index>0)h.assertTrue(base.attribute(index-1,0).x()==b.x()&&b.y()-base.attribute(index-1,0).y()==base.attributeRowHeight(),"Five attributes form aligned, evenly spaced vertical rows");
+                    int gap=-1;
+                    for(int cell=0;cell<SkillChoiceLayout.ATTRIBUTE_LEVELS;cell++){
+                        var pip=base.attributeCell(index,cell,requested);
+                        h.assertTrue(pip.w()==pip.h()&&pip.w()==base.attributeCell(0,0,0).w(),"All 50 level indicators are equal squares");
+                        h.assertTrue(pip.x()>moved.right()&&pip.right()<=v.right()&&pip.y()>=moved.y()&&pip.bottom()<=moved.bottom(),"Ten cells fit right of each icon, including small GUI sizes");
+                        if(cell>0){int nextGap=pip.x()-base.attributeCell(index,cell-1,requested).right();if(gap<0)gap=nextGap;h.assertTrue(nextGap==gap&&gap>0,"All ten indicators have identical positive gaps");}
+                        h.assertTrue(!moved.contains(pip.x()+pip.w()/2.0,pip.y()+pip.h()/2.0),"Read-only cells are not icon purchase targets");
+                    }
                     var buy = base.supplyAction(index, 0);
                     h.assertTrue(buy.x() >= v.x() && buy.right() <= v.right(), "Explicit supply purchase fits the viewport");
                 }
             }
         }
+        h.assertTrue(SkillChoiceLayout.create(854,480,0).panel().w()>SkillChoiceLayout.create(427,240,0).panel().w(),
+                "C panel grows with the available GUI instead of remaining capped at 300 pixels");
         var reference = SkillChoiceLayout.create(427, 240, 0);
         var second = reference.card(1);
         var shortTip = SkillChoiceTooltipLayout.create(427, 240, second, 2, 0, 64);
@@ -105,6 +116,11 @@ final class SkillChoiceUiChecks {
         h.assertTrue(longTip.box().x() > second.right() && longTip.box().right() <= 427,
                 "Standard GUI uses readable right-side space before covering candidates");
         var clicks = new SkillChoiceInteraction();
+        h.assertTrue(SkillChoiceLayout.ATTRIBUTE_LEVELS==com.myriad.character.rework.FirstGroupGrowth.ATTRIBUTE_CAP,"Ten visible cells match the server rank cap");
+        for(int rank=0;rank<=10;rank++){
+            int lit=0;for(int cell=0;cell<10;cell++)if(SkillChoiceLayout.attributeCellLit(rank,cell))lit++;
+            h.assertTrue(lit==rank,"A server rank lights exactly that many leading cells");
+        }
         h.assertTrue(!clicks.select("skill-a", false, true), "Single click selects without spending");
         h.assertTrue(clicks.select("skill-a", true, true), "The second click on the same icon may spend one point");
         h.assertTrue(!clicks.select("skill-a", true, true), "Additional double-click events cannot repeat that purchase");

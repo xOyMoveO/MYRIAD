@@ -40,8 +40,8 @@ public final class NetworkSetup {
             int mana,
             int carrying,
             int factionId,
-            int xuanxiaoScore,
-            int youmingScore,
+            int guardianScore,
+            int destructionScore,
             int phaseId,
             String characterId,
             int cdQ,
@@ -86,8 +86,8 @@ public final class NetworkSetup {
             buf.writeInt(payload.mana());
             buf.writeInt(payload.carrying());
             buf.writeInt(payload.factionId());
-            buf.writeInt(payload.xuanxiaoScore());
-            buf.writeInt(payload.youmingScore());
+            buf.writeInt(payload.guardianScore());
+            buf.writeInt(payload.destructionScore());
             buf.writeInt(payload.phaseId());
             buf.writeUtf(payload.characterId());
             buf.writeInt(payload.cdQ());
@@ -189,8 +189,8 @@ public final class NetworkSetup {
     }
 
     /** 玩家当前所在灵脉的争夺状态（服务端 -> 客户端 HUD）。 */
-    public record VeinStatusPayload(boolean visible, int index, boolean large, int xuanxiaoPlayers,
-            int youmingPlayers, int progress, int captureTicks) implements CustomPacketPayload {
+    public record VeinStatusPayload(boolean visible, int index, boolean large, int guardianPlayers,
+            int destructionPlayers, int progress, int captureTicks) implements CustomPacketPayload {
         public static final Type<VeinStatusPayload> TYPE =
                 new Type<>(Identifier.fromNamespaceAndPath(Myriad.MODID, "vein_status"));
         public static final StreamCodec<FriendlyByteBuf, VeinStatusPayload> STREAM_CODEC =
@@ -200,8 +200,8 @@ public final class NetworkSetup {
             buf.writeBoolean(payload.visible());
             buf.writeInt(payload.index());
             buf.writeBoolean(payload.large());
-            buf.writeInt(payload.xuanxiaoPlayers());
-            buf.writeInt(payload.youmingPlayers());
+            buf.writeInt(payload.guardianPlayers());
+            buf.writeInt(payload.destructionPlayers());
             buf.writeInt(payload.progress());
             buf.writeInt(payload.captureTicks());
         }
@@ -619,7 +619,7 @@ public final class NetworkSetup {
         }
     }
 
-    /** 开局管理：分配玩家宗门（客户端 -> 服务端）；factionId 0=未分配 1=玄霄宗 2=幽冥宗 */
+    /** 开局管理：分配玩家阵营（客户端 -> 服务端）；factionId 0=未分配 1=守护 2=毁灭 */
     public record SetTeamPayload(String playerName, int factionId) implements CustomPacketPayload {
         public static final Type<SetTeamPayload> TYPE =
                 new Type<>(Identifier.fromNamespaceAndPath(Myriad.MODID, "set_team"));
@@ -1195,7 +1195,7 @@ public final class NetworkSetup {
         }
     }
 
-    /** 训练模式操作（客户端 -> 服务端）：升级、金币、宗门选择及训练开关。 */
+    /** 训练模式操作（客户端 -> 服务端）：升级、金币、阵营选择及训练开关。 */
     public record TrainActionPayload(String action, boolean value) implements CustomPacketPayload {
         public static final Type<TrainActionPayload> TYPE =
                 new Type<>(Identifier.fromNamespaceAndPath(Myriad.MODID, "train_action"));
@@ -1467,7 +1467,7 @@ public final class NetworkSetup {
     }
 
     public static int factionId(Faction faction) {
-        return faction == null ? 0 : faction == Faction.XUANXIAO ? 1 : 2;
+        return faction == null ? 0 : faction == Faction.GUARDIAN ? 1 : 2;
     }
 
     public static int phaseId(GameManager.Phase phase) {

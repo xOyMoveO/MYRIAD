@@ -162,7 +162,7 @@ public final class TacticalSupplySystem {
             return true;
         }
         Faction faction = manager == null ? data.getFaction() : manager.factionOf(player);
-        if (faction == null && TrainingMode.isEnabled()) faction = Faction.XUANXIAO;
+        if (faction == null && TrainingMode.isEnabled()) faction = Faction.GUARDIAN;
         Vec3 pos = stack.is(ModItems.SCOUT_TOTEM.get())
                 ? totemPlacementPoint(player) : placementPoint(player);
         if (faction == null || pos == null) {

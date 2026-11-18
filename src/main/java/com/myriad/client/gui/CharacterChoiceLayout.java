@@ -25,4 +25,5 @@ public record CharacterChoiceLayout(Box panel,Box grid,Box details,int columns,i
     public Box close(){return new Box(panel.right()-28,panel.y()+7,18,18);}
     public Box skillViewport(){return new Box(details.x()+6,details.y()+44,details.w()-14,Math.max(0,details.h()-50));}
     public static boolean available(String id,String current,Map<String,Boolean> taken){return id!=null&&!id.isBlank()&&(!taken.getOrDefault(id,false)||id.equals(current));}
+    public static boolean canConfirm(boolean modEnabled,boolean available){return modEnabled&&available;}
 }

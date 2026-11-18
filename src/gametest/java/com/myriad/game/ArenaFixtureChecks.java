@@ -214,30 +214,30 @@ public final class ArenaFixtureChecks implements ModInitializer {
             catch(com.mojang.brigadier.exceptions.CommandSyntaxException expected) { denied=true; }
             check(denied && MatchArena.active().id.equals(mode), "command dispatcher rejects non-admin mode selection");
             var before = MapFacilityEditor.snapshotEntries(server);
-            receive(players.getFirst(),new NetworkSetup.MapFacilityActionPayload("crystal","youming","","clear"));
+            receive(players.getFirst(),new NetworkSetup.MapFacilityActionPayload("crystal","destruction","","clear"));
             check(before.equals(MapFacilityEditor.snapshotEntries(server)), "non-admin facility payload cannot mutate map");
             command("myriad mod on");
             check(players.stream().allMatch(p -> p.position().distanceTo(new Vec3(-32.5,64,64.5))<.01), "both battlefields use the shared world lobby");
             check(LaneSystem.enabledLanes().size()==(mode.equals("5v5")?3:1), "profile restores its enabled lanes");
             configurationRoundTrip();
-            var crystal=LaneSystem.crystalPoint(Faction.YOUMING);
+            var crystal=LaneSystem.crystalPoint(Faction.DESTRUCTION);
             String other=mode.equals("5v5")?"3v3":"5v5";
             byte[] otherLayout=Files.readAllBytes(MatchArena.configuration(world,MatchArena.Mode.byId(other),CONFIGS[0]));
-            check(LaneSystem.setCrystalPoint(Faction.YOUMING,crystal.offset(1,0,0)), "map edit is accepted before start");
+            check(LaneSystem.setCrystalPoint(Faction.DESTRUCTION,crystal.offset(1,0,0)), "map edit is accepted before start");
             LaneSystem.initialize(server);
-            check(LaneSystem.crystalPoint(Faction.YOUMING).equals(crystal.offset(1,0,0)), "edited point reads back from the correct profile");
-            LaneSystem.setCrystalPoint(Faction.YOUMING,crystal);
+            check(LaneSystem.crystalPoint(Faction.DESTRUCTION).equals(crystal.offset(1,0,0)), "edited point reads back from the correct profile");
+            LaneSystem.setCrystalPoint(Faction.DESTRUCTION,crystal);
             check(Arrays.equals(otherLayout,Files.readAllBytes(MatchArena.configuration(world,MatchArena.Mode.byId(other),CONFIGS[0]))), "editing one profile preserves the other profile bytes");
             MatchArena.shutdown(); MatchArena.initialize(server);
             check(MatchArena.active().id.equals(mode), "selected mode survives configuration lifecycle reload");
             // Real administrator team command, then real UI start receiver uses the manual assignments.
-            for(int i=0;i<count;i++) command("myriad team " + (i<count/2?"xuanxiao":"youming") + " ArenaFixture"+i);
+            for(int i=0;i<count;i++) command("myriad team " + (i<count/2?"guardian":"destruction") + " ArenaFixture"+i);
             server.getPlayerList().op(new net.minecraft.server.players.NameAndId(players.getFirst().getGameProfile()),Optional.of(net.minecraft.server.permissions.LevelBasedPermissionSet.OWNER),Optional.empty());
             receive(players.getFirst(),new NetworkSetup.StartMatchPayload(1,mode));
             check(GameManager.get().getPhase()==GameManager.Phase.PICKING, "registered UI start receiver enters draft with assigned teams");
-            check(players.stream().filter(p -> GameManager.get().factionOf(p)==Faction.XUANXIAO).count()==count/2, "manual teams remain balanced at mode capacity");
-            check(command("myriad team youming ArenaFixture0")==0,"draft rejects administrator team-command changes");
-            check(command("myriad arena " + other)==0 && !LaneSystem.setCrystalPoint(Faction.YOUMING,crystal.offset(4,0,0)), "draft rejects mode switching and point edits");
+            check(players.stream().filter(p -> GameManager.get().factionOf(p)==Faction.GUARDIAN).count()==count/2, "manual teams remain balanced at mode capacity");
+            check(command("myriad team destruction ArenaFixture0")==0,"draft rejects administrator team-command changes");
+            check(command("myriad arena " + other)==0 && !LaneSystem.setCrystalPoint(Faction.DESTRUCTION,crystal.offset(4,0,0)), "draft rejects mode switching and point edits");
             var order=pickOrder();
             String chosen="shuo";
             var wrong=players.stream().filter(p -> !p.getUUID().equals(order.getFirst())).findFirst().orElseThrow();
@@ -264,8 +264,8 @@ public final class ArenaFixtureChecks implements ModInitializer {
             var before=new HashSet<>(MapFacilityEditor.snapshotEntries(server));
             int ox=MatchArena.active()==MatchArena.Mode.RIFT?0:256;
             check(LaneSystem.setPathPoint(LaneSystem.Lane.MID,1,new BlockPos(ox+17,64,64)),"lane path edits save through the production map API");
-            check(LaneSystem.setTowerPoint(Faction.XUANXIAO,LaneSystem.Lane.MID,1,new BlockPos(ox+65,64,64)),"owned tower edits save");
-            check(LaneSystem.setFountainPoint(Faction.XUANXIAO,new BlockPos(ox+9,64,72)),"owned fountain edits save");
+            check(LaneSystem.setTowerPoint(Faction.GUARDIAN,LaneSystem.Lane.MID,1,new BlockPos(ox+65,64,64)),"owned tower edits save");
+            check(LaneSystem.setFountainPoint(Faction.GUARDIAN,new BlockPos(ox+9,64,72)),"owned fountain edits save");
             if(ox==0) check(LaneSystem.setLaneCorner(LaneSystem.Lane.TOP,new BlockPos(81,64,24)),"configured lane corner edits save");
             var brush=VisionSystem.brushInfos().getFirst();
             check(VisionSystem.setBrushCorner(brush.id(),1,brush.min().offset(1,0,0)),"brush corner edits save");
@@ -354,7 +354,7 @@ public final class ArenaFixtureChecks implements ModInitializer {
             clock(start+1399);tick();check(units("MELEE",null).isEmpty(),"no minion wave before 70 seconds");
             clock(start+1400);tick();
             int lanes=LaneSystem.enabledLanes().size();check(units("MELEE",null).size()==lanes*4 && units("RANGED",null).size()==lanes*4,"first wave creates four minions per team and lane");
-            var minion=units("MELEE",Faction.XUANXIAO).getFirst();Vec3 before=minion.position();
+            var minion=units("MELEE",Faction.GUARDIAN).getFirst();Vec3 before=minion.position();
             for(int i=1;i<=20;i++){clock(start+1400+i);tick();minion.move(MoverType.SELF,minion.getDeltaMovement());}
             check(minion.position().distanceTo(before)>.1,"spawned minion moves along its configured route with collision stepping");
             clock(start+9600);tick();check(MonsterManager.snapshot().getAsJsonArray("alive").size()==3,"random large boss spawns at its configured pit at eight minutes");

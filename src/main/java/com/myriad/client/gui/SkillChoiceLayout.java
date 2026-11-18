@@ -16,15 +16,15 @@ public record SkillChoiceLayout(Box panel, Box viewport, int labelWidth, int til
         return create(width, height, requestedY, 32);
     }
     public static SkillChoiceLayout create(int width, int height, int requestedY, int measuredLabelWidth) {
-        int h = Math.max(1, Math.min(280, height - 8));
-        int w = Math.max(1, Math.min(300, Math.min(width - 8, (int) Math.round(h * 1.15))));
+        int h = Math.max(1, Math.min(420, height - 8));
+        int w = Math.max(1, Math.min(480, Math.min(width - 8, (int) Math.round(h * 1.15))));
         var panel = new Box((width - w) / 2, (height - h) / 2, w, h);
         int bodyTop = titleOffset(h) + 28;
         int divider = navigationOffset(w);
         var view = new Box(panel.x + divider + 12, panel.y + bodyTop,
                 Math.max(1, w - divider - 34), Math.max(1, h - 37 - bodyTop));
         int label = Math.clamp(measuredLabelWidth, 20, 70);
-        int row = Math.clamp(view.h / 4, 17, 44);
+        int row = Math.clamp(view.h / 4, 17, 64);
         int tile = Math.clamp(row + 2, 20, 46);
         label = Math.min(label,Math.max(20,view.w-2*tile-18));
         int maximum = Math.max(0, 4 * row - view.h);
@@ -67,17 +67,28 @@ public record SkillChoiceLayout(Box panel, Box viewport, int labelWidth, int til
         int left = Math.clamp(panel.w / 12, 16, 25);
         return new Box(panel.x + left, viewport.y + 1 + index * (size + 8), size, size);
     }
-    public int attributeColumns() { return Math.clamp((viewport.w + 8) / 40, 1, 5); }
-    public Box attribute(int index, int requestedScroll) {
-        int columns = attributeColumns();
-        int width = Math.min(38, (viewport.w - (columns - 1) * 8) / columns);
-        int full = columns * width + (columns - 1) * 8;
-        return new Box(viewport.x + Math.max(0, (viewport.w - full) / 2) + (index % columns) * (width + 8),
-                viewport.y + 26 + (index / columns) * 48 - requestedScroll, width, 40);
+    public static final int ATTRIBUTE_ROWS=5,ATTRIBUTE_LEVELS=10;
+    public int attributeRowHeight(){return Math.clamp((viewport.h-28)/ATTRIBUTE_ROWS,36,52);}
+    public Box attributeRow(int index,int requestedScroll){
+        return new Box(viewport.x,viewport.y+28+index*attributeRowHeight()-requestedScroll,viewport.w,attributeRowHeight());
     }
+    /** Only the left icon is a purchase target; rank cells are read-only indicators. */
+    public Box attribute(int index, int requestedScroll) {
+        var row=attributeRow(index,requestedScroll);
+        int size=Math.clamp(row.h-12,20,32);
+        return new Box(row.x+6,row.y+2,size,size);
+    }
+    public Box attributeCell(int row,int index,int requestedScroll){
+        var icon=attribute(row,requestedScroll);
+        int left=icon.right()+8,available=Math.max(1,viewport.right()-4-left);
+        int size=Math.max(2,Math.min(22,(available-2*(ATTRIBUTE_LEVELS-1))/ATTRIBUTE_LEVELS));
+        int gap=Math.max(1,(available-ATTRIBUTE_LEVELS*size)/(ATTRIBUTE_LEVELS-1));
+        int full=ATTRIBUTE_LEVELS*size+(ATTRIBUTE_LEVELS-1)*gap;
+        return new Box(left+(available-full)/2+index*(size+gap),icon.y+(icon.h-size)/2,size,size);
+    }
+    public static boolean attributeCellLit(int rank,int index){return index>=0&&index<Math.clamp(rank,0,ATTRIBUTE_LEVELS);}
     public int attributeMaximum() {
-        int rows = (5 + attributeColumns() - 1) / attributeColumns();
-        return Math.max(0, 26 + rows * 48 - viewport.h);
+        return Math.max(0,28+ATTRIBUTE_ROWS*attributeRowHeight()-viewport.h);
     }
     public Box supply(int index, int requestedScroll) {
         return new Box(viewport.x, viewport.y + index * 32 - requestedScroll, viewport.w, 30);

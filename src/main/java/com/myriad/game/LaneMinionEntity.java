@@ -17,7 +17,7 @@ public final class LaneMinionEntity extends PathfinderMob {
         .add(Attributes.MOVEMENT_SPEED,.28).add(Attributes.FOLLOW_RANGE,48).add(Attributes.KNOCKBACK_RESISTANCE,1)
         .add(ModAttributes.PHYSICAL_DEFENSE).add(ModAttributes.MAGIC_RESISTANCE);}
     @Override protected void defineSynchedData(SynchedEntityData.Builder builder){super.defineSynchedData(builder);builder.define(STYLE,0);builder.define(MOVING,false);builder.define(DISPLAY_HEALTH,1.0F);builder.define(DISPLAY_MAX_HEALTH,1.0F);}
-    public void configure(Faction faction,int kind){entityData.set(STYLE,(faction==Faction.XUANXIAO?0:3)+kind);}
+    public void configure(Faction faction,int kind){entityData.set(STYLE,(faction==Faction.GUARDIAN?0:3)+kind);}
     public int style(){return entityData.get(STYLE);}
     public boolean moving(){return entityData.get(MOVING);}
     public void setMoving(boolean value){entityData.set(MOVING,value);}

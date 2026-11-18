@@ -14,7 +14,7 @@ import com.myriad.network.NetworkSetup;
 /**
  * 开局管理界面（/myriad start 打开）：
  * 顶部「随机开局」（按 2v4 / 3v5 均衡分配）与「开始游戏」；
- * 玩家列表每行显示当前宗门，可用玄霄宗/幽冥宗按钮分配（服务端校验权限）。
+ * 玩家列表每行显示当前阵营，可用守护/毁灭按钮分配（服务端校验权限）。
  */
 public class TeamManageScreen extends Screen {
     private static final int ROW_H = 22;
@@ -22,7 +22,7 @@ public class TeamManageScreen extends Screen {
     private static final int SECTION_COLOR = 0xFF55FFFF;
     private static final int TITLE_COLOR = 0xFFFFFFFF;
 
-    /** 服务端推送的最新玩家阵营表（name -> factionId 0=未分配 1=玄霄宗 2=幽冥宗） */
+    /** 服务端推送的最新玩家阵营表（name -> factionId 0=未分配 1=守护 2=毁灭） */
     private static Map<String, Integer> teams = new LinkedHashMap<>();
     private static String arenaId = "5v5";
     private static boolean duelAvailable;
@@ -81,7 +81,7 @@ public class TeamManageScreen extends Screen {
                 .bounds(centerX + 20, 56, 120, 20)
                 .build()).active = ready && !selecting;
 
-        // 玩家行：名字 + [宗门] + 玄霄宗/幽冥宗按钮
+        // 玩家行：名字 + [阵营] + 守护/毁灭按钮
         int i = 0;
         visibleRows = Math.max(1, (height - startY - 40) / ROW_H);
         scrollRow = Math.clamp(scrollRow, 0, Math.max(0, teams.size() - visibleRows));
@@ -91,23 +91,23 @@ public class TeamManageScreen extends Screen {
             int faction = entry.getValue();
             int y = startY + (i - scrollRow) * ROW_H;
             String factionLabel = faction == 1
-                    ? "[" + Component.translatable("faction.myriad.xuanxiao").getString() + "]"
+                    ? "[" + Component.translatable("faction.myriad.guardian").getString() + "]"
                     : faction == 2
-                            ? "[" + Component.translatable("faction.myriad.youming").getString() + "]"
+                            ? "[" + Component.translatable("faction.myriad.destruction").getString() + "]"
                             : "[" + Component.translatable("screen.myriad.team.unassigned").getString() + "]";
-            int factionColor = faction == 1 ? 0xFFFF5555 : faction == 2 ? 0xFF55AAFF : 0xFF808080;
+            int factionColor = faction == 1 ? com.myriad.game.Faction.GUARDIAN.argb() : faction == 2 ? com.myriad.game.Faction.DESTRUCTION.argb() : 0xFF808080;
             addRenderableWidget(Button.builder(Component.literal(name + "  " + factionLabel)
                             .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(factionColor)),
                             btn -> {
                             })
                     .bounds(listX, y, listW - 150, 18)
                     .build());
-            addRenderableWidget(Button.builder(Component.translatable("faction.myriad.xuanxiao"), btn -> {
+            addRenderableWidget(Button.builder(com.myriad.game.Faction.GUARDIAN.displayName(), btn -> {
                         Packets.sendToServer(new NetworkSetup.SetTeamPayload(name, 1));
                     })
                     .bounds(listX + listW - 146, y, 48, 18)
                     .build());
-            addRenderableWidget(Button.builder(Component.translatable("faction.myriad.youming"), btn -> {
+            addRenderableWidget(Button.builder(com.myriad.game.Faction.DESTRUCTION.displayName(), btn -> {
                         Packets.sendToServer(new NetworkSetup.SetTeamPayload(name, 2));
                     })
                     .bounds(listX + listW - 94, y, 48, 18)

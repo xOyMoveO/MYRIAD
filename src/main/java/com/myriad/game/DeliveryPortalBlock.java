@@ -12,7 +12,7 @@ import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.phys.BlockHitResult;
 
 /**
- * 旧版传送阵（玄霄宗交付点），对称占点模式下保持禁用以兼容旧地图。
+ * 旧版传送阵（守护交付点），对称占点模式下保持禁用以兼容旧地图。
  * 阶段2将实现双向传送功能（玄阵·墨尘 W 技能联动）。
  * 注意：Properties 必须由 DeferredRegister 传入（已设置方块 id），不可自行 Properties.of()。
  */

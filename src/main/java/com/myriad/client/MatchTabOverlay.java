@@ -38,8 +38,8 @@ public final class MatchTabOverlay {
         int x = (int)(mc.getWindow().getGuiScaledWidth()/scale-480)/2, y = 12;
         XianxiaUiSkin.tabPanel(gui,x,y,480,h);
         gui.fill(x+239,y+8,x+240,y+35+rows*25,0xFF82805E);
-        title(gui,font,Component.translatable("faction.myriad.xuanxiao").getString(),x+120,y+10,0xFFFF7676);
-        title(gui,font,Component.translatable("faction.myriad.youming").getString(),x+360,y+10,0xFF70C9FF);
+        title(gui,font,Component.translatable("faction.myriad.guardian").getString(),x+120,y+10,com.myriad.game.Faction.GUARDIAN.argb());
+        title(gui,font,Component.translatable("faction.myriad.destruction").getString(),x+360,y+10,com.myriad.game.Faction.DESTRUCTION.argb());
         int leftGold = left.stream().mapToInt(MatchTabPayload.Entry::gold).sum();
         int rightGold = right.stream().mapToInt(MatchTabPayload.Entry::gold).sum();
         title(gui,font,Component.translatable("tab.myriad.team_gold", leftGold).getString(),x+120,y+21,0xFFFFD570);

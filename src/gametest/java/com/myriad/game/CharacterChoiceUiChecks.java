@@ -28,6 +28,9 @@ final class CharacterChoiceUiChecks {
             h.assertTrue(CharacterChoiceLayout.create(screen[0],screen[1],count,-999).scrollRow()==0&&CharacterChoiceLayout.create(screen[0],screen[1],count,999).scrollRow()==first.maxScroll(),"Scroll remains clamped");
         }
         h.assertTrue(CharacterChoiceLayout.available("shuo","shuo",Map.of("shuo",true))&&!CharacterChoiceLayout.available("shuo","rivet",Map.of("shuo",true))&&CharacterChoiceLayout.available("yike","rivet",Map.of())&&!CharacterChoiceLayout.available(null,"",Map.of())&&!CharacterChoiceLayout.available("","",Map.of()),"Current role remains confirmable; another player's role and empty selections do not");
+        h.assertTrue(!CharacterChoiceLayout.canConfirm(false,true)
+                && !CharacterChoiceLayout.canConfirm(true,false) && CharacterChoiceLayout.canConfirm(true,true),
+                "The preview remains available while disabled, but confirmation requires enabled gameplay and an available role");
         System.out.println("[MYRIAD-CHOOSE-UI] PASS: "+samples+" real card-layout/scroll states at seven GUI sizes, complete roster coverage, separate hit areas and current/occupied availability; no live graphical acceptance");
     }
 }

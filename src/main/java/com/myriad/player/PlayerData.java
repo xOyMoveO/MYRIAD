@@ -252,6 +252,9 @@ public class PlayerData {
         cooldowns.put(skillId, ticks);
     }
 
+    /** Refresh only skill cooldowns, not active effects, CC, motion or basic-attack timing. */
+    public void clearSkillCooldowns() { cooldowns.clear(); }
+
     /** 每 tick 递减冷却；返回是否有冷却归零（需要同步） */
     public boolean tickCooldowns() {
         if (cooldowns.isEmpty()) {

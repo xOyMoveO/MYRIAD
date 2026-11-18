@@ -56,8 +56,8 @@ final class RosterDeliveryChecks {
             set(manager,"phase",GameManager.Phase.PLAYING);
             @SuppressWarnings("unchecked") var factions=(Map<UUID,Faction>)get(manager,"factions");
             factions.clear();
-            for(int i:new int[]{0,1,4})factions.put(viewers.get(i).player.getUUID(),Faction.XUANXIAO);
-            factions.put(viewers.get(3).player.getUUID(),Faction.YOUMING);
+            for(int i:new int[]{0,1,4})factions.put(viewers.get(i).player.getUUID(),Faction.GUARDIAN);
+            factions.put(viewers.get(3).player.getUUID(),Faction.DESTRUCTION);
             for(var viewer:viewers)PlayerDataProvider.get(viewer.player).setFaction(factions.get(viewer.player.getUUID()));
             var data=PlayerDataProvider.get(owner);
             data.setCharacterId("yike");data.setLevel(20);data.setMana(700);
@@ -143,7 +143,7 @@ final class RosterDeliveryChecks {
         set(manager,"phase",GameManager.Phase.PICKING);set(manager,"pickIndex",0);
         var order=(List<UUID>)get(manager,"pickOrder");order.clear();order.add(first.getUUID());order.add(second.getUUID());
         var factions=(Map<UUID,Faction>)get(manager,"factions");
-        factions.put(first.getUUID(),Faction.XUANXIAO);factions.put(second.getUUID(),Faction.YOUMING);
+        factions.put(first.getUUID(),Faction.GUARDIAN);factions.put(second.getUUID(),Faction.DESTRUCTION);
         PlayerDataProvider.get(first).setCharacterId(null);PlayerDataProvider.get(second).setCharacterId(null);
         ShuoPilotChecks.receive(h,second,new NetworkSetup.ChooseCharacterPayload("keheng"));
         h.assertTrue(PlayerDataProvider.get(second).getCharacterId()==null,"Out-of-turn new-role wire input is rejected");

@@ -50,12 +50,12 @@ final class RivetChecks {
             var prep=fixture(h,CASES+10);fixtures.add(prep);
             var noWall=fixture(h,CASES+11);fixtures.add(noWall);
             @SuppressWarnings("unchecked") var factions=(Map<UUID,Faction>)field(GameManager.class,manager,"factions");
-            factions.put(prep.p.getUUID(),Faction.XUANXIAO);factions.put(noWall.p.getUUID(),Faction.YOUMING);
-            fountains.put(Faction.XUANXIAO,BlockPos.containing(prep.origin).below());
-            fountains.put(Faction.YOUMING,BlockPos.containing(noWall.origin).below());
+            factions.put(prep.p.getUUID(),Faction.GUARDIAN);factions.put(noWall.p.getUUID(),Faction.DESTRUCTION);
+            fountains.put(Faction.GUARDIAN,BlockPos.containing(prep.origin).below());
+            fountains.put(Faction.DESTRUCTION,BlockPos.containing(noWall.origin).below());
             @SuppressWarnings("unchecked") var list=(List<ServerPlayer>)field(net.minecraft.server.players.PlayerList.class,h.getLevel().getServer().getPlayerList(),"players");list.add(prep.p);list.add(noWall.p);
             PlayerDataProvider.resetForHostSession(prep.p);PlayerDataProvider.resetForHostSession(noWall.p);
-            PlayerDataProvider.get(prep.p).setFaction(Faction.XUANXIAO);PlayerDataProvider.get(noWall.p).setFaction(Faction.YOUMING);
+            PlayerDataProvider.get(prep.p).setFaction(Faction.GUARDIAN);PlayerDataProvider.get(noWall.p).setFaction(Faction.DESTRUCTION);
             set(GameManager.class,manager,"phase",GameManager.Phase.PICKING);set(GameManager.class,manager,"pickIndex",0);
             @SuppressWarnings("unchecked") var order=(List<UUID>)field(GameManager.class,manager,"pickOrder");order.add(noWall.p.getUUID());order.add(prep.p.getUUID());
             prep.p.setPos(prep.origin.add(-4,0,0));noWall.p.setPos(noWall.origin.add(-4,0,0));
@@ -97,7 +97,7 @@ final class RivetChecks {
     }
     private static void setup(GameTestHelper h,Fixture f,GameManager manager) {
         int i=f.index;var d=PlayerDataProvider.get(f.p);
-        @SuppressWarnings("unchecked") var factions=(Map<UUID,Faction>)field(GameManager.class,manager,"factions");factions.put(f.p.getUUID(),Faction.XUANXIAO);d.setFaction(Faction.XUANXIAO);
+        @SuppressWarnings("unchecked") var factions=(Map<UUID,Faction>)field(GameManager.class,manager,"factions");factions.put(f.p.getUUID(),Faction.GUARDIAN);d.setFaction(Faction.GUARDIAN);
         NetworkSetup.handleChooseCharacter(f.p,new NetworkSetup.ChooseCharacterPayload("rivet"));
         // Ordinary formal selection is exercised above; per-scene initialization uses the same authoritative provider.
         PlayerDataProvider.chooseCharacter(f.p,CharacterType.byId("rivet"));d.setLevel(20);d.refundAllSkillPointsForTraining();
@@ -146,10 +146,10 @@ final class RivetChecks {
         if(i==27){wall(f,9,3);SkillSystem.cast(f.p,1);h.assertTrue(TacticalAnchor.anchor(f.p)==null&&d.getMana()==700,"W rejects a side wall beyond eight blocks without payment");}
         if(i==31||i==32){if(i==32){wall(f,7,3);SkillSystem.cast(f.p,1);wall(f,3,3);}float before=d.getMana();SkillSystem.cast(f.p,2);h.assertTrue(d.getMana()==before&&d.getCooldown(node(5).getId())==0,"Tow without a visible valid path leaves mana and cooldown unchanged: "+i);}
         if(i>=40&&i<=46||i==62||i==63)f.target.setPos(f.origin.add(6,0,0));
-        if(Set.of(22,23,44,45,46,54).contains(i)){f.ally=player(h,f,f.origin.add(1,0,0));var ad=PlayerDataProvider.get(f.ally);ad.setCharacterId("shuo");ad.setFaction(Faction.XUANXIAO);factions.put(f.ally.getUUID(),Faction.XUANXIAO);f.level.players().remove(f.ally);f.level.addNewPlayer(f.ally);}
-        if(i==0){f.ally=player(h,f,f.origin.add(1,0,-1));f.other=player(h,f,f.origin.add(-1,0,-1));for(var observer:new ServerPlayer[]{f.ally,f.other}){PlayerDataProvider.get(observer).setCharacterId("shuo");var side=observer==f.ally?Faction.XUANXIAO:Faction.YOUMING;PlayerDataProvider.get(observer).setFaction(side);factions.put(observer.getUUID(),side);}}
-        if(i==45){f.other=player(h,f,f.origin.add(.5,0,0));PlayerDataProvider.chooseCharacter(f.other,CharacterType.byId("rivet"));var od=PlayerDataProvider.get(f.other);od.setFaction(Faction.XUANXIAO);od.setLevel(20);od.refundAllSkillPointsForTraining();for(int rank=0;rank<2;rank++)PlayerDataProvider.upgradeSkill(f.other,node(4).getId());factions.put(f.other.getUUID(),Faction.XUANXIAO);}
-        if(i==39){f.other=player(h,f,f.origin);PlayerDataProvider.chooseCharacter(f.other,CharacterType.byId("rivet"));var od=PlayerDataProvider.get(f.other);od.setFaction(Faction.XUANXIAO);od.setLevel(20);od.refundAllSkillPointsForTraining();PlayerDataProvider.upgradeSkill(f.other,node(2).getId());factions.put(f.other.getUUID(),Faction.XUANXIAO);}
+        if(Set.of(22,23,44,45,46,54).contains(i)){f.ally=player(h,f,f.origin.add(1,0,0));var ad=PlayerDataProvider.get(f.ally);ad.setCharacterId("shuo");ad.setFaction(Faction.GUARDIAN);factions.put(f.ally.getUUID(),Faction.GUARDIAN);f.level.players().remove(f.ally);f.level.addNewPlayer(f.ally);}
+        if(i==0){f.ally=player(h,f,f.origin.add(1,0,-1));f.other=player(h,f,f.origin.add(-1,0,-1));for(var observer:new ServerPlayer[]{f.ally,f.other}){PlayerDataProvider.get(observer).setCharacterId("shuo");var side=observer==f.ally?Faction.GUARDIAN:Faction.DESTRUCTION;PlayerDataProvider.get(observer).setFaction(side);factions.put(observer.getUUID(),side);}}
+        if(i==45){f.other=player(h,f,f.origin.add(.5,0,0));PlayerDataProvider.chooseCharacter(f.other,CharacterType.byId("rivet"));var od=PlayerDataProvider.get(f.other);od.setFaction(Faction.GUARDIAN);od.setLevel(20);od.refundAllSkillPointsForTraining();for(int rank=0;rank<2;rank++)PlayerDataProvider.upgradeSkill(f.other,node(4).getId());factions.put(f.other.getUUID(),Faction.GUARDIAN);}
+        if(i==39){f.other=player(h,f,f.origin);PlayerDataProvider.chooseCharacter(f.other,CharacterType.byId("rivet"));var od=PlayerDataProvider.get(f.other);od.setFaction(Faction.GUARDIAN);od.setLevel(20);od.refundAllSkillPointsForTraining();PlayerDataProvider.upgradeSkill(f.other,node(2).getId());factions.put(f.other.getUUID(),Faction.GUARDIAN);}
         if(i==52||i==53){f.target.discard();var pos=BlockPos.containing(f.origin.add(0,0,2));MonsterManager.spawn(f.level,pos,MonsterType.OBSIDIAN_TORTOISE_WARDEN);f.target=f.level.getEntitiesOfClass(Mob.class,new AABB(pos).inflate(2),MonsterManager::isMonster).getFirst();((Mob)f.target).setNoAi(true);f.target.setNoGravity(true);f.target.setPos(f.origin.add(0,0,2));h.assertTrue(com.myriad.character.skills.keheng.KehengTimeFields.managedNpcRate(f.target,f.level.getGameTime())==1,"A real managed large boss remains immune to local slow");}
         if(i>=71){
             clearWall(f,4);
@@ -163,7 +163,7 @@ final class RivetChecks {
             if(i==82){
                 f.target.discard();f.other=player(h,f,f.origin.add(0,0,2.35));
                 PlayerDataProvider.chooseCharacter(f.other,CharacterType.byId("rivet"));
-                PlayerDataProvider.get(f.other).setFaction(Faction.YOUMING);factions.put(f.other.getUUID(),Faction.YOUMING);
+                PlayerDataProvider.get(f.other).setFaction(Faction.DESTRUCTION);factions.put(f.other.getUUID(),Faction.DESTRUCTION);
                 FirstGroupGrowth.initialize(f.other,PlayerDataProvider.get(f.other));PlayerHealthSystem.fill(f.other);
                 f.level.players().remove(f.other);f.level.addNewPlayer(f.other);f.target=f.other;
             }

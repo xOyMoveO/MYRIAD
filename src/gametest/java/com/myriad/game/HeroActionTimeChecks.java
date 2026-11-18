@@ -232,11 +232,11 @@ final class HeroActionTimeChecks {
             var pos=floor.offset(x,y,z);f.blocks.put(pos,h.getLevel().getBlockState(pos));h.getLevel().setBlockAndUpdate(pos,(y==0?Blocks.STONE:Blocks.AIR).defaultBlockState());}
         f.origin=Vec3.atBottomCenterOf(floor.above());f.actor=player(h,f.origin,f.scenario.role,Set.of("basic","needle","boundary","dot","dome-finish","needle-finish").contains(f.scenario.kind));
         f.target=player(h,f.origin.add(0,0,f.scenario.distance),"shuo",true);f.clock=player(h,f.origin.add(0,0,-6),"keheng",false);
-        if(f.scenario.kind.equals("ally")){PlayerDataProvider.get(f.actor).setFaction(Faction.XUANXIAO);PlayerDataProvider.get(f.clock).setFaction(Faction.XUANXIAO);}
+        if(f.scenario.kind.equals("ally")){PlayerDataProvider.get(f.actor).setFaction(Faction.GUARDIAN);PlayerDataProvider.get(f.clock).setFaction(Faction.GUARDIAN);}
         if(f.scenario.kind.endsWith("-finish")){
-            PlayerDataProvider.get(f.actor).setFaction(Faction.YOUMING);
-            PlayerDataProvider.get(f.clock).setFaction(Faction.XUANXIAO);
-            PlayerDataProvider.get(f.target).setFaction(Faction.XUANXIAO);
+            PlayerDataProvider.get(f.actor).setFaction(Faction.DESTRUCTION);
+            PlayerDataProvider.get(f.clock).setFaction(Faction.GUARDIAN);
+            PlayerDataProvider.get(f.target).setFaction(Faction.GUARDIAN);
         }
         return f;
     }

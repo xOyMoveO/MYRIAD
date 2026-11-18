@@ -28,7 +28,7 @@ public final class ModItems {
     public static final java.util.function.Supplier<Item> MINION_MAGIC_BLUE = registerSimpleItem("minion_magic_blue");
 
     public static Item minion(com.myriad.game.Faction faction, int kind) {
-        boolean red = faction == com.myriad.game.Faction.XUANXIAO;
+        boolean red = faction == com.myriad.game.Faction.DESTRUCTION;
         return switch (kind) {
             case 2 -> (red ? MINION_MAGIC_RED : MINION_MAGIC_BLUE).get();
             case 1 -> (red ? MINION_RANGED_RED : MINION_RANGED_BLUE).get();
@@ -76,7 +76,7 @@ public final class ModItems {
     public static final java.util.function.Supplier<Item> CRYSTAL_RED = registerSimpleItem("crystal_lingyuan_red");
 
     public static Item defenseTower(com.myriad.game.Faction faction, int tier) {
-        boolean red = faction == com.myriad.game.Faction.XUANXIAO;
+        boolean red = faction == com.myriad.game.Faction.DESTRUCTION;
         return switch (tier) {
             case 1 -> (red ? TOWER_01_RED : TOWER_01_BLUE).get();
             case 2 -> (red ? TOWER_02_RED : TOWER_02_BLUE).get();

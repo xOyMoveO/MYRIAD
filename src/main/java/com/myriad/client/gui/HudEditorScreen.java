@@ -134,11 +134,25 @@ public final class HudEditorScreen extends Screen {
         float targetAnchorX = state.x() * width;
         float targetAnchorY = state.y() * height;
         // 与 HudLayoutConfig.render 完全一致：先平移到目标锚点，再以该锚点缩放原始 HUD。
-        int x = Math.round(targetAnchorX + (base.x - defaultAnchorX) * state.scale());
-        int y = Math.round(targetAnchorY + (base.y - defaultAnchorY) * state.scale());
-        int w = Math.max(1, Math.round(base.w * state.scale()));
-        int h = Math.max(1, Math.round(base.h * state.scale()));
+        float transformScale = element.transformScale(state);
+        int x = Math.round(targetAnchorX + (base.x - defaultAnchorX) * transformScale);
+        int y = Math.round(targetAnchorY + (base.y - defaultAnchorY) * transformScale);
+        int w = Math.max(1, Math.round(base.w * transformScale));
+        int h = Math.max(1, Math.round(base.h * transformScale));
         return new PreviewRect(x, y, w, h);
+    }
+
+    private BaseRect skillDockRect(){
+        var data=com.myriad.client.ClientDataHolder.get();
+        var type=data==null?null:com.myriad.character.CharacterType.byId(data.characterId());
+        int count=0;boolean charges=false;
+        if(type!=null)for(int slot=0;slot<com.myriad.character.CharacterType.SKILL_SLOTS;slot++){
+            var skill=com.myriad.character.rework.FirstGroupSkills.resolve(type,slot,data.skillLevels());
+            if(skill!=null){count++;charges|=com.myriad.client.SkillChargeDisplay.chargeCount(skill,data.buffs())>=0;}
+        }
+        var dock=com.myriad.client.SkillBarLayout.at(width,height,Math.max(1,count),charges,
+                HudLayoutConfig.state(HudLayoutConfig.Element.SKILLS).scale());
+        return new BaseRect(dock.x(),dock.y()-23*dock.scale(),dock.width(),dock.height());
     }
 
     /** 每个 HUD 在未经过 HudLayoutConfig 变换前的实际默认绘制边界。 */
@@ -150,8 +164,7 @@ public final class HudEditorScreen extends Screen {
             case INFO -> new BaseRect(6 * fit, 6 * fit, 148 * fit, 45 * fit);
             case STATUS -> new BaseRect((centerX - 205) * fit, (height - 62) * fit,
                     260 * fit, 44 * fit);
-            // 技能栏实际固定在屏幕左侧垂直居中，而不是底部中央。
-            case SKILLS -> new BaseRect(6, centerY - 14 - 35 * fit, 234 * fit, 95 * fit);
+            case SKILLS -> skillDockRect();
             // 普攻区包含角色专属层数、能量和节奏提示，按最大常用占用区域显示。
             case ATTACKS -> new BaseRect(centerX + 85, height - 73, 145, 63);
             case MINIMAP -> new BaseRect(

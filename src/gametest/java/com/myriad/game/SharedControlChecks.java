@@ -49,8 +49,8 @@ final class SharedControlChecks {
         var d=PlayerDataProvider.get(owner);
         var od=PlayerDataProvider.get(other);
         d.setSkillLevel("g1_sulan_ma",1);od.setSkillLevel("g1_sulan_ma",7);
-        d.setFaction(Faction.XUANXIAO);od.setFaction(Faction.XUANXIAO);
-        PlayerDataProvider.get(enemy).setFaction(Faction.YOUMING);
+        d.setFaction(Faction.GUARDIAN);od.setFaction(Faction.GUARDIAN);
+        PlayerDataProvider.get(enemy).setFaction(Faction.DESTRUCTION);
         Vec3 from=origin.add(0,1.5,-2),to=origin.add(0,1.5,8);
         BlockPos obstruction=BlockPos.containing(origin.add(0,1.5,4));
         var previous=h.getLevel().getBlockState(obstruction);

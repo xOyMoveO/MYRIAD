@@ -343,14 +343,23 @@ public final class FirstGroupScreen extends Screen {
     }
     private void drawAttributes(GuiGraphicsExtractor g,SkillChoiceLayout l,int mx,int my){
         var d=ClientDataHolder.get();var f=Minecraft.getInstance().font;var v=l.viewport();
-        var budget=f.split(Component.literal(text("screen.myriad.g1.attribute_budget",attributeTotal())),v.w()-4);
+        var budget=f.split(Component.literal(text("screen.myriad.g1.attribute_budget_compact",attributeTotal())),v.w()-4);
         for(int i=0;i<budget.size();i++)g.text(f,budget.get(i),v.x()+2,v.y()+i*10-scroll,GOLD);
         for(int i=0;i<5;i++){
-            String key=FirstGroupGrowth.ATTRIBUTES.get(i),id="g1_attribute_"+key;int rank=d.buffs().getOrDefault(id,0);var b=l.attribute(i,scroll);
-            if(!b.overlaps(v)){actions.add(new Action(b,id,true,true,true));continue;}
-            tile(g,b,id,mx,my);int size=Math.min(26,b.w()-6);
-            CultivationIcons.attribute(g,key,new Box(b.x()+(b.w()-size)/2,b.y()+2,size,size));
-            String rankText=rank+"/10";g.text(f,rankText,b.x()+(b.w()-f.width(rankText))/2,b.bottom()-10,rank>0?GOLD:JADE);offer(id+":tile",b,()->attributeLines(key),mx,my,true);
+            String key=FirstGroupGrowth.ATTRIBUTES.get(i),id="g1_attribute_"+key;
+            int rank=d.buffs().getOrDefault(id,0);var b=l.attribute(i,scroll);var row=l.attributeRow(i,scroll);
+            actions.add(new Action(b,id,true,true,true));
+            if(!row.overlaps(v))continue;
+            boolean selected=selection.selected().equals(id),hover=l.canHit(b,mx,my);
+            plate(g,new Box(b.x()-2,b.y()-2,b.w()+4,b.h()+4),selected?GOLD:hover||focused.equals(id)?JADE:0xFF315955,0xB0071C22);
+            CultivationIcons.attribute(g,key,b);
+            centeredScaled(g,text("screen.myriad.g1.attribute."+key),new Box(b.x()-4,b.y(),b.w()+8,b.h()),b.bottom()+3,selected?GOLD:JADE,l.attributeRowHeight()<40?.6f:.7f);
+            for(int cell=0;cell<SkillChoiceLayout.ATTRIBUTE_LEVELS;cell++){
+                var box=l.attributeCell(i,cell,scroll);boolean lit=SkillChoiceLayout.attributeCellLit(rank,cell);
+                plate(g,box,lit?0xFFB8F2D9:0xFF365A5C,lit?0xFF4BB7AA:0xCC0B2028);
+                if(lit&&box.w()>=6)g.fill(box.x()+2,box.y()+2,box.right()-2,box.y()+3,0xFFE2FFF4);
+            }
+            offer(id+":tile",b,()->attributeLines(key),mx,my,true);
         }
     }
     private void drawSupplies(GuiGraphicsExtractor g,SkillChoiceLayout l,int mx,int my){

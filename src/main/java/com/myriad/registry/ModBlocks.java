@@ -23,7 +23,7 @@ public final class ModBlocks {
     public static final java.util.function.Supplier<SpiritCoreBlock> SPIRIT_CORE =
             registerBlock("spirit_core", SpiritCoreBlock::new);
 
-    /** 旧版传送阵：玄霄宗交付点（仅旧地图兼容） */
+    /** 旧版传送阵：守护交付点（仅旧地图兼容） */
     public static final java.util.function.Supplier<DeliveryPortalBlock> DELIVERY_PORTAL =
             registerBlock("delivery_portal", DeliveryPortalBlock::new);
 

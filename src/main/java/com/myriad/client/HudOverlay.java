@@ -208,9 +208,9 @@ public class HudOverlay implements HudElement {
                     default -> "unknown";
                 });
         gui.text(font, title, cx - font.width(title) / 2, y, 0xFFFFE27A);
-        String counts = Component.translatable("faction.myriad.xuanxiao").getString() + " "
-                + status.xuanxiaoPlayers() + "  VS  " + status.youmingPlayers() + " "
-                + Component.translatable("faction.myriad.youming").getString();
+        String counts = Component.translatable("faction.myriad.guardian").getString() + " "
+                + status.guardianPlayers() + "  VS  " + status.destructionPlayers() + " "
+                + Component.translatable("faction.myriad.destruction").getString();
         gui.text(font, counts, cx - font.width(counts) / 2, y + 11, 0xFFFFFFFF);
         int w = 180;
         int h = 7;
@@ -496,7 +496,7 @@ public class HudOverlay implements HudElement {
                 fullReady ? 0xFF8DCCFF : 0xFF69AEEA);
     }
 
-    /** 屏幕下方居中技能栏：Q / W / E / R / F 技能图标槽（横向排列，放大 1.5 倍），冷却倒计时 / 技能等级 */
+    /** Compact horizontal skill dock to the left of the vanilla hotbar. */
     private void renderSkillBar(GuiGraphicsExtractor gui, Font font, PlayerDataPayload data) {
         CharacterType type = CharacterType.byId(data.characterId());
         if (type == null) {
@@ -516,13 +516,17 @@ public class HudOverlay implements HudElement {
         if (skills.isEmpty()) {
             return;
         }
-        float total = UI_SCALE * fitScale();
+        boolean hasCharges=skills.stream().anyMatch(skill->SkillChargeDisplay.chargeCount(skill,data.buffs())>=0);
+        var dock=SkillBarLayout.at(Minecraft.getInstance().getWindow().getGuiScaledWidth(),screenHeight,
+                skills.size(),hasCharges,HudLayoutConfig.state(HudLayoutConfig.Element.SKILLS).scale());
+        float total = dock.scale();
         int slotSize = 28;
         int gap = 4;
         gui.pose().pushMatrix();
+        gui.pose().translate(dock.x(),dock.y());
         gui.pose().scale(total);
-        int x = (int) (6 / total);
-        int y = (int) ((screenHeight / 2 - slotSize / 2) / total);
+        int x = 0;
+        int y = 0;
         for (int i = 0; i < skills.size(); i++) {
             Skill skill = skills.get(i);
             int slot = slots.get(i);

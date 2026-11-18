@@ -44,7 +44,7 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * 三路兵线与防御塔（服务端权威）。路线和塔位均由管理员在地图内放点，存入世界存档。
- * 路径点始终按玄霄宗基地 -> 幽冥宗基地排序，幽冥宗兵线自动反向读取。
+ * 路径点始终按守护基地 -> 毁灭基地排序，毁灭兵线自动反向读取。
  */
 public final class LaneSystem {
     private LaneSystem() {}
@@ -162,7 +162,7 @@ public final class LaneSystem {
     private static String towerId(Faction faction,Lane lane,int tier){return faction.getName()+"/"+lane.id+"/"+tier;}
     private static boolean siegeUnlocked(Faction faction,Lane lane){
         if (!ENABLED_LANES.contains(lane)) return false;
-        Faction enemy=faction==Faction.XUANXIAO?Faction.YOUMING:Faction.XUANXIAO;
+        Faction enemy=faction==Faction.GUARDIAN?Faction.DESTRUCTION:Faction.GUARDIAN;
         for(int tier:ENABLED_TOWER_TIERS)if(!TOWER_POINTS.containsKey(new TowerKey(enemy,lane,tier))
                 || !DESTROYED_TOWERS.contains(towerId(enemy,lane,tier)))return false;
         return true;
@@ -184,7 +184,7 @@ public final class LaneSystem {
     private static final Map<Faction, BlockPos> CRYSTAL_POINTS = new EnumMap<>(Faction.class);
     public static boolean hasCrystals(){return !CRYSTAL_POINTS.isEmpty();}
     private static boolean crystalVulnerable(Faction defender){
-        Faction enemy=defender==Faction.XUANXIAO?Faction.YOUMING:Faction.XUANXIAO;
+        Faction enemy=defender==Faction.GUARDIAN?Faction.DESTRUCTION:Faction.GUARDIAN;
         for(Lane lane:Lane.values())if(siegeUnlocked(enemy,lane))return true;
         return false;
     }
@@ -239,7 +239,7 @@ public final class LaneSystem {
         if (layoutActive && now % 20 == 0) {
             // 玩家离开兵线后也保持三路区块持续模拟，避免小兵走进卸载区块后冻结。
             for (Lane lane : Lane.values()) {
-                CombatChunks.holdLaneRoute(level, orderedPath(lane, Faction.XUANXIAO));
+                CombatChunks.holdLaneRoute(level, orderedPath(lane, Faction.GUARDIAN));
             }
         }
         if (layoutActive && now >= nextWaveAt) {
@@ -287,7 +287,7 @@ public final class LaneSystem {
         nextWaveAt = matchStart + FIRST_WAVE_DELAY;
     }
 
-    /** 宗门泉水：己方玩家处于中心半径 6 格内时，每秒恢复 10% 最大生命与最大法力。 */
+    /** 阵营泉水：己方玩家处于中心半径 6 格内时，每秒恢复 10% 最大生命与最大法力。 */
     private static void tickFountains(ServerLevel level, GameManager manager) {
         for (ServerPlayer player : level.players()) {
             if (!com.myriad.combat.NpcCombat.canTarget(player)) continue;
@@ -325,7 +325,7 @@ public final class LaneSystem {
         for (Map.Entry<Faction, BlockPos> entry : FOUNTAIN_POINTS.entrySet()) {
             BlockPos pos = entry.getValue();
             DustParticleOptions dust = new DustParticleOptions(
-                    entry.getKey() == Faction.XUANXIAO ? 0xFF7568 : 0x63D7FF, 1.0F);
+                    entry.getKey().rgb(), 1.0F);
             for (int i = 0; i < 32; i++) {
                 double angle = Math.PI * 2.0 * i / 32.0;
                 level.sendParticles(dust,
@@ -339,7 +339,7 @@ public final class LaneSystem {
 
     private static boolean pathLayoutReady() {
         for (Lane lane : ENABLED_LANES) {
-            if (orderedPath(lane, Faction.XUANXIAO).size() < 2) return false;
+            if (orderedPath(lane, Faction.GUARDIAN).size() < 2) return false;
         }
         return true;
     }
@@ -859,7 +859,7 @@ public final class LaneSystem {
     }
 
     private static void spawnAttackBeam(ServerLevel level, Vec3 from, Vec3 to, Faction faction) {
-        DustParticleOptions color = new DustParticleOptions(faction == Faction.XUANXIAO ? 0xFF594F : 0x55BFFF, 1.0F);
+        DustParticleOptions color = new DustParticleOptions(faction.rgb(), 1.0F);
         int count = Math.max(3, (int) Math.ceil(from.distanceTo(to) * 2.5));
         for (int i = 0; i <= count; i++) {
             Vec3 point = from.lerp(to, i / (double) count);
@@ -872,7 +872,7 @@ public final class LaneSystem {
     /** 防御塔锁定提示线：两秒内持续追踪目标，并以粒子尺寸和双侧轮廓逐渐加粗。 */
     private static void spawnTowerLockBeam(ServerLevel level, Vec3 from, Vec3 to, Faction faction,
             float progress) {
-        int rgb = faction == Faction.XUANXIAO ? 0xFF594F : 0x55BFFF;
+        int rgb = faction.rgb();
         DustParticleOptions core = new DustParticleOptions(rgb, .35F + progress * 1.45F);
         Vec3 delta = to.subtract(from);
         Vec3 side = new Vec3(-delta.z, 0, delta.x);
@@ -984,7 +984,7 @@ public final class LaneSystem {
         if(state.kind==Kind.CRYSTAL){
             if(crystalVulnerable(state.faction)
                     &&GameManager.get()!=null&&GameManager.get().getPhase()==GameManager.Phase.PLAYING)
-                GameManager.get().endMatch(state.faction == Faction.XUANXIAO ? Faction.YOUMING : Faction.XUANXIAO);
+                GameManager.get().endMatch(state.faction == Faction.GUARDIAN ? Faction.DESTRUCTION : Faction.GUARDIAN);
             return;
         }
         if (state.tower()) {
@@ -1089,7 +1089,7 @@ public final class LaneSystem {
             return;
         }
         if(state.kind==Kind.CRYSTAL){entity.setCustomName(Component.translatable("entity.myriad.base_crystal",state.faction.displayName(),Math.round(state.health),Math.round(state.maxHealth)));entity.setCustomNameVisible(true);return;}
-        ChatFormatting color = state.faction == Faction.XUANXIAO ? ChatFormatting.RED : ChatFormatting.AQUA;
+        ChatFormatting color = state.faction.chatColor();
         Component name;
         if (state.tower()) {
             name = Component.translatable("entity.myriad.lane_tower",
@@ -1109,7 +1109,7 @@ public final class LaneSystem {
         // Tower placements define the lane. Keep legacy manual points only for maps without towers.
         if (TOWER_POINTS.keySet().stream().anyMatch(k -> k.lane == lane)) {
             List<BlockPos> route = new ArrayList<>();
-            Faction enemy = faction == Faction.XUANXIAO ? Faction.YOUMING : Faction.XUANXIAO;
+            Faction enemy = faction == Faction.GUARDIAN ? Faction.DESTRUCTION : Faction.GUARDIAN;
             BlockPos start = respawnPoint(faction);
             if (start != null) route.add(start);
             for (int tier = 3; tier >= 1; tier--) {
@@ -1134,11 +1134,11 @@ public final class LaneSystem {
         if (result.size() < 2) result = new ArrayList<>(fallbackPath(lane));
 
         // 地图编辑器允许从任意一方开始放点，不能再假定 slot 1 永远是
-        // 玄霄宗端。根据实际复活点判断哪一端更靠近当前阵营，必要时反转，
+        // 守护端。根据实际复活点判断哪一端更靠近当前阵营，必要时反转，
         // 确保双方首波都从自己的基地附近出发。
         BlockPos ownBase = respawnPoint(faction);
-        BlockPos enemyBase = respawnPoint(faction == Faction.XUANXIAO
-                ? Faction.YOUMING : Faction.XUANXIAO);
+        BlockPos enemyBase = respawnPoint(faction == Faction.GUARDIAN
+                ? Faction.DESTRUCTION : Faction.GUARDIAN);
         if (ownBase != null && enemyBase != null && result.size() >= 2) {
             // A legacy route can accidentally end back at its starting base. Keep the
             // outbound section through the opposite base rather than spawning both teams together.
@@ -1157,7 +1157,7 @@ public final class LaneSystem {
             double firstOwn = horizontalDistanceSqr(result.getFirst(), ownBase);
             double lastOwn = horizontalDistanceSqr(result.getLast(), ownBase);
             if (firstOwn > lastOwn) Collections.reverse(result);
-        } else if (faction == Faction.YOUMING) {
+        } else if (faction == Faction.DESTRUCTION) {
             // 旧存档没有基地点时保留原有约定，避免改变历史地图行为。
             Collections.reverse(result);
         }
@@ -1171,8 +1171,8 @@ public final class LaneSystem {
     }
 
     private static List<BlockPos> fallbackPath(Lane lane) {
-        BlockPos source = respawnPoint(Faction.XUANXIAO);
-        BlockPos target = respawnPoint(Faction.YOUMING);
+        BlockPos source = respawnPoint(Faction.GUARDIAN);
+        BlockPos target = respawnPoint(Faction.DESTRUCTION);
         if (source == null || target == null) return List.of();
         Vec3 start = Vec3.atCenterOf(source);
         Vec3 end = Vec3.atCenterOf(target);
@@ -1364,11 +1364,11 @@ public final class LaneSystem {
         return List.copyOf(result);
     }
 
-    /** 返回兵线真正采用的路径（玄霄端到幽冥端），供战术地图绘制。 */
+    /** 返回兵线真正采用的路径（守护端到毁灭端），供战术地图绘制。 */
     public static List<MinimapPathPoint> minimapPaths() {
         List<MinimapPathPoint> result = new ArrayList<>();
         for (Lane lane : Lane.values()) {
-            List<BlockPos> path = orderedPath(lane, Faction.XUANXIAO);
+            List<BlockPos> path = orderedPath(lane, Faction.GUARDIAN);
             for (int order = 0; order < path.size(); order++) {
                 BlockPos point = path.get(order);
                 result.add(new MinimapPathPoint(lane.ordinal(), order,
@@ -1610,7 +1610,11 @@ public final class LaneSystem {
     }
     public static void restore(ServerLevel level,JsonObject root) {
         clearRuntime(level);runtimeNeedsCleanup=false;
-        if(root.has("destroyedTowers"))for(var id:root.getAsJsonArray("destroyedTowers"))DESTROYED_TOWERS.add(id.getAsString());
+        if(root.has("destroyedTowers"))for(var id:root.getAsJsonArray("destroyedTowers")){
+            String key=id.getAsString();int slash=key.indexOf('/');
+            Faction faction=slash<0?null:Faction.byId(key.substring(0,slash));
+            DESTROYED_TOWERS.add(faction==null?key:faction.getName()+key.substring(slash));
+        }
         activeMatchStart=root.get("start").getAsLong();nextWaveAt=root.get("nextWave").getAsLong();
         waveNumber=root.get("wave").getAsInt();layoutActive=root.get("active").getAsBoolean();
         for(JsonElement value:root.getAsJsonArray("units")) {

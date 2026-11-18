@@ -13,7 +13,7 @@ import com.myriad.network.NetworkSetup;
 
 /**
  * 游戏设置界面（/myriad settings 打开，开局前可改）：
- * 对局时长 / 宗门胜利积分，每行显示当前值 + 步进按钮。
+ * 对局时长 / 阵营胜利积分，每行显示当前值 + 步进按钮。
  */
 public class SettingsScreen extends Screen {
     private static final int ROW_H = 24;
@@ -23,7 +23,7 @@ public class SettingsScreen extends Screen {
     /** 设置项定义：key -> (显示名, 步长, 是否秒单位) */
     private static final String[][] SETTINGS = {
             { "matchDuration", "对局时长（秒）", "60", "true" },
-            { "targetScore", "宗门胜利积分", "50", "false" },
+            { "targetScore", "阵营胜利积分", "50", "false" },
     };
 
     private static Map<String, Integer> values = new LinkedHashMap<>();

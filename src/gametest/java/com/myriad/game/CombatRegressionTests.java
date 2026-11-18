@@ -19,6 +19,8 @@ import com.myriad.combat.DamageCalc;
 /** Explicit /test or runGameTestServer only; never runs as part of a match. */
 public final class CombatRegressionTests {
     public static void register() {
+        register("faction_identity",FactionIdentityChecks::run);
+        register("training_ui",TrainingUiChecks::run);
         register("arena_switch", ArenaSwitchRegression::run);
         register("combat_regression", CombatRegressionTests::run);
         register("world_time", WorldTimeChecks::run);
@@ -102,8 +104,8 @@ public final class CombatRegressionTests {
 
                 Map<LaneSystem.Lane, Map<Integer, BlockPos>> paths = (Map<LaneSystem.Lane, Map<Integer, BlockPos>>) field(LaneSystem.class, null, "PATH_POINTS");
                 Map<Faction, BlockPos> bases = (Map<Faction, BlockPos>) field(LaneSystem.class, null, "FOUNTAIN_POINTS");
-                bases.put(Faction.XUANXIAO, a);
-                bases.put(Faction.YOUMING, a.offset(30, 0, 0));
+                bases.put(Faction.GUARDIAN, a);
+                bases.put(Faction.DESTRUCTION, a.offset(30, 0, 0));
                 for (var lane : LaneSystem.Lane.values()) {
                     paths.get(lane).clear();
                     paths.get(lane).put(1, a.offset(0, 0, lane.ordinal()*5));
@@ -112,11 +114,11 @@ public final class CombatRegressionTests {
                 }
                 var ordered = LaneSystem.class.getDeclaredMethod("orderedPath", LaneSystem.Lane.class, Faction.class);
                 ordered.setAccessible(true);
-                var reversed = (List<BlockPos>) ordered.invoke(null, LaneSystem.Lane.TOP, Faction.YOUMING);
+                var reversed = (List<BlockPos>) ordered.invoke(null, LaneSystem.Lane.TOP, Faction.DESTRUCTION);
                 helper.assertTrue(reversed.size() == 2 && reversed.getFirst().equals(a.offset(30, 0, 0)), "Looped route must spawn from opposite bases");
                 var saved = new java.util.HashMap<>(paths.get(LaneSystem.Lane.TOP));
                 paths.get(LaneSystem.Lane.TOP).clear();
-                helper.assertTrue(((List<?>) ordered.invoke(null, LaneSystem.Lane.TOP, Faction.YOUMING)).size() == 4, "Fallback route must reverse without immutable-list crash");
+                helper.assertTrue(((List<?>) ordered.invoke(null, LaneSystem.Lane.TOP, Faction.DESTRUCTION)).size() == 4, "Fallback route must reverse without immutable-list crash");
                 paths.get(LaneSystem.Lane.TOP).putAll(saved);
                 helper.assertTrue(((Long) field(LaneSystem.class, null, "FIRST_WAVE_DELAY")) == 1400L, "First wave delay must remain 70 seconds");
                 helper.assertTrue(Math.abs(MatchBalance.towerScale(0, 1) - 1.30) < .0001
@@ -170,11 +172,11 @@ public final class CombatRegressionTests {
                         helper.assertTrue(entity instanceof LaneMinionEntity, "Custom minion missing (must not be iron golem)");
                     }
                     Object own = units.values().stream().filter(s -> {
-                        try { return field(s.getClass(), s, "faction") == Faction.XUANXIAO; }
+                        try { return field(s.getClass(), s, "faction") == Faction.GUARDIAN; }
                         catch (ReflectiveOperationException e) { throw new IllegalStateException(e); }
                     }).findFirst().orElseThrow();
                     Object other = units.values().stream().filter(s -> {
-                        try { return field(s.getClass(), s, "faction") == Faction.YOUMING
+                        try { return field(s.getClass(), s, "faction") == Faction.DESTRUCTION
                                 && field(s.getClass(), s, "lane") == field(own.getClass(), own, "lane"); }
                         catch (ReflectiveOperationException e) { throw new IllegalStateException(e); }
                     }).findFirst().orElseThrow();
@@ -271,7 +273,7 @@ public final class CombatRegressionTests {
 
     private static void verifyProgressionAndTraining(GameTestHelper helper, net.minecraft.server.level.ServerPlayer player) {
         var data = com.myriad.player.PlayerDataProvider.get(player);
-        data.setCharacterId("yingxiao"); data.setFaction(Faction.XUANXIAO);
+        data.setCharacterId("yingxiao"); data.setFaction(Faction.GUARDIAN);
         data.setLevel(1); data.setXp(0);
         com.myriad.player.PlayerHealthSystem.fill(player);
         player.setHealth(70); data.setMana(17);
@@ -311,7 +313,7 @@ public final class CombatRegressionTests {
             throws ReflectiveOperationException {
         var data = com.myriad.player.PlayerDataProvider.get(player);
         data.setCharacterId("yingxiao"); data.setLevel(9); data.setGold(1234); data.resetMatchGoldEarned(2468); data.setXp(87);
-        data.setFaction(Faction.XUANXIAO); data.setSkillLevel("test_skill", 4); data.setCooldown("test_skill", 83);
+        data.setFaction(Faction.GUARDIAN); data.setSkillLevel("test_skill", 4); data.setCooldown("test_skill", 83);
         data.setEquipApplied("test_attribute", 15);
         var codec = com.myriad.player.PlayerData.CODEC;
         var encoded = codec.encodeStart(net.minecraft.nbt.NbtOps.INSTANCE, data).getOrThrow();
@@ -319,7 +321,7 @@ public final class CombatRegressionTests {
         var cloned = new com.myriad.player.PlayerData(); cloned.copyStateFrom(restored);
         helper.assertTrue("yingxiao".equals(restored.getCharacterId()) && restored.getLevel() == 9
                 && restored.getGold() == 1234 && restored.getMatchGoldEarned() == 2468
-                && restored.getXp() == 87 && restored.getFaction() == Faction.XUANXIAO,
+                && restored.getXp() == 87 && restored.getFaction() == Faction.GUARDIAN,
                 "Player progression must survive persistent attachment codec roundtrip");
         helper.assertTrue(cloned.getMatchGoldEarned() == 2468,
                 "Gross match gold must survive the death-clone copy path");
@@ -329,11 +331,11 @@ public final class CombatRegressionTests {
         var manager = GameManager.get();
         var phase = GameManager.class.getDeclaredField("phase"); phase.setAccessible(true);
         phase.set(manager, GameManager.Phase.PLAYING);
-        ((Map<java.util.UUID,Faction>) field(GameManager.class,manager,"factions")).put(player.getUUID(),Faction.XUANXIAO);
+        ((Map<java.util.UUID,Faction>) field(GameManager.class,manager,"factions")).put(player.getUUID(),Faction.GUARDIAN);
         manager.onPlayerQuit(player);
         GameManager.restore(com.google.gson.JsonParser.parseString(MatchProgress.JSON.toJson(GameManager.snapshot())),helper.getLevel().getServer());
         helper.assertTrue(GameManager.get().getPhase() == GameManager.Phase.PLAYING
-                && GameManager.get().factionOf(player) == Faction.XUANXIAO, "Disconnect and world reload must preserve match and faction");
+                && GameManager.get().factionOf(player) == Faction.GUARDIAN, "Disconnect and world reload must preserve match and faction");
         GameManager.get().onPlayerJoin(player);
         helper.assertTrue(data.getGold() == 1234 && "yingxiao".equals(data.getCharacterId()), "Reconnect must not reset character progression");
         var lanes = com.google.gson.JsonParser.parseString(MatchProgress.JSON.toJson(LaneSystem.snapshot())).getAsJsonObject();
@@ -388,7 +390,7 @@ public final class CombatRegressionTests {
         var towerPoints=configureTowerFixture(a);
         BaseRules.logout(player); // Independent fixture: earlier damage tests marked this mock player in combat.
         var phase=GameManager.class.getDeclaredField("phase");phase.setAccessible(true);phase.set(manager,GameManager.Phase.PLAYING);
-        var bases=(Map<Faction,BlockPos>)field(LaneSystem.class,null,"FOUNTAIN_POINTS");bases.put(Faction.XUANXIAO,a);
+        var bases=(Map<Faction,BlockPos>)field(LaneSystem.class,null,"FOUNTAIN_POINTS");bases.put(Faction.GUARDIAN,a);
         player.setPos(a.getX()+.5,a.getY(),a.getZ()+.5);
         helper.assertTrue(BaseRules.canShop(player),"Own base permits equipment buying");
         BaseRules.tick(player);
@@ -425,21 +427,21 @@ public final class CombatRegressionTests {
             clock.setGameTime(savedTime);matchStart.setLong(manager,savedStart);
         }
         var spawn=LaneSystem.class.getDeclaredMethod("spawnCrystal",net.minecraft.server.level.ServerLevel.class,Faction.class,BlockPos.class);spawn.setAccessible(true);
-        spawn.invoke(null,level,Faction.YOUMING,a.offset(20,0,0));
+        spawn.invoke(null,level,Faction.DESTRUCTION,a.offset(20,0,0));
         var units=(Map<?,?>)field(LaneSystem.class,null,"UNITS");Object state=units.values().iterator().next();
         var crystal=(Mob)field(state.getClass(),state,"entity");
         NpcCombat.hit(crystal,player,50,DamageCalc.Kind.PHYSICAL);
         helper.assertTrue(LaneSystem.health(crystal)==21000,"Protected crystal must reject damage");
         var destroyed=(java.util.Set<String>)field(LaneSystem.class,null,"DESTROYED_TOWERS");
-        destroyed.add("youming/top/1");destroyed.add("youming/top/2");
+        destroyed.add("destruction/top/1");destroyed.add("destruction/top/2");
         NpcCombat.hit(crystal,player,50,DamageCalc.Kind.PHYSICAL);
         helper.assertTrue(LaneSystem.health(crystal)==21000,"Two towers are insufficient to unlock crystal");
-        destroyed.add("youming/top/3");crystal.damageCooldownTime = 0;
+        destroyed.add("destruction/top/3");crystal.damageCooldownTime = 0;
         NpcCombat.hit(crystal,player,50,DamageCalc.Kind.PHYSICAL);
         helper.assertTrue(LaneSystem.health(crystal)<21000,"Three destroyed towers allow crystal damage");
         var hp=state.getClass().getDeclaredField("health");hp.setAccessible(true);hp.setFloat(state,1);crystal.damageCooldownTime = 0;
         NpcCombat.hit(crystal,player,50,DamageCalc.Kind.PHYSICAL);
-        helper.assertTrue(manager.getPhase()==GameManager.Phase.ENDED&&manager.getWinner()==Faction.XUANXIAO,"Destroying the crystal must end the match for its enemy");
+        helper.assertTrue(manager.getPhase()==GameManager.Phase.ENDED&&manager.getWinner()==Faction.GUARDIAN,"Destroying the crystal must end the match for its enemy");
         BaseRules.logout(player);
         // Consume the normal deferred end-of-match cleanup before another test enables the mod.
         manager.tick(level.getServer(),level.getGameTime());
@@ -473,12 +475,12 @@ public final class CombatRegressionTests {
         var unlocked=LaneSystem.class.getDeclaredMethod("siegeUnlocked",Faction.class,LaneSystem.Lane.class);unlocked.setAccessible(true);
         var destroyed=(java.util.Set<String>)field(LaneSystem.class,null,"DESTROYED_TOWERS");
         destroyed.clear();
-        destroyed.add("youming/top/1");destroyed.add("youming/top/2");
-        helper.assertTrue(!(Boolean)unlocked.invoke(null,Faction.XUANXIAO,LaneSystem.Lane.TOP),"Two towers must not unlock siege units");
-        destroyed.add("youming/top/3");
-        helper.assertTrue((Boolean)unlocked.invoke(null,Faction.XUANXIAO,LaneSystem.Lane.TOP)
-                && !(Boolean)unlocked.invoke(null,Faction.YOUMING,LaneSystem.Lane.TOP)
-                && !(Boolean)unlocked.invoke(null,Faction.XUANXIAO,LaneSystem.Lane.MID),"Siege unlock must be faction and lane scoped");
+        destroyed.add("destruction/top/1");destroyed.add("destruction/top/2");
+        helper.assertTrue(!(Boolean)unlocked.invoke(null,Faction.GUARDIAN,LaneSystem.Lane.TOP),"Two towers must not unlock siege units");
+        destroyed.add("destruction/top/3");
+        helper.assertTrue((Boolean)unlocked.invoke(null,Faction.GUARDIAN,LaneSystem.Lane.TOP)
+                && !(Boolean)unlocked.invoke(null,Faction.DESTRUCTION,LaneSystem.Lane.TOP)
+                && !(Boolean)unlocked.invoke(null,Faction.GUARDIAN,LaneSystem.Lane.MID),"Siege unlock must be faction and lane scoped");
         spawn.invoke(null,level);
         var units=(Map<?,?>)field(LaneSystem.class,null,"UNITS");
         var siege=units.values().stream().filter(s->{try{return field(s.getClass(),s,"kind").toString().equals("SIEGE");}catch(Exception e){throw new IllegalStateException(e);}}).toList();
@@ -503,7 +505,7 @@ public final class CombatRegressionTests {
         helper.assertTrue(mob.distanceTo(second)>1.3,"Exactly overlapping siege constructs must separate");
         second.discard();
         var saved=LaneSystem.snapshot();LaneSystem.restore(level,saved);
-        helper.assertTrue((Boolean)unlocked.invoke(null,Faction.XUANXIAO,LaneSystem.Lane.TOP),"Siege unlock must survive match checkpoint reload");
+        helper.assertTrue((Boolean)unlocked.invoke(null,Faction.GUARDIAN,LaneSystem.Lane.TOP),"Siege unlock must survive match checkpoint reload");
         helper.assertTrue(MonsterManager.growthMultiplier(0)==1 && MonsterManager.growthMultiplier(2)==1
                 && Math.abs(MonsterManager.growthMultiplier(3)-1.03)<.0001 && Math.abs(MonsterManager.growthMultiplier(4)-1.06)<.0001,
                 "Monster growth starts at the third respawn and adds three percent each time");
@@ -539,11 +541,11 @@ public final class CombatRegressionTests {
         var spawnTower = LaneSystem.class.getDeclaredMethod("spawnTower",net.minecraft.server.level.ServerLevel.class,keyType,BlockPos.class);
         spawnTower.setAccessible(true);
         for (int tier=1;tier<=3;tier++) {
-            Object key=constructor.newInstance(Faction.YOUMING,LaneSystem.Lane.TOP,tier);
+            Object key=constructor.newInstance(Faction.DESTRUCTION,LaneSystem.Lane.TOP,tier);
             BlockPos pos=a.offset(12+tier*8,0,0); points.put(key,pos); spawnTower.invoke(null,level,key,pos);
         }
         var ordered=LaneSystem.class.getDeclaredMethod("orderedPath",LaneSystem.Lane.class,Faction.class); ordered.setAccessible(true);
-        var path=(List<BlockPos>)ordered.invoke(null,LaneSystem.Lane.TOP,Faction.XUANXIAO);
+        var path=(List<BlockPos>)ordered.invoke(null,LaneSystem.Lane.TOP,Faction.GUARDIAN);
         helper.assertTrue(path.get(1).equals(a.offset(20,0,0)) && path.get(2).equals(a.offset(28,0,0))
                 && path.get(3).equals(a.offset(36,0,0)),"Tower order must override the malformed manual route");
         var wave=LaneSystem.class.getDeclaredMethod("spawnWave",net.minecraft.server.level.ServerLevel.class);wave.setAccessible(true);wave.invoke(null,level);
@@ -551,7 +553,7 @@ public final class CombatRegressionTests {
         Object minionState=null,outer=null,inner=null;
         for(Object s:units.values()) {
             if(field(s.getClass(),s,"lane")!=LaneSystem.Lane.TOP)continue;
-            if(field(s.getClass(),s,"faction")==Faction.XUANXIAO && field(s.getClass(),s,"kind").toString().equals("RANGED")) minionState=s;
+            if(field(s.getClass(),s,"faction")==Faction.GUARDIAN && field(s.getClass(),s,"kind").toString().equals("RANGED")) minionState=s;
             if(field(s.getClass(),s,"kind").toString().equals("TOWER")){
                 if((Integer)field(s.getClass(),s,"towerTier")==1)outer=s;
                 if((Integer)field(s.getClass(),s,"towerTier")==2)inner=s;
@@ -575,7 +577,7 @@ public final class CombatRegressionTests {
         helper.assertTrue(minion.getX()>=before && !(Boolean)field(minionState.getClass(),minionState,"returning"),"After tower destruction continue forward without retreat");
         Object blockerState = null;
         for (Object s : units.values()) if (field(s.getClass(),s,"lane") == LaneSystem.Lane.TOP
-                && field(s.getClass(),s,"faction") == Faction.YOUMING
+                && field(s.getClass(),s,"faction") == Faction.DESTRUCTION
                 && !field(s.getClass(),s,"kind").toString().equals("TOWER")) { blockerState = s; break; }
         Mob blocker = (Mob)field(blockerState.getClass(),blockerState,"entity");
         blocker.setPos(minion.getX()+3,minion.getY(),minion.getZ());
@@ -604,8 +606,8 @@ public final class CombatRegressionTests {
         Map<LaneSystem.Lane,BlockPos> corners = (Map<LaneSystem.Lane,BlockPos>)field(LaneSystem.class,null,"LANE_CORNERS");
         BlockPos corner = a.offset(10,0,10);
         corners.put(LaneSystem.Lane.TOP, corner);
-        var ownRoute = (List<BlockPos>)ordered.invoke(null,LaneSystem.Lane.TOP,Faction.XUANXIAO);
-        var enemyRoute = (List<BlockPos>)ordered.invoke(null,LaneSystem.Lane.TOP,Faction.YOUMING);
+        var ownRoute = (List<BlockPos>)ordered.invoke(null,LaneSystem.Lane.TOP,Faction.GUARDIAN);
+        var enemyRoute = (List<BlockPos>)ordered.invoke(null,LaneSystem.Lane.TOP,Faction.DESTRUCTION);
         helper.assertTrue(ownRoute.indexOf(corner) < ownRoute.indexOf(a.offset(20,0,0))
                 && enemyRoute.indexOf(corner) > enemyRoute.indexOf(a.offset(20,0,0)),
                 "Both factions must use the same bend between outer towers in opposite directions");
@@ -617,7 +619,7 @@ public final class CombatRegressionTests {
                 "Configured bend must not be skipped by projection onto the following segment");
         // Reproduce a destroyed outer tower beyond the bend with the inner tower behind a wall.
         BlockPos deadTowerPoint = a.offset(20,0,10);
-        points.put(constructor.newInstance(Faction.YOUMING,LaneSystem.Lane.TOP,1), deadTowerPoint);
+        points.put(constructor.newInstance(Faction.DESTRUCTION,LaneSystem.Lane.TOP,1), deadTowerPoint);
         routeField.set(minionState, List.of(a, corner, deadTowerPoint, a.offset(28,0,0)));
         waypointField.setInt(minionState, 2);
         var chase = minionState.getClass().getDeclaredField("chaseTarget"); chase.setAccessible(true); chase.set(minionState,null);

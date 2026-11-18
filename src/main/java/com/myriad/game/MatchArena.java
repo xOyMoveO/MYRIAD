@@ -61,21 +61,23 @@ public final class MatchArena {
             var keys = new java.util.HashSet<String>();
             for (var row : lane.getAsJsonArray("towers")) {
                 var tower = row.getAsJsonObject();
-                String faction = tower.get("faction").getAsString();
+                Faction faction = Faction.byId(tower.get("faction").getAsString());
                 int tier = tower.get("tier").getAsInt();
-                if ((!faction.equals("youming") && !faction.equals("xuanxiao"))
+                if (faction==null
                         || !tower.get("lane").getAsString().equals("mid") || !tiers.contains(tier)) return false;
                 validPosition(tower);
-                keys.add(faction + tier);
+                keys.add(faction.getName() + tier);
             }
             if (keys.size() != tiers.size()*2 || lane.getAsJsonArray("towers").size() != tiers.size()*2) return false;
             for (String category : new String[]{"fountains", "crystals"}) {
                 var factions = new java.util.HashSet<String>();
                 for (var row : lane.getAsJsonArray(category)) {
                     validPosition(row.getAsJsonObject());
-                    factions.add(row.getAsJsonObject().get("faction").getAsString());
+                    Faction faction=Faction.byId(row.getAsJsonObject().get("faction").getAsString());
+                    if(faction==null)return false;
+                    factions.add(faction.getName());
                 }
-                if (!factions.equals(java.util.Set.of("youming", "xuanxiao"))) return false;
+                if (!factions.equals(java.util.Set.of("destruction", "guardian"))) return false;
             }
             var minimap = JsonParser.parseString(Files.readString(configuration(world, Mode.DUEL, CONFIGS[4]))).getAsJsonObject();
             return minimap.getAsJsonArray("corners").size() == 4;

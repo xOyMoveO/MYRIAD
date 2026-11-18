@@ -88,7 +88,7 @@ final class FlameHitChecks {
         var con=new net.minecraft.network.Connection(net.minecraft.network.protocol.PacketFlow.SERVERBOUND);new io.netty.channel.embedded.EmbeddedChannel(con);
         p.connection=new net.minecraft.server.network.ServerGamePacketListenerImpl(h.getLevel().getServer(),con,p,net.minecraft.server.network.CommonListenerCookie.createInitial(p.getGameProfile(),false)){
             @Override public void send(net.minecraft.network.protocol.Packet<?> packet){if(packet instanceof net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket cp&&cp.payload() instanceof AbilityVfxPayload hit&&FlameHitVfx.owns(hit))hits.add(hit);}
-        };p.connection.handleAcceptPlayerLoad(new net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket());p.setPos(pos);p.setNoGravity(true);PlayerDataProvider.get(p).setFaction(Faction.XUANXIAO);if(add)h.getLevel().addNewPlayer(p);
+        };p.connection.handleAcceptPlayerLoad(new net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket());p.setPos(pos);p.setNoGravity(true);PlayerDataProvider.get(p).setFaction(Faction.GUARDIAN);if(add)h.getLevel().addNewPlayer(p);
         var v=new Viewer(p,hits);viewers.add(v);return v;
     }
 }

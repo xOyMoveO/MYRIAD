@@ -73,13 +73,13 @@ final class RosterAChecks {
                 int opposite=FirstGroupSkills.opposite(index);
                 if(opposite>=0){receive(h,p,new NetworkSetup.UpgradeSkillPayload(FirstGroupSkills.node(role,opposite).getId()));
                     h.assertTrue(d.getSkillPoints()==19&&d.skillLevel(FirstGroupSkills.node(role,opposite).getId())==0,"Opposite active branch cannot spend: "+f.skill.getId());}
-                prepare(p);d.setFaction(Faction.XUANXIAO);p.setPos(f.origin);aim(p,f.skill.needsPoint()||role.equals("tianxing")&&index==2);
+                prepare(p);d.setFaction(Faction.GUARDIAN);p.setPos(f.origin);aim(p,f.skill.needsPoint()||role.equals("tianxing")&&index==2);
             }
             // The manager phase is fixture preparation. All tested cast/confirm requests below run with training off.
             var phase=GameManager.class.getDeclaredField("phase");phase.setAccessible(true);phase.set(GameManager.get(),GameManager.Phase.PLAYING);
             var factionField=GameManager.class.getDeclaredField("factions");factionField.setAccessible(true);
             @SuppressWarnings("unchecked") var factions=(Map<UUID,Faction>)factionField.get(GameManager.get());
-            for(var f:fixtures){factions.put(f.actor.player.getUUID(),Faction.XUANXIAO);factions.put(f.ally.player.getUUID(),Faction.XUANXIAO);factions.put(f.enemy.player.getUUID(),Faction.YOUMING);}
+            for(var f:fixtures){factions.put(f.actor.player.getUUID(),Faction.GUARDIAN);factions.put(f.ally.player.getUUID(),Faction.GUARDIAN);factions.put(f.enemy.player.getUUID(),Faction.DESTRUCTION);}
             TrainingMode.setEnabled(false);
             for(var f:fixtures) {
                 var p=f.actor.player;var d=PlayerDataProvider.get(p);
@@ -256,7 +256,7 @@ final class RosterAChecks {
         for(int x=-5;x<=5;x++)for(int z=-5;z<=16;z++)for(int y=0;y<=5;y++){
             var at=floor.offset(x,y,z);f.blocks.put(at,h.getLevel().getBlockState(at));h.getLevel().setBlockAndUpdate(at,(y==0?Blocks.STONE:Blocks.AIR).defaultBlockState());}
         f.origin=Vec3.atBottomCenterOf(floor.above());f.actor=actor(h,f.origin,false);f.enemy=actor(h,f.origin.add(0,0,3),true);f.ally=actor(h,f.origin.add(.8,0,2.5),true);
-        PlayerDataProvider.get(f.enemy.player).setFaction(Faction.YOUMING);PlayerDataProvider.get(f.ally.player).setFaction(Faction.XUANXIAO);
+        PlayerDataProvider.get(f.enemy.player).setFaction(Faction.DESTRUCTION);PlayerDataProvider.get(f.ally.player).setFaction(Faction.GUARDIAN);
         f.enemy.player.setHealth(10000);
         f.ally.player.setHealth(4000);return f;
     }

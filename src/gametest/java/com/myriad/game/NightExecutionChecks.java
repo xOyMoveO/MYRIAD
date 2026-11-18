@@ -89,10 +89,10 @@ final class NightExecutionChecks {
         var cues=new ArrayList<NightSkillViewPayload>();var targetCues=new ArrayList<NightSkillViewPayload>();var p=mock(h,cues);var target=mock(h,targetCues);
         Vec3 origin=Vec3.atBottomCenterOf(floor.above());p.setPos(origin);p.setYRot(0);p.setXRot(0);p.setNoGravity(true);
         target.setPos(origin.add(0,0,5));target.setYRot(180);target.setXRot(0);target.setNoGravity(true);
-        var td=PlayerDataProvider.get(target);td.setFaction(Faction.YOUMING);td.setModMaxHealth(1000);td.setModHealthInitialized(true);
+        var td=PlayerDataProvider.get(target);td.setFaction(Faction.DESTRUCTION);td.setModMaxHealth(1000);td.setModHealthInitialized(true);
         target.getAttribute(Attributes.MAX_HEALTH).setBaseValue(1000);target.setHealth(1000);
         target.getAttribute(ModAttributes.PHYSICAL_DEFENSE).setBaseValue(0);level.addNewPlayer(target);
-        var d=PlayerDataProvider.get(p);d.setFaction(Faction.XUANXIAO);d.setCharacterId("yingxiao");d.setLevel(20);d.setSkillLevel("g1_yingxiao_ua",1);d.setMana(700);
+        var d=PlayerDataProvider.get(p);d.setFaction(Faction.GUARDIAN);d.setCharacterId("yingxiao");d.setLevel(20);d.setSkillLevel("g1_yingxiao_ua",1);d.setMana(700);
         p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(0);p.getAttribute(ModAttributes.CRIT_CHANCE).setBaseValue(0);
         p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND,new net.minecraft.world.item.ItemStack(ModItems.YINGCI.get()));
         return new Fixture(p,target,origin,floor,cues,targetCues,saved);

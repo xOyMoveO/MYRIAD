@@ -1,149 +1,121 @@
 package com.myriad.client.gui;
-import com.mojang.blaze3d.platform.InputConstants;
-
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
-import com.myriad.network.Packets;
 
 import com.myriad.client.ClientDataHolder;
 import com.myriad.network.NetworkSetup;
+import com.myriad.network.Packets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.BooleanSupplier;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import com.myriad.client.gui.SkillChoiceLayout.Box;
 
-/**
- * 训练模式管理界面（/myriad train 打开）：
- * 提升等级 / 获得金币 / 训练宗门 / 无冷却 / 无限金币 / 无限蓝开关。
- */
-public class TrainScreen extends Screen {
-    private static final int SECTION_COLOR = 0xFF55FFFF;
-
-    public TrainScreen() {
-        super(Component.translatable("screen.myriad.train.title"));
+/** Server-synchronised controls; labels left, glass actions/switches right. */
+public final class TrainScreen extends Screen {
+    private int scroll,level=1;
+    private final List<Control> controls=new ArrayList<>();
+    private record Control(GlassButton button,int row,int column,int columns,boolean requiresTraining){}
+    private GlassButton levelLabel;
+    private static final String[] ROW_KEYS={"enabled","apply_level","refresh","restore","nocooldown","nomana","nogold","level","gold","team","team"};
+    public TrainScreen(){
+        super(label("title"));
+        if(ClientDataHolder.get()!=null)level=ClientDataHolder.get().level();
+        Packets.sendToServer(new NetworkSetup.RequestSyncPayload());
     }
-
-    @Override
-    public boolean isPauseScreen() {
-        return false;
+    @Override public boolean isPauseScreen(){return false;}
+    private static Component label(String key){return Component.translatable("screen.myriad.train."+key);}
+    private void send(String action,boolean value){Packets.sendToServer(new NetworkSetup.TrainActionPayload(action,value));}
+    private GlassButton control(int row,int column,int columns,Component text,boolean needsTraining,BooleanSupplier state,Button.OnPress press){
+        var b=addRenderableWidget(new GlassButton(text,state,press));
+        controls.add(new Control(b,row,column,columns,needsTraining));return b;
     }
-
-    @Override
-    protected void init() {
-        int centerX = this.width / 2;
-        int w = 200;
-        int x = centerX - w / 2;
-        int y = 44;
-        int rowH = 26;
-
-        addRenderableWidget(Button.builder(
-                        Component.translatable("screen.myriad.train.level"), btn ->
-                                Packets.sendToServer(
-                                        new NetworkSetup.TrainActionPayload("level", false)))
-                .bounds(x, y, w, 20).build());
-        y += rowH;
-        addRenderableWidget(Button.builder(
-                        Component.translatable("screen.myriad.train.gold"), btn ->
-                                Packets.sendToServer(
-                                        new NetworkSetup.TrainActionPayload("gold", true)))
-                .bounds(x, y, w, 20).build());
-        y += rowH;
-        int factionGap = 4;
-        int factionWidth = (w - factionGap) / 2;
-        xuanxiaoBtn = addRenderableWidget(Button.builder(
-                        factionLabel("screen.myriad.train.faction_xuanxiao",
-                                ClientDataHolder.faction() == com.myriad.game.Faction.XUANXIAO), btn ->
-                                Packets.sendToServer(
-                                        new NetworkSetup.TrainActionPayload("faction_xuanxiao", true)))
-                .bounds(x, y, factionWidth, 20).build());
-        youmingBtn = addRenderableWidget(Button.builder(
-                        factionLabel("screen.myriad.train.faction_youming",
-                                ClientDataHolder.faction() == com.myriad.game.Faction.YOUMING), btn ->
-                                Packets.sendToServer(
-                                        new NetworkSetup.TrainActionPayload("faction_youming", true)))
-                .bounds(x + factionWidth + factionGap, y, factionWidth, 20).build());
-        y += rowH + 8;
-        // 开关：无冷却 / 无限金币 / 无限蓝（每 tick 实时刷新状态）
-        Button cdBtn = addRenderableWidget(Button.builder(
-                        toggleLabel("screen.myriad.train.nocooldown", ClientDataHolder.noCooldown()), btn ->
-                                Packets.sendToServer(new NetworkSetup.TrainActionPayload(
-                                        "nocooldown", !ClientDataHolder.noCooldown())))
-                .bounds(x, y, w, 20).build());
-        y += rowH;
-        Button goldBtn = addRenderableWidget(Button.builder(
-                        toggleLabel("screen.myriad.train.nogold", ClientDataHolder.noGoldCost()), btn ->
-                                Packets.sendToServer(new NetworkSetup.TrainActionPayload(
-                                        "nogold", !ClientDataHolder.noGoldCost())))
-                .bounds(x, y, w, 20).build());
-        y += rowH;
-        Button manaBtn = addRenderableWidget(Button.builder(
-                        toggleLabel("screen.myriad.train.nomana", ClientDataHolder.noMana()), btn ->
-                                Packets.sendToServer(new NetworkSetup.TrainActionPayload(
-                                        "nomana", !ClientDataHolder.noMana())))
-                .bounds(x, y, w, 20).build());
-        this.cdBtn = cdBtn;
-        this.goldBtn = goldBtn;
-        this.manaBtn = manaBtn;
+    private GlassButton action(int row,Component text,Button.OnPress press){return control(row,0,1,text,true,null,press);}
+    private void toggle(int row,String key,boolean training,BooleanSupplier state){control(row,0,1,label(key),training,state,b->send(key,!state.getAsBoolean()));}
+    @Override protected void init(){
+        controls.clear();
+        toggle(0,"enabled",false,ClientDataHolder::isTraining);
+        control(1,0,4,Component.literal("−"),true,null,b->{level=Math.max(1,level-1);refresh();});
+        levelLabel=control(1,1,4,Component.literal(""+level),true,null,b->{level=level==20?1:20;refresh();});
+        control(1,2,4,Component.literal("+"),true,null,b->{level=Math.min(20,level+1);refresh();});
+        control(1,3,4,label("apply"),true,null,b->send("level:"+level,true));
+        levelLabel.setTooltip(Tooltip.create(label("level_hint")));
+        action(2,label("execute"),b->send("refresh",true));
+        action(3,label("execute"),b->send("restore",true));
+        toggle(4,"nocooldown",true,ClientDataHolder::noCooldown);
+        toggle(5,"nomana",true,ClientDataHolder::noMana);
+        toggle(6,"nogold",true,ClientDataHolder::noGoldCost);
+        action(7,Component.literal("+1"),b->send("level",true));
+        action(8,Component.literal("+10000"),b->send("gold",true));
+        action(9,label("faction_guardian"),b->send("faction_guardian",true)).textColor=com.myriad.game.Faction.GUARDIAN.argb();
+        action(10,label("faction_destruction"),b->send("faction_destruction",true)).textColor=com.myriad.game.Faction.DESTRUCTION.argb();
+        var p=layout().panel();
+        var done=addRenderableWidget(new GlassButton(Component.translatable("gui.done"),null,b->onClose()));
+        done.setPosition(p.right()-91,p.bottom()-27);done.setWidth(78);
+        refresh();
     }
-
-    private Button cdBtn;
-    private Button goldBtn;
-    private Button manaBtn;
-    private Button xuanxiaoBtn;
-    private Button youmingBtn;
-
-    /** 每 tick 刷新开关按钮状态（服务端同步后实时更新） */
-    @Override
-    public void tick() {
-        if (cdBtn != null) {
-            cdBtn.setMessage(toggleLabel("screen.myriad.train.nocooldown", ClientDataHolder.noCooldown()));
-        }
-        if (goldBtn != null) {
-            goldBtn.setMessage(toggleLabel("screen.myriad.train.nogold", ClientDataHolder.noGoldCost()));
-        }
-        if (manaBtn != null) {
-            manaBtn.setMessage(toggleLabel("screen.myriad.train.nomana", ClientDataHolder.noMana()));
-        }
-        if (xuanxiaoBtn != null) {
-            xuanxiaoBtn.setMessage(factionLabel("screen.myriad.train.faction_xuanxiao",
-                    ClientDataHolder.faction() == com.myriad.game.Faction.XUANXIAO));
-        }
-        if (youmingBtn != null) {
-            youmingBtn.setMessage(factionLabel("screen.myriad.train.faction_youming",
-                    ClientDataHolder.faction() == com.myriad.game.Faction.YOUMING));
+    private TrainLayout layout(){return TrainLayout.create(width,height,scroll);}
+    private void refresh(){
+        levelLabel.setMessage(Component.literal(""+level));
+        var l=layout();scroll=l.scroll();
+        for(var c:controls){
+            var row=l.row(c.row());var a=l.actions(c.row());
+            int w=c.button().state!=null?64:(a.w()-3*(c.columns()-1))/c.columns();
+            int x=c.button().state!=null?a.right()-w:a.x()+c.column()*(w+3);
+            c.button().setPosition(x,a.y());c.button().setWidth(w);
+            c.button().visible=row.y()>=l.viewport().y()&&row.bottom()<=l.viewport().bottom();
+            c.button().active=ClientDataHolder.modEnabled()&&(!c.requiresTraining()||ClientDataHolder.isTraining());
         }
     }
-
-    private static Component toggleLabel(String key, boolean on) {
-        return Component.translatable(key).append("：")
-                .append(Component.literal(on ? "开启" : "关闭")
-                        .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(on ? 0xFF55FF55 : 0xFF888888)));
+    @Override public void tick(){refresh();}
+    @Override public boolean mouseScrolled(double x,double y,double dx,double dy){
+        var l=layout();if(!l.viewport().contains(x,y))return super.mouseScrolled(x,y,dx,dy);
+        scroll=Math.clamp(scroll-(int)Math.round(dy*TrainLayout.STEP),0,l.maximum());refresh();return true;
     }
-
-    private static Component factionLabel(String key, boolean active) {
-        return Component.translatable(key).copy().withStyle(
-                net.minecraft.network.chat.Style.EMPTY.withColor(active ? 0xFF55FF55 : 0xFFB8C4D4))
-                .append(active ? Component.translatable("screen.myriad.train.faction_current")
-                        .withStyle(net.minecraft.ChatFormatting.GREEN) : Component.empty());
-    }
-
-    @Override
-    public void extractRenderState(net.minecraft.client.gui.GuiGraphicsExtractor gui,
-            int mouseX, int mouseY, float partialTick) {
-        super.extractRenderState(gui, mouseX, mouseY, partialTick);
-        net.minecraft.client.gui.Font font = Minecraft.getInstance().font;
-        String title = Component.translatable("screen.myriad.train.title").getString();
-        gui.text(font, Component.literal(title).withStyle(net.minecraft.ChatFormatting.BOLD),
-                this.width / 2 - font.width(title) / 2, 10, SECTION_COLOR);
-        String hint = Component.translatable("screen.myriad.train.hint").getString();
-        gui.text(font, Component.literal(hint),
-                this.width / 2 - font.width(hint) / 2, 24, 0xFF808080);
-    }
-
-    @Override
-    public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
-        if (event.key() == InputConstants.KEY_ESCAPE) {
-            onClose();
-            return true;
+    @Override public void extractRenderState(GuiGraphicsExtractor g,int mx,int my,float partial){
+        refresh();var l=layout();var p=l.panel();
+        g.fill(0,0,width,height,0x31030A17);
+        TrainingGlass.surface(g,p,12,false,true);
+        g.text(font,title,p.x()+15,p.y()+12,TrainingGlass.TEXT);
+        var data=ClientDataHolder.get();
+        String status=ClientDataHolder.modEnabled()?Component.translatable("screen.myriad.train.current",data==null?1:data.level()).getString():label("require_mod").getString();
+        g.text(font,font.plainSubstrByWidth(status,p.w()-30),p.x()+15,p.y()+29,TrainingGlass.ACCENT);
+        for(int i=0;i<TrainLayout.ROWS;i++){
+            var row=l.row(i);if(row.y()<l.viewport().y()||row.bottom()>l.viewport().bottom())continue;
+            TrainingGlass.surface(g,row,7,row.contains(mx,my),false);
+            var b=l.label(i);String full=label(ROW_KEYS[i]).getString();
+            g.text(font,font.plainSubstrByWidth(full,b.w()),b.x(),b.y(),TrainingGlass.TEXT);
+            if(b.contains(mx,my))g.setComponentTooltipForNextFrame(font,List.of(label(ROW_KEYS[i])),mx,my);
         }
-        return super.keyPressed(event);
+        if(l.maximum()>0){
+            int h=Math.max(12,l.viewport().h()*l.viewport().h()/(l.viewport().h()+l.maximum()));
+            TrainingGlass.round(g,new Box(p.right()-7,l.viewport().y(),2,l.viewport().h()),1,0x40395D73);
+            TrainingGlass.round(g,new Box(p.right()-7,l.viewport().y()+(l.viewport().h()-h)*scroll/l.maximum(),2,h),1,0xC0A1EAF7);
+        }
+        g.text(font,label("scroll"),p.x()+15,p.bottom()-19,TrainingGlass.MUTED);
+        super.extractRenderState(g,mx,my,partial);
+    }
+    private final class GlassButton extends Button {
+        final BooleanSupplier state;
+        int textColor=TrainingGlass.TEXT;
+        GlassButton(Component label,BooleanSupplier state,OnPress press){super(0,0,1,22,label,press,DEFAULT_NARRATION);this.state=state;}
+        @Override public Component getMessage(){
+            return state==null?super.getMessage():super.getMessage().copy().append(": ").append(Component.translatable(state.getAsBoolean()?"options.on":"options.off"));
+        }
+        @Override protected void extractContents(GuiGraphicsExtractor g,int mx,int my,float partial){
+            var b=new Box(getX(),getY(),getWidth(),getHeight());
+            TrainingGlass.surface(g,b,state==null?6:11,active&&isHoveredOrFocused(),false);
+            if(state!=null){
+                boolean on=state.getAsBoolean();
+                TrainingGlass.round(g,new Box(b.right()-25,b.y()+3,22,16),8,!active?0xFF52606D:on?0xFF75DDF1:0xFF607C8E);
+                TrainingGlass.round(g,new Box(b.right()-(on?15:23),b.y()+5,12,12),6,active?0xFFF2FCFF:0xFFB0BDCA);
+                g.text(font,Component.translatable(on?"options.on":"options.off"),b.x()+7,b.y()+7,active?TrainingGlass.TEXT:TrainingGlass.MUTED);
+            }else{
+                String text=font.plainSubstrByWidth(getMessage().getString(),Math.max(1,b.w()-6));
+                g.text(font,text,b.x()+(b.w()-font.width(text))/2,b.y()+7,active?textColor:TrainingGlass.MUTED);
+            }
+        }
     }
 }
