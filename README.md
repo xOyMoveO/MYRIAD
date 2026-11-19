@@ -115,7 +115,7 @@
 
 ## 地图与存档
 
-可以在 [樱隙前线](maps/cherry-rift-frontline/)下载浮岛建筑地图。存档自带静态野怪模型和两座可设置重生点、恢复生命值的复活泉，可在 Minecraft 26.3 单人世界中游览。
+可以在 [樱隙前线](maps/cherry-rift-frontline/)下载浮岛建筑地图，并查看[露天平地的测量口径](maps/cherry-rift-frontline/README.md#露天平地)。存档自带静态野怪模型和两座可设置重生点、恢复生命值的复活泉，可在 Minecraft 26.3 Fabric 单人世界中游览。
 
 樱隙前线的[野怪试玩指引](maps/cherry-rift-frontline/#野怪试玩)提供三成平地版的 13 个营地点位和六种可战斗野怪。开启训练后可用 `/myriad mob preview` 提前刷新营地。正式 3v3 仍需配置对局设施。
 
