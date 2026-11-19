@@ -2,6 +2,7 @@ package com.myriad.game;
 
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
+import com.myriad.registry.ModEntities;
 
 /**
  * 野怪类型表（策划案第十一节扩展）：
@@ -21,7 +22,21 @@ public enum MonsterType {
     AZURE_HORN_GUARDIAN("azure_horn_guardian", "monster.myriad.azure_horn_guardian", EntityTypes.RAVAGER, 10080, 78, 350, 180, 300, "azure_attack", false, 180, 1.25, 2.3, 110, 90),
     VERMILION_FLAME_TYRANT("vermilion_flame_tyrant", "monster.myriad.vermilion_flame_tyrant", EntityTypes.HOGLIN, 11340, 96, 420, 220, 300, "vermilion_spell", false, 190, 1.35, 2.0, 90, 120),
     GALE_ROC_MATRIARCH("gale_roc_matriarch", "monster.myriad.gale_roc_matriarch", EntityTypes.PHANTOM, 9450, 72, 380, 200, 300, "gale_haste", false, 170, 1.8, 2.0, 80, 90),
-    OBSIDIAN_TORTOISE_WARDEN("obsidian_tortoise_warden", "monster.myriad.obsidian_tortoise_warden", EntityTypes.IRON_GOLEM, 13860, 66, 450, 240, 300, "obsidian_guard", false, 220, 0.9, 2.2, 160, 130);
+    OBSIDIAN_TORTOISE_WARDEN("obsidian_tortoise_warden", "monster.myriad.obsidian_tortoise_warden", EntityTypes.IRON_GOLEM, 13860, 66, 450, 240, 300, "obsidian_guard", false, 220, 0.9, 2.2, 160, 130),
+    CHERRY_FROST_HARE("frost_hare", new CherryModel(1.1034F, .44F, .82F, .88F),
+            950, 36, 85, 32, 90, null, 75, 2.4, 1.55, 24, 24),
+    CHERRY_DUSK_FOX("dusk_fox", new CherryModel(2.1822F, .425F, 1.75F, .87F),
+            950, 36, 85, 32, 90, null, 75, 2.4, 1.55, 24, 24),
+    CHERRY_SCOUT_BOT("scout_bot", new CherryModel(1.5467F, .435F, 1.46F, .9F),
+            1000, 38, 90, 34, 90, null, 80, 2.25, 1.55, 28, 28),
+    CHERRY_JADE_BEAST("jade_beast", new CherryModel(2.7F, .9853F, 2.45F, 1.95F),
+            2500, 56, 155, 110, 120, null, 130, 1.6, 2.1, 56, 50),
+    CHERRY_HEAVY_WALKER("heavy_walker", new CherryModel(2.796F, .965F, 2.45F, 1.95F),
+            2500, 56, 155, 110, 120, null, 130, 1.6, 2.1, 56, 50),
+    CHERRY_RIFT_CRAB("rift_crab", new CherryModel(5.87F, 1.11F, 5.45F, 2.1F),
+            7600, 75, 270, 260, 300, "obsidian_guard", 185, 1.15, 3.45, 88, 75);
+
+    public record CherryModel(float scale, float lift, float width, float height) {}
 
     private final String id;
     private final String nameKey;
@@ -44,10 +59,27 @@ public enum MonsterType {
     private final double attackRange;
     private final double physicalDefense;
     private final double magicDefense;
+    private final CherryModel cherryModel;
 
     MonsterType(String id, String nameKey, EntityType<?> entityType, double health, double attack,
             int xp, int gold, int respawnSeconds, String buff, boolean teamGold, int hatred,
             double moveSpeed, double attackRange, double physicalDefense, double magicDefense) {
+        this(id, nameKey, entityType, health, attack, xp, gold, respawnSeconds, buff, teamGold,
+                hatred, moveSpeed, attackRange, physicalDefense, magicDefense, null);
+    }
+
+    MonsterType(String model, CherryModel cherryModel, double health, double attack, int xp, int gold,
+            int respawnSeconds, String buff, int hatred, double moveSpeed, double attackRange,
+            double physicalDefense, double magicDefense) {
+        this("cherry_" + model, "monster.myriad.cherry_" + model, ModEntities.CHERRY_RIFT_MONSTER.get(),
+                health, attack, xp, gold, respawnSeconds, buff, false, hatred, moveSpeed, attackRange,
+                physicalDefense, magicDefense, cherryModel);
+    }
+
+    MonsterType(String id, String nameKey, EntityType<?> entityType, double health, double attack,
+            int xp, int gold, int respawnSeconds, String buff, boolean teamGold, int hatred,
+            double moveSpeed, double attackRange, double physicalDefense, double magicDefense,
+            CherryModel cherryModel) {
         this.id = id;
         this.nameKey = nameKey;
         this.entityType = entityType;
@@ -63,6 +95,7 @@ public enum MonsterType {
         this.attackRange = attackRange;
         this.physicalDefense = physicalDefense;
         this.magicDefense = magicDefense;
+        this.cherryModel = cherryModel;
     }
 
     public int getHatred() {
@@ -120,21 +153,31 @@ public enum MonsterType {
         return teamGold;
     }
 
-    /** 会在开局 30 秒后首次生成的六种小型野怪。 */
+    public CherryModel cherryModel() {
+        return cherryModel;
+    }
+
+    public boolean canUseFixedSpawn() {
+        return !isLargeBoss() || this == CHERRY_RIFT_CRAB;
+    }
+
+    /** 会在开局 30 秒后首次生成的小型野怪。 */
     public boolean isSmallMonster() {
         return this == FROST_HARE || this == EMBER_IMP || this == SHADOW_FOX
-                || this == THUNDER_BADGER || this == MIASMA_TOAD || this == STONE_SHELL_CRAB;
+                || this == THUNDER_BADGER || this == MIASMA_TOAD || this == STONE_SHELL_CRAB
+                || this == CHERRY_FROST_HARE || this == CHERRY_DUSK_FOX || this == CHERRY_SCOUT_BOT;
     }
 
-    /** 会在开局 60 秒后首次生成的三种中型野怪。 */
+    /** 会在开局 60 秒后首次生成的中型野怪。 */
     public boolean isMediumMonster() {
-        return this == GOLD_PIG || this == SPRING_REEF_GUARDIAN || this == FROST_WEB_MATRIARCH;
+        return this == GOLD_PIG || this == SPRING_REEF_GUARDIAN || this == FROST_WEB_MATRIARCH
+                || this == CHERRY_JADE_BEAST || this == CHERRY_HEAVY_WALKER;
     }
 
-    /** 四种会在大型刷新点随机出现的首领。 */
+    /** 大型首领包括随机首领及樱隙前线的固定首领。 */
     public boolean isLargeBoss() {
         return this == AZURE_HORN_GUARDIAN || this == VERMILION_FLAME_TYRANT
-                || this == GALE_ROC_MATRIARCH || this == OBSIDIAN_TORTOISE_WARDEN;
+                || this == GALE_ROC_MATRIARCH || this == OBSIDIAN_TORTOISE_WARDEN || this == CHERRY_RIFT_CRAB;
     }
 
     public static MonsterType byId(String id) {

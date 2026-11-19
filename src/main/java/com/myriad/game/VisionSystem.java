@@ -91,7 +91,8 @@ public final class VisionSystem {
                         boolean ally = team == targetData.getFaction();
                         if (!ally && !canSee(viewer, target)) continue;
                         bars.add(new com.myriad.network.EnemyHealthPayload.Entry(target.getId(),
-                                target.getHealth(), targetData.getModMaxHealth(), ally));
+                                target.getHealth(), targetData.getModMaxHealth(), ally,
+                                com.myriad.player.ModShieldSystem.displayValue(target)));
                     }
                 }
                 Packets.sendToPlayer(viewer, new com.myriad.network.EnemyHealthPayload(bars));

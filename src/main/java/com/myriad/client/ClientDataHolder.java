@@ -30,6 +30,11 @@ public final class ClientDataHolder {
         if(data!=null&&(data.modEnabled()!=payload.modEnabled()||data.phaseId()!=payload.phaseId()
                 ||!java.util.Objects.equals(data.characterId(),payload.characterId())))
             {com.myriad.client.particle.AbilityMeshParticle.reset();SkillChargeClient.reset();}
+        if (data != null && (data.modEnabled() != payload.modEnabled() || data.training() != payload.training()
+                || data.phaseId() != payload.phaseId() || data.factionId() != payload.factionId()
+                || !java.util.Objects.equals(data.characterId(), payload.characterId()))) {
+            TeamSignalClient.reset(); ControlStatusOverlay.reset(); EnemyHealthBars.reset(); DeathRecapStore.clear();
+        }
         data = payload;
         if (!payload.modEnabled()) {
             pickState = null;
@@ -54,6 +59,7 @@ public final class ClientDataHolder {
 
     /** Connection-local snapshots must never carry rendering rules into another world/server. */
     public static void resetConnection() {
+        TeamSignalClient.reset(); ControlStatusOverlay.reset(); EnemyHealthBars.reset(); DeathRecapStore.clear();
         com.myriad.client.firstperson.NightDaggerView.reset();
         com.myriad.client.firstperson.FlameDaoView.reset();
         com.myriad.client.firstperson.ShuoView.reset();

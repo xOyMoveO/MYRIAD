@@ -91,6 +91,13 @@ public final class MinimapOverlay {
             if (marker.kind() > 1) continue;
             renderMarker(gui, marker, projection, left, top, width, height);
         }
+        for (var signal : TeamSignalClient.entries()) {
+            var uv = projection.project(signal.position().x, signal.position().z);
+            if (uv[0] < 0 || uv[0] > 1 || uv[1] < 0 || uv[1] > 1) continue;
+            int px = left + (int)Math.round(uv[0] * (width - 1));
+            int py = top + (int)Math.round(uv[1] * (height - 1));
+            TeamSignalClient.glyph(gui, px, py, com.myriad.game.TeamSignalKind.values()[signal.kind()].color, 4, signal.kind());
+        }
         renderLegend(gui, font, left, y + SIZE - 12);
     }
 

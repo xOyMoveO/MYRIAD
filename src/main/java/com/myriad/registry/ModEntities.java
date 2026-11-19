@@ -1,6 +1,7 @@
 package com.myriad.registry;
 
 import com.myriad.Myriad;
+import com.myriad.game.CherryRiftMonsterEntity;
 import com.myriad.game.DefenseTowerEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -33,4 +34,9 @@ public final class ModEntities {
             register("siege_minion", id -> EntityType.Builder
                     .of(com.myriad.game.LaneMinionEntity::new, MobCategory.MISC).sized(1.5F,2F)
                     .clientTrackingRange(10).updateInterval(1).build(ResourceKey.create(Registries.ENTITY_TYPE,id)));
+    public static final java.util.function.Supplier<EntityType<CherryRiftMonsterEntity>> CHERRY_RIFT_MONSTER =
+            register("cherry_rift_monster", id -> EntityType.Builder
+                    .of(CherryRiftMonsterEntity::new, MobCategory.MISC).sized(.82F, .88F)
+                    .clientTrackingRange(10).updateInterval(1).noLootTable().noSummon()
+                    .build(ResourceKey.create(Registries.ENTITY_TYPE, id)));
 }

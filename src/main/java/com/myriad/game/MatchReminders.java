@@ -1,6 +1,8 @@
 package com.myriad.game;
 
 import com.myriad.player.PlayerDataProvider;
+import com.myriad.character.rework.FirstGroupGrowth;
+import com.myriad.character.rework.FirstGroupSkills;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -9,7 +11,7 @@ public final class MatchReminders {
     private MatchReminders() {}
     public static void tick(ServerPlayer player) {
         GameManager manager = GameManager.get();
-        if (manager == null || manager.getPhase() != GameManager.Phase.PLAYING) return;
+        if (TrainingMode.isEnabled() || manager == null || manager.getPhase() != GameManager.Phase.PLAYING) return;
         var data = PlayerDataProvider.get(player);
         if (data == null || data.getCharacterId() == null || player.isSpectator()) return;
         long now = player.level().getGameTime();
@@ -20,8 +22,10 @@ public final class MatchReminders {
             tag.putLong("myriad_reminder_next", 0);
         }
         if (now < tag.getLongOr("myriad_reminder_next", 0)) return;
-        boolean empty = java.util.Arrays.stream(data.getEquipmentSlots()).allMatch(id -> id == null || id.isBlank());
-        boolean shop = empty && data.getGold() >= 450 && manager.getMatchElapsedTicks(now) < 2400;
+        boolean shop = FirstGroupSkills.active(data.getCharacterId())
+                && data.getGold() >= FirstGroupGrowth.price(0)
+                && manager.getMatchElapsedTicks(now) < 2400
+                && FirstGroupGrowth.ATTRIBUTES.stream().allMatch(key -> data.firstGroupAttribute(key) == 0);
         boolean points = data.getSkillPoints() > 0;
         if (!shop && !points) return;
         Component message = Component.translatable(shop && points ? "message.myriad.reminder.both"

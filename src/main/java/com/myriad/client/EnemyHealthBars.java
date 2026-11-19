@@ -20,6 +20,7 @@ public final class EnemyHealthBars {
     private static EnemyHealthPayload snapshot = new EnemyHealthPayload(java.util.List.of());
     private static net.minecraft.client.multiplayer.ClientLevel world;
     private static long updated;
+    public static void reset() { update(new EnemyHealthPayload(java.util.List.of())); world = null; }
     public static void update(EnemyHealthPayload payload) {
         world = Minecraft.getInstance().level;
         updated = world == null ? 0 : world.getGameTime();
@@ -47,7 +48,9 @@ public final class EnemyHealthBars {
             float fraction = Math.clamp(entry.health() / Math.max(1, entry.maximum()), 0, 1);
             int emptyColor = entry.ally() ? ALLY_EMPTY : ENEMY_EMPTY;
             int fillColor = entry.ally() ? ALLY_FILL : ENEMY_FILL;
-            String health = Math.max(0, Math.round(entry.health())) + " / " + Math.round(entry.maximum());
+            var health = net.minecraft.network.chat.Component.literal(Math.max(0, Math.round(entry.health())) + " / " + Math.round(entry.maximum()));
+            if (entry.shield() > 0) health.append(net.minecraft.network.chat.Component.translatable("hud.myriad.overhead_shield",
+                    Math.max(1, Math.round(entry.shield()))).withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xA1EEFF)));
             String name = target.getName().getString();
             int nameColor = entry.ally() ? 0xFF72E69A : 0xFFFF8088;
             gui.pose().pushMatrix();
@@ -57,6 +60,12 @@ public final class EnemyHealthBars {
             gui.fill(left - 1, -1, left + BAR_WIDTH + 1, BAR_HEIGHT + 1, 0xEE11151B);
             gui.fill(left, 0, left + BAR_WIDTH, BAR_HEIGHT, emptyColor);
             gui.fill(left, 0, left + Math.round(BAR_WIDTH * fraction), BAR_HEIGHT, fillColor);
+            int shieldWidth = EnemyHealthPayload.shieldPixels(entry.shield(), entry.maximum(), BAR_WIDTH);
+            if (shieldWidth > 0) {
+                gui.fill(left - 1, BAR_HEIGHT + 1, left + BAR_WIDTH + 1, BAR_HEIGHT + 6, 0xEE11151B);
+                gui.fill(left, BAR_HEIGHT + 2, left + BAR_WIDTH, BAR_HEIGHT + 5, 0xFF203E50);
+                gui.fill(left, BAR_HEIGHT + 2, left + shieldWidth, BAR_HEIGHT + 5, 0xFF76D9FF);
+            }
             gui.text(font, name, -font.width(name) / 2, -21, nameColor);
             gui.text(font, health, -font.width(health) / 2, -11, 0xFFFFFFFF);
             gui.pose().popMatrix();

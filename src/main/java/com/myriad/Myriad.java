@@ -22,6 +22,8 @@ public final class Myriad implements ModInitializer {
         net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(ModEntities.DEFENSE_TOWER.get(),com.myriad.game.DefenseTowerEntity.createAttributes());
         net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(ModEntities.SIEGE_MINION.get(),com.myriad.game.LaneMinionEntity.createAttributes());
         net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(ModEntities.LANE_MINION.get(),com.myriad.game.LaneMinionEntity.createAttributes());
+        net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(
+                ModEntities.CHERRY_RIFT_MONSTER.get(), com.myriad.game.CherryRiftMonsterEntity.createAttributes());
         net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.MODIFY.register(Myriad::onModifyAttributes);
         com.myriad.player.PlayerDataProvider.initialize();
         com.myriad.player.EntityState.initialize();

@@ -219,6 +219,7 @@ public final class RivetPush {
         c.slow(target, 1, ticks);
         if (target instanceof ServerPlayer player) {
             com.myriad.player.PlayerDataProvider.get(player).setBuff(key, duration);
+            com.myriad.combat.DeathRecaps.control(c.player,player,c.skill.getId(),4,c.now(),duration);
             com.myriad.player.PlayerDataProvider.syncToClient(player);
         }
     }

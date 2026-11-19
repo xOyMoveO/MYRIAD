@@ -105,6 +105,8 @@ public class HudOverlay implements HudElement {
             return;
         }
         Font font = Minecraft.getInstance().font;
+        TeamSignalClient.render(gui,font);
+        ControlStatusOverlay.render(gui,font);
         var preparation=ClientDataHolder.pickState();
         if(preparation!=null&&preparation.state()==1&&preparation.countdownTick()>=0&&Minecraft.getInstance().level!=null){
             int seconds=(int)Math.max(0,(preparation.countdownTick()-Minecraft.getInstance().level.getGameTime()+19)/20);
@@ -182,6 +184,10 @@ public class HudOverlay implements HudElement {
                 : Component.translatable("hud.myriad.spectating", target).getString();
         gui.fill(x - font.width(hint) / 2 - 8, y + 16, x + font.width(hint) / 2 + 8, y + 32, 0xB8101722);
         gui.text(font, hint, x - font.width(hint) / 2, y + 19, 0xFFB9DFFF);
+        if (DeathRecapStore.latest() != null) {
+            var recap = Component.translatable("recap.myriad.hint", com.myriad.MyriadClient.KEY_DEATH_RECAP.getTranslatedKeyMessage());
+            gui.text(font, recap, x - font.width(recap) / 2, y + 35, 0xFFFFD48B);
+        }
     }
 
     private void renderRecall(GuiGraphicsExtractor gui, Font font) {

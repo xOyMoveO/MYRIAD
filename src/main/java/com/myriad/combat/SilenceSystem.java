@@ -18,6 +18,9 @@ public final class SilenceSystem {
             PlayerDataProvider.syncToClient(player);
         }
     }
+    public static long remaining(ServerPlayer player) {
+        return Math.max(0, SILENCED_UNTIL.getOrDefault(player.getUUID(), 0L) - player.level().getGameTime());
+    }
     public static boolean isSilenced(ServerPlayer player) {
         return SILENCED_UNTIL.getOrDefault(player.getUUID(), 0L) > player.level().getGameTime();
     }

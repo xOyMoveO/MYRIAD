@@ -43,6 +43,12 @@ public final class SkillChargeSystem {
                 &&p.isAlive()&&!p.isSpectator()&&ModState.isEnabled()
                 &&java.util.Objects.equals(c.role,PlayerDataProvider.get(p).getCharacterId());
     }
+    public record View(String skill, int ticks, float walkFactor) {}
+    public static View view(ServerPlayer player) {
+        if (!active(player)) return null;
+        var charge = ACTIVE.get(player.getUUID());
+        return new View(charge.skill, (int)Math.min(Integer.MAX_VALUE, charge.until - player.level().getGameTime()), charge.walkFactor);
+    }
     private static void freeze(ServerPlayer p){
         // Stationary casting is not knockback immunity; explicit skill impulses keep ownership.
         if(com.myriad.combat.KnockbackBuffer.recentlyForced(p))return;

@@ -1,0 +1,72 @@
+package com.myriad.game;
+
+import com.myriad.registry.ModAttributes;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.world.entity.EntityDimensions;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.Pose;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+
+/** The model and hitbox belong to the combatant itself. MonsterManager owns combat and respawning. */
+public final class CherryRiftMonsterEntity extends PathfinderMob {
+    private static final EntityDataAccessor<String> VARIANT = SynchedEntityData.defineId(
+            CherryRiftMonsterEntity.class, EntityDataSerializers.STRING);
+
+    public CherryRiftMonsterEntity(EntityType<? extends CherryRiftMonsterEntity> type, Level level) {
+        super(type, level);
+        setNoAi(true);
+        setPersistenceRequired();
+        setCanPickUpLoot(false);
+    }
+
+    public static AttributeSupplier.Builder createAttributes() {
+        return createMobAttributes().add(Attributes.ATTACK_DAMAGE).add(Attributes.FOLLOW_RANGE, 20)
+                .add(ModAttributes.PHYSICAL_DEFENSE).add(ModAttributes.MAGIC_RESISTANCE);
+    }
+
+    @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(VARIANT, MonsterType.CHERRY_FROST_HARE.getId());
+    }
+
+    public void configure(MonsterType type) {
+        entityData.set(VARIANT, type.getId());
+    }
+
+    public MonsterType variant() {
+        MonsterType type = MonsterType.byId(entityData.get(VARIANT));
+        return type != null && type.cherryModel() != null ? type : MonsterType.CHERRY_FROST_HARE;
+    }
+
+    @Override
+    protected EntityDimensions getDefaultDimensions(Pose pose) {
+        MonsterType.CherryModel model = variant().cherryModel();
+        return EntityDimensions.fixed(model.width(), model.height()).withEyeHeight(model.height() * .75F);
+    }
+
+    @Override
+    public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
+        super.onSyncedDataUpdated(key);
+        if (VARIANT.equals(key)) refreshDimensions();
+    }
+
+    @Override
+    protected void addAdditionalSaveData(ValueOutput output) {
+        super.addAdditionalSaveData(output);
+        output.putString("myriad_variant", variant().getId());
+    }
+
+    @Override
+    protected void readAdditionalSaveData(ValueInput input) {
+        super.readAdditionalSaveData(input);
+        entityData.set(VARIANT, input.getStringOr("myriad_variant", MonsterType.CHERRY_FROST_HARE.getId()));
+    }
+}

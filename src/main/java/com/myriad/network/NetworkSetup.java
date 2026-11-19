@@ -1255,6 +1255,14 @@ public final class NetworkSetup {
         PayloadTypeRegistry.clientboundPlay().register(KillAnnouncementPayload.TYPE, KillAnnouncementPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(MatchTabPayload.TYPE, MatchTabPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(EnemyHealthPayload.TYPE, EnemyHealthPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(TeamSignalsPayload.TYPE, TeamSignalsPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(DeathRecapPayload.TYPE, DeathRecapPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(ControlStatusPayload.TYPE, ControlStatusPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(TeamSignalRequest.TYPE, TeamSignalRequest.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(TeamSignalRequest.TYPE, (payload, context) -> {
+            if (!com.myriad.game.TeamSignals.request(context.player(), payload))
+                com.myriad.game.TeamSignals.rejected(context.player());
+        });
         PayloadTypeRegistry.clientboundPlay().register(RewardFloatPayload.TYPE, RewardFloatPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(TowerAlertPayload.TYPE, TowerAlertPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(PlayerDataPayload.TYPE, PlayerDataPayload.STREAM_CODEC);

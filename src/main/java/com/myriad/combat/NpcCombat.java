@@ -28,7 +28,7 @@ public final class NpcCombat {
         float damage = DamageCalc.applyMitigation(attacker, target, base, kind);
         DamageSource source = new DamageSource(level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE)
                 .getOrThrow(kind == DamageCalc.Kind.MAGIC ? MAGIC : ATTACK), attacker);
-        target.hurt(source, damage);
+        DeathRecaps.typedHurt(target, source, damage, kind);
     }
 
     /** 防御塔基础伤害由防御塔自身数值决定，最大生命百分比附伤只计算一次。 */
@@ -39,7 +39,7 @@ public final class NpcCombat {
         float damage = DamageCalc.applyMitigation(attacker, target, raw, kind);
         DamageSource source = new DamageSource(level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE)
                 .getOrThrow(kind == DamageCalc.Kind.MAGIC ? MAGIC : ATTACK), attacker);
-        target.hurt(source, damage);
+        DeathRecaps.typedHurt(target, source, damage, kind);
     }
 
     /** Damage without crediting a player, used by enemy fountains. */

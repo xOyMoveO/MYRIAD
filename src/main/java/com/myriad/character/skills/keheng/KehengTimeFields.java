@@ -121,9 +121,11 @@ public final class KehengTimeFields {
         long now=p.level().getGameTime();var sources=new ArrayList<Published>();
         if(susceptible(p,now)){
             for(var n:NEEDLES)if(n.target==p&&now<n.until&&n.cast.player.level()==p.level()){
-                ActionTime.apply(p.getUUID(),n.cast.player.getUUID(),n.key,n.rate,n.until);sources.add(new Published(n.cast.player.getUUID(),n.key));}
+                ActionTime.apply(p.getUUID(),n.cast.player.getUUID(),n.key,n.rate,n.until);sources.add(new Published(n.cast.player.getUUID(),n.key));
+                com.myriad.combat.DeathRecaps.control(n.cast.player,p,n.cast.skill.getId(),2,now);}
             for(var f:FIELDS)if(f.cast.player.level()==p.level()&&f.active(now)&&SkillTargets.enemy(f.cast.player,p)&&f.contains(f.corridor?p.getBoundingBox().getCenter():p.position())){
-                ActionTime.apply(p.getUUID(),f.cast.player.getUUID(),f.key,f.actorRate,now+2);sources.add(new Published(f.cast.player.getUUID(),f.key));}
+                ActionTime.apply(p.getUUID(),f.cast.player.getUUID(),f.key,f.actorRate,now+2);sources.add(new Published(f.cast.player.getUUID(),f.key));
+                com.myriad.combat.DeathRecaps.control(f.cast.player,p,f.cast.skill.getId(),2,now);}
         }
         if(!sources.isEmpty())PUBLISHED.put(p.getUUID(),sources);
         double rate=ActionTime.multiplier(p.getUUID(),now);updateMovement(p,rate);

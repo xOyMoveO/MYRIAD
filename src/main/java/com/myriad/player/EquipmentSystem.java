@@ -175,7 +175,7 @@ public final class EquipmentSystem {
             return false;
         }
         data.setEquipmentSlot(slot, "");
-        data.addGold((int) Math.round(def.totalPrice() * 0.7));
+        data.addWalletGold((int) Math.round(def.totalPrice() * 0.7));
         apply(player, data);
         com.myriad.game.MatchMessages.send(player,
                 com.myriad.game.MatchMessages.Tone.SUCCESS,

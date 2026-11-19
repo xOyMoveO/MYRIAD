@@ -330,6 +330,11 @@ public class PickScreen extends Screen {
             boolean clickable = myTurn && faction.getName().equals(state.myFaction());
             drawAvatarAt(gui, font, t, null, null, slot.x(), slot.y(), slot.size(), 1f,
                     hover, clickable && !taken, taken, accent);
+            CharacterStatusBadge.draw(gui, font, t, slot.x() + 2, slot.y() + 2, slot.size() - 4);
+            if (hover && t.isHalfComplete()) {
+                gui.setComponentTooltipForNextFrame(font,
+                        List.of(Component.translatable(t.nameKey()), CharacterStatusBadge.halfCompleteLabel()), mouseX, mouseY);
+            }
             String name = font.plainSubstrByWidth(Component.translatable(t.nameKey()).getString(),slot.size()+8);
             gui.text(font, Component.literal(name).withStyle(net.minecraft.ChatFormatting.BOLD),
                     slot.x() + slot.size() / 2 - font.width(name) / 2,

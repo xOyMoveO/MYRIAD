@@ -46,7 +46,7 @@ public final class TrainingActions {
             data.setMana((float)Math.min(mana,player.getAttributeValue(ModAttributes.MAX_MANA)));
         }else switch(action){
             case "level" -> LevelSystem.addXp(player,data,LevelSystem.xpToNext(data.getLevel()));
-            case "gold" -> data.addGold(value?10000:1000);
+            case "gold" -> data.addWalletGold(value?10000:1000);
             case "refresh" -> data.clearSkillCooldowns();
             case "restore" -> {player.setHealth(player.getMaxHealth());data.setMana((float)player.getAttributeValue(ModAttributes.MAX_MANA));}
             case "faction_guardian" -> PlayerDataProvider.assignTeam(player,Faction.GUARDIAN);

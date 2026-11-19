@@ -17,6 +17,18 @@ public final class ServerCallbacks {
         ServerLifecycleEvents.SERVER_STOPPED.register(PlayerDataProvider::onServerStopped);
         ServerTickEvents.START_SERVER_TICK.register(com.myriad.character.skills.keheng.KehengTimeFields::clock);
         ServerTickEvents.END_SERVER_TICK.register(PlayerDataProvider::onServerTick);
+        ServerTickEvents.END_SERVER_TICK.register(com.myriad.game.TeamSignals::tick);
+        ServerTickEvents.END_SERVER_TICK.register(com.myriad.combat.ControlStatusSystem::tick);
+        ServerTickEvents.END_SERVER_TICK.register(com.myriad.combat.DeathRecaps::tick);
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
+            com.myriad.game.TeamSignals.clear();
+            com.myriad.combat.ControlStatusSystem.clearAll();
+            com.myriad.combat.DeathRecaps.clearAll();
+        });
+        ServerPlayerEvents.LEAVE.register(player -> {
+            com.myriad.combat.ControlStatusSystem.forget(player.getUUID());
+            com.myriad.combat.DeathRecaps.forget(player.getUUID());
+        });
         ServerPlayerEvents.JOIN.register(PlayerDataProvider::onPlayerLoggedIn);
         ServerPlayerEvents.LEAVE.register(player -> { PlayerDataProvider.onPlayerLoggedOut(player);com.myriad.character.ability.SkillChargeSystem.logout(player); });
         ServerPlayerEvents.COPY_FROM.register((original,player,alive) -> PlayerDataProvider.onPlayerClone(original,player));
