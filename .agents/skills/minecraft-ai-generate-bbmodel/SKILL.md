@@ -1,6 +1,6 @@
 ---
 name: minecraft-ai-generate-bbmodel
-description: Convert a text description or reference image into an editable Minecraft/Blockbench .bbmodel by first authoring a structured asset spec JSON, then running a deterministic generator that validates geometry, hierarchy, UVs, texture details, and outputs a clean .bbmodel. Use when the user asks to generate Minecraft models, Blockbench models, bbmodel assets, cuboid furniture, props, creatures, robots, mobs, or convert concepts/images into .bbmodel files.
+description: Generate Minecraft cuboid assets or editable Blockbench .bbmodel files from text, reference images, or asset specs. In MYRIAD, use Blockbench MCP to inspect and refine generated models, then carry approved edits back into the asset spec and regenerate.
 ---
 
 # Minecraft AI Generate BBModel
@@ -26,7 +26,7 @@ input (text / image)
   -> [script] build .bbmodel           (grid-snapped cuboids, hierarchy, UVs)
   -> [script] render atlas             (Pillow, deterministic, flexible size)
   -> [script] validate_bbmodel         (faces, uv bounds, detail binding, encoding)
-  -> .bbmodel  ->  open in Blockbench for manual polish
+  -> .bbmodel -> Blockbench MCP preview/refinement -> approved edits to spec -> regenerate
 ```
 
 The AI fills the spec. The script `scripts/generate_bbmodel.py` does the rest.
@@ -38,6 +38,7 @@ bottom section); it never feeds geometry.
 - `schema/asset_spec.schema.json` — the intermediate spec contract the AI fills in.
 - `scripts/generate_bbmodel.py` — deterministic generator + 3 validation layers.
 - `scripts/bbmodel_to_spec.py` — reverse a `.bbmodel` back into an editable spec (for iterating on existing models).
+- `scripts/merge_bbmodel_geometry.py` — stage confirmed cube geometry edits in an existing spec.
 - `presets/archetypes.json` — proportion anchors per archetype (quadruped, humanoid, furniture_block, item_simple).
 
 ## Workflow
@@ -81,8 +82,11 @@ For a MYRIAD skill projectile or other VFX model, first read the project [layere
    - Use `--strict` only when you want conventional proportions enforced as hard errors
      (e.g. batch-generating standard mobs to a house style).
 
-5. Report the result and hand off to Blockbench for manual polish. The goal is a clean,
-   editable, correctly-proportioned first pass, not a finished production asset.
+5. For MYRIAD assets, follow [Blockbench preview and write-back](references/blockbench-round-trip.md)
+   when Blockbench MCP is available. Inspect the generated copy, refine it, and capture
+   comparable views. Carry approved edits into the existing spec and regenerate with
+   the asset's own generator. If MCP is unavailable, use the offline renderer at
+   `tools/assets/render_bbmodel.py` for the preview and report its source.
 
 ## The asset spec (what the AI fills in)
 
@@ -165,20 +169,18 @@ Archetype is also entirely optional: omit it and no proportion checks run at all
 
 ## Inspecting / editing an existing .bbmodel
 
-- To iterate on an existing model (yours or someone else's), reverse it back into a spec,
-  edit the spec, then regenerate:
+- When a model already has a source spec, update that spec using the
+  [write-back workflow](references/blockbench-round-trip.md). For a model without
+  a source spec, recover an initial spec:
   ```bash
   python scripts/bbmodel_to_spec.py model.bbmodel -o model.spec.json --dump-texture tex.png
   # edit model.spec.json, then:
   python scripts/generate_bbmodel.py model.spec.json -o model.bbmodel --png tex.png
   ```
-  Geometry round-trips losslessly (pos/size/pivot/rotation/inflate, hierarchy, UV layout,
-  resolution). Lossy: texture PIXELS (use `--dump-texture`), `face_details` (returns
-  empty — re-declare important ones), and `target`/`archetype` (guessed/blank). The
-  reverse script also tolerates foreign models: it sanitizes non-ASCII/duplicate element
-  names to unique ASCII ids and recovers non-box UVs as explicit `per_face`.
-- For a tiny tweak you may edit the `.bbmodel` directly, but prefer the spec round-trip so
-  validation still applies.
+  Check the recovered cuboid geometry, hierarchy, and UVs against the original.
+  The reverse script guesses the target, leaves `face_details` and the archetype
+  empty, and normalizes element IDs. Use `--dump-texture` to extract embedded
+  texture pixels separately.
 - Preserve user-edited geometry unless they ask for a rebuild. Keep `resolution`.
 - Keep all internal names ASCII to avoid replacement-character (`?`) corruption. For a
   Chinese-facing filename, build the path with Python Unicode escapes, e.g.

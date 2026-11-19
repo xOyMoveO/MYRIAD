@@ -4,6 +4,7 @@ import com.myriad.registry.ModAttributes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
@@ -18,6 +19,10 @@ import net.minecraft.world.level.storage.ValueOutput;
 public final class CherryRiftMonsterEntity extends PathfinderMob {
     private static final EntityDataAccessor<String> VARIANT = SynchedEntityData.defineId(
             CherryRiftMonsterEntity.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<Float> ATTACK_PROGRESS = SynchedEntityData.defineId(
+            CherryRiftMonsterEntity.class, EntityDataSerializers.FLOAT);
+    private float lastRenderedAttack = -1F;
+    private float renderedAttack = -1F;
 
     public CherryRiftMonsterEntity(EntityType<? extends CherryRiftMonsterEntity> type, Level level) {
         super(type, level);
@@ -35,6 +40,30 @@ public final class CherryRiftMonsterEntity extends PathfinderMob {
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(VARIANT, MonsterType.CHERRY_FROST_HARE.getId());
+        builder.define(ATTACK_PROGRESS, -1F);
+    }
+
+    void publishAttackProgress(float progress) {
+        entityData.set(ATTACK_PROGRESS, progress);
+    }
+
+    /** The server publishes progress for the currently active strike; idle is -1. */
+    public float attackAnimationProgress(float partialTick) {
+        float current = entityData.get(ATTACK_PROGRESS);
+        if (!level().isClientSide() || current < 0F || current != renderedAttack
+                || lastRenderedAttack < 0F || lastRenderedAttack > current) {
+            return current;
+        }
+        return Mth.lerp(partialTick, current, Math.min(1F, current + (current - lastRenderedAttack)));
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (level().isClientSide()) {
+            lastRenderedAttack = renderedAttack;
+            renderedAttack = entityData.get(ATTACK_PROGRESS);
+        }
     }
 
     public void configure(MonsterType type) {

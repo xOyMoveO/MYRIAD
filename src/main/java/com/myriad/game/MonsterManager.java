@@ -24,6 +24,9 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.phys.Vec3;
 
+import com.myriad.character.ability.ActionTime;
+import com.myriad.character.skills.keheng.KehengTimeFields;
+import com.myriad.combat.NpcCombat;
 import com.myriad.player.PlayerData;
 import com.myriad.player.PlayerDataProvider;
 
@@ -100,6 +103,8 @@ public final class MonsterManager {
 
     private record PendingRespawn(MonsterType type, long at, String pointId) {}
 
+    private record CherryStrike(UUID target, CherryRiftAttackTiming timing, ActionTime.Progress progress) {}
+
     /** 野怪状态 */
     private static final class State {
         transient Mob entity;
@@ -117,6 +122,7 @@ public final class MonsterManager {
         long lastAttackTick;
         double attackRecovery = 20;
         transient long lastRecoveryTick = Long.MIN_VALUE;
+        transient CherryStrike cherryStrike;
         String spawnPointId;
         boolean randomBoss;
         int respawnGeneration;
@@ -413,22 +419,26 @@ public final class MonsterManager {
     /** Neutral camps retaliate against valid attackers, with stable threat selection and a hard leash. */
     private static void tickMonster(ServerLevel level, Mob mob, State s, long now) {
         double cooldown=Math.max(1,Math.round(20/growthMultiplier(s.respawnGeneration)));
+        double actionRate = KehengTimeFields.managedNpcRate(mob, now);
         if(now>s.lastRecoveryTick){
-            s.attackRecovery=Math.min(cooldown,s.attackRecovery+
-                    com.myriad.character.skills.keheng.KehengTimeFields.managedNpcRate(mob,now));
+            s.attackRecovery=Math.min(cooldown,s.attackRecovery+actionRate);
             s.lastRecoveryTick=now;
         }
         mob.setDeltaMovement(0,mob.getDeltaMovement().y,0);
         Vec3 home=Vec3.atBottomCenterOf(s.spawnPos);
         s.damageTable.entrySet().removeIf(e -> !(level.getEntity(e.getKey()) instanceof LivingEntity target)
-                || !com.myriad.combat.NpcCombat.canTarget(target));
+                || !NpcCombat.canTarget(target));
         if(s.returning){
+            endCherryStrike(s);
             mob.setTarget(null);
             s.modHealth=Math.min(s.modMaxHealth,s.modHealth+(float)s.regenPerTick);
             NpcNavigation.move(level,mob,s.navigation,home,s.type.getMoveSpeed()*growthMultiplier(s.respawnGeneration)/12.0);
             if(mob.position().distanceToSqr(home)<2.25){
                 s.returning=false;s.damageTable.clear();s.target=null;s.modHealth=s.modMaxHealth;
             }
+            return;
+        }
+        if (s.cherryStrike != null && tickCherryStrike(level, (CherryRiftMonsterEntity) mob, s, home, now, actionRate)) {
             return;
         }
         if(s.damageTable.isEmpty()){
@@ -453,21 +463,67 @@ public final class MonsterManager {
             s.returning=true;s.target=null;s.damageTable.clear();mob.setTarget(null);return;
         }
         mob.setTarget(target);
-        double range=s.type.getAttackRange()*growthMultiplier(s.respawnGeneration)+target.getBbWidth()*.25;
-        if(mob.distanceToSqr(target)<=range*range && NpcNavigation.visible(mob,target)){
+        if (canReachByMelee(mob, s, target)) {
             mob.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES,target.getEyePosition());
             if(s.attackRecovery+1E-9>=cooldown){
                 s.attackRecovery=0;
                 s.lastAttackTick=now;
-                mob.swing(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT);
-                applyNpcDamage(target,mob,(float)(s.type.getAttack()*growthMultiplier(s.respawnGeneration)));
+                if (mob instanceof CherryRiftMonsterEntity cherry) {
+                    s.cherryStrike = new CherryStrike(target.getUUID(), CherryRiftAttackTiming.forType(s.type),
+                            new ActionTime.Progress(now));
+                    cherry.publishAttackProgress(0F);
+                } else {
+                    mob.swing(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT);
+                    applyNpcDamage(target,mob,(float)(s.type.getAttack()*growthMultiplier(s.respawnGeneration)));
+                }
             }
         }else NpcNavigation.move(level,mob,s.navigation,target.position(),s.type.getMoveSpeed()*growthMultiplier(s.respawnGeneration)/12.0);
     }
 
+    private static boolean tickCherryStrike(ServerLevel level, CherryRiftMonsterEntity mob, State state,
+            Vec3 home, long now, double rate) {
+        CherryStrike strike = state.cherryStrike;
+        LivingEntity target = level.getEntity(strike.target()) instanceof LivingEntity living
+                && NpcCombat.canTarget(living) ? living : null;
+        double previous = strike.progress().completed();
+        boolean beforeHit = previous + 1E-9 < strike.timing().hit();
+        if (mob.position().distanceToSqr(home) > 400 || (target == null && beforeHit)
+                || (target != null && target.position().distanceToSqr(home) > 400)) {
+            endCherryStrike(state);
+            state.target = null;
+            return false;
+        }
+
+        mob.setTarget(target);
+        // A lethal hit can complete its follow-through even though the target is gone.
+        if (target != null) {
+            mob.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES, target.getEyePosition());
+        }
+        boolean finished = strike.progress().advance(now, rate, strike.timing().duration());
+        double completed = strike.progress().completed();
+        mob.publishAttackProgress((float) (completed / strike.timing().duration()));
+        if (target != null && beforeHit && completed + 1E-9 >= strike.timing().hit()
+                && canReachByMelee(mob, state, target)) {
+            applyNpcDamage(target, mob, (float) (state.type.getAttack() * growthMultiplier(state.respawnGeneration)));
+        }
+        if (finished) endCherryStrike(state);
+        return !finished;
+    }
+
+    private static boolean canReachByMelee(Mob mob, State state, LivingEntity target) {
+        double range = state.type.getAttackRange() * growthMultiplier(state.respawnGeneration) + target.getBbWidth() * .25;
+        return mob.distanceToSqr(target) <= range * range && NpcNavigation.visible(mob, target);
+    }
+
+    private static void endCherryStrike(State state) {
+        if (state.cherryStrike == null) return;
+        state.cherryStrike = null;
+        ((CherryRiftMonsterEntity) state.entity).publishAttackProgress(-1F);
+    }
+
     /** 野怪伤害使用模组双防/护盾，不受和平难度的原版缩放影响。 */
     private static void applyNpcDamage(LivingEntity target, Mob attacker, float damage) {
-        com.myriad.combat.NpcCombat.hit(target, attacker, damage,
+        NpcCombat.hit(target, attacker, damage,
                 com.myriad.combat.DamageCalc.Kind.PHYSICAL);
     }
 
@@ -493,6 +549,7 @@ public final class MonsterManager {
         if (s == null) {
             return;
         }
+        endCherryStrike(s);
         // 大型随机首领不在原地点直接复活，由全局 5 分钟轮次重新抽取位置和类型。
         if (!s.randomBoss && s.type.getRespawnSeconds() > 0 && entity.level() instanceof ServerLevel level) {
             long at = level.getGameTime() + s.type.getRespawnSeconds() * 20L;

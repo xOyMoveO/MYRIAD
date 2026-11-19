@@ -1,0 +1,78 @@
+{
+  "textures": {
+    "skin": "myriad:item/cherry_rift/scout_bot",
+    "particle": "#skin"
+  },
+  "elements": [
+    {
+      "from": [
+        11.0,
+        5.5,
+        2.6666667
+      ],
+      "to": [
+        13.0,
+        7.5,
+        4.3333333
+      ],
+      "faces": {
+        "down": {
+          "texture": "#skin",
+          "uv": [
+            13.375,
+            7.875,
+            13.75,
+            8.25
+          ],
+          "rotation": 180
+        },
+        "west": {
+          "texture": "#skin",
+          "uv": [
+            14.0,
+            7.875,
+            14.375,
+            8.25
+          ]
+        },
+        "south": {
+          "texture": "#skin",
+          "uv": [
+            14.625,
+            7.875,
+            15.0,
+            8.25
+          ]
+        },
+        "north": {
+          "texture": "#skin",
+          "uv": [
+            15.25,
+            7.875,
+            15.625,
+            8.25
+          ]
+        },
+        "up": {
+          "texture": "#skin",
+          "uv": [
+            0.125,
+            8.5,
+            0.5,
+            8.875
+          ],
+          "rotation": 180
+        },
+        "east": {
+          "texture": "#skin",
+          "uv": [
+            0.75,
+            8.5,
+            1.125,
+            8.875
+          ]
+        }
+      }
+    }
+  ]
+}
