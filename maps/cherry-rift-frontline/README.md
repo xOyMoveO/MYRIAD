@@ -41,6 +41,8 @@
 
 试玩存档的 [营地配置](myriad_monster_spawns.json) 沿用原版建筑图的 13 个摆放点。管理员可在地图设施编辑器配置全部六种野怪或用 `/myriad mob spawnpoint list` 查看点位。正式 3v3 需完成路线、塔、泉水、水晶等设施配置；正式对局开始后小型和中型营地分别在 30 秒和 60 秒首次刷新，裂隙蟹固定在第 6 分钟刷新。
 
+六种可战斗野怪各有移动和攻击动作。攻击开始后，服务器在命中标记处核对目标距离和视线，满足条件才结算伤害。隔着地形或及时退开可以躲过这次攻击。
+
 | 野怪 | 生命 | 基础伤害 | 经验 | 基础金币 | 重生等待 |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | 霜兔、暮狐 | 950 | 36 | 85 | 32 | 90 秒 |
@@ -58,7 +60,7 @@
 
 ## 编辑资源
 
-- [Blockbench 模型](../../art_source/cherry-rift-frontline/)内嵌像素贴图。包含庭园野怪 `dusk_fox`、`frost_hare`、`jade_beast`，工业野怪 `heavy_walker`、`scout_bot`，以及首领 `rift_crab`。
+- [Blockbench 模型](../../art_source/cherry-rift-frontline/)内嵌像素贴图和 `move`、`attack` 两段动画。包含庭园野怪 `dusk_fox`、`frost_hare`、`jade_beast`，工业野怪 `heavy_walker`、`scout_bot`，以及首领 `rift_crab`。在仓库根目录运行 `python tools/export_cherry_rift_animations.py` 可导出游戏动画与命中时点，加 `--check` 可验证导出文件。
 - [地图资源包](resource-pack/)保留 Minecraft 26.3 读取的物品定义、几何和贴图。地图自带的 `resourcepacks/resources.zip` 对应这份资源包。
 - [复活泉数据包](datapack/)保存了存档内的数据包源码。编辑后，将目录内容压缩成 `cherry_rift_fountains.zip`，确保 `pack.mcmeta` 位于压缩包根目录，替换存档副本 `datapacks/` 下的同名文件。
 

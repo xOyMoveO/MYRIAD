@@ -1,0 +1,88 @@
+{
+  "textures": {
+    "skin": "myriad:item/cherry_rift/frost_hare",
+    "particle": "#skin"
+  },
+  "elements": [
+    {
+      "from": [
+        8.8336641,
+        9.5395429,
+        10.9980154
+      ],
+      "to": [
+        10.5009923,
+        14.1246954,
+        12.6653436
+      ],
+      "faces": {
+        "west": {
+          "texture": "#skin",
+          "uv": [
+            4.0,
+            2.625,
+            4.5,
+            3.3125
+          ]
+        },
+        "south": {
+          "texture": "#skin",
+          "uv": [
+            5.0,
+            2.625,
+            5.5,
+            3.3125
+          ]
+        },
+        "north": {
+          "texture": "#skin",
+          "uv": [
+            6.0,
+            2.625,
+            6.5,
+            3.3125
+          ]
+        },
+        "east": {
+          "texture": "#skin",
+          "uv": [
+            7.0,
+            2.625,
+            7.5,
+            3.3125
+          ]
+        },
+        "down": {
+          "texture": "#skin",
+          "uv": [
+            0.25,
+            9.6875,
+            0.75,
+            9.9375
+          ],
+          "rotation": 180
+        },
+        "up": {
+          "texture": "#skin",
+          "uv": [
+            1.25,
+            9.6875,
+            1.75,
+            9.9375
+          ],
+          "rotation": 180
+        }
+      },
+      "rotation": {
+        "origin": [
+          9.6673282,
+          9.956375,
+          11.8316795
+        ],
+        "axis": "x",
+        "angle": -22.5,
+        "rescale": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "textures": {
+    "skin": "myriad:item/cherry_rift/jade_beast",
+    "particle": "#skin"
+  },
+  "elements": [
+    {
+      "from": [
+        7.0697446,
+        6.6262502,
+        1.301965
+      ],
+      "to": [
+        8.9302554,
+        8.3007099,
+        2.7903736
+      ],
+      "faces": {
+        "south": {
+          "texture": "#skin",
+          "uv": [
+            7.25,
+            8.21875,
+            7.875,
+            8.5
+          ]
+        },
+        "north": {
+          "texture": "#skin",
+          "uv": [
+            8.125,
+            8.21875,
+            8.75,
+            8.5
+          ]
+        },
+        "west": {
+          "texture": "#skin",
+          "uv": [
+            12.25,
+            8.21875,
+            12.75,
+            8.5
+          ]
+        },
+        "east": {
+          "texture": "#skin",
+          "uv": [
+            13.0,
+            8.21875,
+            13.5,
+            8.5
+          ]
+        },
+        "down": {
+          "texture": "#skin",
+          "uv": [
+            10.75,
+            8.625,
+            11.375,
+            8.875
+          ],
+          "rotation": 180
+        },
+        "up": {
+          "texture": "#skin",
+          "uv": [
+            11.625,
+            8.625,
+            12.25,
+            8.875
+          ],
+          "rotation": 180
+        }
+      },
+      "rotation": {
+        "origin": [
+          8.0,
+          7.1844034,
+          2.2322204
+        ],
+        "axis": "x",
+        "angle": 22.5,
+        "rescale": false
+      }
+    }
+  ]
+}

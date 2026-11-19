@@ -1,0 +1,88 @@
+{
+  "textures": {
+    "skin": "myriad:item/cherry_rift/dusk_fox",
+    "particle": "#skin"
+  },
+  "elements": [
+    {
+      "from": [
+        7.0711478,
+        5.3577078,
+        10.0773211
+      ],
+      "to": [
+        8.0187764,
+        7.252965,
+        11.2618568
+      ],
+      "faces": {
+        "west": {
+          "texture": "#skin",
+          "uv": [
+            0.25,
+            7.125,
+            1.0,
+            7.625
+          ]
+        },
+        "east": {
+          "texture": "#skin",
+          "uv": [
+            1.5,
+            7.125,
+            2.25,
+            7.625
+          ]
+        },
+        "south": {
+          "texture": "#skin",
+          "uv": [
+            13.25,
+            7.125,
+            13.75,
+            7.625
+          ]
+        },
+        "north": {
+          "texture": "#skin",
+          "uv": [
+            14.25,
+            7.125,
+            14.75,
+            7.625
+          ]
+        },
+        "down": {
+          "texture": "#skin",
+          "uv": [
+            13.75,
+            9.25,
+            14.25,
+            9.625
+          ],
+          "rotation": 180
+        },
+        "up": {
+          "texture": "#skin",
+          "uv": [
+            14.75,
+            9.25,
+            15.25,
+            9.625
+          ],
+          "rotation": 180
+        }
+      },
+      "rotation": {
+        "origin": [
+          7.5449621,
+          6.0684293,
+          10.7880425
+        ],
+        "axis": "x",
+        "angle": 22.5,
+        "rescale": false
+      }
+    }
+  ]
+}

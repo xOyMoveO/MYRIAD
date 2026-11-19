@@ -1,0 +1,26 @@
+{
+  "cherry_frost_hare": {
+    "duration": 13,
+    "hit": 7
+  },
+  "cherry_dusk_fox": {
+    "duration": 14,
+    "hit": 7
+  },
+  "cherry_jade_beast": {
+    "duration": 18,
+    "hit": 10
+  },
+  "cherry_scout_bot": {
+    "duration": 13,
+    "hit": 7
+  },
+  "cherry_heavy_walker": {
+    "duration": 19,
+    "hit": 11
+  },
+  "cherry_rift_crab": {
+    "duration": 20,
+    "hit": 11
+  }
+}

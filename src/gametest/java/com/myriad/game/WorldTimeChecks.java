@@ -99,8 +99,10 @@ final class WorldTimeChecks {
         f.removeMob(friend);f.clearFields();
         for(MonsterType type:MonsterType.values()) {
             Mob mob=f.monster(type);
-            if(!type.isLargeBoss()) {npcMovement(f,mob,type.getId());npcRecovery(f,mob,20,type.getId());}
-            else {
+            if(!type.isLargeBoss()) npcMovement(f,mob,type.getId());
+            if (mob instanceof CherryRiftMonsterEntity cherry) cherryAttacks(f, cherry);
+            else if (!type.isLargeBoss()) npcRecovery(f, mob, 20, type.getId());
+            if (type.isLargeBoss()) {
                 f.field(.5);float before=MonsterManager.modHealth(mob);
                 f.cast().damage(mob,50,com.myriad.combat.DamageCalc.Kind.MAGIC);
                 f.h.assertTrue(MonsterManager.modHealth(mob)<before,"Large boss remains legally damageable: "+type);
@@ -149,6 +151,77 @@ final class WorldTimeChecks {
         f.h.assertTrue(f.target.getHealth()<hp,"Retained attack fraction completes exactly after exit: "+label);
         hp=f.target.getHealth();f.tickNpc(mob);
         f.h.assertTrue(f.target.getHealth()==hp,"Only one attack is resolved at recovery completion: "+label);
+    }
+
+    private static void cherryAttacks(Fixture f, CherryRiftMonsterEntity mob) throws Exception {
+        MonsterType type = mob.variant();
+        var timing = CherryRiftAttackTiming.forType(type);
+        Vec3 withinReach = mob.position().add(0, 0, .9);
+        f.target.setPos(withinReach);
+        MonsterManager.onAttacked(mob, f.target, 100);
+        float health = f.target.getHealth();
+        f.tickNpc(mob);
+        f.h.assertTrue(mob.attackAnimationProgress(0) == 0F && f.target.getHealth() == health,
+                "Attack starts with the animation and no damage: " + type);
+
+        f.field(.5);
+        int ticksPerAction = type.isLargeBoss() ? 1 : 2;
+        int hitTick = timing.hit() * ticksPerAction;
+        for (int tick = 1; tick < hitTick; tick++) {
+            f.tickNpc(mob);
+            f.h.assertTrue(f.target.getHealth() == health && Math.abs(mob.attackAnimationProgress(0)
+                    - tick / (float) (timing.duration() * ticksPerAction)) < 1E-5,
+                    "No premature hit; animation uses the server action rate: " + type + " tick " + tick);
+        }
+        f.tickNpc(mob);
+        f.h.assertTrue(f.target.getHealth() < health && Math.abs(mob.attackAnimationProgress(0)
+                - timing.hit() / (float) timing.duration()) < 1E-5,
+                "The exported action marker changes target health once: " + type);
+        health = f.target.getHealth();
+        f.tickNpcAt(mob, f.now);
+        f.h.assertTrue(f.target.getHealth() == health, "A repeat visit in the same tick cannot hit again: " + type);
+        f.target.setHealth(0F);
+        f.tickNpc(mob);
+        f.h.assertTrue(mob.attackAnimationProgress(0) > timing.hit() / (float) timing.duration(),
+                "Losing the target after the hit preserves the follow-through: " + type);
+        f.target.setHealth(health);
+        MonsterManager.onAttacked(mob, f.target, 100);
+        for (int tick = hitTick + 2; tick < timing.duration() * ticksPerAction; tick++) {
+            f.tickNpc(mob);
+            f.h.assertTrue(f.target.getHealth() == health, "No duplicate hit during recovery: " + type);
+        }
+        f.clearFields();
+
+        awaitCherrySwing(f, mob, health);
+        Vec3 enemyBefore = f.enemy.position();
+        f.enemy.setPos(mob.position().add(.9, 0, 0));
+        MonsterManager.onAttacked(mob, f.enemy, 10000);
+        float enemyHealth = f.enemy.getHealth();
+        f.target.setPos(mob.position().add(0, 0, 8));
+        for (int tick = 1; tick <= timing.hit(); tick++) f.tickNpc(mob);
+        f.h.assertTrue(f.target.getHealth() == health && f.enemy.getHealth() == enemyHealth,
+                "A target outside reach at the marker neither takes damage nor redirects the hit: " + type);
+        f.target.setPos(withinReach);
+        for (int tick = timing.hit() + 1; tick < timing.duration(); tick++) f.tickNpc(mob);
+        f.h.assertTrue(f.target.getHealth() == health, "Returning to reach after a missed hit is safe: " + type);
+        f.enemy.setPos(enemyBefore);
+        MonsterManager.onAttacked(mob, f.target, 100000);
+        awaitCherrySwing(f, mob, health);
+        f.target.setHealth(0F);
+        f.tickNpc(mob);
+        f.h.assertTrue(mob.attackAnimationProgress(0) == -1F, "A dead target cancels the active strike: " + type);
+        f.target.setHealth(health);
+        System.out.println("[MYRIAD-CHERRY-STRIKE] " + type.getId() + " hit=" + timing.hit()
+                + " duration=" + timing.duration() + " verified cue, whiff and cancellation");
+    }
+
+    private static void awaitCherrySwing(Fixture f, CherryRiftMonsterEntity mob, float health) throws Exception {
+        for (int tick = 0; tick < 25; tick++) {
+            f.tickNpc(mob);
+            f.h.assertTrue(f.target.getHealth() == health, "Recovering cannot inflict damage: " + mob.variant());
+            if (mob.attackAnimationProgress(0) == 0F) return;
+        }
+        throw new IllegalStateException("No next strike after recovery: " + mob.variant());
     }
     private static void arrowCases(Fixture f)throws Exception {
         f.target.setPos(f.origin.add(15,0,-5));f.owner.setPos(f.origin.add(-8,0,-5));
@@ -316,11 +389,12 @@ final class WorldTimeChecks {
             for(var entry:states(LaneSystem.class,"UNITS").entrySet())if(!before.contains(entry.getKey())){var mob=(Mob)WorldTimeChecks.field(entry.getValue().getClass(),"entity").get(entry.getValue());entities.add(mob);return mob;}
             throw new IllegalStateException("Minion not spawned");
         }
-        void tickNpc(Mob mob)throws Exception {
+        void tickNpc(Mob mob)throws Exception { tickNpcAt(mob,++now); }
+        void tickNpcAt(Mob mob,long tickTime)throws Exception {
             target.damageCooldownTime = 0;boolean monster=MonsterManager.isMonster(mob);Class<?> system=monster?MonsterManager.class:LaneSystem.class;
             Object state=states(system,monster?"STATES":"UNITS").get(mob.getUUID());
             var tick=system.getDeclaredMethod(monster?"tickMonster":"tickMinion",ServerLevel.class,Mob.class,state.getClass(),long.class);tick.setAccessible(true);
-            tick.invoke(null,h.getLevel(),mob,state,++now);
+            tick.invoke(null,h.getLevel(),mob,state,tickTime);
         }
         AbstractArrow arrow(boolean spectral,Vec3 at,Vec3 velocity,Entity shooter){
             AbstractArrow arrow=spectral?new SpectralArrow(h.getLevel(),at.x,at.y,at.z,new ItemStack(Items.SPECTRAL_ARROW),null)
