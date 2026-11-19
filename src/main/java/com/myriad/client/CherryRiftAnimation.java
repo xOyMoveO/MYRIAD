@@ -24,7 +24,7 @@ final class CherryRiftAnimation {
     private static final Gson GSON = new Gson();
     private record Definition(BoneSource[] bones, Clip move, Clip attack) {}
     private record BoneSource(int parent, float[] pivot, String item) {}
-    private record Bone(float[] pivot, ItemStack item, List<Integer> children) {}
+    private record Bone(float[] pivot, Identifier model, List<Integer> children) {}
     private record Key(float tick, float[] value) {}
 
     record Clip(int duration, Channels[] tracks) {}
@@ -51,6 +51,7 @@ final class CherryRiftAnimation {
     }
 
     private final Bone[] bones;
+    private final ItemStack[] items;
     final Clip move;
     final Clip attack;
 
@@ -63,20 +64,22 @@ final class CherryRiftAnimation {
         move = definition.move();
         attack = definition.attack();
         bones = new Bone[source.length];
+        items = new ItemStack[source.length];
         for (int i = 0; i < bones.length; i++) {
             BoneSource bone = source[i];
-            ItemStack item = ItemStack.EMPTY;
-            if (bone.item() != null) {
-                Identifier id = Identifier.parse(bone.item());
-                if (resources.getResource(id.withPath("items/" + id.getPath() + ".json")).isEmpty()) {
-                    throw new IllegalArgumentException("Missing rig item " + id);
-                }
-                item = new ItemStack(Items.PAPER);
-                item.set(DataComponents.ITEM_MODEL, id);
+            Identifier model = bone.item() == null ? null : Identifier.parse(bone.item());
+            if (model != null && resources.getResource(model.withPath("items/" + model.getPath() + ".json")).isEmpty()) {
+                throw new IllegalArgumentException("Missing rig item " + model);
             }
-            bones[i] = new Bone(bone.pivot(), item, new ArrayList<>());
+            bones[i] = new Bone(bone.pivot(), model, new ArrayList<>());
             if (i != 0) bones[bone.parent()].children().add(i);
         }
+    }
+
+    static ItemStack paperModel(Identifier model) {
+        ItemStack stack = new ItemStack(Items.PAPER);
+        stack.set(DataComponents.ITEM_MODEL, model);
+        return stack;
     }
 
     static CherryRiftAnimation load(ResourceManager resources, String modelName) {
@@ -95,8 +98,10 @@ final class CherryRiftAnimation {
             for (int i = 0; i < parts.length; i++) parts[i] = new ItemStackRenderState();
         }
         for (int i = 0; i < bones.length; i++) {
-            ItemStack item = bones[i].item();
-            if (!item.isEmpty()) resolver.updateForNonLiving(parts[i], item, ItemDisplayContext.FIXED, entity);
+            Identifier model = bones[i].model();
+            if (model == null) continue;
+            if (items[i] == null) items[i] = paperModel(model);
+            resolver.updateForNonLiving(parts[i], items[i], ItemDisplayContext.FIXED, entity);
         }
         return parts;
     }
@@ -113,7 +118,7 @@ final class CherryRiftAnimation {
         pose.pushPose();
         try {
             clip.tracks()[index].apply(pose, bone.pivot(), time, quaternion);
-            if (!bone.item().isEmpty()) parts[index].submit(pose, collector, light, overlay, outline);
+            if (bone.model() != null) parts[index].submit(pose, collector, light, overlay, outline);
             for (int child : bone.children()) {
                 submitBone(child, clip, time, parts, pose, collector, light, overlay, outline, quaternion);
             }

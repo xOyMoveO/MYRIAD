@@ -15,12 +15,10 @@ import net.minecraft.client.renderer.item.ItemModelResolver;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 
 public final class CherryRiftMonsterRenderer
         extends EntityRenderer<CherryRiftMonsterEntity, CherryRiftMonsterRenderer.State> {
@@ -33,13 +31,13 @@ public final class CherryRiftMonsterRenderer
         resolver = context.getItemModelResolver();
         for (MonsterType type : MonsterType.values()) {
             if (type.cherryModel() == null) continue;
-            String modelName = type.getId().substring("cherry_".length());
-            ItemStack stack = new ItemStack(Items.PAPER);
-            stack.set(DataComponents.ITEM_MODEL, Identifier.fromNamespaceAndPath(Myriad.MODID, "cherry_rift/" + modelName));
-            models.put(type, stack);
-            CherryRiftAnimation rig = CherryRiftAnimation.load(context.getResourceManager(), modelName);
+            CherryRiftAnimation rig = CherryRiftAnimation.load(context.getResourceManager(), modelName(type));
             if (rig != null) rigs.put(type, rig);
         }
+    }
+
+    private static String modelName(MonsterType type) {
+        return type.getId().substring("cherry_".length());
     }
 
     public static final class State extends EntityRenderState {
@@ -80,7 +78,10 @@ public final class CherryRiftMonsterRenderer
             }
         }
         if (state.clip == null) {
-            resolver.updateForNonLiving(state.item, models.get(type), ItemDisplayContext.FIXED, entity);
+            // Renderer construction runs during reload, before item components are bound.
+            ItemStack stack = models.computeIfAbsent(type, variant -> CherryRiftAnimation.paperModel(
+                    Identifier.fromNamespaceAndPath(Myriad.MODID, "cherry_rift/" + modelName(variant))));
+            resolver.updateForNonLiving(state.item, stack, ItemDisplayContext.FIXED, entity);
         } else {
             state.parts = state.rig.prepare(resolver, entity, state.parts);
         }
