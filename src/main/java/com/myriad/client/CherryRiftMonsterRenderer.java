@@ -98,7 +98,8 @@ public final class CherryRiftMonsterRenderer
         super.submit(state, pose, collector, camera);
         pose.pushPose();
         pose.translate(0F, state.model.lift(), 0F);
-        pose.rotate(Axis.YP, (180F - state.yaw) * Mth.DEG_TO_RAD);
+        // The exported item already faces +Z. Entity yaw zero also faces +Z.
+        pose.rotate(Axis.YP, -state.yaw * Mth.DEG_TO_RAD);
         float scale = state.model.scale();
         pose.scale(scale, scale, scale);
         int overlay = OverlayTexture.pack(0, state.hurt);
