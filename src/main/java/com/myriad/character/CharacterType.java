@@ -777,13 +777,6 @@ public enum CharacterType {
         return "character.myriad." + id;
     }
 
-    public boolean isHalfComplete() {
-        return switch (this) {
-            case XUANCHEN, SULAN, LINGYUAN, HANZE, QINGLUO, CHIXIAO, YUNSHENG -> true;
-            default -> false;
-        };
-    }
-
     /** 槽位技能：0=Q, 1=W, 2=E, 3=R, 4=F；未配置返回 null */
     public Skill skill(int slot) {
         return slot < 0 || slot >= skills.length ? null : skills[slot];

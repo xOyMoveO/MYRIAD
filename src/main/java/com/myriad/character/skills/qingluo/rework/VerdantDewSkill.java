@@ -8,7 +8,7 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 public final class VerdantDewSkill extends AbilitySkill {
  public VerdantDewSkill(Definition definition){super(definition);}
 
-@Override public void release(Cast c){LivingEntity ally=c.target(12,true);if(ally==null)ally=c.player;c.heal(ally,c.value(70,22,.5f));c.slow(ally,-.15f,30);AbilityVisuals.beam(c,c.player.position().add(0,1,0),ally.position().add(0,1,0),.12);AbilityVisuals.burst(c,ally.position(),.9);}
+ @Override public void release(Cast c){LivingEntity ally=c.target(12,true);if(ally==null)ally=c.player;StaffHandCues.release(c,ally==c.player);c.heal(ally,c.value(70,22,.5f));c.slow(ally,-.15f,30);AbilityVisuals.beam(c,c.player.position().add(0,1,0),ally.position().add(0,1,0),.12);HerbVisuals.restoration(c,ally,.9);}
 @Override public void present(Cast c){AbilityVisuals.seal(c,c.player.position(),.7,false);}
 }
 

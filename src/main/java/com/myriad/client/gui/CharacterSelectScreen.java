@@ -136,9 +136,7 @@ public final class CharacterSelectScreen extends Screen {
         private final CharacterType role;
         RoleCard(CharacterType role,SkillChoiceLayout.Box b){
             super(b.x(),b.y(),b.w(),b.h(),Component.translatable(role.nameKey()),button->select(role.getId()),DEFAULT_NARRATION);this.role=role;
-            var tooltip = Component.translatable(role.nameKey());
-            if (role.isHalfComplete()) tooltip.append("\n").append(CharacterStatusBadge.halfCompleteLabel());
-            setTooltip(Tooltip.create(tooltip));
+            setTooltip(Tooltip.create(Component.translatable(role.nameKey())));
         }
         @Override protected void extractContents(GuiGraphicsExtractor g,int mx,int my,float partial){
             var b=new SkillChoiceLayout.Box(getX(),getY(),getWidth(),getHeight());
@@ -149,7 +147,6 @@ public final class CharacterSelectScreen extends Screen {
                 g.item(new ItemStack(ModItems.initialWeaponItem(role.getId())),x+(size-16)/2,y+(size-16)/2);
             }
             fit(g,Component.translatable(role.nameKey()).getString(),b.x()+4,b.bottom()-14,b.w()-8,free?GOLD:MUTED);
-            CharacterStatusBadge.draw(g,font,role,b.x()+3,b.y()+3,b.w()-15);
             if(selected||!free)g.text(font,selected?"◆":"×",b.right()-10,b.y()+3,free?JADE:MUTED);
         }
     }

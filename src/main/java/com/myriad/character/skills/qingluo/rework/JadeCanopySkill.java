@@ -8,7 +8,7 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 public final class JadeCanopySkill extends AbilitySkill {
  public JadeCanopySkill(Definition definition){super(definition);}
 
-@Override public void release(Cast c){for(var ally:c.allies(c.player.position(),8)){c.heal(ally,c.value(100,35,.4f));c.shield(ally,c.value(200,65,.65f),100);c.slow(ally,-.2f,60);}}
+ @Override public void release(Cast c){StaffHandCues.release(c);for(var ally:c.allies(c.player.position(),8)){HerbVisuals.heal(c,ally,c.value(100,35,.4f),.85);c.shield(ally,c.value(200,65,.65f),100);c.slow(ally,-.2f,60);}}
 @Override public void present(Cast c){AbilityVisuals.field(c,c.player.position(),8,24);}
 }
 

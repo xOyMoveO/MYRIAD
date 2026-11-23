@@ -41,9 +41,6 @@ public final class MagicBullet {
     private static final double BLOCK_SAMPLE_STEP = 0.25;
     /** 伤害系数：法术强度 × 0.5 */
     private static final double DMG_RATIO = 0.5;
-    /** 青萝魔法弹：明亮的青绿色光球。 */
-    private static final DustParticleOptions QINGLUO_ORB = new DustParticleOptions(0x62F578, 1.65F);
-    private static final DustParticleOptions QINGLUO_GLOW = new DustParticleOptions(0xC5FF9C, .95F);
     private static final DustParticleOptions YUNSHENG_ORB = new DustParticleOptions(0x75F2E5, 1.45F);
     private static final DustParticleOptions YUNSHENG_GLOW = new DustParticleOptions(0xEDFFF9, .8F);
 
@@ -54,7 +51,7 @@ public final class MagicBullet {
         float sp;
         float attackMultiplier;
         String characterId;
-        int spiralPhase;
+        int visualTheme, visualId;
         final UUID flight=UUID.randomUUID();
         long lastTick=Long.MIN_VALUE;int age;
     }
@@ -117,21 +114,21 @@ public final class MagicBullet {
             b.sp = (float) (player.getAttributeValue(com.myriad.registry.ModAttributes.PHYSICAL_ATTACK) / DMG_RATIO);
         b.attackMultiplier = attackMultiplier;
         b.characterId = PlayerDataProvider.get(player).getCharacterId();
-        b.spiralPhase = 0;
+        b.visualTheme = MagicBulletVisuals.theme(b.characterId);
+        if(b.visualTheme>0)b.visualId=MagicBulletVisuals.start();
         BULLETS.computeIfAbsent(player.getUUID(), k -> new ArrayList<>()).add(b);
+        if ("xuanchen".equals(b.characterId)) {
+            com.myriad.character.skills.xuanchen.rework.InkCastCues.basicBullet(player, held, pos, dir);
+        }
         com.myriad.network.Packets.sendToPlayer(player,
                 new com.myriad.network.NetworkSetup.MagicBulletCooldownPayload(remaining(player), total(player)));
+        com.myriad.character.ability.StaffHandCues.basic(player, held, b.characterId, pos, dir);
         // 起手：枪口迸发 + 音效
         if ("yunsheng".equalsIgnoreCase(b.characterId)) {
+            com.myriad.character.ability.WarSpiritHandCues.basic(player,b.characterId,total(player));
             level.sendParticles(YUNSHENG_ORB, pos.x, pos.y, pos.z, 16, .13, .13, .13, .022);
             level.sendParticles(YUNSHENG_GLOW, pos.x, pos.y, pos.z, 9, .08, .08, .08, .015);
-        } else if ("qingluo".equalsIgnoreCase(b.characterId)) {
-            level.sendParticles(QINGLUO_ORB, pos.x, pos.y, pos.z, 18, .14, .14, .14, .025);
-            level.sendParticles(QINGLUO_GLOW, pos.x, pos.y, pos.z, 10, .09, .09, .09, .018);
-        } else if ("hanze".equalsIgnoreCase(b.characterId)) {
-            level.sendParticles(ParticleTypes.SNOWFLAKE, pos.x, pos.y, pos.z, 14, 0.15, 0.15, 0.15, 0.04);
-            level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, 7, 0.1, 0.1, 0.1, 0.02);
-        } else {
+        } else if (b.visualId == 0) {
             level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, 12, 0.15, 0.15, 0.15, 0.04);
             level.sendParticles(ParticleTypes.SCULK_SOUL, pos.x, pos.y, pos.z, 8, 0.1, 0.1, 0.1, 0.02);
         }
@@ -150,7 +147,10 @@ public final class MagicBullet {
             return;
         }
         ServerLevel level = (ServerLevel) player.level();
-        list.removeIf(b -> {boolean ended=tickOne(level,player,b);if(ended)ActionTime.clearTarget(b.flight);return ended;});
+        list.removeIf(b -> {boolean ended=tickOne(level,player,b);if(ended){
+            ActionTime.clearTarget(b.flight);
+            if(b.visualId>0)MagicBulletVisuals.end(player,b.visualTheme,b.visualId);
+        }return ended;});
         if (list.isEmpty()) {
             BULLETS.remove(player.getUUID());
         }
@@ -162,26 +162,29 @@ public final class MagicBullet {
         if(++b.age>2*Math.ceil(maxRange(b.characterId)/SPEED))return true;
         double step=Math.min(SPEED*AbilityRuntime.projectileRate(caster,b.flight,b.pos,now),maxRange(b.characterId)-b.traveled);
         Vec3 next = b.pos.add(b.dir.scale(step));
-        if (com.myriad.combat.WindWallSystem.firstEnemyHit(caster, b.pos, next) != null) {
+        if (com.myriad.combat.WindWallSystem.interceptProjectile(caster, b.pos, next) != null) {
             return true;
         }
         LivingEntity target = findFirstEnemy(level, caster, b.pos, next);
         if (target != null) {
             float dmg = (float) (b.sp * damageRatio(b.characterId) * b.attackMultiplier);
             DamageCalc.dealBasicDamage(caster, target, dmg, DamageCalc.Kind.MAGIC);
+            if (b.visualId>0) {
+                Vec3 at=target.getBoundingBox().inflate(HIT_RADIUS).clip(b.pos,next).orElse(next);
+                MagicBulletVisuals.sample(caster,b.visualTheme,b.visualId,b.pos,at);
+                MagicBulletVisuals.impact(caster,b.visualTheme,at,b.dir);
+                level.playSound(null,target.getX(),target.getY(),target.getZ(),
+                        SoundEvents.ENDERMAN_TELEPORT,SoundSource.PLAYERS,.6f,1.1f);
+                return true;
+            }
             // 命中爆散特效
             if ("yunsheng".equalsIgnoreCase(b.characterId)) {
                 level.sendParticles(YUNSHENG_ORB, target.getX(), target.getY() + target.getBbHeight() * .6, target.getZ(),
                         22, .3, .3, .3, .04);
                 level.sendParticles(YUNSHENG_GLOW, target.getX(), target.getY() + target.getBbHeight() * .6, target.getZ(),
                         12, .2, .2, .2, .03);
-            } else if ("qingluo".equalsIgnoreCase(b.characterId)) {
-                level.sendParticles(QINGLUO_ORB, target.getX(), target.getY() + target.getBbHeight() * .6, target.getZ(),
-                        24, .32, .32, .32, .045);
-                level.sendParticles(QINGLUO_GLOW, target.getX(), target.getY() + target.getBbHeight() * .6, target.getZ(),
-                        14, .22, .22, .22, .035);
             } else {
-                level.sendParticles("hanze".equalsIgnoreCase(b.characterId) ? ParticleTypes.SNOWFLAKE : ParticleTypes.SCULK_SOUL,
+                level.sendParticles(ParticleTypes.SCULK_SOUL,
                         target.getX(), target.getY() + target.getBbHeight() * 0.6, target.getZ(),
                         18, 0.35, 0.35, 0.35, 0.05);
             }
@@ -194,12 +197,13 @@ public final class MagicBullet {
         }
         Vec3 blockHit = firstBlockHit(level, b.pos, next);
         if (blockHit != null) {
-            // 撞到方块直接消失：不播放墨尘专属的幽魂消散特效，也不复用其他角色的命中表现。
+            if(b.visualId>0)MagicBulletVisuals.sample(caster,b.visualTheme,b.visualId,b.pos,blockHit);
             return true;
         }
+        if(b.visualId>0)MagicBulletVisuals.sample(caster,b.visualTheme,b.visualId,b.pos,next);
         b.traveled += step;
         if (b.traveled >= maxRange(b.characterId)) {
-
+            if(b.visualId==0)
                 level.sendParticles(ParticleTypes.END_ROD, next.x, next.y, next.z,
                         8, 0.15, 0.15, 0.15, 0.02);
 
@@ -208,42 +212,14 @@ public final class MagicBullet {
         // 飞行拖尾：按角色区分特效
         spawnTrail(level, b, next);
         b.pos = next;
-        b.spiralPhase++;
         return false;
     }
 
-    /** 飞行拖尾特效（按角色区分；墨尘 = 黑白粒子螺旋向前） */
+    /** Vanilla particle trails for roles without a modeled projectile. */
     private static void spawnTrail(ServerLevel level, Bullet b, Vec3 pos) {
         if ("yunsheng".equalsIgnoreCase(b.characterId)) {
             level.sendParticles(YUNSHENG_ORB, pos.x, pos.y, pos.z, 5, .08, .08, .08, .006);
             level.sendParticles(YUNSHENG_GLOW, pos.x, pos.y, pos.z, 2, .04, .04, .04, .003);
-        } else if ("qingluo".equalsIgnoreCase(b.characterId)) {
-            // 两层 Dust 聚成紧凑球体，中心亮、外围青绿，拖尾不遮挡视线。
-            level.sendParticles(QINGLUO_ORB, pos.x, pos.y, pos.z, 7, .105, .105, .105, .008);
-            level.sendParticles(QINGLUO_GLOW, pos.x, pos.y, pos.z, 3, .055, .055, .055, .004);
-        } else if ("xuanchen".equalsIgnoreCase(b.characterId)) {
-            // 黑白螺旋：以弹道为轴旋转，黑白两色交替
-            Vec3 axis = b.dir;
-            Vec3 up = Math.abs(axis.y) > 0.95 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0);
-            Vec3 side = axis.cross(up).normalize();
-            Vec3 vert = side.cross(axis).normalize();
-            double angle = b.spiralPhase * Math.PI / 6.0;
-            double r = 0.35;
-            Vec3 offset = side.scale(Math.cos(angle) * r).add(vert.scale(Math.sin(angle) * r));
-            Vec3 black = pos.add(offset.scale(1.0));
-            Vec3 white = pos.add(offset.scale(-1.0));
-            level.sendParticles(ParticleTypes.SCULK_SOUL, black.x, black.y, black.z,
-                    1, 0.02, 0.02, 0.02, 0.01);
-            level.sendParticles(ParticleTypes.END_ROD, white.x, white.y, white.z,
-                    1, 0.02, 0.02, 0.02, 0.01);
-            // 弹头一点白光
-            level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y, pos.z,
-                    1, 0.03, 0.03, 0.03, 0.01);
-        } else if ("hanze".equalsIgnoreCase(b.characterId)) {
-            level.sendParticles(ParticleTypes.SNOWFLAKE, pos.x, pos.y, pos.z,
-                    3, 0.05, 0.05, 0.05, 0.01);
-            level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y, pos.z,
-                    1, 0.025, 0.025, 0.025, 0.005);
         }
     }
 
@@ -317,6 +293,11 @@ public final class MagicBullet {
     }
 
     public static void blockIn(ServerLevel level, java.util.function.Predicate<UUID> owners, java.util.function.Predicate<Vec3> inside) {
+        blockIn(level,owners,inside,at->{});
+    }
+
+    public static void blockIn(ServerLevel level, java.util.function.Predicate<UUID> owners,
+            java.util.function.Predicate<Vec3> inside,java.util.function.Consumer<Vec3> intercepted) {
         if (BULLETS.isEmpty()) {
             return;
         }
@@ -328,7 +309,11 @@ public final class MagicBullet {
                 it.remove();
                 continue;
             }
-            list.removeIf(b -> {if(!inside.test(b.pos))return false;ActionTime.clearTarget(b.flight);return true;});
+            var caster=level.getServer().getPlayerList().getPlayer(entry.getKey());
+            list.removeIf(b -> {if(!inside.test(b.pos))return false;ActionTime.clearTarget(b.flight);
+                if(b.visualId>0&&caster!=null&&caster.level()==level)
+                    MagicBulletVisuals.end(caster,b.visualTheme,b.visualId);
+                intercepted.accept(b.pos);return true;});
             if (list.isEmpty()) {
                 it.remove();
             }

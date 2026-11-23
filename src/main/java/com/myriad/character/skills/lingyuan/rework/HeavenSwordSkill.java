@@ -12,12 +12,17 @@ public final class HeavenSwordSkill extends AbilitySkill {
     public static final double REACH=15,WIDTH=3;
     public HeavenSwordSkill(Definition definition){super(definition);}
 
+    @Override public void windupPose(Cast c,boolean active){LingyuanHandCues.heaven(c,active);}
+
     @Override public void release(Cast c){
         Vec3 origin=c.player.position(),forward=c.forward(1);
+        c.memory("hand_phase").count=0;
         c.windup(CHARGE_TICKS,0,()->{
             Vec3 chopOrigin=new Vec3(origin.x,c.player.getY(),origin.z);
+            c.memory("hand_phase").count=1;
             SwordVisuals.heavenRelease(c,chopOrigin,forward);
             c.windup(CHOP_TICKS,0,()->{
+                LingyuanHandCues.impact(c);
                 SwordVisuals.heavenImpact(c,chopOrigin,forward);
                 Vec3 end=chopOrigin.add(forward.scale(REACH));
                 AABB candidates=new AABB(chopOrigin,end).inflate(WIDTH/2,4,WIDTH/2);

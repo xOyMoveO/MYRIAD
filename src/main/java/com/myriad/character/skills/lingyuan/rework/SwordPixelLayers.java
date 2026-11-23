@@ -58,9 +58,15 @@ final class SwordPixelLayers {
         }
     }
     void wake(Vec3 from,Vec3 to,double width,double phase){
+        wake(from,to,width,phase,.65);
+    }
+    void clippedWake(Vec3 from,Vec3 to,double width,double phase){
+        wake(from,to,width,phase,.5);
+    }
+    private void wake(Vec3 from,Vec3 to,double width,double phase,double coverage){
         if(from.distanceToSqr(to)<1E-8)return;
         Vec3 f=direction(from,to),s=side(f),u=s.cross(f).normalize(),center=from.lerp(to,.5);
-        double half=from.distanceTo(to)*.65;
+        double half=from.distanceTo(to)*coverage;
         for(int i=0;i<(low?1:2);i++){
             double a=phase*.25+i*Math.PI/3;Vec3 up=s.scale(Math.cos(a)).add(u.scale(Math.sin(a)));
             plane(center.add(up.scale(i==0?0:width*.25)),f,up,half,width*(i==0?2.5:1.8),LINGYUAN_PIXEL_STREAM,i==0?.95:.65,SwordFlipbook.loop(LINGYUAN_PIXEL_STREAM,started,age,i*3));

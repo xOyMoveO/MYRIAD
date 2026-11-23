@@ -10,7 +10,15 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 public final class SwordVolleySkill extends AbilitySkill {
     public SwordVolleySkill(Definition definition){super(definition);}
 
-@Override public void release(Cast c){for(int i=0;i<3;i++)c.actionLater(i*4,()->c.actionProjectile(18,1.5,.7,false,false,(t,back)->c.damage(t,c.value(35,10,.25f),MAGIC)));}
+@Override public void release(Cast c){
+    for(int i=0;i<3;i++){
+        int shot=i;
+        c.actionLater(shot*4,()->{
+            c.actionProjectile(18,1.5,.7,false,false,(t,back)->c.damage(t,c.value(35,10,.25f),MAGIC));
+            LingyuanHandCues.volley(c,shot);
+        });
+    }
+}
 @Override public void present(Cast c){SwordVisuals.volley(c);}
 }
 

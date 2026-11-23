@@ -20,7 +20,7 @@ public final class YikeProjectiles {
             if(age>2*natural){finish(c,visual,flight);return false;}
             double rate=AbilityRuntime.projectileRate(c.player,flight,pos[0],now),step=Math.min(range-distance[0],blocksPerSecond/20*rate);
             Vec3 next=pos[0].add(dir.scale(step));
-            Vec3 wind=WindWallSystem.firstEnemyHit(c.player,pos[0],next);
+            Vec3 wind=WindWallSystem.interceptProjectile(c.player,pos[0],next);
             if(wind!=null){finish(c,visual,flight);YikeVfx.event(c,"dissipate",wind,wind,.25f,4);return false;}
             var wall=c.player.level().clip(new ClipContext(pos[0],next,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,c.player));
             boolean blocked=wall.getType()!=HitResult.Type.MISS;
@@ -46,7 +46,7 @@ public final class YikeProjectiles {
             progress[0]+=AbilityRuntime.projectileRate(c.player,flight,pos[0],c.now());double t=Math.min(1,progress[0]/duration);
             Vec3 next=begin.lerp(end,t).add(0,4*height*t*(1-t),0);
             var wall=c.player.level().clip(new ClipContext(pos[0],next,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,c.player));
-            Vec3 wind=WindWallSystem.firstEnemyHit(c.player,pos[0],next);
+            Vec3 wind=WindWallSystem.interceptProjectile(c.player,pos[0],next);
             if(wall.getType()!=HitResult.Type.MISS||wind!=null){
                 Vec3 at=wind==null?wall.getLocation():wind;YikeVfx.event(c,"dissipate",at,at,.6f,5);finish(c,visual,flight);YikeVfx.cancel(c.player,6);return false;
             }

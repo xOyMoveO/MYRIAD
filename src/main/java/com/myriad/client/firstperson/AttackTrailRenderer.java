@@ -12,7 +12,20 @@ import com.myriad.client.platform.HandRenderContext;
 /** Bounded local translucent/fullbright geometry using the already packaged authored pixel atlases. */
 public final class AttackTrailRenderer {
     private static final Map<Integer,Identifier> IDS=Map.ofEntries(Map.entry(0,Identifier.fromNamespaceAndPath("minecraft","textures/particle/glow.png")),Map.entry(50,id("night_gray_blade")),Map.entry(52,id("night_gray_wake")),
-            Map.entry(57,id("thunder_pixel_slash")),Map.entry(58,id("thunder_pixel_bolt")),Map.entry(64,id("fenjue_pixel_slash")),Map.entry(68,id("fenjue_pixel_stream")),Map.entry(71,id("fenjue_hd_fire")),Map.entry(75,id("shuo_basic_hd")),Map.entry(77,id("shuo_stream_hd")));
+            Map.entry(57,id("thunder_pixel_slash")),Map.entry(58,id("thunder_pixel_bolt")),Map.entry(64,id("fenjue_pixel_slash")),Map.entry(68,id("fenjue_pixel_stream")),Map.entry(71,id("fenjue_hd_fire")),Map.entry(75,id("shuo_basic_hd")),Map.entry(77,id("shuo_stream_hd")),
+            Map.entry(com.myriad.character.ability.AbilityVfxMaterials.WIND_HD_CUT,id("wind_hd_cut")),
+            Map.entry(com.myriad.character.ability.AbilityVfxMaterials.WIND_HD_FLOW,id("wind_hd_flow")),
+            Map.entry(com.myriad.character.ability.AbilityVfxMaterials.WIND_HD_NEEDLE,id("wind_hd_needle")),
+            Map.entry(com.myriad.character.ability.AbilityVfxMaterials.WIND_HD_FILAMENTS,id("wind_hd_filaments")),
+            Map.entry(com.myriad.character.ability.AbilityVfxMaterials.WIND_HD_SWEEP_EDGE,id("wind_hd_sweep_edge")),
+            Map.entry(com.myriad.character.ability.AbilityVfxMaterials.WIND_HD_RING_FLECKS,id("wind_hd_ring_flecks")),
+            Map.entry(com.myriad.character.ability.AbilityVfxMaterials.INK_HD_PAPER,id("ink_hd_paper")),
+            Map.entry(com.myriad.character.ability.AbilityVfxMaterials.INK_HD_STAMP,id("ink_hd_stamp")),
+            Map.entry(com.myriad.character.ability.AbilityVfxMaterials.INK_HD_BRUSH,id("ink_hd_brush")),
+            Map.entry(com.myriad.character.ability.AbilityVfxMaterials.INK_HD_CHAIN,id("ink_hd_chain")),
+            Map.entry(com.myriad.character.ability.AbilityVfxMaterials.INK_HD_SCRAPS,id("ink_hd_scraps")),
+            Map.entry(com.myriad.character.ability.AbilityVfxMaterials.INK_HD_GILT,id("ink_hd_gilt")),
+            Map.entry(com.myriad.character.ability.AbilityVfxMaterials.INK_HD_FIBERS,id("ink_hd_fibers")));
     private AttackTrailRenderer(){}
     private static Identifier id(String name){return Identifier.fromNamespaceAndPath("myriad","textures/particle/vfx/"+name+".png");}
     public static void submit(HandRenderContext event,List<Quad> quads){

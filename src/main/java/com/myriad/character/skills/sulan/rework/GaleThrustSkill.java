@@ -14,7 +14,10 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class GaleThrustSkill extends AbilitySkill {
     public GaleThrustSkill(Definition definition){super(definition);}
+    @Override public void dashPose(Cast c,DashPose phase,Vec3 direction){WindCastCues.dash(c,phase,direction);}
     @Override public void present(Cast c){com.myriad.character.ability.AbilityVisuals.arc(c,c.player.position(),1.4,55);}
     @Override public boolean canRelease(Cast c){return c.data.getBuff("g1_root")==0;} @Override public void release(Cast c){
- c.actionDash(c.forward(6),7,1.2,(t,first)->c.damage(t,c.value(50,15,.6f),PHYSICAL),()->{},false,false);}
+ c.actionDash(c.forward(6),7,1.2,(t,first)->{
+     if(c.damage(t,c.value(50,15,.6f),PHYSICAL))WindVisuals.cut(c,t,.62,55);
+ },()->com.myriad.character.ability.AbilityVisuals.burst(c,c.player.position(),.68),false,false);}
 }

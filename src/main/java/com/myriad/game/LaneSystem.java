@@ -141,6 +141,9 @@ public final class LaneSystem {
 
     private static final Map<Lane, Map<Integer, BlockPos>> PATH_POINTS = new EnumMap<>(Lane.class);
     private static final Map<Lane, BlockPos> LANE_CORNERS = new EnumMap<>(Lane.class);
+    private static final java.util.EnumSet<Lane> MANUAL_PATHS = java.util.EnumSet.noneOf(Lane.class);
+    // A platform's footprint, not the building's combat range or player hitbox.
+    private static final Map<BlockPos, Double> MINION_PLATFORM_RADII = new LinkedHashMap<>();
 
     public static BlockPos laneCorner(Lane lane) { return LANE_CORNERS.get(lane); }
 
@@ -407,7 +410,13 @@ public final class LaneSystem {
         Vec3 direction = Vec3.atBottomCenterOf(path.get(1)).subtract(start).multiply(1, 0, 1);
         Vec3 forward = direction.horizontalDistanceSqr() < 1.0E-6
                 ? new Vec3(0, 0, 1) : direction.normalize();
-        Vec3 spawn = start.subtract(forward.scale(formationIndex * 1.8));
+        // A hand-authored corridor begins on traversable ground; keep the entire
+        // formation in that verified corridor instead of behind it in a pedestal.
+        double offset = usesManualPath(lane)
+                ? Math.min(start.subtract(Vec3.atBottomCenterOf(path.get(1))).horizontalDistance() * .8,
+                        (3.0 - formationIndex) * 1.8)
+                : -formationIndex * 1.8;
+        Vec3 spawn = start.add(forward.scale(offset));
         CombatChunks.prepare(level, BlockPos.containing(spawn));
         minion.setPos(spawn.x, spawn.y, spawn.z);
         ((LaneMinionEntity)minion).configure(faction, kind == Kind.MAGIC ? 2 : kind == Kind.RANGED ? 1 : 0);
@@ -575,7 +584,8 @@ public final class LaneSystem {
                 || target instanceof ServerPlayer player && (VisionSystem.concealedFromNpc(minion, player)
                         || !NpcNavigation.visible(minion, target))
                 || towerTarget && (tracked.kind!=Kind.CRYSTAL&&tracked.lane != state.lane || !isTowerVulnerable(tracked))
-                || towerTarget && (hasPendingCorner(state)
+                || towerTarget && (platformRadius(target)>0&&!inMinionAttackRange(minion,target,state,minionAttackRange(state))
+                        || hasPendingCorner(state)
                         && minion.distanceToSqr(target) > minionAttackRange(state) * minionAttackRange(state)
                         || minion.distanceToSqr(target) > 100
                         && !NpcNavigation.visible(minion, target))
@@ -614,7 +624,7 @@ public final class LaneSystem {
             }
             if (target == null) {
                 Mob objective = laneObjective(state);
-                if (objective != null && !hasPendingCorner(state)
+                if (objective != null && platformRadius(objective)==0 && !hasPendingCorner(state)
                         && (minion.distanceToSqr(objective) <= 100 || reachedEnemySide(state)
                         && minion.distanceToSqr(objective) <= 1600 && NpcNavigation.clearWalk(minion,
                                 objective.position().add(minion.position().subtract(objective.position()).normalize()
@@ -637,11 +647,8 @@ public final class LaneSystem {
             }
         }
         double range = minionAttackRange(state);
-        if (target != null && UNITS.get(target.getUUID()) instanceof UnitState targetState && targetState.tower()) {
-            range += target.getBbWidth() * .5;
-        }
         if (target != null) {
-            if (minion.distanceToSqr(target) <= range * range && NpcNavigation.visible(minion, target)) {
+            if (inMinionAttackRange(minion,target,state,range) && visibleLaneTarget(minion,target)) {
                 state.navigation.clear();
                 if (state.attackRecovery + 1E-9 >= cooldown) {
                     state.attackRecovery = 0;
@@ -806,12 +813,52 @@ public final class LaneSystem {
 
     private static LivingEntity nearestVulnerableTower(ServerLevel level, Mob source, UnitState seeker,
             double range) {
+        if (usesManualPath(seeker.lane)) {
+            double search=range+12;
+            return nearest(level,source,search,candidate->{
+                UnitState other=UNITS.get(candidate.getUUID());
+                return other!=null&&other.tower()&&other.faction!=seeker.faction
+                        &&(other.kind==Kind.CRYSTAL||other.lane==seeker.lane)
+                        &&isTowerVulnerable(other)&&inMinionAttackRange(source,candidate,seeker,range)
+                        &&visibleLaneTarget(source,candidate);
+            });
+        }
         return nearest(level, source, range, candidate -> {
             UnitState other = UNITS.get(candidate.getUUID());
             return other != null && other.tower() && other.faction != seeker.faction
                     && (other.kind == Kind.CRYSTAL || other.lane == seeker.lane)
                     && isTowerVulnerable(other) && NpcNavigation.visible(source, candidate);
         });
+    }
+
+    private static double platformRadius(LivingEntity target){
+        return MatchArena.active()==MatchArena.Mode.DUEL&&!MANUAL_PATHS.isEmpty()&&target instanceof DefenseTowerEntity
+                ? MINION_PLATFORM_RADII.getOrDefault(BlockPos.containing(target.position()),0.0) : 0.0;
+    }
+
+    private static boolean visibleLaneTarget(Mob from,LivingEntity target){
+        // On a raised pedestal the exposed upper body can be visible even when
+        // the low edge of the hitbox is occluded by its own foundation.
+        if(NpcNavigation.visible(from,target))return true;
+        if(platformRadius(target)<=0)return false;
+        Vec3 upper=target.position().add(0,target.getBbHeight()*.78,0);
+        return from.level().clip(new net.minecraft.world.level.ClipContext(from.getEyePosition(),upper,
+                net.minecraft.world.level.ClipContext.Block.COLLIDER,net.minecraft.world.level.ClipContext.Fluid.NONE,from))
+                .getType()==net.minecraft.world.phys.HitResult.Type.MISS;
+    }
+
+    private static boolean inMinionAttackRange(Mob source,LivingEntity target,UnitState seeker,double range){
+        UnitState tracked=UNITS.get(target.getUUID());
+        if(tracked==null||!tracked.tower())return source.distanceToSqr(target)<=range*range;
+        double platform=usesManualPath(seeker.lane)?platformRadius(target):0;
+        if(platform>0)return platformInReach(source.position(),target.position(),platform,range);
+        double normal=range+target.getBbWidth()*.5;
+        return source.distanceToSqr(target)<=normal*normal;
+    }
+
+    static boolean platformInReach(Vec3 source,Vec3 building,double radius,double attackReach){
+        double reach=radius+attackReach;
+        return Math.abs(source.y-building.y)<=5&&source.subtract(building).horizontalDistanceSqr()<=reach*reach;
     }
 
     private static LivingEntity nearestEnemyPlayer(ServerLevel level, LivingEntity source, Faction faction,
@@ -1104,10 +1151,13 @@ public final class LaneSystem {
         entity.setCustomNameVisible(true);
     }
 
-    private static List<BlockPos> orderedPath(Lane lane, Faction faction) {
+    private static boolean usesManualPath(Lane lane){
+        return MatchArena.active()==MatchArena.Mode.DUEL&&MANUAL_PATHS.contains(lane)&&PATH_POINTS.get(lane).size()>=2;
+    }
+    static List<BlockPos> orderedPath(Lane lane, Faction faction) {
         if (!ENABLED_LANES.contains(lane)) return List.of();
-        // Tower placements define the lane. Keep legacy manual points only for maps without towers.
-        if (TOWER_POINTS.keySet().stream().anyMatch(k -> k.lane == lane)) {
+        // Existing arenas keep tower-derived routing unless the 3v3 layout explicitly opts in.
+        if (!usesManualPath(lane)&&TOWER_POINTS.keySet().stream().anyMatch(k -> k.lane == lane)) {
             List<BlockPos> route = new ArrayList<>();
             Faction enemy = faction == Faction.GUARDIAN ? Faction.DESTRUCTION : Faction.GUARDIAN;
             BlockPos start = respawnPoint(faction);
@@ -1208,14 +1258,14 @@ public final class LaneSystem {
         if (!canEdit() || faction == null || !ENABLED_LANES.contains(lane) || !ENABLED_TOWER_TIERS.contains(tier) || pos == null) {
             return false;
         }
-        TOWER_POINTS.put(new TowerKey(faction, lane, tier), pos.immutable());
+        forgetPlatform(TOWER_POINTS.put(new TowerKey(faction, lane, tier), pos.immutable()),pos);
         saveLayout();
         return true;
     }
 
     public static boolean clearTowerPoint(Faction faction, Lane lane, int tier) {
         if (!canEdit() || faction == null || lane == null || tier < 1 || tier > TOWERS_PER_LANE) return false;
-        TOWER_POINTS.remove(new TowerKey(faction, lane, tier));
+        forgetPlatform(TOWER_POINTS.remove(new TowerKey(faction, lane, tier)),null);
         saveLayout();
         return true;
     }
@@ -1229,7 +1279,7 @@ public final class LaneSystem {
 
     public static boolean setCrystalPoint(Faction faction, BlockPos pos) {
         if (!canEdit() || faction == null || pos == null) return false;
-        CRYSTAL_POINTS.put(faction, pos.immutable());
+        forgetPlatform(CRYSTAL_POINTS.put(faction, pos.immutable()),pos);
         saveLayout();
         syncBuildingLayout(server.overworld());
         return true;
@@ -1237,7 +1287,7 @@ public final class LaneSystem {
 
     public static boolean clearCrystalPoint(Faction faction) {
         if (!canEdit() || faction == null) return false;
-        CRYSTAL_POINTS.remove(faction);
+        forgetPlatform(CRYSTAL_POINTS.remove(faction),null);
         saveLayout();
         syncBuildingLayout(server.overworld());
         return true;
@@ -1459,6 +1509,11 @@ public final class LaneSystem {
             paths.add(lane.id, array);
         }
         root.add("paths", paths);
+        if(!MANUAL_PATHS.isEmpty()){
+            JsonArray manual=new JsonArray();
+            MANUAL_PATHS.forEach(lane->manual.add(lane.id));
+            root.add("manualPaths",manual);
+        }
         JsonObject corners = new JsonObject();
         LANE_CORNERS.forEach((lane, pos) -> corners.add(lane.id(), positionJson(pos)));
         root.add("laneCorners", corners);
@@ -1468,6 +1523,7 @@ public final class LaneSystem {
             tower.addProperty("faction", entry.getKey().faction.getName());
             tower.addProperty("lane", entry.getKey().lane.id);
             tower.addProperty("tier", entry.getKey().tier);
+            writePlatform(tower,entry.getValue());
             towers.add(tower);
         }
         root.add("towers", towers);
@@ -1482,6 +1538,7 @@ public final class LaneSystem {
         CRYSTAL_POINTS.forEach((faction, pos) -> {
             JsonObject crystal = positionJson(pos);
             crystal.addProperty("faction", faction.getName());
+            writePlatform(crystal,pos);
             crystals.add(crystal);
         });
         root.add("crystals", crystals);
@@ -1494,6 +1551,8 @@ public final class LaneSystem {
 
     private static void loadLayout() {
         readEnabledLanes(new JsonObject());
+        MANUAL_PATHS.clear();
+        MINION_PLATFORM_RADII.clear();
         LANE_CORNERS.clear();
         for (Lane lane : Lane.values()) PATH_POINTS.get(lane).clear();
         TOWER_POINTS.clear();
@@ -1504,6 +1563,11 @@ public final class LaneSystem {
         try {
             JsonObject root = JsonParser.parseString(Files.readString(path)).getAsJsonObject();
             readEnabledLanes(root);
+            JsonArray manual=root.getAsJsonArray("manualPaths");
+            if(manual!=null)for(JsonElement value:manual){
+                Lane lane=Lane.byId(value.getAsString());
+                if(lane!=null&&ENABLED_LANES.contains(lane))MANUAL_PATHS.add(lane);
+            }
             JsonObject corners = root.getAsJsonObject("laneCorners");
             if (corners != null) for (Lane lane : List.of(Lane.TOP, Lane.BOTTOM)) {
                 if (corners.has(lane.id())) LANE_CORNERS.put(lane, readPosition(corners.getAsJsonObject(lane.id())));
@@ -1512,7 +1576,11 @@ public final class LaneSystem {
             if (crystals != null) for (JsonElement element : crystals) {
                 JsonObject crystal = element.getAsJsonObject();
                 Faction faction = parseFaction(crystal.get("faction").getAsString());
-                if (faction != null) CRYSTAL_POINTS.put(faction, readPosition(crystal));
+                if (faction != null) {
+                    BlockPos pos=readPosition(crystal);
+                    CRYSTAL_POINTS.put(faction,pos);
+                    readPlatform(crystal,pos);
+                }
             }
             JsonObject paths = root.getAsJsonObject("paths");
             if (paths != null) for (Lane lane : Lane.values()) {
@@ -1531,7 +1599,9 @@ public final class LaneSystem {
                 Lane lane = Lane.byId(tower.get("lane").getAsString());
                 int tier = tower.get("tier").getAsInt();
                 if (faction != null && ENABLED_LANES.contains(lane) && ENABLED_TOWER_TIERS.contains(tier)) {
-                    TOWER_POINTS.put(new TowerKey(faction, lane, tier), readPosition(tower));
+                    BlockPos pos=readPosition(tower);
+                    TOWER_POINTS.put(new TowerKey(faction, lane, tier),pos);
+                    readPlatform(tower,pos);
                 }
             }
             JsonArray fountains = root.getAsJsonArray("fountains");
@@ -1547,6 +1617,21 @@ public final class LaneSystem {
 
     public static Faction parseFaction(String id) {
         return Faction.byId(id);
+    }
+
+    private static void readPlatform(JsonObject entry,BlockPos pos){
+        if(!entry.has("minionPlatformRadius"))return;
+        double radius=entry.get("minionPlatformRadius").getAsDouble();
+        if(Double.isFinite(radius)&&radius>0&&radius<=10)MINION_PLATFORM_RADII.put(pos,radius);
+    }
+
+    private static void writePlatform(JsonObject entry,BlockPos pos){
+        Double radius=MINION_PLATFORM_RADII.get(pos);
+        if(radius!=null)entry.addProperty("minionPlatformRadius",radius);
+    }
+
+    private static void forgetPlatform(BlockPos old,BlockPos next){
+        if(old!=null&&!old.equals(next))MINION_PLATFORM_RADII.remove(old);
     }
 
     private static void readEnabledLanes(JsonObject root) {

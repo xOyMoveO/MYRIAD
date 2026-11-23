@@ -430,7 +430,6 @@
   "screen.myriad.info.title": "Player Info",
   "screen.myriad.info.hint": "Press C or ESC to close",
   "screen.myriad.choose.title": "Choose Character",
-  "screen.myriad.character.half_complete": "WIP",
   "screen.myriad.choose.syncing": "Syncing character status…",
   "screen.myriad.choose.require_mod": "Enable MYRIAD with /myriad mod on to select a character.",
   "screen.myriad.choose.range": "%s–%s / %s",

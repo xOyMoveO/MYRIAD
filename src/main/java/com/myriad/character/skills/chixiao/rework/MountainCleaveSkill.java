@@ -8,7 +8,6 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 public final class MountainCleaveSkill extends AbilitySkill {
  public MountainCleaveSkill(Definition definition){super(definition);}
 
-@Override public void release(Cast c){c.cone(6,100,c.value(75,22,.6f),PHYSICAL);}
-@Override public void present(Cast c){AbilityVisuals.burst(c,c.player.position().add(c.forward(3)),1);}
+@Override public void release(Cast c){WarSpiritHandCues.cast(c);c.cone(6,100,c.value(75,22,.6f),PHYSICAL);}
 }
 

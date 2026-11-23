@@ -9,7 +9,7 @@ import net.minecraft.resources.Identifier;
 import com.myriad.character.Skill;
 
 /**
- * 技能图标槽：渲染 assets/myriad/textures/skill_icons/generated 下的角色技能图标；
+ * 技能图标槽：渲染 assets/myriad/textures/gui/sprites/skill_icons/generated 下的角色技能图标；
  * 大招（终极技能）金色边框 + 左上角「大」标记。
  */
 public class SkillIcon {
@@ -20,6 +20,52 @@ public class SkillIcon {
     private static final int ACCENT_CD = 0xA0646A76;
     private static final int ACCENT_ULTIMATE = 0xC9E2B94B;
     private static final Map<String, String> GENERATED_ICON_PATHS = Map.ofEntries(
+            // Each current branch owns unique artwork; legacy aliases below remain valid.
+            Map.entry("g1_yingxiao_pa", "yingxiao/g1_yingxiao_pa"),
+            Map.entry("g1_yingxiao_pb", "yingxiao/g1_yingxiao_pb"),
+            Map.entry("g1_yingxiao_n1", "yingxiao/g1_yingxiao_n1"),
+            Map.entry("g1_yingxiao_n2", "yingxiao/g1_yingxiao_n2"),
+            Map.entry("g1_yingxiao_ma", "yingxiao/g1_yingxiao_ma"),
+            Map.entry("g1_yingxiao_mb", "yingxiao/g1_yingxiao_mb"),
+            Map.entry("g1_yingxiao_ua", "yingxiao/g1_yingxiao_ua"),
+            Map.entry("g1_yingxiao_ub", "yingxiao/g1_yingxiao_ub"),
+
+            Map.entry("g1_tianxing_pa", "tianxing/g1_tianxing_pa"),
+            Map.entry("g1_tianxing_pb", "tianxing/g1_tianxing_pb"),
+            Map.entry("g1_tianxing_n1", "tianxing/g1_tianxing_n1"),
+            Map.entry("g1_tianxing_n2", "tianxing/g1_tianxing_n2"),
+            Map.entry("g1_tianxing_ma", "tianxing/g1_tianxing_ma"),
+            Map.entry("g1_tianxing_mb", "tianxing/g1_tianxing_mb"),
+            Map.entry("g1_tianxing_ua", "tianxing/g1_tianxing_ua"),
+            Map.entry("g1_tianxing_ub", "tianxing/g1_tianxing_ub"),
+
+            Map.entry("g1_fenjue_pa", "fenjue/g1_fenjue_pa"),
+            Map.entry("g1_fenjue_pb", "fenjue/g1_fenjue_pb"),
+            Map.entry("g1_fenjue_n1", "fenjue/g1_fenjue_n1"),
+            Map.entry("g1_fenjue_n2", "fenjue/g1_fenjue_n2"),
+            Map.entry("g1_fenjue_ma", "fenjue/g1_fenjue_ma"),
+            Map.entry("g1_fenjue_mb", "fenjue/g1_fenjue_mb"),
+            Map.entry("g1_fenjue_ua", "fenjue/g1_fenjue_ua"),
+            Map.entry("g1_fenjue_ub", "fenjue/g1_fenjue_ub"),
+
+            Map.entry("g2_chixiao_pa", "chixiao/g2_chixiao_pa"),
+            Map.entry("g2_chixiao_pb", "chixiao/g2_chixiao_pb"),
+            Map.entry("g2_chixiao_n1", "chixiao/g2_chixiao_n1"),
+            Map.entry("g2_chixiao_n2", "chixiao/g2_chixiao_n2"),
+            Map.entry("g2_chixiao_ma", "chixiao/g2_chixiao_ma"),
+            Map.entry("g2_chixiao_mb", "chixiao/g2_chixiao_mb"),
+            Map.entry("g2_chixiao_ua", "chixiao/g2_chixiao_ua"),
+            Map.entry("g2_chixiao_ub", "chixiao/g2_chixiao_ub"),
+
+            Map.entry("g2_yunsheng_pa", "yunsheng/g2_yunsheng_pa"),
+            Map.entry("g2_yunsheng_pb", "yunsheng/g2_yunsheng_pb"),
+            Map.entry("g2_yunsheng_n1", "yunsheng/g2_yunsheng_n1"),
+            Map.entry("g2_yunsheng_n2", "yunsheng/g2_yunsheng_n2"),
+            Map.entry("g2_yunsheng_ma", "yunsheng/g2_yunsheng_ma"),
+            Map.entry("g2_yunsheng_mb", "yunsheng/g2_yunsheng_mb"),
+            Map.entry("g2_yunsheng_ua", "yunsheng/g2_yunsheng_ua"),
+            Map.entry("g2_yunsheng_ub", "yunsheng/g2_yunsheng_ub"),
+
             Map.entry("keheng_kehen", "keheng/kehen"),
             Map.entry("keheng_hengbu", "keheng/hengbu"),
             Map.entry("keheng_chizhen", "keheng/chizhen"),
@@ -49,11 +95,17 @@ public class SkillIcon {
             Map.entry("chuansongzhen", "xuanchen/chuansongzhen"),
             Map.entry("moyanghuzhen", "xuanchen/moyanghuzhen"),
             Map.entry("zhoutianfuzhen", "xuanchen/zhoutianfuzhen"),
+            Map.entry("g1_xuanchen_pb", "xuanchen/fuyingongming"),
+            Map.entry("g1_xuanchen_n2", "xuanchen/molinghufu"),
+            Map.entry("g1_xuanchen_ub", "xuanchen/fengjiefulao"),
             Map.entry("sulan_passive", "sulan/passive"),
             Map.entry("jifengtuci", "sulan/jifengtuci"),
             Map.entry("lingfengbiaoji", "sulan/lingfengbiaoji"),
             Map.entry("fengqiang", "sulan/fengqiang"),
             Map.entry("yufengqianli", "sulan/yufengqianli"),
+            Map.entry("g1_sulan_pb", "sulan/luefenglianren"),
+            Map.entry("g1_sulan_mb", "sulan/huixuanfengren"),
+            Map.entry("g1_sulan_ub", "sulan/fengyuguizhen"),
             Map.entry("fenjue_passive", "fenjue/passive"),
             Map.entry("lieyanzhan", "fenjue/lieyanzhan"),
             Map.entry("rongyanlaolong", "fenjue/rongyanlaolong"),
@@ -69,16 +121,25 @@ public class SkillIcon {
             Map.entry("huaxingweijian", "lingyuan/huaxingweijian"),
             Map.entry("wanjianjue", "lingyuan/wanjianjue"),
             Map.entry("sanqianguizong", "lingyuan/sanqianguizong"),
+            Map.entry("g2_lingyuan_pb", "lingyuan/cangfengyangshi"),
+            Map.entry("g2_lingyuan_mb", "lingyuan/dingyuejianzhen"),
+            Map.entry("g2_lingyuan_ub", "lingyuan/yijiankaitian"),
             Map.entry("hanze_passive", "hanze/passive"),
             Map.entry("bingzhuishu", "hanze/bingzhuishu"),
             Map.entry("shuangdun", "hanze/shuangdun"),
             Map.entry("jueduilingdu", "hanze/jueduilingdu"),
             Map.entry("qianlibingfeng", "hanze/qianlibingfeng"),
+            Map.entry("g2_hanze_pb", "hanze/ningshuangjia"),
+            Map.entry("g2_hanze_mb", "hanze/liebingchangleng"),
+            Map.entry("g2_hanze_ub", "hanze/xuandongbilei"),
             Map.entry("qingluo_passive", "qingluo/passive"),
             Map.entry("qingtengyu", "qingluo/qingtengyu"),
             Map.entry("huxindanzhen", "qingluo/huxindanzhen"),
             Map.entry("qiansiduoe", "qingluo/qiansiduoe"),
             Map.entry("wanmuchunhui", "qingluo/wanmuchunhui"),
+            Map.entry("g2_qingluo_pb", "qingluo/cailinghualu"),
+            Map.entry("g2_qingluo_n2", "qingluo/fushengteng"),
+            Map.entry("g2_qingluo_ub", "qingluo/xuanhutianmu"),
             Map.entry("chixiao_passive", "chixiao/passive"),
             Map.entry("duanyuezhan", "chixiao/duanyuezhan"),
                         Map.entry("rivet_station_armor", "rivet/rivet_station_armor"),
@@ -107,19 +168,23 @@ public class SkillIcon {
             Map.entry("huiyinjiebiao", "yunsheng/huiyinjiebiao"),
             Map.entry("zhongshengguizong", "yunsheng/zhongshengguizong"));
 
+    /** 已绘制独立图标的分支用自身 ID，未重绘的分支保持原有别名。 */
+    private static String iconPath(String skillId) {
+        String direct = GENERATED_ICON_PATHS.get(skillId);
+        if (direct != null) return direct;
+        var ability = com.myriad.character.rework.FirstGroupSkills.byId(skillId);
+        return ability == null ? null : GENERATED_ICON_PATHS.get(ability.iconAlias());
+    }
+
     /** 技能图标以 GUI sprite 渲染；sprite 文件指向 generated 目录中的图标。 */
     public static boolean hasIcon(String skillId) {
-        var ability = com.myriad.character.rework.FirstGroupSkills.byId(skillId);
-        if (ability != null) skillId = ability.iconAlias();
-        String path = GENERATED_ICON_PATHS.get(skillId);
+        String path = iconPath(skillId);
         return path != null && hasResource("textures/gui/sprites/skill_icons/generated/" + path + ".png");
     }
 
     private static Identifier iconSprite(String skillId) {
-        var ability = com.myriad.character.rework.FirstGroupSkills.byId(skillId);
-        if (ability != null) skillId = ability.iconAlias();
         return Identifier.fromNamespaceAndPath("myriad",
-                "skill_icons/generated/" + GENERATED_ICON_PATHS.get(skillId));
+                "skill_icons/generated/" + iconPath(skillId));
     }
 
     /** 二段技能在服务器同步的再施放窗口内切换为独立图标。 */

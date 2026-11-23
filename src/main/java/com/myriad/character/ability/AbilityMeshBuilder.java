@@ -10,8 +10,13 @@ import java.util.List;
 public final class AbilityMeshBuilder {
     public static final Vec3 UP=new Vec3(0,1,0),X=new Vec3(1,0,0),Z=new Vec3(0,0,1);
     private final ArrayList<Quad> out=new ArrayList<>();
+    private final int limit;
     public final float fade;public final double age,progress;public final boolean reduced;
     public AbilityMeshBuilder(AbilityVfxPayload p,float age,boolean reduced){
+        this(p,age,reduced,192);
+    }
+    public AbilityMeshBuilder(AbilityVfxPayload p,float age,boolean reduced,int limit){
+        this.limit=limit;
         this.age=age;this.progress=Math.clamp(age/p.life(),0,1);this.reduced=reduced;
         this.fade=(float)Math.min(1,(p.life()-age)/Math.max(1,p.life()*.25));
     }
@@ -20,7 +25,7 @@ public final class AbilityMeshBuilder {
     public static Vec3 side(Vec3 forward){Vec3 s=forward.cross(UP);return s.lengthSqr()<1E-8?X:s.normalize();}
     public static Vec3 circle(Vec3 at,double r,double angle,double y){return at.add(Math.cos(angle)*r,y,Math.sin(angle)*r);}
     public void quad(Vec3 a,Vec3 b,Vec3 c,Vec3 d,int rgb,double alpha,int material){
-        if(out.size()>190||alpha<=0)return;
+        if(out.size()+2>limit||alpha<=0)return;
         float opacity=(float)Math.clamp(alpha*fade,0,1);if(opacity<=0)return;
         out.add(new Quad(a,b,c,d,rgb,opacity,material));
         out.add(new Quad(d,c,b,a,rgb,opacity,material,true));
@@ -28,6 +33,34 @@ public final class AbilityMeshBuilder {
     public void plane(Vec3 at,Vec3 right,Vec3 up,double w,double h,int material,int rgb,double alpha){
         Vec3 r=right.scale(w),u=up.scale(h);
         quad(at.subtract(r).subtract(u),at.add(r).subtract(u),at.add(r).add(u),at.subtract(r).add(u),rgb,alpha,material);
+    }
+    /** Select a 128px cell from a horizontal four-frame atlas, including texel-safe edges. */
+    public void frame(Vec3 at,Vec3 right,Vec3 up,double w,double h,int material,int frame,double alpha){
+        Vec3 r=right.scale(w),u=up.scale(h);
+        Vec3 a=at.subtract(r).subtract(u),b=at.add(r).subtract(u),c=at.add(r).add(u),d=at.subtract(r).add(u);
+        atlasFace(a,b,c,d,material,frame,alpha);
+    }
+    public void atlasTriangle(Vec3 a,Vec3 b,Vec3 c,int material,int facet){
+        atlasFace(a,b,c,c,material,facet,1);
+    }
+    /** A closed model supplies outward winding; a second reverse quad would reveal its interior. */
+    public void modelFace(Vec3 a,Vec3 b,Vec3 c,Vec3 d,int material,int cell,int tint,double opacity){
+        float u0=(Math.floorMod(cell,4)*128+1f)/512,u1=u0+126f/512;
+        modelFace(a,b,c,d,material,tint,opacity,u0,u1,1f/128,127f/128,false);
+    }
+    /** Use an independent atlas region for each exported solid-model face. */
+    public void modelFace(Vec3 a,Vec3 b,Vec3 c,Vec3 d,int material,int tint,double opacity,
+                          float u0,float u1,float v0,float v1,boolean topFirst){
+        if(out.size()>=limit||opacity<=0)return;
+        out.add(new Quad(a,b,c,d,tint,(float)Math.clamp(opacity,0,1),material,topFirst,u0,u1,v0,v1));
+    }
+    private void atlasFace(Vec3 a,Vec3 b,Vec3 c,Vec3 d,int material,int frame,double alpha){
+        if(out.size()+2>limit||alpha<=0||fade<=0)return;
+        float opacity=(float)Math.clamp(alpha*fade,0,1);
+        float u0=(Math.floorMod(frame,4)*128+.5f)/512,u1=u0+127f/512;
+        float v0=.5f/128,v1=1-v0;
+        out.add(new Quad(a,b,c,d,0xFFFFFF,opacity,material,false,u0,u1,v0,v1));
+        out.add(new Quad(d,c,b,a,0xFFFFFF,opacity,material,true,u0,u1,v0,v1));
     }
     public void triangle(Vec3 a,Vec3 b,Vec3 c,int rgb,double alpha){quad(a,b,c,c,rgb,alpha,0);}
     public void line(Vec3 a,Vec3 b,Vec3 normal,double width,int rgb,double alpha){
@@ -78,7 +111,7 @@ public final class AbilityMeshBuilder {
             double t=i/(double)n,u=(i+1.0)/n;Vec3 a=from.lerp(to,t),b=from.lerp(to,u);
             for(Vec3 normal:new Vec3[]{side,up}){
                 Vec3 w0=normal.scale(width*(.1+.9*t)),w1=normal.scale(width*(.1+.9*u));
-                if(out.size()>190)return;float opacity=(float)Math.clamp(alpha*fade*(.25+.75*u),0,1);
+                if(out.size()+2>limit)return;float opacity=(float)Math.clamp(alpha*fade*(.25+.75*u),0,1);
                 out.add(new Quad(a.subtract(w0),b.subtract(w1),b.add(w1),a.add(w0),rgb,opacity,material,false,(float)t,(float)u));
                 out.add(new Quad(a.add(w0),b.add(w1),b.subtract(w1),a.subtract(w0),rgb,opacity,material,true,(float)t,(float)u));
             }

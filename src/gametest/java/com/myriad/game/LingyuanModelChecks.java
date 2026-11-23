@@ -82,18 +82,18 @@ final class LingyuanModelChecks {
                     faces++;crescents++;
                 }
                 // Reduced trails intentionally keep only the stream texture, without the decorative crescent.
-                if(kind==FLIGHT||kind==CHARGE||kind==ARC||kind==TRAIL&&!reduced)
+                if(kind==FLIGHT||kind==CHARGE||kind==ARC||kind==TRAIL&&!reduced&&aim.lengthSqr()>1E-8)
                     h.assertTrue(crescents>0,"Actual moving crescent composition exercised: kind="+kind+", reduced="+reduced);
             }
         }
         System.out.println("[MYRIAD-LINGYUAN-CRESCENT] PASS: "+faces+" actual sprite faces, 6 axes / 2 diagonals / zero fallback, near/far, three ages, convex front follows travel");
     }
     private static AbilityVfxPayload profile(int variant){
-        int kind=switch(variant){case 0,1,3->SHIELD;case 2->ARC;case 4->FLIGHT;case 5,6->SEAL;default->CHARGE;};
+        int kind=switch(variant){case 0,1->SHIELD;case 2->ARC;case 3->WALL;case 4->FLIGHT;case 5,6->SEAL;default->CHARGE;};
         float radius=switch(variant){case 0->1.05f;case 1->.8f;case 2->2;case 3->.65f;case 4->.22f;case 5->4;case 6->10;default->1.2f;};
         float angle=switch(variant){case 0->4;case 1->3;case 2->80;case 5,6->360;case 7->300;default->0;};
-        int life=switch(variant){case 0,1->14;case 2->12;case 3->8;case 4->3;case 5->80;case 6->120;default->5;};
-        return new AbilityVfxPayload(1,kind==SHIELD?1:-1,5,variant,kind,Vec3.ZERO,new Vec3(0,0,variant==7?20:1.5),radius,angle,life,100,false);
+        int life=switch(variant){case 0->7;case 1->6;case 2,3->5;case 4->3;case 5->80;case 6->120;default->5;};
+        return new AbilityVfxPayload(1,kind==SHIELD||kind==WALL?1:-1,5,variant,kind,Vec3.ZERO,new Vec3(0,0,variant==7?20:1.5),radius,angle,life,100,false);
     }
     private static void verifySkillProfiles(GameTestHelper h){
         var fingerprints=new HashSet<Integer>();
@@ -114,13 +114,30 @@ final class LingyuanModelChecks {
         for(int count=1;count<=4;count++){
             var p=new AbilityVfxPayload(1,1,5,0,SHIELD,Vec3.ZERO,new Vec3(0,0,1),1.05f,count,14,100,false);
             long faces=AbilityVfxGeometry.build(p,.5f,false).stream().filter(q->q.material()==AbilityVfxMaterials.LINGYUAN_PIXEL_MODEL).count();
-            h.assertTrue(faces==count*SwordModelAsset.faceCount("body"),"Passive orbit renders exactly the real sword count");
+            h.assertTrue(faces==count*SwordModelAsset.faceCount("body_lod"),"Fixed passive slots render exactly the real sword count");
         }
+        var guard=profile(3);
+        var afterGuard=new AbilityVfxPayload(1,1,5,3,WALL,guard.from(),guard.to(),1.1f,2,5,100,false);
+        var first=AbilityVfxGeometry.build(guard,1,false);
+        var second=AbilityVfxGeometry.build(afterGuard,1,false);
+        h.assertTrue(modelFaces(first)==5*SwordModelAsset.faceCount("body_lod")
+                &&modelFaces(second)==3*SwordModelAsset.faceCount("body_lod"),"Damage reduction has five fan blades; remaining shield has three");
+        var field=profile(5);
+        var pulse=new AbilityVfxPayload(1,-1,5,5,BURST,field.from(),field.to(),4,1,10,120,false);
+        h.assertTrue(modelFaces(AbilityVfxGeometry.build(field,20,false))==4*SwordModelAsset.faceCount("body_lod")
+                &&modelFaces(AbilityVfxGeometry.build(pulse,2,false))==0,"Four persistent stakes are separate from the short ground-cut pulse");
+        var trace=new AbilityVfxPayload(1,-1,5,2,TRAIL,Vec3.ZERO,new Vec3(1,.4,1),.18f,0,7,100,false);
+        var travel=trace.to().normalize();
+        for(var q:AbilityVfxGeometry.build(trace,1,false))for(var v:List.of(q.a(),q.b(),q.c(),q.d()))
+            h.assertTrue(v.subtract(trace.to()).dot(travel)<1E-6,"Collision-clipped dash light does not overshoot the actual endpoint");
         var initial=new AbilityVfxPayload(1,-1,5,7,CHARGE,Vec3.ZERO,new Vec3(0,0,20),1.2f,0,5,100,false);
         var complete=new AbilityVfxPayload(1,-1,5,7,CHARGE,Vec3.ZERO,new Vec3(0,0,20),1.2f,350,5,103,false);
         double a=span(AbilityVfxGeometry.build(initial,.5f,false)),b=span(AbilityVfxGeometry.build(complete,.5f,false));
         h.assertTrue(b>a+.5,"Actual charge stage grows the blade across packet renewals");
         System.out.println("[MYRIAD-LINGYUAN-SKILLS] PASS: 8 distinct layered profiles, early/mid/late, real passive count, resonance-ready cue, cross-packet charge growth");
+    }
+    private static long modelFaces(List<Quad> quads){
+        return quads.stream().filter(q->q.material()==AbilityVfxMaterials.LINGYUAN_PIXEL_MODEL).count();
     }
     private static double span(List<Quad> mesh){
         double min=Double.POSITIVE_INFINITY,max=Double.NEGATIVE_INFINITY;

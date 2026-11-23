@@ -27,7 +27,11 @@ final class ChargeFlightLifecycleChecks {
                     case 0->c.projectile(3,1.5,.3,false,false,(t,b)->{});
                     case 1->c.projectile(10,2,.7,false,false,(t,b)->{});
                     case 2->c.projectile(10,1.5,.3,false,false,(t,b)->{});
-                    case 3->c.projectile(3,1,.3,true,true,(t,b)->{});
+                    case 3->{
+                        PlayerDataProvider.get(p).setCharacterId("sulan");
+                        var blade=FirstGroupSkills.node("sulan",5);
+                        blade.release(AbilityRuntime.context(p,blade));
+                    }
                     case 4->{c.skill.release(c);c.skill.present(c);} // Include the actual launch gate, not just flight packets.
                     case 5->{
                         PlayerDataProvider.get(p).setCharacterId("yunsheng");
@@ -68,6 +72,12 @@ final class ChargeFlightLifecycleChecks {
                         }
                         h.assertTrue(fixtures.get(4).packets.stream().filter(p->p.kind()==FLIGHT).map(AbilityVfxPayload::instance).distinct().count()==3,
                                 "Three simultaneous swords keep separate identities, not one per skill");
+                        var wind=fixtures.get(3).packets;
+                        var turns=wind.stream().filter(p->p.theme()==4&&p.variant()==5&&p.kind()==BURST&&p.angle()==180).toList();
+                        var outward=wind.stream().filter(p->p.kind()==FLIGHT&&p.angle()==0).toList();
+                        h.assertTrue(turns.size()==1&&turns.getFirst().from().equals(outward.getLast().to())
+                                        &&wind.stream().anyMatch(p->p.kind()==FLIGHT&&p.angle()==180),
+                                "The actual returning wind blade draws one turn exactly at its clipped outbound endpoint");
                         verifyVolleyPresentation(h,fixtures.get(4).packets);
                         done[0]=true;fixtures.forEach(ChargeFlightLifecycleChecks::cleanup);
                         System.out.println("[MYRIAD-FLIGHT-LIFECYCLE] PASS: real range/hit/wall/return/three-shot volley/paper-crane/reset, independent identities, one end each, queued-frame suppression, TTL fallback and wire");
@@ -134,11 +144,13 @@ final class ChargeFlightLifecycleChecks {
             if(p.kind()==SEAL){gates++;h.assertTrue(p.life()==9,"Launch light ends with the third launch, not a lingering sword array");}
         }
         h.assertTrue(flights>3&&gates==1,"The real three-shot release and its actual presentation are covered");
-        // This fix must not delete the persistent passive orbit, defensive shields, or sword arrays.
+        // The real replacement recipes must retain the intentionally persistent swords.
         for(int variant:new int[]{0,3,5}){
-            int kind=variant==5?SEAL:SHIELD;
-            var p=new AbilityVfxPayload(1,kind==SHIELD?1:-1,5,variant,kind,Vec3.ZERO,new Vec3(0,0,1),1,360,14,100,false);
-            h.assertTrue(AbilityVfxGeometry.build(p,5,false).stream().anyMatch(q->q.material()==AbilityVfxMaterials.LINGYUAN_PIXEL_MODEL),
+            int kind=variant==5?SEAL:variant==3?WALL:SHIELD;
+            int life=variant==5?80:variant==3?5:7;
+            var p=new AbilityVfxPayload(1,variant==5?-1:1,5,variant,kind,Vec3.ZERO,new Vec3(0,0,1),variant==5?4:1,
+                    variant==5?360:1,life,100,false);
+            h.assertTrue(AbilityVfxGeometry.build(p,life-.25f,false).stream().anyMatch(q->q.material()==AbilityVfxMaterials.LINGYUAN_PIXEL_MODEL),
                     "Intended orbit/shield/array swords retain their real lifetime");
         }
         System.out.println("[MYRIAD-VOLLEY-PRESENTATION] PASS: real launch cue has no duplicate swords; fresh frames move, stale bodies vanish within one tick; orbit/shield/array preserved");

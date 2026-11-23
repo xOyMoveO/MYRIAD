@@ -11,7 +11,8 @@ public final class SpringGroveSkill extends AbilitySkill {
 @Override public boolean needsPoint(){return true;}
 @Override public double pointRange(Cast c){return 14;}
 @Override public double previewRadius(Cast c){return 7;}
-@Override public void release(Cast c){Vec3 at=c.point;c.repeat(120,20,i->{for(var ally:c.allies(at,7))c.heal(ally,c.value(45,20,.22f));AbilityVisuals.burst(c,at,2);});}
+@Override public void selectionPose(Cast c,boolean active){StaffHandCues.select(c,active);}
+ @Override public void release(Cast c){StaffHandCues.release(c);Vec3 at=c.point;c.repeat(120,20,i->{for(var ally:c.allies(at,7))HerbVisuals.heal(c,ally,c.value(45,20,.22f),.74);AbilityVisuals.burst(c,at,2);});}
 @Override public void present(Cast c){AbilityVisuals.field(c,c.point,7,120);}
 }
 

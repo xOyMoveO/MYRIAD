@@ -403,7 +403,6 @@
   "screen.myriad.info.title": "个人信息",
   "screen.myriad.info.hint": "按 C 键或 ESC 关闭",
   "screen.myriad.choose.title": "选择角色",
-  "screen.myriad.character.half_complete": "半成",
   "screen.myriad.choose.syncing": "正在同步角色状态…",
   "screen.myriad.choose.require_mod": "请用 /myriad mod on 开启玩法后选角。",
   "screen.myriad.choose.range": "%s–%s / %s",

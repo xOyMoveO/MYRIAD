@@ -14,10 +14,17 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class SpiritWindMarkSkill extends AbilitySkill {
     public SpiritWindMarkSkill(Definition definition){super(definition);}
-    @Override public void present(Cast c){var target=c.target(14,false);if(target!=null){var m=c.memory(target.getUUID().toString());c.whileActive(80,a->{if(m.until<=c.now()||!target.isAlive())return false;if(a%8==0&&c.player.hasLineOfSight(target))com.myriad.character.ability.AbilityVisuals.following(c,com.myriad.character.ability.AbilityVfxGeometry.SEAL,target,.7,8);return true;});}}
     @Override public boolean canRelease(Cast c){return c.target(14,false)!=null;}
- @Override public void release(Cast c){LivingEntity t=c.target(14,false);if(t==null)return;var m=c.memory(t.getUUID().toString());c.damage(t,c.value(25,10,.25f),PHYSICAL);
- m.until=c.now()+80;c.slow(t,.2f,30);c.ring(t.position(),1,false);}
+ @Override public void release(Cast c){LivingEntity t=c.target(14,false);if(t==null)return;
+ WindCastCues.release(c,t.position().add(0,t.getBbHeight()*.6,0).subtract(c.player.getEyePosition()));
+ var m=c.memory(t.getUUID().toString());c.damage(t,c.value(25,10,.25f),PHYSICAL);
+ m.until=c.now()+80;c.slow(t,.2f,30);
+ long active=m.until;
+ c.whileActive(80,a->{
+     if(m.until!=active||m.until<=c.now()||!t.isAlive())return false;
+     if(a%5==0&&c.player.hasLineOfSight(t))WindVisuals.mark(c,t);
+     return true;
+ });}
  @Override public double modifyDamage(AbilityRuntime.Hit h){Cast c=AbilityRuntime.context(h.player(),this);var m=c.memory(h.target().getUUID().toString());
- if(m.until>c.now()){m.until=0;return 1+(5+c.rank)/100.0;}return 1;}
+ if(m.until>c.now()){m.until=0;WindVisuals.consumeMark(c,h.target());return 1+(5+c.rank)/100.0;}return 1;}
 }

@@ -16,6 +16,6 @@ public final class ArrayGuardianSkill extends AbilitySkill {
     public ArrayGuardianSkill(Definition definition){super(definition);}
     @Override public void onCast(Cast released){Cast c=AbilityRuntime.context(released.player,this);var m=c.memory();if(m.cooldown>c.now())return;m.cooldown=c.now()+240;
  var ally=c.allies(c.player.position(),8).stream().filter(p->p!=c.player).min(Comparator.comparingDouble(p->p.getHealth()/p.getMaxHealth())).orElse(c.player);
- com.myriad.character.ability.AbilityVisuals.beam(c,c.player.position().add(0,.5,0),ally.position().add(0,.5,0),.06);c.shield(ally,c.value(40,15,.25f),40);}
+ c.shield(ally,c.value(40,15,.25f),40,()->InkVisuals.deliver(c,ally,.48));}
     @Override public void release(Cast cast){} // Passive: event hooks above own the effect.
 }

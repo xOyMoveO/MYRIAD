@@ -9,6 +9,6 @@ public final class CovenantShelterSkill extends AbilitySkill {
  public CovenantShelterSkill(Definition definition){super(definition);}
 
 @Override public void release(Cast c){for(var ally:c.allies(c.player.position(),8)){c.shield(ally,c.value(210,65,.65f),100);c.slow(ally,-.25f,60);}}
-@Override public void present(Cast c){AbilityVisuals.field(c,c.player.position(),8,24);}
+@Override public void present(Cast c){WarSpiritHandCues.cast(c);AbilityVisuals.field(c,c.player.position(),8,24);}
 }
 

@@ -8,7 +8,15 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 public final class SpiritChimeSkill extends AbilitySkill {
  public SpiritChimeSkill(Definition definition){super(definition);}
 
-@Override public void onHit(AbilityRuntime.Hit h){Cast c=AbilityRuntime.context(h.player(),this);if(!c.hero(h.target())||c.memory().cooldown>c.now())return;c.memory().cooldown=c.now()+120;for(var ally:c.allies(c.player.position(),6)){c.heal(ally,c.value(18,7,.15f));c.slow(ally,-.1f,20);}}
+@Override public void onHit(AbilityRuntime.Hit h){
+    Cast c=AbilityRuntime.context(h.player(),this);if(!c.hero(h.target())||c.memory().cooldown>c.now())return;
+    c.memory().cooldown=c.now()+120;
+    AbilityVisuals.seal(c,c.player.position(),1.3,false);
+    for(var ally:c.allies(c.player.position(),6)){
+        c.heal(ally,c.value(18,7,.15f));c.slow(ally,-.1f,20);
+        AbilityVisuals.following(c,AbilityVfxGeometry.SEAL,ally,.66,2,8);
+    }
+}
 @Override public void release(Cast c){}
 }
 

@@ -10,6 +10,7 @@ import com.myriad.network.Packets;
 
 import com.myriad.character.CharacterType;
 import com.myriad.client.HudOverlay;
+import com.myriad.client.LowHealthOverlay;
 import com.myriad.client.StatusOverlay;
 import com.myriad.client.particle.SulanBladeArcParticle;
 import com.myriad.client.particle.SpiritMoteParticle;
@@ -89,6 +90,7 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
         com.myriad.client.firstperson.ThunderSwordView.onAttack(event);
         com.myriad.client.firstperson.FlameDaoView.onAttack(event);
         com.myriad.client.firstperson.ShuoView.onAttack(event);
+        com.myriad.client.firstperson.WindBladeView.onAttack(event);
         return event.isCanceled();
     }
 
@@ -251,6 +253,7 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
                     return;
                 }
                 event.setCanceled(true);
+                com.myriad.client.firstperson.InkFlagView.prepareBasic();
                 Packets.sendToServer(new NetworkSetup.MagicBulletFirePayload());
             }
         }
@@ -299,6 +302,11 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
         if (com.myriad.client.firstperson.KehengView.render(event)) return;
         if (com.myriad.client.firstperson.ThunderSwordView.render(event)) return;
         if (com.myriad.client.firstperson.FlameDaoView.render(event)) return;
+        if (com.myriad.client.firstperson.WindBladeView.render(event)) return;
+        if (com.myriad.client.firstperson.InkFlagView.render(event)) return;
+        if (com.myriad.client.firstperson.StaffHandView.render(event)) return;
+        if (com.myriad.client.firstperson.LingyuanHandView.render(event)) return;
+        if (com.myriad.client.firstperson.WarSpiritHandView.render(event)) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || !com.myriad.client.ClientDataHolder.modEnabled()
                 || !isInitialWeaponClient(event.getItemStack())) return;
@@ -347,6 +355,11 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
             com.myriad.client.firstperson.ThunderSwordView.tick();
             com.myriad.client.firstperson.FlameDaoView.tick();
             com.myriad.client.firstperson.ShuoView.tick();
+            com.myriad.client.firstperson.WindBladeView.tick();
+            com.myriad.client.firstperson.InkFlagView.tick();
+            com.myriad.client.firstperson.StaffHandView.tick();
+            com.myriad.client.firstperson.LingyuanHandView.tick();
+            com.myriad.client.firstperson.WarSpiritHandView.tick();
             com.myriad.client.YikeClientState.tick();
             com.myriad.client.StarPullController.tick();
             com.myriad.client.RespawnSpectatorView.enforceFirstPerson();
@@ -483,6 +496,9 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
     }
 
     private static void onRegisterGuiLayers() {
+        net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry.attachElementBefore(
+                net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements.CROSSHAIR,
+                Identifier.fromNamespaceAndPath(Myriad.MODID, "low_health"), LowHealthOverlay::render);
         net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry.addLast(
                 Identifier.fromNamespaceAndPath(Myriad.MODID,"hud"), HudOverlay.INSTANCE);
         wrapStatusLayer(net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements.HEALTH_BAR, StatusOverlay.HEALTH);
@@ -661,6 +677,8 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
                     }
                 }
             }
+            com.myriad.client.firstperson.WindBladeView.prepare(slot);
+            com.myriad.client.firstperson.InkFlagView.prepareSkill(slot);
             Packets.sendToServer(new NetworkSetup.CastSkillPayload(slot, moveX, moveZ));
         }
     }

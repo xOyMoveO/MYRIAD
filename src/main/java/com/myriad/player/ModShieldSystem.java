@@ -4,8 +4,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 
 /**
@@ -47,6 +49,10 @@ public final class ModShieldSystem {
 
     /** 用最终伤害消耗护盾，返回被护盾吸收的实际数值。 */
     public static float consume(LivingEntity player, float damage) {
+        return consume(player, damage, null);
+    }
+
+    public static float consume(LivingEntity player, float damage, DamageSource hit) {
         if (damage <= 0.0f) return 0.0f;
         Map<String, ShieldLayer> layers = LAYERS.get(player.getUUID());
         if (layers == null || layers.isEmpty()) return 0.0f;
@@ -74,6 +80,7 @@ public final class ModShieldSystem {
                     layers.remove(earliestKey);
                     com.myriad.character.skills.rivet.StationArmor.shieldBroken(player, earliestKey);
                 }
+                if (used > 0 && earliest.onAbsorb != null) earliest.onAbsorb.accept(hit);
             } else {
                 // A family exposes its highest remaining contribution. Damage spends the same
                 // effective amount from every owner, so removing one owner cannot uncover a reserve.
@@ -100,12 +107,17 @@ public final class ModShieldSystem {
 
     /** Refresh one source without letting a weaker recast reduce that source's shield. */
     public static void grantMaxSource(LivingEntity player, String source, float amount, int durationTicks) {
+        grantMaxSource(player, source, amount, durationTicks, null);
+    }
+
+    public static void grantMaxSource(LivingEntity player, String source, float amount, int durationTicks,
+                                      Consumer<DamageSource> onAbsorb) {
         if (amount <= 0 || durationTicks <= 0) return;
         var layers = LAYERS.computeIfAbsent(player.getUUID(), id -> new HashMap<>());
         pruneExpired(player, layers);
         var existing = layers.get(source);
         layers.put(source, new ShieldLayer(existing == null ? amount : Math.max(amount, existing.remaining),
-                player.level().getGameTime() + durationTicks));
+                player.level().getGameTime() + durationTicks, "", onAbsorb));
         updateValue(player, layers, true);
     }
 
@@ -249,12 +261,17 @@ public final class ModShieldSystem {
         private float remaining;
         private final long expiresAt;
         private final String group;
+        private final Consumer<DamageSource> onAbsorb;
 
         private ShieldLayer(float remaining, long expiresAt) { this(remaining, expiresAt, ""); }
         private ShieldLayer(float remaining, long expiresAt, String group) {
+            this(remaining, expiresAt, group, null);
+        }
+        private ShieldLayer(float remaining, long expiresAt, String group, Consumer<DamageSource> onAbsorb) {
             this.remaining = remaining;
             this.expiresAt = expiresAt;
             this.group = group;
+            this.onAbsorb = onAbsorb;
         }
     }
 }

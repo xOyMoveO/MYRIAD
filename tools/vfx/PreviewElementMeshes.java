@@ -12,7 +12,7 @@ public class PreviewElementMeshes {
     static final HashMap<String,BufferedImage> TINT=new HashMap<>();
     static BufferedImage cell(JsonObject shot,boolean light){
         int w=360,h=300;var image=new BufferedImage(w,h,BufferedImage.TYPE_INT_RGB);var g=image.createGraphics();
-        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
         g.setColor(light?new Color(103,119,99):new Color(43,56,57));g.fillRect(0,0,w,h);
         var list=new ArrayList<JsonObject>();shot.getAsJsonArray("mesh").forEach(q->list.add(q.getAsJsonObject()));
         list.sort(Comparator.comparingDouble(PreviewNightMeshes::depth));
@@ -35,8 +35,11 @@ public class PreviewElementMeshes {
             g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,q.get("alpha").getAsFloat()));
             if(material==0){var p=new Path2D.Double();p.moveTo(vertices[0][0],vertices[0][1]);for(int i=1;i<4;i++)p.lineTo(vertices[i][0],vertices[i][1]);p.closePath();g.setColor(new Color(rgb));g.fill(p);continue;}
             var texture=TINT.computeIfAbsent(material+":"+rgb,k->PreviewNightMeshes.tint(textures[material],rgb));
-            boolean reverse=q.get("reverseV").getAsBoolean();double v0=reverse?256:0,v1=reverse?0:256;
-            double u0=q.get("startU").getAsDouble()*256,u1=q.get("endU").getAsDouble()*256;double[][] uv={{u0,v1},{u1,v1},{u1,v0},{u0,v0}};
+            boolean reverse=q.get("reverseV").getAsBoolean();
+            double v0=q.get(reverse?"endV":"startV").getAsDouble()*texture.getHeight();
+            double v1=q.get(reverse?"startV":"endV").getAsDouble()*texture.getHeight();
+            double u0=q.get("startU").getAsDouble()*texture.getWidth(),u1=q.get("endU").getAsDouble()*texture.getWidth();
+            double[][] uv={{u0,v1},{u1,v1},{u1,v0},{u0,v0}};
             PreviewNightMeshes.triangle(g,texture,new double[][]{vertices[0],vertices[1],vertices[2]},new double[][]{uv[0],uv[1],uv[2]});
             PreviewNightMeshes.triangle(g,texture,new double[][]{vertices[0],vertices[2],vertices[3]},new double[][]{uv[0],uv[2],uv[3]});
         }

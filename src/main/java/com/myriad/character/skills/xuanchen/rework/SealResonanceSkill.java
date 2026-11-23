@@ -17,6 +17,12 @@ public final class SealResonanceSkill extends AbilitySkill {
     @Override public void onHit(AbilityRuntime.Hit h){if(h.basic())return;Cast c=AbilityRuntime.context(h.player(),this);if(!c.hero(h.target()))return;
  var m=c.memory(h.target().getUUID().toString());if(m.cooldown>c.now())return;
  if(m.until>c.now()&&!m.tag.equals(h.skillId())){m.until=0;m.cooldown=c.now()+160;com.myriad.character.ability.AbilityVisuals.burst(c,h.target().position(),.75);c.damage(h.target(),c.value(35,12,.3f),MAGIC,false);}
- else if(m.until<=c.now()){m.until=c.now()+80;m.tag=h.skillId();com.myriad.character.ability.AbilityVisuals.seal(c,h.target().position(),.6,false);}}
+ else if(m.until<=c.now()){m.until=c.now()+80;m.tag=h.skillId();
+     var target=h.target();
+     c.whileActive(80,age->{
+         if(m.until<=c.now()||!target.isAlive())return false;
+         if(age%5==0)InkVisuals.halfSeal(c,target);
+         return true;
+     });}}
     @Override public void release(Cast cast){} // Passive: event hooks above own the effect.
 }

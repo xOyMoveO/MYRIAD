@@ -41,6 +41,9 @@ public final class VanillaMeleeAttack {
         com.myriad.character.skills.shuo.ShuoCombat.basic(player);
         com.myriad.character.skills.keheng.KehengBasic.swing(player);
         com.myriad.character.skills.yingxiao.rework.NightBasicVisuals.swing(player);
+        com.myriad.character.skills.lingyuan.rework.LingyuanHandCues.basic(player,data.getCharacterId());
+        com.myriad.character.ability.WarSpiritHandCues.basic(player,data.getCharacterId(),
+                (int)Math.ceil(player.getCurrentItemAttackStrengthDelay()));
         return true;
     }
     public static float consumeStrength(ServerPlayer player,LivingEntity target){

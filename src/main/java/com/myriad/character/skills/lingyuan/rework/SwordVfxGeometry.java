@@ -19,6 +19,10 @@ public final class SwordVfxGeometry {
         var pixels=new SwordPixelLayers(out,b.fade,reduced,p.started(),age);
         // Repeated short-life packets must share a phase instead of restarting the orbit every tick.
         double phase=((p.started()%80)+age)*Math.PI/40;
+        if(SwordFormationLayers.append(p,b,pixels,out,phase)){
+            out.addAll(b.result());
+            return List.copyOf(out);
+        }
         switch(p.kind()){
             case FLIGHT->{
                 // A volley packet describes ONE tick of travel, not a sword parked at its endpoint
@@ -28,7 +32,11 @@ public final class SwordVfxGeometry {
                 double length=p.variant()==7?3.2:1.6;Vec3 center=SwordModelAsset.centerAtTip(tip,f,length);
                 if(!volley||age<1)sword(out,center,f,length,phase,b.fade,reduced);
                 if(p.variant()==7)pixels.halo(center.subtract(f.scale(length*.25)),f,.7,phase*.3);
-                pixels.wake(center.subtract(f.scale(length*.8)),tip,p.variant()==7?.24:.13,phase);
+                pixels.wake(center.subtract(f.scale(length*.8)),tip,p.variant()==7?.24:volley?.19:.13,phase);
+                if(volley&&age<1&&!reduced){
+                    Vec3 shoulder=tip.subtract(f.scale(length*.14));
+                    pixels.wake(shoulder.subtract(f.scale(length*.75)).add(0,.06,0),shoulder,.085,-phase);
+                }
                 if(p.variant()==7)pixels.crown(center,f,.4,phase,4);
             }
             case BEAM->{

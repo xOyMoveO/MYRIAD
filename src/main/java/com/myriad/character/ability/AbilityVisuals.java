@@ -36,7 +36,10 @@ public final class AbilityVisuals {
     }
     /** Role-owned visual state, e.g. blade count or charge stage. Not a combat value. */
     public static void following(Cast c,int kind,net.minecraft.world.entity.LivingEntity target,double radius,double stage,int life){
-        send(c,kind,target.position(),target.position().add(c.forward(1)),radius,stage,life,false,target.getId());
+        following(c,kind,target,c.forward(1),radius,stage,life);
+    }
+    public static void following(Cast c,int kind,net.minecraft.world.entity.LivingEntity target,Vec3 heading,double radius,double stage,int life){
+        send(c,kind,target.position(),target.position().add(heading),radius,stage,life,false,target.getId());
     }
     private static void send(Cast c,int kind,Vec3 from,Vec3 to,double radius,double angle,int life,boolean personal,int anchor) {
         send(c,kind,from,to,radius,angle,life,personal,anchor,0);
@@ -71,13 +74,19 @@ public final class AbilityVisuals {
     /** Continue presentation only while this exact skill still owns a real shield. */
     public static void maintainShield(Cast c,net.minecraft.world.entity.LivingEntity target,int ticks){
         var state=c.memory("vfxShield/"+target.getUUID());int token=++state.count;
-        c.whileActive(ticks,age->{if(token!=state.count||!target.isAlive()||target.level()!=c.player.level()||!c.ownShield(target))return false;
+        c.whileActive(ticks,age->{if(token!=state.count||!target.isAlive()||target.level()!=c.player.level())return false;
+            if(!c.ownShield(target))return false;
             if(age>0&&age%6==0)following(c,SHIELD,target,.65,8);return true;});
     }
-    public static void portalAnchor(Cast c,Vec3 at){emit(c,SEAL,at.add(0,.055,0),facing(c,at),.9,0,8,false);}
+    public static void portalAnchor(Cast c,Vec3 at,Vec3 exit,int life){
+        Vec3 heading=exit.subtract(at).multiply(1,0,1).normalize();
+        if(heading.lengthSqr()<1E-8)heading=c.forward(1);
+        emit(c,SEAL,at.add(0,.055,0),at.add(heading).add(0,.055,0),.9,0,life,false);
+    }
     public static void motionTrail(Cast c,Vec3 from,Vec3 to){
         if(from.distanceToSqr(to)<.0025)return;
-        emit(c,TRAIL,from.add(0,.4,0),to.add(0,.4,0),.18,0,7,false);
+        boolean warReturn=c.skill.role().equals("chixiao")&&c.skill.index()==3&&c.memory("vfxDashPhase").count==1;
+        emit(c,TRAIL,from.add(0,.4,0),to.add(0,.4,0),.18,warReturn?180:0,7,false);
     }
     public static void flight(Cast c,Vec3 from,Vec3 to,int age,boolean returning){
         flight(c,from,to,age,returning,0);
