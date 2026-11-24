@@ -52,6 +52,7 @@ final class FirstGroupRegressionChecks {
             ThunderSwordViewChecks.verify(h);
             FlameDaoViewChecks.verify(h);
             BasicAttackTrailChecks.verify(h);
+            com.myriad.client.firstperson.WindHandChecks.verify(h);
             FlameSlashViewChecks.verify(h);
             FlameStepViewChecks.verify(h);
             FenjueMajorViewChecks.verify(h);
@@ -173,6 +174,8 @@ final class FirstGroupRegressionChecks {
             HeavenSwordChecks.start(h);
             ShuoChecks.start(h);
             ChargeFlightLifecycleChecks.start(h);
+            InkCastAnimationChecks.start(h);
+            WindCastAnimationChecks.start(h);
             NightDashRangeChecks.start(h);
             NightExecutionChecks.start(h);
             ThunderChainChecks.start(h);

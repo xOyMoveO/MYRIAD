@@ -11,7 +11,12 @@ public final class HeartPillArraySkill extends AbilitySkill {
 @Override public boolean needsPoint(){return true;}
 @Override public double pointRange(Cast c){return 14;}
 @Override public double previewRadius(Cast c){return 4;}
-@Override public void release(Cast c){Vec3 at=c.point;for(var ally:c.allies(at,4))c.shield(ally,c.value(80,22,.35f),25);c.repeat(80,20,i->{for(var ally:c.allies(at,4))c.shield(ally,c.value(80,22,.35f),25);});}
+@Override public void selectionPose(Cast c,boolean active){StaffHandCues.select(c,active);}
+ @Override public void release(Cast c){StaffHandCues.release(c);Vec3 at=c.point;pulse(c,at);c.repeat(80,20,i->pulse(c,at));}
 @Override public void present(Cast c){AbilityVisuals.field(c,c.point,4,80);}
+ private static void pulse(Cast c,Vec3 at){
+     for(var ally:c.allies(at,4))c.shield(ally,c.value(80,22,.35f),25);
+     AbilityVisuals.burst(c,at,3.8);
+ }
 }
 

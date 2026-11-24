@@ -21,8 +21,8 @@ public class PreviewNightMeshes {
         var child=(Graphics2D)g.create();child.clip(path);child.drawImage(image,transform,null);child.dispose();
     }
     static BufferedImage tint(BufferedImage source,int rgb){
-        var image=new BufferedImage(256,256,BufferedImage.TYPE_INT_ARGB);
-        for(int y=0;y<256;y++)for(int x=0;x<256;x++){
+        var image=new BufferedImage(source.getWidth(),source.getHeight(),BufferedImage.TYPE_INT_ARGB);
+        for(int y=0;y<source.getHeight();y++)for(int x=0;x<source.getWidth();x++){
             int pixel=source.getRGB(x,y);int r=((pixel>>16)&255)*((rgb>>16)&255)/255,g=((pixel>>8)&255)*((rgb>>8)&255)/255,b=(pixel&255)*(rgb&255)/255;
             image.setRGB(x,y,(pixel&0xFF000000)|(r<<16)|(g<<8)|b);
         }return image;

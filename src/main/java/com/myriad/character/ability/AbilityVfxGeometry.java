@@ -20,6 +20,10 @@ public final class AbilityVfxGeometry {
     /** Complex closed models have their own budget; other role recipes stay at 192. */
     public static int maxQuads(AbilityVfxPayload p) {
         return p.theme()==5&&p.kind()!=RETICLE&&p.kind()!=INVALID&&p.kind()!=CANCEL?4096
+                :com.myriad.character.skills.xuanchen.rework.InkVfxGeometry.bannerField(p)?768
+                :p.kind()==FLIGHT&&FrostHerbLayers.owns(p)?512
+                :WarSpiritModels.flight(p)?320
+                :com.myriad.character.skills.hanze.rework.IceVfxGeometry.usesSpikeModel(p)?512
                 :p.theme()==12&&p.kind()==FLIGHT?512:192;
     }
     private final List<Quad> quads=new ArrayList<>();
@@ -33,6 +37,12 @@ public final class AbilityVfxGeometry {
     }
     public static List<Quad> build(AbilityVfxPayload p,float age,boolean reduced) {
         if(!p.valid()||age<0||age>=p.life())return List.of();
+        if(com.myriad.character.skills.xuanchen.rework.InkCastAnimation.cue(p)
+                ||com.myriad.character.skills.xuanchen.rework.InkCastAnimation.firstPersonCue(p))return List.of();
+        if(com.myriad.character.skills.sulan.rework.WindCastAnimation.cue(p))return List.of();
+        if(StaffHandCues.owns(p))return List.of();
+        if(WarSpiritHandCues.owns(p))return List.of();
+        if(com.myriad.character.skills.lingyuan.rework.LingyuanHandCues.owns(p))return List.of();
         if(com.myriad.player.LevelUpBeamGeometry.owns(p))return com.myriad.player.LevelUpBeamGeometry.build(p,age,reduced);
         if(p.theme()==0&&p.kind()!=RETICLE&&p.kind()!=INVALID&&p.kind()!=CANCEL)
             return com.myriad.character.skills.yingxiao.rework.NightVfxGeometry.build(p,age,reduced);

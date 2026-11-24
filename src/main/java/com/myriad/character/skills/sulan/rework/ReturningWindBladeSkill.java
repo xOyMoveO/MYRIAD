@@ -15,5 +15,8 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 public final class ReturningWindBladeSkill extends AbilitySkill {
     public ReturningWindBladeSkill(Definition definition){super(definition);}
     @Override public void present(Cast c){com.myriad.character.ability.AbilityVisuals.arc(c,c.player.position(),1.6,130);}
-    @Override public void release(Cast c){c.actionProjectile(12,1,1,true,true,(t,back)->c.damage(t,c.value(45,15,.45f),PHYSICAL));}
+    @Override public void release(Cast c){WindCastCues.release(c);c.actionProjectile(12,1,1,true,true,(t,back)->c.damage(t,c.value(45,15,.45f),PHYSICAL));}
+    @Override public void projectileTurned(Cast c, Vec3 end, Vec3 outboundDirection){
+        WindVisuals.turn(c,end,outboundDirection);
+    }
 }

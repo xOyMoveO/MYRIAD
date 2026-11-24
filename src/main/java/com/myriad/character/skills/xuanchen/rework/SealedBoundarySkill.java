@@ -14,9 +14,11 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class SealedBoundarySkill extends AbilitySkill {
     public SealedBoundarySkill(Definition definition){super(definition);}
-    @Override public void present(Cast c){com.myriad.character.ability.AbilityVisuals.warning(c,c.point,4,14);}
+    @Override public void present(Cast c){InkVisuals.warn(c,c.point,4,14);}
     @Override public boolean needsPoint(){return true;} @Override public double previewRadius(Cast c){return 4;}
- @Override public void release(Cast c){Vec3 at=c.point;c.ring(at,4,false);c.later(14,false,()->{com.myriad.character.ability.AbilityVisuals.field(c,at,4,60);
- c.area(at,4,c.value(170,65,1.1f),MAGIC);for(var t:c.enemies(at,4))c.root(t,20,false);
- c.tickFor(60,age->{if(age%4==0){c.ring(at,4,false);for(var t:c.enemies(at,4))c.slow(t,.2f,8);}});});}
+    @Override public void selectionPose(Cast c,boolean selecting){InkCastCues.select(c,selecting);}
+ @Override public void release(Cast c){InkCastCues.release(c);Vec3 at=c.point;c.later(14,false,()->{InkCastCues.activate(c);com.myriad.character.ability.AbilityVisuals.field(c,at,4,60);InkVisuals.closeBoundary(c,at);
+ for(var t:c.enemies(at,4))c.damage(t,c.value(170,65,1.1f),MAGIC);
+ for(var t:c.enemies(at,4)){c.root(t,20,false);InkVisuals.binding(c,t,12);}
+ c.tickFor(60,age->{if(age%4==0){for(var t:c.enemies(at,4))c.slow(t,.2f,8);}});});}
 }

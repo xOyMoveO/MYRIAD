@@ -40,7 +40,16 @@ public abstract class AbilitySkill extends Skill {
     public boolean recastDuringChannel(){return false;}
     public boolean requiresStandingPoint(){return false;}
     public void present(AbilityRuntime.Cast cast){}
+    public void projectileTurned(AbilityRuntime.Cast cast, net.minecraft.world.phys.Vec3 end,
+            net.minecraft.world.phys.Vec3 outboundDirection){}
     public void preparing(AbilityRuntime.Cast c){}
+    public void selectionPose(AbilityRuntime.Cast c,boolean selecting){}
+    public void windupPose(AbilityRuntime.Cast c,boolean winding){}
+    public enum DashPose { START, MOVING, FINISH, CANCEL }
+    /** Presentation only. The movement task remains authoritative for every transition. */
+    public void dashPose(AbilityRuntime.Cast c,DashPose phase,net.minecraft.world.phys.Vec3 direction){}
+    /** Visual flight progress only; any landing effect is still owned by the landing callback. */
+    public void leapPose(AbilityRuntime.Cast c,DashPose phase,double progress){}
     /** Opt out of the generic cast Foley when this module owns its staged sound cues. */
     public boolean hasOwnCastSound(){return false;}
     public double pointRange(AbilityRuntime.Cast c){return 12;}

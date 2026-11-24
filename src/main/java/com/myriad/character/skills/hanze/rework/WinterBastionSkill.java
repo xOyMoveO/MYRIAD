@@ -10,7 +10,7 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 public final class WinterBastionSkill extends AbilitySkill {
     public WinterBastionSkill(Definition definition){super(definition);}
 
-@Override public void release(Cast c){for(var ally:c.allies(c.player.position(),6))c.shield(ally,c.value(230,70,.7f),100);c.area(c.player.position(),5,c.value(90,30,.4f),MAGIC);for(var t:c.enemies(c.player.position(),5))c.root(t,20,false);}
+@Override public void release(Cast c){StaffHandCues.release(c);for(var ally:c.allies(c.player.position(),6))c.shield(ally,c.value(230,70,.7f),100);c.area(c.player.position(),5,c.value(90,30,.4f),MAGIC);for(var t:c.enemies(c.player.position(),5))c.root(t,20,false);}
 @Override public void present(Cast c){AbilityVisuals.field(c,c.player.position(),5,24);}
 }
 

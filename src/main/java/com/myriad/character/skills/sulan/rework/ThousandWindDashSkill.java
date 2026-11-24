@@ -14,6 +14,8 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class ThousandWindDashSkill extends AbilitySkill {
     public ThousandWindDashSkill(Definition definition){super(definition);}
+    @Override public void windupPose(Cast c,boolean winding){WindCastCues.windup(c,winding);}
+    @Override public void dashPose(Cast c,DashPose phase,Vec3 direction){WindCastCues.dash(c,phase,direction);}
     @Override public void present(Cast c){com.myriad.character.ability.AbilityVisuals.charging(c,10,12,.35);}
     @Override public boolean canRelease(Cast c){return c.data.getBuff("g1_root")==0;}
  @Override public void release(Cast c){c.windup(10,0,()->c.actionDash(c.forward(12),14,1.2,(t,first)->{},

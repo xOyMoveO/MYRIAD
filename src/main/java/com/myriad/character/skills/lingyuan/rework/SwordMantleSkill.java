@@ -10,8 +10,7 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 public final class SwordMantleSkill extends AbilitySkill {
     public SwordMantleSkill(Definition definition){super(definition);}
 
-@Override public void release(Cast c){c.shield(c.player,c.value(100,30,.55f),80);c.memory().until=c.now()+40;}
+@Override public void release(Cast c){LingyuanHandCues.release(c);c.shield(c.player,c.value(100,30,.55f),80);c.memory().until=c.now()+40;SwordVisuals.mantle(c);}
 @Override public double incomingMultiplier(Cast c){return c.memory().until>c.now()?.85:1;}
-@Override public void present(Cast c){SwordVisuals.mantle(c);}
 }
 

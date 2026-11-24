@@ -13,7 +13,8 @@ public final class SwordArraySkill extends AbilitySkill {
 @Override public boolean needsPoint(){return true;}
 @Override public double pointRange(Cast c){return 14;}
 @Override public double previewRadius(Cast c){return 4;}
-@Override public void release(Cast c){Vec3 at=c.point;c.repeat(80,20,i->{c.pulse(at,4,c.value(35,10,.25f),MAGIC);for(var t:c.enemies(at,4))c.slow(t,.25f,20);});}
+@Override public void selectionPose(Cast c,boolean active){LingyuanHandCues.aim(c,active);}
+@Override public void release(Cast c){LingyuanHandCues.release(c);Vec3 at=c.point;c.repeat(80,20,i->{c.pulse(at,4,c.value(35,10,.25f),MAGIC);for(var t:c.enemies(at,4))c.slow(t,.25f,20);SwordVisuals.arrayPulse(c,at,i);});}
 @Override public void present(Cast c){SwordVisuals.array(c);}
 }
 

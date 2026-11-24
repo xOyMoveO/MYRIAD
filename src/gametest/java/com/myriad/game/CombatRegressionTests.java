@@ -24,6 +24,7 @@ public final class CombatRegressionTests {
         register("combat_feedback",CombatFeedbackChecks::run);
         register("match_economy", MatchEconomyChecks::run);
         register("cherry_rift_camps", CherryRiftCampChecks::run);
+        register("cherry_flat_lane", CherryFlatLaneChecks::run);
         register("arena_switch", ArenaSwitchRegression::run);
         register("combat_regression", CombatRegressionTests::run);
         register("world_time", WorldTimeChecks::run);
@@ -32,6 +33,9 @@ public final class CombatRegressionTests {
         register("rivet", RivetChecks::run);
         register("hero_action_time", HeroActionTimeChecks::run);
         register("first_group", FirstGroupRegressionChecks::run);
+        register("staff_first_person", StaffCastChecks::run);
+        register("lingyuan_first_person", LingyuanHandCueChecks::run);
+        register("war_spirit_first_person", WarSpiritHandChecks::run);
         register("roster_delivery", RosterDeliveryChecks::run);
         register("roster_a", RosterAChecks::run);
         register("shuo_pilot", ShuoPilotChecks::run);

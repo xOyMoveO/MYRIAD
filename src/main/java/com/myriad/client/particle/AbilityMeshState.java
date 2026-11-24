@@ -58,6 +58,12 @@ final class AbilityMeshState extends QuadParticleRenderState {
         if(q.material()!=com.myriad.character.ability.AbilityVfxMaterials.LINGYUAN_PIXEL_MODEL
                 &&q.material()!=com.myriad.character.ability.AbilityVfxMaterials.NIGHT_NEEDLE_MODEL
                 &&q.material()!=com.myriad.character.ability.AbilityVfxMaterials.THUNDER_PROJECTILE_MODEL
+                &&q.material()!=com.myriad.character.ability.AbilityVfxMaterials.INK_HD_HEAD_MODEL
+                &&q.material()!=com.myriad.character.ability.AbilityVfxMaterials.INK_BANNER_MODEL
+                &&q.material()!=com.myriad.character.ability.AbilityVfxMaterials.FROST_PROJECTILE_MODEL
+                &&q.material()!=com.myriad.character.ability.AbilityVfxMaterials.HERB_HD_SEED_MODEL
+                &&q.material()!=com.myriad.character.ability.AbilityVfxMaterials.WIND_HD_WING_MODEL
+                &&!com.myriad.character.ability.WarSpiritModels.material(q.material())
                 &&q.material()!=com.myriad.character.ability.AbilityVfxMaterials.KEHENG_PROJECTILE_MODEL
                 &&q.material()!=com.myriad.character.ability.AbilityVfxMaterials.YIKE_PROJECTILE_MODEL
                 &&q.material()!=com.myriad.character.ability.AbilityVfxMaterials.RIVET_MODEL)return true;

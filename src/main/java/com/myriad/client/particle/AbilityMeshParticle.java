@@ -1,6 +1,13 @@
 package com.myriad.client.particle;
 
 import com.myriad.character.ability.AbilityVfxGeometry;
+import com.myriad.character.ability.FrostHerbLayers;
+import com.myriad.character.ability.StaffHandCues;
+import com.myriad.client.firstperson.StaffHandView;
+import com.myriad.character.skills.lingyuan.rework.LingyuanHandCues;
+import com.myriad.client.firstperson.LingyuanHandView;
+import com.myriad.character.ability.WarSpiritHandCues;
+import com.myriad.client.firstperson.WarSpiritHandView;
 import com.myriad.client.ClientDataHolder;
 import com.myriad.client.FogOfWarClient;
 import com.myriad.network.AbilityVfxPayload;
@@ -27,6 +34,10 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
     private final int bornEpoch,bornOwnerEpoch,bornSkillEpoch;
     private static long skillKey(AbilityVfxPayload p){return ((long)p.owner()<<7)|((long)p.theme()<<3)|p.variant();}
     private static AABB visualBounds(AbilityVfxPayload p){
+        if(com.myriad.character.skills.hanze.rework.IceVfxGeometry.usesSpikeModel(p))
+            return new AABB(p.from(),p.to()).inflate(3);
+        if(com.myriad.character.skills.xuanchen.rework.InkVfxGeometry.portalFrame(p))
+            return new AABB(p.from().add(-1.7,-.12,-1.7),p.from().add(1.7,2.58,1.7));
         if(com.myriad.character.skills.shuo.ShuoSkillVfx.owns(p))return com.myriad.character.skills.shuo.ShuoSkillVfx.bounds(p);
         if(p.theme()==0)return com.myriad.character.skills.yingxiao.rework.NightVfxGeometry.bounds(p);
         if(p.theme()==1)return com.myriad.character.skills.tianxing.rework.ThunderVfxGeometry.bounds(p);
@@ -46,7 +57,9 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
         // packet is not already in its trail-only phase. Absolute expiry still rejects old
         // packets and bounds its lifetime; an end signal still removes it immediately.
         boolean movingBody=recipe.kind()==AbilityVfxGeometry.FLIGHT
-                &&(recipe.theme()==5&&recipe.variant()==4||(recipe.theme()==0||recipe.theme()==1||recipe.theme()==11)&&recipe.instance()>0
+                &&(recipe.theme()==5&&recipe.variant()==4||(recipe.theme()==0||recipe.theme()==1||recipe.theme()==3
+                    ||recipe.theme()==4||recipe.theme()==11||FrostHerbLayers.owns(recipe)
+                    ||com.myriad.character.ability.WarSpiritModels.flight(recipe))&&recipe.instance()>0
                 ||com.myriad.character.skills.yike.YikeVfxGeometry.movingBody(recipe));
         age=movingBody?0:(int)Math.clamp(level.getGameTime()-recipe.started(),0,lifetime);
         hasPhysics=false;gravity=0;xd=yd=zd=0;
@@ -59,13 +72,48 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
         com.myriad.client.firstperson.RivetWeaponView.receive(p);
         if(p.kind()==AbilityVfxGeometry.CANCEL){
             com.myriad.client.firstperson.ShuoHeldLight.receive(p);
+            if(p.angle()==0){
+                com.myriad.client.firstperson.InkFlagView.clearOwner(p.owner());
+                com.myriad.client.firstperson.WindBladeView.clearOwner(p.owner());
+                StaffHandView.clearOwner(p.owner());
+                LingyuanHandView.clearOwner(p.owner());
+                WarSpiritHandView.clearOwner(p.owner());
+            }
+            if(p.angle()==1)WarSpiritHandView.cancelSkill(p);
             if(p.angle()==2)FLIGHTS.end(p,mc.level==null?p.started():mc.level.getGameTime());
             else if(p.angle()==1)SKILL_EPOCHS.merge(skillKey(p),1,Integer::sum);
             else {OWNER_EPOCHS.merge(p.owner(),1,Integer::sum);SKILL_EPOCHS.keySet().removeIf(key->(key>>7)==p.owner());FLIGHTS.clearOwner(p.owner());}
             return;
         }
-        if(mc.level==null||mc.player==null||sprites==null||!ClientDataHolder.modEnabled()||!p.valid())return;
+        if(mc.level==null||mc.player==null||!ClientDataHolder.modEnabled())return;
         if(p.personal()&&p.owner()!=mc.player.getId())return;
+        if(WarSpiritHandCues.owns(p)){
+            if(!com.myriad.character.ability.AbilityVisualLifetime.expired(p,mc.level.getGameTime()))
+                WarSpiritHandView.receive(p);
+            return;
+        }
+        if(LingyuanHandCues.owns(p)){
+            if(!com.myriad.character.ability.AbilityVisualLifetime.expired(p,mc.level.getGameTime()))
+                LingyuanHandView.receive(p);
+            return;
+        }
+        if(StaffHandCues.owns(p)){
+            if(!com.myriad.character.ability.AbilityVisualLifetime.expired(p,mc.level.getGameTime()))
+                StaffHandView.receive(p);
+            return;
+        }
+        if(com.myriad.character.skills.xuanchen.rework.InkCastAnimation.cue(p)
+                ||com.myriad.character.skills.xuanchen.rework.InkCastAnimation.firstPersonCue(p)){
+            if(p.owner()==mc.player.getId()&&!com.myriad.character.ability.AbilityVisualLifetime.expired(p,mc.level.getGameTime()))
+                com.myriad.client.firstperson.InkFlagView.receive(p);
+            return;
+        }
+        if(com.myriad.character.skills.sulan.rework.WindCastAnimation.cue(p)){
+            if(p.owner()==mc.player.getId()&&!com.myriad.character.ability.AbilityVisualLifetime.expired(p,mc.level.getGameTime()))
+                com.myriad.client.firstperson.WindBladeView.receive(p);
+            return;
+        }
+        if(sprites==null)return;
         if(!p.personal()&&!FogOfWarClient.shouldRenderPlayer(p.owner())
                 &&!(com.myriad.character.skills.shuo.ShuoSkillVfx.owns(p)&&p.owner()==mc.player.getId())
                 &&!(p.theme()==12&&p.anchor()<0)&&!com.myriad.character.skills.rivet.RivetVfx.stationary(p))return;
@@ -90,9 +138,18 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
         var rainbowWake=com.myriad.character.skills.yike.YikeVfxGeometry.wakeForFlight(p);
         if(rainbowWake!=null&&!com.myriad.character.ability.AbilityVisualLifetime.expired(rainbowWake,mc.level.getGameTime()))
             mc.particleEngine.add(new AbilityMeshParticle(mc.level,rainbowWake));
+        var frostHerbWake=FrostHerbLayers.wakeForFlight(p);
+        if(frostHerbWake!=null&&!com.myriad.character.ability.AbilityVisualLifetime.expired(frostHerbWake,mc.level.getGameTime()))
+            mc.particleEngine.add(new AbilityMeshParticle(mc.level,frostHerbWake));
+        var inkWake=com.myriad.character.skills.xuanchen.rework.InkVfxGeometry.wakeForFlight(p);
+        if(inkWake!=null&&!com.myriad.character.ability.AbilityVisualLifetime.expired(inkWake,mc.level.getGameTime()))
+            mc.particleEngine.add(new AbilityMeshParticle(mc.level,inkWake));
+        var windWake=com.myriad.character.skills.sulan.rework.WindVfxGeometry.wakeForFlight(p);
+        if(windWake!=null&&!com.myriad.character.ability.AbilityVisualLifetime.expired(windWake,mc.level.getGameTime()))
+            mc.particleEngine.add(new AbilityMeshParticle(mc.level,windWake));
         mc.particleEngine.add(new AbilityMeshParticle(mc.level,p));
     }
-    public static void reset(){epoch++;OWNER_EPOCHS.clear();SKILL_EPOCHS.clear();FLIGHTS.clear();com.myriad.client.firstperson.ShuoHeldLight.reset();com.myriad.client.YikeClientState.reset();com.myriad.client.firstperson.RivetWeaponView.reset();}
+    public static void reset(){epoch++;OWNER_EPOCHS.clear();SKILL_EPOCHS.clear();FLIGHTS.clear();com.myriad.client.firstperson.InkFlagView.reset();com.myriad.client.firstperson.WindBladeView.reset();StaffHandView.reset();LingyuanHandView.reset();WarSpiritHandView.reset();com.myriad.client.firstperson.ShuoHeldLight.reset();com.myriad.client.YikeClientState.reset();com.myriad.client.firstperson.RivetWeaponView.reset();}
     public static void registerGroup(){ParticleGroupRegistry.register(GROUP,Group::new);}
     @Override public ParticleRenderType getGroup(){return GROUP;}
     @Override protected Layer getLayer(){return Layer.TRANSLUCENT;}
@@ -122,9 +179,14 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
         boolean thunderModel=com.myriad.character.skills.tianxing.rework.ThunderVfxGeometry.usesProjectileModel(recipe);
         boolean rosterModel=com.myriad.character.skills.keheng.KehengVfx.usesProjectileModel(recipe)
                 ||recipe.theme()==12&&recipe.kind()==AbilityVfxGeometry.FLIGHT
-                ||com.myriad.character.skills.rivet.RivetVfx.usesModel(recipe);
+                ||(recipe.theme()==4||FrostHerbLayers.owns(recipe))&&recipe.kind()==AbilityVfxGeometry.FLIGHT
+                ||com.myriad.character.skills.hanze.rework.IceVfxGeometry.usesSpikeModel(recipe)
+                ||com.myriad.character.skills.xuanchen.rework.InkVfxGeometry.usesModel(recipe)
+                ||com.myriad.character.skills.rivet.RivetVfx.usesModel(recipe)
+                ||com.myriad.character.ability.WarSpiritModels.owns(recipe);
         if((recipe.theme()==5||thunderModel||rosterModel||recipe.theme()==0&&recipe.kind()==AbilityVfxGeometry.FLIGHT&&recipe.variant()==2)&&!recipe.personal()){
-            int budget=recipe.theme()==5?4096:thunderModel?1200:recipe.theme()==12?512:192;
+            int budget=recipe.theme()==5?4096:thunderModel?1200:recipe.theme()==12?512:
+                    com.myriad.character.ability.WarSpiritModels.flight(recipe)?320:192;
             if(mesh.remaining()<(recipe.theme()==5?256:thunderModel?320:64))return;
             reduced|=distance>20||mesh.remaining()<budget;
         }
@@ -133,6 +195,7 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
         // A muzzle at the camera must not dim the entire 22-block beam to 42% opacity.
         // Its solid core already starts outside the near plane; retain full beam visibility.
         if(com.myriad.character.skills.yike.YikeVfxGeometry.continuousBeam(recipe))near=1;
+        if(com.myriad.character.skills.xuanchen.rework.InkVfxGeometry.bannerField(recipe))near=1;
         if(com.myriad.player.LevelUpBeamGeometry.owns(recipe)&&mc.options.getCameraType().isFirstPerson()
                 &&mc.getCameraEntity()!=null&&mc.getCameraEntity().getId()==recipe.owner())near*=.22f;
         if(recipe.theme()==1&&mc.options.getCameraType().isFirstPerson()
@@ -158,7 +221,7 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
                 &&mc.player.getMainHandItem().is(com.myriad.registry.ModItems.RIVET_HAMMER.get());
         if(heldRivet)
             geometry=com.myriad.character.skills.rivet.RivetVfx.firstPerson(recipe,geometry);
-        if(recipe.theme()==11||recipe.theme()==12||recipe.theme()==13||com.myriad.player.LevelUpBeamGeometry.owns(recipe)
+        if(recipe.theme()==3||recipe.theme()==4||FrostHerbLayers.owns(recipe)||recipe.theme()==8||recipe.theme()==9||recipe.theme()==11||recipe.theme()==12||recipe.theme()==13||com.myriad.player.LevelUpBeamGeometry.owns(recipe)
                 ||com.myriad.character.skills.shuo.ShuoSkillVfx.owns(recipe))mesh.sortTranslucent();
         if((recipe.theme()==5||thunderModel||rosterModel||recipe.theme()==0&&recipe.kind()==AbilityVfxGeometry.FLIGHT&&recipe.variant()==2)&&!recipe.personal()){
             if(!mesh.addModelBatch(geometry,camera.position(),sprites,near)&&!reduced){
@@ -231,6 +294,12 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
                 if(FLIGHTS.finished(incoming.recipe,incoming.level.getGameTime())||com.myriad.character.ability.AbilityVisualLifetime.expired(incoming.recipe,incoming.level.getGameTime()))return false;
                 particles.removeIf(old->{boolean same=old.recipe.kind()==AbilityVfxGeometry.FLIGHT&&old.recipe.owner()==incoming.recipe.owner()
                         &&old.recipe.theme()==incoming.recipe.theme()&&old.recipe.variant()==incoming.recipe.variant()&&old.recipe.instance()==incoming.recipe.instance();
+                    if(same)old.remove();return same;});
+            }
+            if(com.myriad.character.skills.xuanchen.rework.InkVfxGeometry.portalFrame(incoming.recipe)){
+                particles.removeIf(old->{boolean same=com.myriad.character.skills.xuanchen.rework.InkVfxGeometry.portalFrame(old.recipe)
+                        &&old.recipe.owner()==incoming.recipe.owner()&&old.recipe.from().equals(incoming.recipe.from())
+                        &&old.recipe.to().equals(incoming.recipe.to());
                     if(same)old.remove();return same;});
             }
             if(incoming.recipe.theme()==5&&incoming.recipe.kind()==AbilityVfxGeometry.CHARGE)

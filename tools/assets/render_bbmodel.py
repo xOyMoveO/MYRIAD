@@ -61,10 +61,11 @@ def cuboid_faces(element):
     x1, y1, z1 = element["from"]
     x2, y2, z2 = element["to"]
     return {
-        "north": [(x1, y2, z1), (x2, y2, z1), (x2, y1, z1), (x1, y1, z1)],
-        "south": [(x2, y2, z2), (x1, y2, z2), (x1, y1, z2), (x2, y1, z2)],
-        "east": [(x2, y2, z1), (x2, y2, z2), (x2, y1, z2), (x2, y1, z1)],
-        "west": [(x1, y2, z2), (x1, y2, z1), (x1, y1, z1), (x1, y1, z2)],
+        # Match Blockbench and vanilla's U direction on the four upright faces.
+        "north": [(x2, y2, z1), (x1, y2, z1), (x1, y1, z1), (x2, y1, z1)],
+        "south": [(x1, y2, z2), (x2, y2, z2), (x2, y1, z2), (x1, y1, z2)],
+        "east": [(x2, y2, z2), (x2, y2, z1), (x2, y1, z1), (x2, y1, z2)],
+        "west": [(x1, y2, z1), (x1, y2, z2), (x1, y1, z2), (x1, y1, z1)],
         "up": [(x1, y2, z1), (x2, y2, z1), (x2, y2, z2), (x1, y2, z2)],
         "down": [(x1, y1, z2), (x2, y1, z2), (x2, y1, z1), (x1, y1, z1)],
     }
@@ -82,7 +83,7 @@ def texture_images(model, source_dir):
 
 
 def render(model_path, output_path=None, view="isometric", size=(720, 1024),
-           scale=None, background="#17232c", center=None):
+           scale=None, background="#17232c", center=None, ambient=1.0):
     """Render a path or in-memory bbmodel; larger depth values face the camera."""
     if isinstance(model_path, dict):
         model, source_dir = model_path, Path.cwd()
@@ -102,7 +103,7 @@ def render(model_path, output_path=None, view="isometric", size=(720, 1024),
             projected.extend(points)
             if dot(normal, toward) <= 1e-7:
                 continue
-            surfaces.append((element["faces"][face], points, normal))
+            surfaces.append((element["faces"][face], points, normal, element.get("light_emission", 0)))
     min_x, max_x = min(p[0] for p in projected), max(p[0] for p in projected)
     min_y, max_y = min(p[1] for p in projected), max(p[1] for p in projected)
     width, height = size
@@ -111,13 +112,16 @@ def render(model_path, output_path=None, view="isometric", size=(720, 1024),
     center_x, center_y = (min_x + max_x) / 2, (min_y + max_y) / 2
     if center is not None:
         center_x, center_y = center
-    canvas = Image.new("RGBA", size, background)
+    canvas = background.convert("RGBA") if isinstance(background, Image.Image) else Image.new("RGBA", size, background)
+    if canvas.size != size:
+        raise ValueError("Background dimensions must match the preview size")
     pixels = canvas.load()
     depths = [-float("inf")] * (width * height)
+    translucent = {}
     light = (-.32, .65, -.69)
     atlas_width = model["resolution"]["width"]
     atlas_height = model["resolution"]["height"]
-    for face, points, normal in surfaces:
+    for face_id, (face, points, normal, emission) in enumerate(surfaces):
         screen = [(width / 2 + (p[0] - center_x) * scale,
                    height / 2 - (p[1] - center_y) * scale, p[2]) for p in points]
         u1, v1, u2, v2 = face["uv"]
@@ -127,7 +131,7 @@ def render(model_path, output_path=None, view="isometric", size=(720, 1024),
         texture = textures[int(face["texture"])]
         texels = texture.load()
         tw, th = texture.size
-        shade = min(1.10, .74 + .36 * max(0, dot(normal, light)))
+        shade = min(1.10, .74 + .36 * max(0, dot(normal, light))) * max(ambient, emission / 15)
         for indices in [(0, 1, 2), (0, 2, 3)]:
             a, b, c = [screen[i] for i in indices]
             ua, ub, uc = [uvs[i] for i in indices]
@@ -154,8 +158,26 @@ def render(model_path, output_path=None, view="isometric", size=(720, 1024),
                     color = texels[max(0, min(tw - 1, int(u))), max(0, min(th - 1, int(v)))]
                     if color[3] == 0:
                         continue
-                    pixels[x, y] = tuple(min(255, round(value * shade)) for value in color[:3]) + (color[3],)
-                    depths[index] = depth
+                    shaded = tuple(min(255, round(value * shade)) for value in color[:3]) + (color[3],)
+                    if shaded[3] < 255:
+                        # A pixel on the quad diagonal may be visited by both triangles.
+                        translucent.setdefault(index, {})[face_id] = (depth, shaded)
+                    else:
+                        pixels[x, y] = shaded
+                        depths[index] = depth
+    for index, fragments in translucent.items():
+        x, y = index % width, index // width
+        r, g, b, a = pixels[x, y]
+        alpha = a / 255
+        rgb = [r * alpha, g * alpha, b * alpha]
+        for depth, color in sorted(fragments.values()):
+            if depth < depths[index] - 1e-8:
+                continue
+            opacity = color[3] / 255
+            rgb = [value * opacity + under * (1 - opacity) for value, under in zip(color, rgb)]
+            alpha = opacity + alpha * (1 - opacity)
+        if alpha > 0:
+            pixels[x, y] = (*[round(value / alpha) for value in rgb], round(alpha * 255))
     if output_path:
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
         canvas.save(output_path)

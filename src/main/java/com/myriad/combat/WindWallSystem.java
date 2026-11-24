@@ -109,11 +109,9 @@ public final class WindWallSystem {
                     0.45f, 0.85f + level.getRandom().nextFloat() * 0.3f);
         }
         AABB box = buildBox(wall);
-        if(com.myriad.character.rework.FirstGroupSkills.active(data.getCharacterId())){
-            if(now%2==0)com.myriad.character.rework.FirstGroupSkills.candidates(data.getCharacterId()).stream()
-                    .filter(skill->skill instanceof com.myriad.character.skills.sulan.rework.WindBarrierSkill)
-                    .findFirst().ifPresent(skill->com.myriad.character.ability.AbilityVisuals.wall(
-                            com.myriad.character.ability.AbilityRuntime.context(player,skill),wall.center,wall.flat,WALL_LENGTH*.5));
+        var presentation=wallPresentation(player);
+        if(presentation!=null){
+            if(now%2==0)com.myriad.character.ability.AbilityVisuals.wall(presentation,wall.center,wall.flat,WALL_LENGTH*.5);
         }else renderWall(level, wall);
         // 阻挡飞行投射物（精确判断：仅在风墙 6×4×0.6 内）
         for (Projectile p : level.getEntitiesOfClass(Projectile.class, box.inflate(4.0))) {
@@ -121,6 +119,7 @@ public final class WindWallSystem {
             Vec3 hit = segmentHit(wall, p.position().subtract(p.getDeltaMovement()), p.position());
             if (hit == null) hit = segmentHit(wall, p.position(), p.position().add(p.getDeltaMovement()));
             if (hit == null) continue;
+            showIntercept(presentation,hit,wall.flat);
             level.sendParticles(ParticleTypes.CLOUD, hit.x, hit.y, hit.z,
                     10, 0.2, 0.2, 0.2, 0.03);
             level.sendParticles(ParticleTypes.END_ROD, hit.x, hit.y, hit.z,
@@ -134,7 +133,7 @@ public final class WindWallSystem {
         MagicBullet.blockIn(level, id -> {
             var caster = level.getServer().getPlayerList().getPlayer(id);
             return !id.equals(player.getUUID()) && (caster == null || !com.myriad.combat.SkillTargets.ally(player, caster));
-        }, p -> inWall(wall, p));
+        }, p -> inWall(wall, p),p->showIntercept(presentation,p,wall.flat));
         // 穿过减速 50%（2 秒）
         for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, box,
                 e -> e != player && com.myriad.combat.SkillTargets.alive(e) && !isAlly(player, e))) {
@@ -171,7 +170,17 @@ public final class WindWallSystem {
      */
     /** Read-only clipping for sustained beams: no repeated burst/sound and friendly walls ignored. */
     public static Vec3 firstEnemyHit(ServerPlayer caster, Vec3 from, Vec3 to) {
+        return enemyHit(caster,from,to,false);
+    }
+
+    public static Vec3 interceptProjectile(ServerPlayer caster, Vec3 from, Vec3 to) {
+        return enemyHit(caster,from,to,true);
+    }
+
+    private static Vec3 enemyHit(ServerPlayer caster, Vec3 from, Vec3 to, boolean showImpact) {
         Vec3 closest = null;
+        ServerPlayer wallOwner = null;
+        Vec3 wallNormal = Vec3.ZERO;
         Faction own = com.myriad.game.LaneSystem.factionOf(caster);
         for (var entry : WALLS.entrySet()) {
             Wall wall = entry.getValue();
@@ -179,9 +188,26 @@ public final class WindWallSystem {
             ServerPlayer owner = caster.level().getServer().getPlayerList().getPlayer(entry.getKey());
             if (owner != null && own != null && own == com.myriad.game.LaneSystem.factionOf(owner)) continue;
             Vec3 at = segmentHit(wall, from, to);
-            if (at != null && (closest == null || from.distanceToSqr(at) < from.distanceToSqr(closest))) closest = at;
+            if (at != null && (closest == null || from.distanceToSqr(at) < from.distanceToSqr(closest))) {
+                closest=at;
+                wallOwner=owner;
+                wallNormal=wall.flat;
+            }
         }
+        if(showImpact&&wallOwner!=null)showIntercept(wallPresentation(wallOwner),closest,wallNormal);
         return closest;
+    }
+
+    private static com.myriad.character.ability.AbilityRuntime.Cast wallPresentation(ServerPlayer owner) {
+        String role=com.myriad.player.PlayerDataProvider.get(owner).getCharacterId();
+        if(!"sulan".equals(role))return null;
+        var skill=com.myriad.character.rework.FirstGroupSkills.node(role,4);
+        return skill==null?null:com.myriad.character.ability.AbilityRuntime.context(owner,skill);
+    }
+
+    private static void showIntercept(com.myriad.character.ability.AbilityRuntime.Cast presentation,Vec3 at,Vec3 normal) {
+        if(presentation!=null)com.myriad.character.ability.AbilityVisuals.emit(presentation,
+                com.myriad.character.ability.AbilityVfxGeometry.BURST,at,at.add(normal),.55,270,8,false);
     }
     public static boolean blocksProjectile(ServerLevel level, Vec3 from, Vec3 to) {
         long now = level.getGameTime();

@@ -141,7 +141,8 @@ public final class AbilityRuntime {
         if(!noCd&&!skill.cooldownReady(c)){message(p,"message.myriad.g1.not_ready");return null;}
         if(!noMana&&d.getMana()<skill.manaCost(c)){message(p,"message.myriad.not_enough_mana");return null;}
         if(skill.needsPoint()){
-            o.pending=skill.getId();o.pendingWindup=windupTicks;o.pendingUntil=c.now()+200;d.setPlacementType(100+skill.index());PlayerDataProvider.syncToClient(p);return null;
+            o.pending=skill.getId();o.pendingWindup=windupTicks;o.pendingUntil=c.now()+200;d.setPlacementType(100+skill.index());
+            skill.selectionPose(c,true);PlayerDataProvider.syncToClient(p);return null;
         }
         begin(c,windupTicks);
         return c;
@@ -160,7 +161,9 @@ public final class AbilityRuntime {
         c.point=c.point(skill.pointRange(c));if(c.point==null){message(p,"message.myriad.g1.invalid_point");return;}
         begin(c,o.pendingWindup);
     }
-    public static void cancel(ServerPlayer p){var o=owner(p);if(o.preparing!=null)o.preparing.cancelCast();if(o.winding!=null)o.winding.cancelCast();o.pending="";PlayerDataProvider.get(p).setPlacementType(0);PlayerDataProvider.syncToClient(p);}
+    public static void cancel(ServerPlayer p){var o=owner(p);if(o.preparing!=null)o.preparing.cancelCast();if(o.winding!=null)o.winding.cancelCast();
+        var selected=FirstGroupSkills.byId(o.pending);if(selected!=null)selected.selectionPose(context(p,selected),false);
+        o.pending="";PlayerDataProvider.get(p).setPlacementType(0);PlayerDataProvider.syncToClient(p);}
     private static void begin(Cast c,int windupTicks){
         if(!c.skill.canRelease(c)){message(c.player,"message.myriad.no_skill_target");c.phase=Phase.CANCELLED;return;}
         c.owner.pending="";c.owner.lastCast=c.now();c.castToken=++c.owner.castToken;c.data.setPlacementType(0);
@@ -193,6 +196,7 @@ public final class AbilityRuntime {
         var passive=passive(p);if(passive!=null&&!inPreparation(p))passive.tickPassive(context(p,passive));
         if(!o.pending.isEmpty()&&now>o.pendingUntil){cancel(p);}
         if(!o.pending.isEmpty()&&now%4==0){var skill=FirstGroupSkills.byId(o.pending);if(skill!=null){Cast c=context(p,skill);Vec3 point=c.point(skill.pointRange(c));
+            skill.selectionPose(c,d.getBuff("g1_stun")==0&&!com.myriad.combat.SilenceSystem.isSilenced(p));
             c.point=point;if(point!=null&&!skill.canRelease(c))point=null;
             c.ring(p.position(),skill.pointRange(c),true);
             if(point!=null){c.ring(point,skill.previewRadius(c),true);AbilityVisuals.reticle(c,point,skill.previewRadius(c));}
@@ -320,6 +324,7 @@ public final class AbilityRuntime {
         }
         public void cancelCast(){
             if(phase==Phase.CANCELLED||phase==Phase.COMPLETED)return;
+            if(phase==Phase.WINDUP)skill.windupPose(this,false);
             phase=Phase.CANCELLED;if(owner.winding==this)owner.winding=null;
             if(owner.preparing==this||windupToken!=0&&owner.channelToken==windupToken){if(owner.preparing==this)owner.preparing=null;owner.channelToken++;owner.channelUntil=0;
                 data.setBuff("g1_channel",0);SkillChargeSystem.clear(player);}
@@ -366,13 +371,20 @@ public final class AbilityRuntime {
         public void area(Vec3 at,double radius,float amount,DamageCalc.Kind kind){for(var t:enemies(at,radius))damage(t,amount,kind);AbilityVisuals.burst(this,at,radius);AbilityVisuals.seal(this,at,radius,false);}
         public void pulse(Vec3 at,double radius,float amount,DamageCalc.Kind kind){
             for(var t:enemies(at,radius))damage(t,amount,kind,false);AbilityVisuals.seal(this,at,radius,false);}
-        public void shield(LivingEntity target,float amount,int ticks){if(!SkillTargets.ally(player,target))return;
+        public void shield(LivingEntity target,float amount,int ticks){
+            shield(target,amount,ticks,()->{});
+        }
+        public void shield(LivingEntity target,float amount,int ticks,Runnable onGain){
+            shield(target,amount,ticks,onGain,null);
+        }
+        public void shield(LivingEntity target,float amount,int ticks,Runnable onGain,
+                           Consumer<net.minecraft.world.damagesource.DamageSource> onAbsorb){if(!SkillTargets.ally(player,target))return;
             float before=ModShieldSystem.value(target);
-            ModShieldSystem.grantMaxSource(target,skill.getId()+"/"+player.getUUID(),amount,ticks);
+            ModShieldSystem.grantMaxSource(target,shieldSource(),amount,ticks,onAbsorb);
             float gained=Math.max(0,ModShieldSystem.value(target)-before);
             if(gained>0){AbilityVisuals.shield(this,target);
                 if(!skill.role().equals("yingxiao"))AbilityVisuals.maintainShield(this,target,ticks);
-                supported(target);}
+                onGain.run();supported(target);}
             }
         public void heal(LivingEntity target,float amount){
             if(!target.isAlive()||target.level()!=player.level()||!SkillTargets.ally(player,target)||amount<=0)return;
@@ -390,7 +402,8 @@ public final class AbilityRuntime {
             }
             AbilityVisuals.arc(this,player.position(),range,degrees);
         }
-        public boolean ownShield(LivingEntity target){return ModShieldSystem.hasSource(target,skill.getId()+"/"+player.getUUID());}
+        private String shieldSource(){return skill.getId()+"/"+player.getUUID();}
+        public boolean ownShield(LivingEntity target){return ModShieldSystem.hasSource(target,shieldSource());}
         public void buff(String key,int ticks){data.setBuff(key,ticks);}
         public void haste(float percent,int ticks){slow(player,-percent,ticks);}
         public void slow(LivingEntity t,float percent,int ticks){
@@ -421,6 +434,7 @@ public final class AbilityRuntime {
             buff("g1_channel",ticks+1);SkillChargeSystem.start(player,skill.getId(),ticks,walkFactor);
             if(skill.role().equals("yike"))com.myriad.character.skills.yike.YikeStance.refreshMovement(player);
             SkillChargeSystem.extend(player,ticks+1);
+            skill.windupPose(this,true);
             var progress=new ActionTime.Progress(now());
             owner.tasks.add(new Task(){
                 public boolean tick(long time){
@@ -436,7 +450,7 @@ public final class AbilityRuntime {
                     }
                     int remaining=Math.max(2,(int)Math.ceil((ticks-progress.completed())/rate)+1);
                     owner.channelUntil=time+remaining;buff("g1_channel",remaining);
-                    SkillChargeSystem.extend(player,remaining);return true;
+                    SkillChargeSystem.extend(player,remaining);skill.windupPose(Cast.this,true);return true;
                 }
                 public void cancel(){cancelCast();}
             });
@@ -507,7 +521,7 @@ public final class AbilityRuntime {
                     double step=speed*rate;
                     if(back){Vec3 toward=player.getEyePosition().subtract(pos);if(toward.length()<step)return finish(true);direction=toward.normalize();}
                     Vec3 end=pos.add(direction.scale(back?step:Math.min(step,range-traveled)));
-                    Vec3 wallHit=com.myriad.combat.WindWallSystem.firstEnemyHit(player,pos,end);
+                    Vec3 wallHit=com.myriad.combat.WindWallSystem.interceptProjectile(player,pos,end);
                     if(wallHit!=null){AbilityVisuals.flight(Cast.this,pos,wallHit,age,back,visual);pos=wallHit;return finish(true);}
                     var clip=player.level().clip(new ClipContext(pos,end,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,player));boolean blocked=clip.getType()!=HitResult.Type.MISS;
                     if(blocked)end=clip.getLocation();final Vec3 dest=end;
@@ -521,7 +535,8 @@ public final class AbilityRuntime {
                         }
                         impact.accept(target,back);AbilityVisuals.burst(Cast.this,target.position().add(0,.5,0),.55);if(!pierce)return finish(false);}
                     AbilityVisuals.flight(Cast.this,pos,end,age,back,visual);traveled+=pos.distanceTo(end);pos=end;if(blocked)return finish(true);
-                    if(!back&&traveled>=range){if(!returning)return finish(true);back=true;hit.clear();}return true;}
+                    if(!back&&traveled>=range){if(!returning)return finish(true);back=true;hit.clear();
+                        skill.projectileTurned(Cast.this,pos,direction);}return true;}
             }owner.tasks.add(new Flight());
         }
         /** Release this owner's current motion lease, for an explicit stop/recast. */
@@ -655,8 +670,9 @@ public final class AbilityRuntime {
             dash(delta,ticks,radius,impact,end,turn,stopAtHero,false);
         }
         private void dash(Vec3 delta,int ticks,double radius,BiConsumer<LivingEntity,Boolean> impact,Runnable end,boolean turn,boolean stopAtHero,boolean local){
-            if(data.getBuff("g1_root")>0||data.getBuff("g1_stun")>0)return;
-            if(delta.lengthSqr()<.0025)return;
+            if(data.getBuff("g1_root")>0||data.getBuff("g1_stun")>0||delta.lengthSqr()<.0025){
+                skill.dashPose(this,AbilitySkill.DashPose.CANCEL,delta);return;
+            }
             final int token=++owner.motionToken;
             final Vec3 destination=player.position().add(delta);final long start=now();final long impulse=KnockbackBuffer.impulseToken(player);
             owner.motionUntil=now()+ticks+4;
@@ -666,28 +682,34 @@ public final class AbilityRuntime {
                     if(local&&KnockbackBuffer.impulseToken(player)!=impulse){
                         owner.motionUntil=0;Vec3 forced=player.getDeltaMovement();
                         Packets.sendToPlayer(player,new NetworkSetup.DashPayload((float)forced.x,(float)forced.y,(float)forced.z,-1));
+                        skill.dashPose(Cast.this,AbilitySkill.DashPose.CANCEL,direction);
                         return false;
                     }
                     double rate=local?ActionTime.multiplier(player.getUUID(),now):1;
                     if(local)owner.motionUntil=now+Math.max(2,(int)Math.ceil((ticks+4-age)/rate));
                     Vec3 pos=player.position();moved+=Math.max(0,pos.subtract(last).dot(direction));
                     for(var target:DashHitbox.targets(player,last,pos,radius,hits)){boolean first=hits.isEmpty();hits.add(target.getUUID());impact.accept(target,first);
-                        if(stopAtHero&&hero(target)){finish();return false;}}
+                        if(stopAtHero&&hero(target)){finish(AbilitySkill.DashPose.FINISH);return false;}}
                     AbilityVisuals.motionTrail(Cast.this,last,pos);last=pos;
                     age+=rate;
-                    if(age>=ticks+4||moved>=delta.length()-.04||!turn&&pos.distanceToSqr(destination)<.0025
-                            ||data.getBuff("g1_root")>0||data.getBuff("g1_stun")>0){finish();return false;}
+                    boolean controlled=data.getBuff("g1_root")>0||data.getBuff("g1_stun")>0;
+                    if(age>=ticks+4||moved>=delta.length()-.04||!turn&&pos.distanceToSqr(destination)<.0025||controlled){
+                        finish(controlled?AbilitySkill.DashPose.CANCEL:AbilitySkill.DashPose.FINISH);return false;
+                    }
                     if(turn)direction=direction.lerp(forward(1),.18).normalize();
                     double step=Math.min(delta.length()/ticks*rate,Math.max(0,delta.length()-moved));Vec3 velocity=direction.scale(step);
-                    if(!AbilityTargeting.clearSweep(player,velocity)){finish();return false;}
-                    sendMotion(velocity,turn?pos.add(direction.scale(delta.length()-moved)):destination);return true;}
-                void finish(){owner.motionUntil=0;Vec3 v=skill.requiresStandingPoint()?Vec3.ZERO:player.getDeltaMovement().scale(.12);
+                    if(!AbilityTargeting.clearSweep(player,velocity)){finish(AbilitySkill.DashPose.FINISH);return false;}
+                    sendMotion(velocity,turn?pos.add(direction.scale(delta.length()-moved)):destination);
+                    skill.dashPose(Cast.this,AbilitySkill.DashPose.MOVING,direction);return true;}
+                void finish(AbilitySkill.DashPose phase){owner.motionUntil=0;Vec3 v=skill.requiresStandingPoint()?Vec3.ZERO:player.getDeltaMovement().scale(.12);
                     player.setDeltaMovement(v);player.syncVelocity=true;player.resetFallDistance();
-                    Packets.sendToPlayer(player,new NetworkSetup.DashPayload((float)v.x,(float)v.y,(float)v.z,-1));end.run();}
+                    Packets.sendToPlayer(player,new NetworkSetup.DashPayload((float)v.x,(float)v.y,(float)v.z,-1));
+                    skill.dashPose(Cast.this,phase,direction);end.run();}
             }
             var dash=new Dash();Vec3 v=delta.scale((local?ActionTime.multiplier(player.getUUID(),now()):1)/ticks);
-            if(!AbilityTargeting.clearSweep(player,v)){dash.finish();return;}
+            if(!AbilityTargeting.clearSweep(player,v)){dash.finish(AbilitySkill.DashPose.CANCEL);return;}
             sendMotion(v,destination);owner.tasks.add(dash);
+            skill.dashPose(this,AbilitySkill.DashPose.START,delta);
         }
         private void sendMotion(Vec3 velocity,Vec3 destination){player.setDeltaMovement(velocity);player.syncVelocity=true;player.resetFallDistance();
             Packets.sendToPlayer(player,new com.myriad.network.AbilityMotionPayload((float)velocity.x,(float)velocity.y,(float)velocity.z,
@@ -714,17 +736,20 @@ public final class AbilityRuntime {
             final double[] point={initialRate};final long impulse=KnockbackBuffer.impulseToken(player);final long[] lastTick={start};
             Runnable finish=()->{owner.motionUntil=0;player.setDeltaMovement(Vec3.ZERO);player.resetFallDistance();
                 Packets.sendToPlayer(player,new NetworkSetup.DashPayload(0,0,0,-1));
+                skill.leapPose(this,AbilitySkill.DashPose.FINISH,0);
                 if(precise&&player.position().distanceToSqr(destination)>.16)return;
                 if(safe(player.position()))landed.run();else whileActive(12,a->{
                     if(token!=owner.motionToken)return false;if(safe(player.position())){landed.run();return false;}return true;});};
             Task motion=time->{if(token!=owner.motionToken)return false;if(time<=lastTick[0])return true;lastTick[0]=time;
                 if(local&&KnockbackBuffer.impulseToken(player)!=impulse){owner.motionUntil=0;Vec3 forced=player.getDeltaMovement();
-                    Packets.sendToPlayer(player,new NetworkSetup.DashPayload((float)forced.x,(float)forced.y,(float)forced.z,-1));return false;}
+                    Packets.sendToPlayer(player,new NetworkSetup.DashPayload((float)forced.x,(float)forced.y,(float)forced.z,-1));
+                    skill.leapPose(this,AbilitySkill.DashPose.CANCEL,0);return false;}
                 double rate=local?ActionTime.multiplier(player.getUUID(),time):1;age[0]+=rate;
                 if(local)owner.motionUntil=time+Math.max(2,(int)Math.ceil((ticks+8-age[0])/rate));
                 if(age[0]>ticks+8||data.getBuff("g1_root")>0||data.getBuff("g1_stun")>0){
                     if(precise){owner.motionUntil=0;player.setDeltaMovement(Vec3.ZERO);player.resetFallDistance();
-                        Packets.sendToPlayer(player,new NetworkSetup.DashPayload(0,0,0,-1));return false;}
+                        Packets.sendToPlayer(player,new NetworkSetup.DashPayload(0,0,0,-1));
+                        skill.leapPose(this,AbilitySkill.DashPose.CANCEL,0);return false;}
                     finish.run();return false;}
                 if(age[0]>=ticks&&player.position().distanceToSqr(destination)<.01){finish.run();return false;}
                 point[0]+=rate;double t=Math.min(1,point[0]/ticks);
@@ -733,26 +758,34 @@ public final class AbilityRuntime {
                 if(precise&&velocity.length()>cap+4*height/ticks){
                     // A displaced/lagged body must not catch up with an arbitrarily large corrective impulse.
                     owner.motionUntil=0;player.setDeltaMovement(Vec3.ZERO);player.resetFallDistance();
-                    Packets.sendToPlayer(player,new NetworkSetup.DashPayload(0,0,0,-1));return false;
+                    Packets.sendToPlayer(player,new NetworkSetup.DashPayload(0,0,0,-1));
+                    skill.leapPose(this,AbilitySkill.DashPose.CANCEL,0);return false;
                 }
                 if(!precise&&velocity.length()>cap)velocity=velocity.normalize().scale(cap);
                 if(!AbilityTargeting.clearSweep(player,velocity)){finish.run();return false;}
-                AbilityVisuals.motionTrail(Cast.this,player.position(),desired);sendMotion(velocity,desired);return true;};
+                AbilityVisuals.motionTrail(Cast.this,player.position(),desired);sendMotion(velocity,desired);
+                skill.leapPose(this,AbilitySkill.DashPose.MOVING,Math.min(1,age[0]/ticks));return true;};
             double t=initialRate/ticks;Vec3 desired=origin.lerp(destination,t).add(0,4*height*t*(1-t),0);
             if(!AbilityTargeting.clearSweep(player,desired.subtract(origin))){finish.run();return;}
             sendMotion(desired.subtract(origin),desired);owner.tasks.add(motion);
+            skill.leapPose(this,AbilitySkill.DashPose.START,0);
         }
-        public void portal(Vec3 from,Vec3 to,int duration){
+        public void portal(Vec3 from,Vec3 to,int duration,BiConsumer<Vec3,Vec3> travel){
             Memory memory=memory("portal");int token=++memory.count;memory.targets.clear();whileActive(duration,age->{if(token!=memory.count)return false;
-                if(age%6==0){AbilityVisuals.portalAnchor(this,from);AbilityVisuals.portalAnchor(this,to);}
+                if(age>0&&age%6==0&&age<duration){
+                    int life=Math.min(6,duration-age);
+                    AbilityVisuals.portalAnchor(this,from,to,life);AbilityVisuals.portalAnchor(this,to,from,life);
+                }
                 for(var ally:allies(from,2)){if(ally.isShiftKeyDown()&&ally.position().distanceToSqr(from)<=2.25&&memory.targets.getOrDefault(ally.getUUID(),0L)<=now()
                         &&PlayerDataProvider.get(ally).getBuff("g1_root")==0&&PlayerDataProvider.get(ally).getBuff("g1_stun")==0&&AbilityTargeting.canStand(ally,to)){
-                    ally.teleportTo(to.x,to.y,to.z);memory.targets.put(ally.getUUID(),now()+40);}}
+                    ally.teleportTo(to.x,to.y,to.z);memory.targets.put(ally.getUUID(),now()+40);travel.accept(from,to);}}
                 for(var ally:allies(to,2)){if(ally.isShiftKeyDown()&&ally.position().distanceToSqr(to)<=2.25&&memory.targets.getOrDefault(ally.getUUID(),0L)<=now()
                         &&PlayerDataProvider.get(ally).getBuff("g1_root")==0&&PlayerDataProvider.get(ally).getBuff("g1_stun")==0&&AbilityTargeting.canStand(ally,from)){
-                    ally.teleportTo(from.x,from.y,from.z);memory.targets.put(ally.getUUID(),now()+40);}}
+                    ally.teleportTo(from.x,from.y,from.z);memory.targets.put(ally.getUUID(),now()+40);travel.accept(to,from);}}
                 return true;
             });
+            AbilityVisuals.portalAnchor(this,from,to,6);
+            AbilityVisuals.portalAnchor(this,to,from,6);
         }
     }
 }

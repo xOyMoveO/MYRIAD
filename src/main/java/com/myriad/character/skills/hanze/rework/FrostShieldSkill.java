@@ -10,7 +10,7 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 public final class FrostShieldSkill extends AbilitySkill {
     public FrostShieldSkill(Definition definition){super(definition);}
 
-@Override public void release(Cast c){c.shield(c.player,c.value(150,40,.65f),80);for(var t:c.enemies(c.player.position(),3))c.slow(t,.25f,30);}
+@Override public void release(Cast c){StaffHandCues.release(c);c.shield(c.player,c.value(150,40,.65f),80);for(var t:c.enemies(c.player.position(),3))c.slow(t,.25f,30);}
 @Override public void present(Cast c){AbilityVisuals.seal(c,c.player.position(),3,false);}
 }
 

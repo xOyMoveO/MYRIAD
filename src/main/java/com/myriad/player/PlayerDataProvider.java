@@ -1602,7 +1602,7 @@ public final class PlayerDataProvider {
         }
         // 模组护盾在全部攻防修正完成后吸收最终伤害；生命扣除阶段不再依赖原版吸收生命。
         if (event.getAmount() > 0.0f) {
-            float absorbed = ModShieldSystem.consume(entity, event.getAmount());
+            float absorbed = ModShieldSystem.consume(entity, event.getAmount(), event.getSource());
             if (absorbed > 0.0f) {
                 // Fabric enters after vanilla has set its cooldown; accepted shield/pool hits
                 // need the same three-tick cadence as accepted vanilla HP loss.
