@@ -312,6 +312,16 @@ public final class NetworkSetup {
         }
     }
 
+    /** 近战擦边意图：候选与攻击由服务端重新判定。 */
+    public record MeleeAssistPayload() implements CustomPacketPayload {
+        public static final Type<MeleeAssistPayload> TYPE =
+                new Type<>(Identifier.fromNamespaceAndPath(Myriad.MODID, "melee_assist"));
+        public static final StreamCodec<FriendlyByteBuf, MeleeAssistPayload> CODEC =
+                StreamCodec.unit(new MeleeAssistPayload());
+
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
+
     /** 左键普攻意图：客户端仅提交实体 ID，命中、伤害和攻速间隔均由服务端验证。 */
     public record BasicAttackPayload(int targetId) implements CustomPacketPayload {
         public static final Type<BasicAttackPayload> TYPE =
@@ -1288,6 +1298,7 @@ public final class NetworkSetup {
         PayloadTypeRegistry.serverboundPlay().register(CancelPlacementPayload.TYPE, CancelPlacementPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(MagicBulletFirePayload.TYPE, MagicBulletFirePayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(BasicAttackPayload.TYPE, BasicAttackPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(MeleeAssistPayload.TYPE, MeleeAssistPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(TrainActionPayload.TYPE, TrainActionPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(UpgradeSkillPayload.TYPE, UpgradeSkillPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(TeamListPayload.TYPE, TeamListPayload.STREAM_CODEC);
@@ -1367,6 +1378,11 @@ public final class NetworkSetup {
             ServerPlayer player = context.player();
             com.myriad.combat.BasicAttackSystem.tryAttack(player, payload.targetId());
         });
+        // The advertised receive channel also disables client preselection for the 0% test server.
+        if (com.myriad.combat.BasicAttackAssist.enabled()) {
+            ServerPlayNetworking.registerGlobalReceiver(MeleeAssistPayload.TYPE,
+                    (payload, context) -> com.myriad.combat.VanillaMeleeAttack.tryAssist(context.player()));
+        }
         ServerPlayNetworking.registerGlobalReceiver(TrainActionPayload.TYPE,
                 (payload, context) -> {
             ServerPlayer player = context.player();

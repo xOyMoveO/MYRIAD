@@ -45,7 +45,7 @@ public final class ShuoView {
     public static void onAttack(AttackInput e){var mc=Minecraft.getInstance();
         if(!e.isAttack()||e.isCanceled()||!e.shouldSwingHand()||!enabled(mc)||menu(mc)||ClientDataHolder.isChanneling()
             ||ClientDataHolder.buffTicks("g1_stun")>0||ClientDataHolder.buffTicks("g1_shuo_sheathing")>0||mc.player.getAttackStrengthScale(.5f)<1
-            ||mc.hitResult!=null&&mc.hitResult.getType()==HitResult.Type.BLOCK)return;
+            ||!e.isMeleeAssist()&&mc.hitResult!=null&&mc.hitResult.getType()==HitResult.Type.BLOCK)return;
         check(mc);MOTION.basic(mc.player.tickCount,drawn()||predictedDrawn);
     }
     public static boolean render(HandRenderContext e){var mc=Minecraft.getInstance();if(!enabled(mc)){reset();return false;}

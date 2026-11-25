@@ -68,7 +68,7 @@ public final class NightDaggerView {
                 || ClientDataHolder.placementType()!=0 || ClientDataHolder.isChanneling()
                 || ClientDataHolder.buffTicks("g1_stun")>0 || mc.player.getAttackStrengthScale(.5f)<1) return;
         // Mining uses its own vanilla hand animation, not the combat chain.
-        if (mc.hitResult!=null && mc.hitResult.getType()==HitResult.Type.BLOCK) return;
+        if (!event.isMeleeAssist() && mc.hitResult!=null && mc.hitResult.getType()==HitResult.Type.BLOCK) return;
         checkOwner(mc);
         if(SKILL.active(mc.player.tickCount))return;
         MOTION.attack(mc.player.tickCount,mc.player.getCurrentItemAttackStrengthDelay());

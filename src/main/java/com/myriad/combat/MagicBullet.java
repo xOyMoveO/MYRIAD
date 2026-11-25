@@ -13,7 +13,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.phys.AABB;
+import net.minecraft.world.entity.decoration.ArmorStand;
+import net.minecraft.world.entity.decoration.Mannequin;
 import net.minecraft.world.phys.Vec3;
 
 import com.myriad.character.CharacterType;
@@ -35,8 +36,6 @@ public final class MagicBullet {
     private static final double MAX_RANGE = 15.0;
     /** 命中判定半径（格） */
     private static final double HIT_RADIUS = 1.05;
-    /** 撞方块采样步长（格） */
-    private static final double BLOCK_SAMPLE_STEP = 0.25;
     /** 伤害系数：法术强度 × 0.5 */
     private static final double DMG_RATIO = 0.5;
     private static final DustParticleOptions YUNSHENG_ORB = new DustParticleOptions(0x75F2E5, 1.45F);
@@ -46,7 +45,7 @@ public final class MagicBullet {
         final ServerLevel level;
         Bullet(ServerLevel level) { this.level = level; }
 
-        Vec3 pos;
+        Vec3 pos, launchEye;
         Vec3 dir;
         double traveled;
         float sp;
@@ -105,9 +104,11 @@ public final class MagicBullet {
         if (dir.lengthSqr() < 1.0E-4) {
             return;
         }
-        Vec3 pos = player.getEyePosition().add(dir.scale(0.5));
+        Vec3 eye = player.getEyePosition();
+        Vec3 pos = eye.add(dir.scale(0.5));
         Bullet b = new Bullet(level);
         b.pos = pos;
+        b.launchEye = eye;
         b.dir = dir;
         b.traveled = 0;
         b.sp = (float) player.getAttributeValue(com.myriad.registry.ModAttributes.SPELL_POWER);
@@ -161,17 +162,30 @@ public final class MagicBullet {
     private static boolean tickOne(ServerLevel level, ServerPlayer caster, Bullet b) {
         long now=level.getGameTime();if(b.lastTick==now)return false;b.lastTick=now;
         if(++b.age>2*Math.ceil(maxRange(b.characterId)/SPEED))return true;
-        double step=Math.min(SPEED*AbilityRuntime.projectileRate(caster,b.flight,b.pos,now),maxRange(b.characterId)-b.traveled);
-        Vec3 next = b.pos.add(b.dir.scale(step));
-        if (com.myriad.combat.WindWallSystem.interceptProjectile(caster, b.pos, next) != null) {
+        if (b.age == 1) {
+            var muzzle = ProjectileBasicAttack.clip(caster, b.launchEye, b.pos);
+            if (muzzle.blocked()) {
+                muzzle.showWindIntercept();
+                if (b.visualId > 0) MagicBulletVisuals.sample(caster, b.visualTheme, b.visualId, b.launchEye, muzzle.end());
+                return true;
+            }
+        }
+        double remaining = maxRange(b.characterId) - b.traveled;
+        double step = Math.min(SPEED * AbilityRuntime.projectileRate(caster, b.flight, b.pos, now), remaining);
+        var segment = ProjectileBasicAttack.clip(caster, b.pos, b.pos.add(b.dir.scale(step)));
+        Vec3 next = segment.end();
+        // A wind wall intercepted the whole mage step before any entity check in the original path.
+        if (segment.windBlocked()) {
+            segment.showWindIntercept();
             return true;
         }
-        LivingEntity target = findFirstEnemy(level, caster, b.pos, next);
-        if (target != null) {
+        var hit = findFirstEnemy(segment, remaining);
+        if (hit != null) {
+            LivingEntity target = hit.target();
             float dmg = (float) (b.sp * damageRatio(b.characterId) * b.attackMultiplier);
             DamageCalc.dealBasicDamage(caster, target, dmg, DamageCalc.Kind.MAGIC);
             if (b.visualId>0) {
-                Vec3 at=target.getBoundingBox().inflate(HIT_RADIUS).clip(b.pos,next).orElse(next);
+                Vec3 at = target.getBoundingBox().inflate(HIT_RADIUS).clip(b.pos, next).orElse(hit.point());
                 MagicBulletVisuals.sample(caster,b.visualTheme,b.visualId,b.pos,at);
                 MagicBulletVisuals.impact(caster,b.visualTheme,at,b.dir);
                 level.playSound(null,target.getX(),target.getY(),target.getZ(),
@@ -196,9 +210,8 @@ public final class MagicBullet {
                     SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 0.6f, 1.1f);
             return true;
         }
-        Vec3 blockHit = firstBlockHit(level, b.pos, next);
-        if (blockHit != null) {
-            if(b.visualId>0)MagicBulletVisuals.sample(caster,b.visualTheme,b.visualId,b.pos,blockHit);
+        if (segment.blocked()) {
+            if (b.visualId > 0) MagicBulletVisuals.sample(caster, b.visualTheme, b.visualId, b.pos, next);
             return true;
         }
         if(b.visualId>0)MagicBulletVisuals.sample(caster,b.visualTheme,b.visualId,b.pos,next);
@@ -232,42 +245,26 @@ public final class MagicBullet {
         return MAX_RANGE;
     }
 
-    private static Vec3 firstBlockHit(ServerLevel level, Vec3 from, Vec3 to) {
-        double dist = from.distanceTo(to);
-        int steps = Math.max(1, (int) Math.ceil(dist / BLOCK_SAMPLE_STEP));
-        for (int i = 1; i <= steps; i++) {
-            Vec3 p = from.lerp(to, (double) i / steps);
-            net.minecraft.core.BlockPos bp = net.minecraft.core.BlockPos.containing(p.x, p.y, p.z);
-            if (level.getBlockState(bp).isSolid()) {
-                return p;
-            }
-        }
-        return null;
-    }
-
-    private static LivingEntity findFirstEnemy(ServerLevel level, ServerPlayer caster, Vec3 from, Vec3 to) {
-        AABB box = new AABB(
-                Math.min(from.x, to.x) - HIT_RADIUS, Math.min(from.y, to.y) - HIT_RADIUS, Math.min(from.z, to.z) - HIT_RADIUS,
-                Math.max(from.x, to.x) + HIT_RADIUS, Math.max(from.y, to.y) + HIT_RADIUS, Math.max(from.z, to.z) + HIT_RADIUS);
-        Vec3 delta = to.subtract(from);
+    private static ProjectileBasicAttack.Hit findFirstEnemy(ProjectileBasicAttack.Segment segment, double remaining) {
+        Vec3 from = segment.from();
+        Vec3 delta = segment.end().subtract(from);
         double lenSqr = delta.lengthSqr();
-        LivingEntity best = null;
+        if (lenSqr == 0) return null;
+        ProjectileBasicAttack.Hit best = null;
         double bestT = Double.MAX_VALUE;
-        for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, box,
-                e -> e != caster && e.isAlive()
-                        && !(e instanceof net.minecraft.world.entity.decoration.ArmorStand)
-                        && !(e instanceof net.minecraft.world.entity.decoration.Mannequin)
-                        && SkillTargets.hostile(caster, e))) {
-            Vec3 rel = e.getBoundingBox().getCenter().subtract(from);
-            double t = rel.dot(delta) / lenSqr;
-            if (t < 0 || t > 1) {
-                continue;
-            }
+        // The original query padding and the center-sphere radius both exceed the capped assist padding.
+        // Keep both tests, including the original order by center projection.
+        for (LivingEntity e : segment.candidates(HIT_RADIUS, target -> !(target instanceof ArmorStand)
+                && !(target instanceof Mannequin))) {
+            var bounds = e.getBoundingBox();
+            Vec3 center = bounds.getCenter();
+            double t = center.subtract(from).dot(delta) / lenSqr;
+            if (t < 0 || t > 1 || t >= bestT) continue;
             Vec3 closest = from.add(delta.scale(t));
             double radius = HIT_RADIUS + Math.max(e.getBbWidth(), e.getBbHeight()) * 0.3;
-            if (closest.distanceToSqr(e.getBoundingBox().getCenter()) <= radius * radius && t < bestT) {
+            if (closest.distanceToSqr(center) <= radius * radius && segment.reaches(closest, bounds, remaining)) {
                 bestT = t;
-                best = e;
+                best = new ProjectileBasicAttack.Hit(e, closest);
             }
         }
         return best;

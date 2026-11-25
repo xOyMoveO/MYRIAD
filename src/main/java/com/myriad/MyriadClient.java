@@ -86,20 +86,24 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
     }
 
     /** Called at Minecraft.startAttack, including keyboard or mouse rebound attacks. */
-    public static boolean attack() {
+    public static AttackInput attack(boolean allowMeleeAssist) {
         AttackInput event = new AttackInput();
         onInteractionKeyMapping(event);
+        Minecraft mc = Minecraft.getInstance();
+        event.setMeleeAssist(allowMeleeAssist && !event.isCanceled()
+                && com.myriad.client.MeleeAssistInput.shouldAssist(mc));
         com.myriad.client.firstperson.KehengView.attack(event);
         com.myriad.client.firstperson.NightDaggerView.onAttack(event);
         com.myriad.client.firstperson.ThunderSwordView.onAttack(event);
         com.myriad.client.firstperson.FlameDaoView.onAttack(event);
         com.myriad.client.firstperson.ShuoView.onAttack(event);
         com.myriad.client.firstperson.WindBladeView.onAttack(event);
-        return event.isCanceled();
+        if (event.isMeleeAssist()) com.myriad.client.MeleeAssistInput.send(mc.player);
+        return event;
     }
 
     /**
-     * 近战完全交还原版攻击输入；仅远程专属普攻使用自定义请求。
+     * Preserve native attack input for exact melee selections and route dedicated ranged attacks.
      */
     private static void onInteractionKeyMapping(AttackInput event) {
         if (!com.myriad.client.ClientDataHolder.modEnabled()) return;

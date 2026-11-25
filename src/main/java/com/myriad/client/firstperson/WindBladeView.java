@@ -90,7 +90,7 @@ public final class WindBladeView {
         var mc = Minecraft.getInstance();
         if (event.isCanceled() || !event.shouldSwingHand() || !enabled(mc) || busy(mc)
                 || mc.player.getAttackStrengthScale(.5f) < 1
-                || mc.hitResult != null && mc.hitResult.getType() == HitResult.Type.BLOCK) return;
+                || !event.isMeleeAssist() && mc.hitResult != null && mc.hitResult.getType() == HitResult.Type.BLOCK) return;
         checkOwner(mc);
         MOTION.attack(mc.player.tickCount, mc.player.getCurrentItemAttackStrengthDelay());
     }
