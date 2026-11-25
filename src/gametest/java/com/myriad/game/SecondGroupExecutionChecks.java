@@ -12,8 +12,10 @@ import java.util.*;
 final class SecondGroupExecutionChecks {
  static void run(GameTestHelper h,Runnable restore){
   List<ServerPlayer> casters=new ArrayList<>();
-  var target=h.spawn(net.minecraft.world.entity.EntityTypes.PIG,new net.minecraft.core.BlockPos(4,6,4));
-  target.setNoAi(true);target.setNoGravity(true);target.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(1000);target.setHealth(1000);
+  // Keep the pulse target out of the other concurrently running combat scenes.
+  var target=h.spawn(net.minecraft.world.entity.EntityTypes.PIG,new net.minecraft.core.BlockPos(4,220,4));
+  target.setNoAi(true);target.setNoGravity(true);target.noPhysics=true;
+  target.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(1000);target.setHealth(1000);
   Vec3 center=target.position();
   for(String role:List.of("lingyuan","hanze","yunsheng")){
    var p=(ServerPlayer)h.makeMockServerPlayer(GameType.SURVIVAL);
