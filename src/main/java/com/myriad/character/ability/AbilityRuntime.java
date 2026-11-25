@@ -1,6 +1,7 @@
 package com.myriad.character.ability;
 
 import com.myriad.character.*;
+import com.myriad.character.rework.FirstGroupGrowth;
 import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.combat.*;
 import com.myriad.game.*;
@@ -294,7 +295,8 @@ public final class AbilityRuntime {
         return Math.clamp(scale,.3,1);
     }
     public static final class Cast {
-        public final ServerPlayer player;public final PlayerData data;public final AbilitySkill skill;public final int rank;public final float strength;
+        public final ServerPlayer player;public final PlayerData data;public final AbilitySkill skill;public final int rank;
+        public final float totalPhysicalAttack, totalSpellPower, purchasedPhysicalAttack, purchasedSpellPower;
         private final Owner owner;private int castToken;public Vec3 point;
         private float windupProgress;
         private Phase phase=Phase.REQUESTED;private boolean accepted,committed;private int windupToken;
@@ -333,14 +335,23 @@ public final class AbilityRuntime {
                 data.setBuff("g1_channel",0);SkillChargeSystem.clear(player);}
         }
         private Cast(ServerPlayer p,PlayerData data,AbilitySkill skill,Owner owner){this.player=p;this.data=data;this.skill=skill;this.owner=owner;
-            rank=Math.clamp(Math.max(1,data.skillLevel(skill.getId())),1,skill.maxRank());strength=(float)p.getAttributeValue(ModAttributes.SPELL_POWER);castToken=owner.castToken;}
+            rank=Math.clamp(Math.max(1,data.skillLevel(skill.getId())),1,skill.maxRank());
+            totalPhysicalAttack=(float)p.getAttributeValue(ModAttributes.PHYSICAL_ATTACK);
+            totalSpellPower=(float)p.getAttributeValue(ModAttributes.SPELL_POWER);
+            purchasedPhysicalAttack=(float)FirstGroupGrowth.purchasedPhysicalAttack(data.firstGroupAttribute("strength"));
+            purchasedSpellPower=(float)FirstGroupGrowth.purchasedSpellPower(data.firstGroupAttribute("wisdom"));
+            castToken=owner.castToken;}
         public long now(){return player.level().getGameTime();}
         public int castId(){return castToken;}
         public Vec3 forward(double distance){Vec3 flat=player.getLookAngle().multiply(1,0,1).normalize();
             return (flat.lengthSqr()<.01?Vec3.directionFromRotation(0,player.getYRot()):flat).scale(distance);}
         public Memory memory(){return owner.memory.computeIfAbsent(skill.getId(),id->new Memory());}
         public Memory memory(String key){return owner.memory.computeIfAbsent(skill.getId()+"/"+key,id->new Memory());}
-        public float value(float base,float growth,float scale){return base+growth*(rank-1)+scale*strength;}
+        /** Older support formulas use total spell power. Damage formulas declare their source separately. */
+        public float value(float base,float growth,float scale){return spellPowerValue(base,growth,scale);}
+        public float spellPowerValue(float base,float rankGrowth,float scale){
+            return base+rankGrowth*(rank-1)+scale*totalSpellPower;
+        }
         public boolean behind(LivingEntity t){Vec3 to=player.position().subtract(t.position()).multiply(1,0,1).normalize();Vec3 look=t.getLookAngle().multiply(1,0,1).normalize();return to.dot(look)<-.5;}
         public boolean hero(LivingEntity t){return t instanceof ServerPlayer||JiarenManager.isJiaren(t.getUUID());}
         public boolean enemy(LivingEntity t){return SkillTargets.enemy(player,t)&&player.hasLineOfSight(t);}

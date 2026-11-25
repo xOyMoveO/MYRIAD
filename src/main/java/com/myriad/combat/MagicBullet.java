@@ -20,12 +20,16 @@ import net.minecraft.world.phys.Vec3;
 import com.myriad.character.CharacterType;
 import com.myriad.character.ability.ActionTime;
 import com.myriad.character.ability.AbilityRuntime;
+import com.myriad.character.rework.FirstGroupGrowth;
+import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.player.PlayerData;
 import com.myriad.player.PlayerDataProvider;
+import com.myriad.registry.ModAttributes;
 
 /**
  * 法师普攻魔法弹：手持初始武器右键发射。
- * 伤害 = 法术强度 × 角色系数（墨尘/青萝 50%，寒泽 60%）；射程 15 格、飞行速度 30 格/秒，
+ * 发射时快照法术伤害：保留零购买基线，额外法强按角色系数成长（寒泽 60%，其余 50%）。
+ * 射程 15 格、飞行速度 30 格/秒，
  * 发射间隔 = 1 / 攻速 秒（攻速 1.0 → 每秒 1 发，攻速 0.5 → 每 2 秒 1 发）。
  * 每个法师角色的魔法弹特效不同：墨尘 = 黑白粒子螺旋向前。
  */
@@ -36,20 +40,21 @@ public final class MagicBullet {
     private static final double MAX_RANGE = 15.0;
     /** 命中判定半径（格） */
     private static final double HIT_RADIUS = 1.05;
-    /** 伤害系数：法术强度 × 0.5 */
-    private static final double DMG_RATIO = 0.5;
+    private static final double STANDARD_SPELL_RATIO = 0.5;
     private static final DustParticleOptions YUNSHENG_ORB = new DustParticleOptions(0x75F2E5, 1.45F);
     private static final DustParticleOptions YUNSHENG_GLOW = new DustParticleOptions(0xEDFFF9, .8F);
 
     private static final class Bullet {
         final ServerLevel level;
-        Bullet(ServerLevel level) { this.level = level; }
+        final float rawDamageAtLaunch;
+        Bullet(ServerLevel level, float rawDamageAtLaunch) {
+            this.level = level;
+            this.rawDamageAtLaunch = rawDamageAtLaunch;
+        }
 
         Vec3 pos, launchEye;
         Vec3 dir;
         double traveled;
-        float sp;
-        float attackMultiplier;
         String characterId;
         int visualTheme, visualId;
         final UUID flight=UUID.randomUUID();
@@ -97,7 +102,6 @@ public final class MagicBullet {
         int cd = (int) Math.ceil(20.0 / as);
         FireCooldown previous = FIRE_CD.get(player.getUUID());
         if (previous != null && !previous.progress.advance(now,ActionTime.multiplier(player.getUUID(),now),previous.totalTicks)) return;
-        float attackMultiplier = 1.0F;
         FIRE_CD.put(player.getUUID(), new FireCooldown(now,cd));
 
         Vec3 dir = player.getLookAngle().normalize();
@@ -106,16 +110,18 @@ public final class MagicBullet {
         }
         Vec3 eye = player.getEyePosition();
         Vec3 pos = eye.add(dir.scale(0.5));
-        Bullet b = new Bullet(level);
+        String characterId = PlayerDataProvider.get(player).getCharacterId();
+        CharacterType role = CharacterType.byId(characterId);
+        double totalSpellPower = player.getAttributeValue(ModAttributes.SPELL_POWER);
+        float rawDamageAtLaunch = FirstGroupSkills.active(characterId)
+                ? rawDamage(role, totalSpellPower)
+                : (float) (totalSpellPower * spellPowerRatio(role));
+        Bullet b = new Bullet(level, rawDamageAtLaunch);
         b.pos = pos;
         b.launchEye = eye;
         b.dir = dir;
         b.traveled = 0;
-        b.sp = (float) player.getAttributeValue(com.myriad.registry.ModAttributes.SPELL_POWER);
-        if (com.myriad.character.rework.FirstGroupSkills.active(PlayerDataProvider.get(player).getCharacterId()))
-            b.sp = (float) (player.getAttributeValue(com.myriad.registry.ModAttributes.PHYSICAL_ATTACK) / DMG_RATIO);
-        b.attackMultiplier = attackMultiplier;
-        b.characterId = PlayerDataProvider.get(player).getCharacterId();
+        b.characterId = characterId;
         b.visualTheme = MagicBulletVisuals.theme(b.characterId);
         if(b.visualTheme>0)b.visualId=MagicBulletVisuals.start();
         BULLETS.computeIfAbsent(player.getUUID(), k -> new ArrayList<>()).add(b);
@@ -182,8 +188,7 @@ public final class MagicBullet {
         var hit = findFirstEnemy(segment, remaining);
         if (hit != null) {
             LivingEntity target = hit.target();
-            float dmg = (float) (b.sp * damageRatio(b.characterId) * b.attackMultiplier);
-            DamageCalc.dealBasicDamage(caster, target, dmg, DamageCalc.Kind.MAGIC);
+            DamageCalc.dealBasicDamage(caster, target, b.rawDamageAtLaunch, DamageCalc.Kind.MAGIC);
             if (b.visualId>0) {
                 Vec3 at = target.getBoundingBox().inflate(HIT_RADIUS).clip(b.pos, next).orElse(hit.point());
                 MagicBulletVisuals.sample(caster,b.visualTheme,b.visualId,b.pos,at);
@@ -237,8 +242,16 @@ public final class MagicBullet {
         }
     }
 
-    private static double damageRatio(String characterId) {
-        return "hanze".equalsIgnoreCase(characterId) ? 0.6 : DMG_RATIO;
+    public static double spellPowerRatio(CharacterType role) {
+        return role == CharacterType.HANZE ? 0.6 : STANDARD_SPELL_RATIO;
+    }
+
+    public static float rawDamage(CharacterType role, double totalSpellPower) {
+        double ratio = spellPowerRatio(role);
+        // Before the fix the mage path fed innate physical attack / 0.5 into the final role ratio.
+        double baselineDamage = FirstGroupGrowth.baselinePhysicalAttack(role) * ratio / STANDARD_SPELL_RATIO;
+        double extraSpellPower = totalSpellPower - FirstGroupGrowth.baselineSpellPower();
+        return (float) (baselineDamage + ratio * extraSpellPower);
     }
 
     private static double maxRange(String characterId) {

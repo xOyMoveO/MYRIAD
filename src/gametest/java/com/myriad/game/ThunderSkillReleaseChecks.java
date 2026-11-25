@@ -93,7 +93,7 @@ final class ThunderSkillReleaseChecks {
                 if(elapsed==30){
                     for(var f:fixtures){
                         boolean success=f.index==0||f.index==1||f.index==4||f.index==5;
-                        for(var target:f.hits)h.assertTrue(Math.abs(target.getHealth()-(1000-(success?f.damage:0)))<.03,"Exactly one rank/S hit, travel/pierce/wall/interruption: case="+f.index+" hp="+target.getHealth());
+                        for(var target:f.hits)h.assertTrue(Math.abs(target.getHealth()-(1000-(success?f.damage:0)))<.03,"Exactly one rank-and-attribute hit, travel/pierce/wall/interruption: case="+f.index+" hp="+target.getHealth());
                         for(var target:f.excluded)h.assertTrue(Math.abs(target.getHealth()-1000)<.03,"Friends/buildings/range/back/angle excluded: case="+f.index+" hp="+target.getHealth());
                         h.assertTrue(f.cues.stream().anyMatch(c->c.action()==(f.index==3||f.index==6?CANCEL:slash(f.index)?SLASH_FIRE:JUDGMENT_FIRE)),"Completion or cancellation is server confirmed");
                         if(f.index==3||f.index==6)h.assertTrue(f.cues.stream().noneMatch(c->c.action()==SLASH_FIRE||c.action()==JUDGMENT_FIRE),"Interrupted charge never sends a release cue");
@@ -108,9 +108,9 @@ final class ThunderSkillReleaseChecks {
         Vec3 origin=Vec3.atBottomCenterOf(h.absolutePos(new BlockPos(140,160+index*10,40)));
         var players=new ArrayList<ServerPlayer>();var cues=new ArrayList<ThunderSkillViewPayload>();var saved=new HashMap<BlockPos,BlockState>();
         var caster=player(h,origin,Faction.GUARDIAN,players,cues,false);var d=PlayerDataProvider.get(caster);d.setCharacterId("tianxing");d.setLevel(20);d.setMana(700);
-        int rank=index==1?7:index==5?3:1;float strength=index==1||index==5?100:0;
+        int rank=index==1?7:index==5?3:1;float spellPower=index==1||index==5?100:0;int strength=index==5?1:0;
         var skill=FirstGroupSkills.node("tianxing",slash(index)?5:7);d.setSkillLevel(skill.getId(),rank);
-        caster.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(strength);caster.getAttribute(ModAttributes.CRIT_CHANCE).setBaseValue(0);caster.getAttribute(ModAttributes.COOLDOWN_REDUCTION).setBaseValue(0);
+        caster.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(spellPower);d.setFirstGroupAttribute("strength",strength);caster.getAttribute(ModAttributes.CRIT_CHANCE).setBaseValue(0);caster.getAttribute(ModAttributes.COOLDOWN_REDUCTION).setBaseValue(0);
         var hits=new ArrayList<LivingEntity>();var excluded=new ArrayList<LivingEntity>();
         List<Vec3> hitPositions=slash(index)?List.of(new Vec3(0,0,4),new Vec3(0,0,8),new Vec3(.8,0,11),new Vec3(0,0,19.5)):
                 List.of(new Vec3(0,0,4),new Vec3(-6*Math.sin(Math.toRadians(55)),0,6*Math.cos(Math.toRadians(55))),new Vec3(8*Math.sin(Math.PI/3),0,4));
@@ -122,7 +122,7 @@ final class ThunderSkillReleaseChecks {
         var tower=h.spawn(ModEntities.DEFENSE_TOWER.get(),new BlockPos(2,6,2));tower.setPos(origin.add(rotate(new Vec3(.5,0,5.5),index==5)));tower.setHealth(1000);excluded.add(tower);
         if(index==2||index==7)for(int x=-9;x<=9;x++)for(int y=0;y<4;y++)set(h,saved,BlockPos.containing(origin.add(x,y,2)),Blocks.STONE.defaultBlockState());
         if(index==8){var wall=player(h,origin.add(0,0,2),Faction.DESTRUCTION,players,cues,false);var wd=PlayerDataProvider.get(wall);wd.setCharacterId("sulan");com.myriad.combat.WindWallSystem.createWall(wall,wd,80,false);}
-        float damage=slash(index)?95+24*(rank-1)+.95f*strength:200+80*(rank-1)+1.5f*strength;
+        float damage=slash(index)?95+24*(rank-1)+.95f*spellPower:245+80*(rank-1)+12f*strength;
         return new Fixture(caster,hits,excluded,players,cues,saved,index,damage);
     }
     private static Vec3 rotate(Vec3 d,boolean turn){return turn?new Vec3(d.z,d.y,-d.x):d;}

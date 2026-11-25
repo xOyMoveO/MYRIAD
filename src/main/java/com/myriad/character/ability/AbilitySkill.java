@@ -4,6 +4,8 @@ import com.myriad.character.Skill;
 import com.myriad.player.PlayerData;
 import net.minecraft.server.level.ServerPlayer;
 
+import java.util.List;
+
 /** Reusable ability module: every concrete skill owns its effect logic, not a role/batch switch. */
 public abstract class AbilitySkill extends Skill {
     public record Definition(String id,String role,int index,int maxRank,float mana,int[] cooldowns,
@@ -17,6 +19,7 @@ public abstract class AbilitySkill extends Skill {
     public String role(){return definition.role();} public int index(){return definition.index();}
     public int maxRank(){return definition.maxRank();} public String displayName(){return definition.name();}
     public String description(){return definition.description();} public String iconAlias(){return definition.iconAlias();}
+    public List<AbilityDamageFormula> damageFormulas(){return List.of();}
     public String evaluatedDescription(int rank, double skillPower, int purchasedStrength){
         return AbilityFormulaText.evaluate(description(), rank, skillPower);
     }

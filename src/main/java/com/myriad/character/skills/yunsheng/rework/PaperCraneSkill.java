@@ -3,9 +3,18 @@ import com.myriad.character.ability.*;
 import com.myriad.character.ability.AbilityRuntime.Cast;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
+import java.util.List;
+
 import static com.myriad.combat.DamageCalc.Kind.*;
 /** Independent reusable branch. */
 public final class PaperCraneSkill extends AbilitySkill {
+    private static final AbilityDamageFormula DAMAGE =
+            AbilityDamageFormula.spellPower(MAGIC, 55, 18, .45f);
+
+    @Override public List<AbilityDamageFormula> damageFormulas() {
+        return List.of(DAMAGE);
+    }
+
  public PaperCraneSkill(Definition definition){super(definition);}
 
 @Override public void release(Cast c){
@@ -29,7 +38,7 @@ public final class PaperCraneSkill extends AbilitySkill {
         }
         AbilityVisuals.flight(c,last[0],at,age,false,visual);last[0]=at;if(u<1){if(age>=24){finish.run();AbilityVisuals.dissipate(c,at);return false;}return true;}
         finish.run();
-        if(hostile){c.damage(target,c.value(55,18,.45f),MAGIC);c.slow(target,.25f,20);}
+        if(hostile){c.damage(target,DAMAGE.value(c),DAMAGE.kind());c.slow(target,.25f,20);}
         else {c.heal(target,c.value(40,14,.3f));if(target instanceof net.minecraft.server.level.ServerPlayer ally){
             var d=com.myriad.player.PlayerDataProvider.get(ally);d.setMana(Math.min((float)ally.getAttributeValue(com.myriad.registry.ModAttributes.MAX_MANA),d.getMana()+20));}}
         AbilityVisuals.emit(c,AbilityVfxGeometry.BURST,at,at.add(f),.8,hostile?2:3,9,false);return false;

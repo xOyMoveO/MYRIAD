@@ -1,9 +1,17 @@
 package com.myriad.character.skills.luoxia;
 
+import com.myriad.character.ability.AbilityDamageFormula;
 import com.myriad.character.ability.AbilityRuntime.Cast;
 import com.myriad.combat.DamageCalc;
+import java.util.List;
 
 final class LastSun extends LuoxiaSkill {
+    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.purchased(DamageCalc.Kind.PHYSICAL, 108, 12, .50f);
+
+    @Override public List<AbilityDamageFormula> damageFormulas() {
+        return List.of(DAMAGE);
+    }
+
     LastSun(Definition definition) { super(definition); }
     @Override public int commitWindupTicks() { return 10; }
     @Override public float windupWalkFactor(Cast c) { return .60f; }
@@ -12,6 +20,6 @@ final class LastSun extends LuoxiaSkill {
     @Override public void release(Cast c) {
         LuoxiaVfx.shot(c, true, .90f);
         LuoxiaArrow.launch(c, c.player.getLookAngle(), 28, 3, LuoxiaArrow.Shape.LAST_SUN, false,
-                target -> { c.damage(target, damageAtRank(c, 108, 180, .76f), DamageCalc.Kind.PHYSICAL); return true; });
+                target -> { c.damage(target, DAMAGE.value(c), DamageCalc.Kind.PHYSICAL); return true; });
     }
 }

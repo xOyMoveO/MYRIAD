@@ -117,9 +117,9 @@ final class RosterBChecks {
     }
     private static void verifyOutcome(GameTestHelper h,Scene s){
         double expected=switch(s.role){
-            case "yingxiao"->switch(s.index){case 2->45;case 4->70;case 5->55;case 6->180;default->0;};
-            case "sulan"->switch(s.index){case 2->50;case 3->25;case 5->90;case 6->160;case 7->90;default->0;};
-            case "lingyuan"->switch(s.index){case 2->65;case 4->105;case 5->140;case 6->330;case 7->300;default->0;};
+            case "yingxiao"->switch(s.index){case 2->61.5;case 4->94;case 5->74.5;case 6->219;default->0;};
+            case "sulan"->switch(s.index){case 2->68;case 3->32.5;case 5->117;case 6->196;case 7->109.5;default->0;};
+            case "lingyuan"->switch(s.index){case 2->81.5;case 4->105;case 5->140;case 6->330;case 7->300;default->0;};
             case "hanze"->switch(s.index){case 2->75;case 4->115;case 5->85;case 6->270;case 7->90;default->0;};
             case "yunsheng"->switch(s.index){case 2->55;case 3->70;case 4->65;case 6->180;default->0;};
             default->throw new IllegalArgumentException(s.role);
@@ -149,11 +149,11 @@ final class RosterBChecks {
     }
     private static void verifyPassive(GameTestHelper h,Scene s){
         var d=PlayerDataProvider.get(s.actor);
-        if(s.role.equals("yingxiao"))near(h,10000-s.target.getHealth(),s.index==0?11:40,"Actual backstab/isolated-hero hit hook "+label(s));
+        if(s.role.equals("yingxiao"))near(h,10000-s.target.getHealth(),s.index==0?11:47.5,"Actual backstab/isolated-hero hit hook "+label(s));
         if(s.role.equals("sulan"))h.assertTrue(s.loss>=(s.index==0?96:86)&&d.getBuff("sulan_passive_ready")==0,"Walking/skill-hit primed passive adds actual basic damage once and consumes readiness: "+label(s)+" damage="+s.loss);
         if(s.role.equals("lingyuan")&&s.index==0)h.assertTrue(d.getSwordQi()==10,"Actual basic grants exactly ten sword qi");
         if(s.role.equals("lingyuan")&&s.index==1)h.assertTrue(s.loss>=96&&d.getBuff(node(s).getId()+"_ready")==0,"Resonance adds actual magic damage once and consumes readiness");
-        if(s.role.equals("hanze")&&s.index==0)h.assertTrue(Math.abs(10000-s.target.getHealth()-337)<.15&&s.root,"Four actual magic basics add frost damage and actual sourced control; loss="+(10000-s.target.getHealth()));
+        if(s.role.equals("hanze")&&s.index==0)h.assertTrue(Math.abs(10000-s.target.getHealth()-265)<.15&&s.root,"Four actual magic basics add frost damage and actual sourced control; loss="+(10000-s.target.getHealth()));
         if(s.role.equals("yunsheng")&&s.index==1)near(h,s.actor.getHealth(),118,"Effective hero hit triggers exact spirit chime healing");
         AbilityRuntime.clear(s.actor);
     }
@@ -171,7 +171,7 @@ final class RosterBChecks {
             }
             FirstGroupGrowth.initialize(p,d);d.setGold(2000);
             for(String key:FirstGroupGrowth.ATTRIBUTES)receive(h,p,new NetworkSetup.CraftEquipPayload("g1_attribute_"+key));
-            h.assertTrue(FirstGroupGrowth.ATTRIBUTES.stream().allMatch(key->d.firstGroupAttribute(key)==1)&&d.getGold()==1100,"Five actual purchase inputs charge exactly 5x180 gold: "+role);
+            h.assertTrue(FirstGroupGrowth.ATTRIBUTES.stream().allMatch(key->d.firstGroupAttribute(key)==1)&&d.getGold()==200,"Five actual purchase inputs charge exactly 5x360 gold: "+role);
             near(h,p.getAttributeValue(ModAttributes.PHYSICAL_ATTACK),80,"Purchased strength "+role);near(h,p.getAttributeValue(ModAttributes.SPELL_POWER),50,"Purchased wisdom "+role);
             near(h,p.getAttributeValue(ModAttributes.ATTACK_SPEED),.76,"Purchased attack speed "+role);h.assertTrue(Math.abs(p.getAttributeValue(Attributes.MOVEMENT_SPEED)-.1015)<.00001,"Purchased movement speed "+role);
             near(h,p.getAttributeValue(ModAttributes.PHYSICAL_DEFENSE),50,"Purchased physical defense "+role);near(h,p.getAttributeValue(ModAttributes.MAGIC_RESISTANCE),50,"Purchased magic resistance "+role);near(h,p.getAttributeValue(ModAttributes.COOLDOWN_REDUCTION),3,"Purchased cooldown reduction "+role);

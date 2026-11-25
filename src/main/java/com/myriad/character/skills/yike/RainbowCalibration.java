@@ -8,6 +8,12 @@ import java.util.*;
 
 /** One paid cast can mark each hero only once, even after the third mark clears the stack. */
 public final class RainbowCalibration extends AbilitySkill {
+    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 40, 10, .20f);
+
+    @Override public List<AbilityDamageFormula> damageFormulas() {
+        return List.of(DAMAGE);
+    }
+
     private static final class Mark {int count;long until;final Set<Integer> casts=new HashSet<>();}
     private static final Map<UUID,Map<UUID,Mark>> MARKS=new HashMap<>();
     public RainbowCalibration(Definition d){super(d);}
@@ -21,7 +27,7 @@ public final class RainbowCalibration extends AbilitySkill {
         if(!m.casts.add(AbilityRuntime.sourceCast()))return;
         if(c.now()>=m.until)m.count=0;m.until=c.now()+120;
         if(++m.count>=3){m.count=0;
-            c.damage(hit.target(),c.value(40,10,.20f),DamageCalc.Kind.MAGIC,false);
+            c.damage(hit.target(),DAMAGE.value(c),DamageCalc.Kind.MAGIC,false);
             YikeVfx.target(c,"mark_burst",hit.target(),.7f,8);YikeAudio.play(c.player,"mark",hit.target().position(),.45f,1.25f);
         }else YikeVfx.target(c,"mark_"+m.count,hit.target(),.7f,12);
     }

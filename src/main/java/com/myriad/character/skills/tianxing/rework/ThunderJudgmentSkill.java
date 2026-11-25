@@ -3,12 +3,20 @@ package com.myriad.character.skills.tianxing.rework;
 import com.myriad.character.ability.*;
 import com.myriad.character.ability.AbilityRuntime.Cast;
 import net.minecraft.world.phys.Vec3;
+import java.util.List;
+
 import static com.myriad.character.ability.AbilityVfxGeometry.*;
-import static com.myriad.combat.DamageCalc.Kind.PHYSICAL;
 import static com.myriad.network.ThunderSkillViewPayload.*;
 
 /** Interruptible blade wipe, followed by one 120-degree / eight-block thunder judgment. */
 public final class ThunderJudgmentSkill extends AbilitySkill {
+    private static final AbilityDamageFormula DAMAGE =
+            AbilityDamageFormula.physicalFromSpell(200, 80, 1.5f, .8f);
+
+    @Override public List<AbilityDamageFormula> damageFormulas() {
+        return List.of(DAMAGE);
+    }
+
     public static final int WINDUP=12,STUN=16;
     public static final double RANGE=8,ANGLE=120;
     public ThunderJudgmentSkill(Definition definition){super(definition);}
@@ -33,7 +41,7 @@ public final class ThunderJudgmentSkill extends AbilitySkill {
             // Shared enemies() excludes buildings/allies and requires LOS. No hidden centre-line-only stun.
             // Broad phase includes floating-point boundary rounding; inside() remains the exact sector filter.
             for(var target:c.enemies(origin,RANGE+1E-6))if(inside(target.position().subtract(origin),facing)){
-                c.damage(target,c.value(200,80,1.5f),PHYSICAL);c.root(target,STUN,true);
+                c.damage(target,DAMAGE.value(c),DAMAGE.kind());c.root(target,STUN,true);
             }
         });
     }

@@ -1,5 +1,6 @@
 package com.myriad.character.skills.luoxia;
 
+import com.myriad.character.ability.AbilityDamageFormula;
 import com.myriad.character.ability.AbilityRuntime;
 import com.myriad.character.ability.AbilityRuntime.Cast;
 import com.myriad.character.ability.AbilityRuntime.Hit;
@@ -7,14 +8,24 @@ import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.combat.DamageCalc;
 import com.myriad.game.VisionSystem;
 import net.minecraft.world.entity.LivingEntity;
+import java.util.List;
 
 final class DuskMark extends LuoxiaSkill {
+    private static final AbilityDamageFormula ARROW = AbilityDamageFormula.purchased(DamageCalc.Kind.PHYSICAL, 52, 7, 5f / 18)
+            .segment("skill.myriad.damage.mark_arrow", 1);
+    private static final AbilityDamageFormula MARK = AbilityDamageFormula.purchased(DamageCalc.Kind.PHYSICAL, 25, 5, 2f / 9)
+            .segment("skill.myriad.damage.mark_pop", 1);
+
+    @Override public List<AbilityDamageFormula> damageFormulas() {
+        return List.of(ARROW, MARK);
+    }
+
     DuskMark(Definition definition) { super(definition); }
 
     @Override public void release(Cast c) {
         LuoxiaVfx.shot(c, false, 1.18f);
         LuoxiaArrow.launch(c, c.player.getLookAngle(), 20, 1.6, LuoxiaArrow.Shape.MARK, false,
-                target -> { c.damage(target, damageAtRank(c, 52, 80, .40f), DamageCalc.Kind.PHYSICAL); return true; });
+                target -> { c.damage(target, ARROW.value(c), DamageCalc.Kind.PHYSICAL); return true; });
     }
 
     @Override public void onHit(Hit hit) {
@@ -38,6 +49,6 @@ final class DuskMark extends LuoxiaSkill {
         if (c.now() >= mark.until || !target.getUUID().equals(mark.target)) return;
         mark.until = 0;
         LuoxiaVfx.impact(c, target.getBoundingBox().getCenter(), target.getLookAngle(), true);
-        c.damage(target, damageAtRank(c, 25, 45, .32f), DamageCalc.Kind.PHYSICAL, false);
+        c.damage(target, MARK.value(c), DamageCalc.Kind.PHYSICAL, false);
     }
 }

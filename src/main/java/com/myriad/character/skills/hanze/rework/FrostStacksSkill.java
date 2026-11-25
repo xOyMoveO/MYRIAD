@@ -4,10 +4,19 @@ import com.myriad.character.ability.*;
 import com.myriad.character.ability.AbilityRuntime.Cast;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
+import java.util.List;
+
 import static com.myriad.combat.DamageCalc.Kind.*;
 
 /** Independent branch; no gameplay switches in the batch registry. */
 public final class FrostStacksSkill extends AbilitySkill {
+    private static final AbilityDamageFormula DAMAGE =
+            AbilityDamageFormula.spellPower(MAGIC, 25, 10, .2f);
+
+    @Override public List<AbilityDamageFormula> damageFormulas() {
+        return List.of(DAMAGE);
+    }
+
     public FrostStacksSkill(Definition definition){super(definition);}
 
  @Override public void onHit(AbilityRuntime.Hit h){
@@ -23,7 +32,7 @@ public final class FrostStacksSkill extends AbilitySkill {
      }
      m.count=0;m.cooldown=c.now()+120;
      c.root(h.target(),20,false);
-     c.damage(h.target(),c.value(25,10,.2f),MAGIC,false);
+     c.damage(h.target(),DAMAGE.value(c),DAMAGE.kind(),false);
      AbilityVisuals.pillar(c,h.target().position(),2.2);
  }
 @Override public void release(Cast c){}

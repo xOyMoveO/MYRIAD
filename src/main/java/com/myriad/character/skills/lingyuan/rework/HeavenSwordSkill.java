@@ -4,10 +4,19 @@ import com.myriad.character.ability.*;
 import com.myriad.character.ability.AbilityRuntime.Cast;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import java.util.List;
+
 import static com.myriad.combat.DamageCalc.Kind.*;
 
 /** A stationary, telegraphed overhead chop, not a moving projectile. */
 public final class HeavenSwordSkill extends AbilitySkill {
+    private static final AbilityDamageFormula DAMAGE =
+            AbilityDamageFormula.spellPower(MAGIC, 300, 100, 1.2f);
+
+    @Override public List<AbilityDamageFormula> damageFormulas() {
+        return List.of(DAMAGE);
+    }
+
     public static final int CHARGE_TICKS=24,CHOP_TICKS=6;
     public static final double REACH=15,WIDTH=3;
     public HeavenSwordSkill(Definition definition){super(definition);}
@@ -28,7 +37,7 @@ public final class HeavenSwordSkill extends AbilitySkill {
                 AABB candidates=new AABB(chopOrigin,end).inflate(WIDTH/2,4,WIDTH/2);
                 for(var target:c.player.level().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,candidates,
                         t->c.enemy(t)&&intersects(chopOrigin,forward,t.getBoundingBox())))
-                    c.damage(target,c.value(300,100,1.2f),MAGIC);
+                    c.damage(target,DAMAGE.value(c),DAMAGE.kind());
             });
         });
     }

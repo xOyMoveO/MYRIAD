@@ -1259,7 +1259,7 @@ public final class PlayerDataProvider {
         return cancelled;
     }
 
-    /** 法师手持初始武器右键：向前发射魔法弹（伤害 = 法术强度×0.5，射程 10 格，攻速决定发射间隔） */
+    /** 法师手持初始武器右键发射魔法弹，攻速决定发射间隔。 */
     public static void onRightClickItem(Player subject, net.minecraft.world.item.ItemStack stack) {
         if (subject.level().isClientSide()) {
             return;

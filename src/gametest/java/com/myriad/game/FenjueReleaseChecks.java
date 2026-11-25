@@ -80,8 +80,8 @@ final class FenjueReleaseChecks {
                     }
                 }
                 if(elapsed==20){
-                    h.assertTrue(Math.abs(fixtures.get(0).targets.getFirst().getHealth()-925)<.05,"Target beyond old 4-block dash is hit once with unchanged 35+40%S damage");
-                    h.assertTrue(Math.abs(fixtures.get(2).targets.getFirst().getHealth()-630)<.05,"New 5.8-block Burst target receives unchanged rank7 / S100 formula exactly once");
+                    h.assertTrue(Math.abs(fixtures.get(0).targets.getFirst().getHealth()-953)<.05,"Target beyond old 4-block dash is hit once with 47 zero-purchase damage despite extra spell power");
+                    h.assertTrue(Math.abs(fixtures.get(2).targets.getFirst().getHealth()-707)<.05,"New 5.8-block Burst target receives the 293-point rank-seven zero-purchase baseline exactly once");
                     h.assertTrue(fixtures.get(2).p.getX()-fixtures.get(2).origin.x>1&&!SkillChargeSystem.active(fixtures.get(2).p)
                             &&Math.abs(fixtures.get(2).p.getAttributeValue(Attributes.MOVEMENT_SPEED)-fixtures.get(2).p.getAttribute(Attributes.MOVEMENT_SPEED).getBaseValue())<.001,"Walking more than old 0.8-block cancellation threshold completes Burst and restores normal movement");
                     h.assertTrue(fixtures.get(2).targets.getLast().getHealth()==1000,"Burst excludes 6.2-block target");
@@ -99,8 +99,8 @@ final class FenjueReleaseChecks {
                     h.assertTrue(audio.stream().filter(s->s.id.startsWith("skill_fenjue_step_")).allMatch(s->s.server&&s.source==SoundSource.PLAYERS&&s.volume<=.70f),"Server-authoritative nearby sound, bounded volume, no client echo");
                     GameTestSounds.removeListener(listener);
                     done[0]=true;fixtures.forEach(FenjueReleaseChecks::cleanup);
-                    System.out.println("[MYRIAD-FLAME-STEP-AUDIO] PASS: public dash start / actual normal and wall endpoints, no early/duplicate slash, controlled cancellation, no generic echo, unchanged damage/cost/CD");
-                    System.out.println("[MYRIAD-FENJUE-RELEASE] PASS: actual 8-block motion, endpoint packets, six steps, wall and far single-hit; 13-tick / 6-block burst, unchanged formula/cost/CD, range and stun interruption");
+                    System.out.println("[MYRIAD-FLAME-STEP-AUDIO] PASS: public dash start / actual normal and wall endpoints, no early/duplicate slash, controlled cancellation, no generic echo, zero-purchase damage and unchanged cost/CD");
+                    System.out.println("[MYRIAD-FENJUE-RELEASE] PASS: actual 8-block motion, endpoint packets, six steps, wall and far single-hit; 13-tick / 6-block burst, zero-purchase baseline and unchanged cost/CD, range and stun interruption");
                 }
             }catch(Throwable failure){done[0]=true;GameTestSounds.removeListener(listener);fixtures.forEach(FenjueReleaseChecks::cleanup);throw failure;}
         });}

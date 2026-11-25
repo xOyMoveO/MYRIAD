@@ -8,6 +8,13 @@ import java.util.*;
 
 /** Charge follows local action time; the six damage opportunities use real ticks only. */
 public final class PrismaticBeam extends AbilitySkill {
+    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 70, 20, .25f)
+            .segment("skill.myriad.damage.per_pulse", 6);
+
+    @Override public List<AbilityDamageFormula> damageFormulas() {
+        return List.of(DAMAGE);
+    }
+
     private static final class Beam {AbilityRuntime.Cast cast;Vec3 direction,origin,visualFrom,visualTo;long start,last,impulse;int jumps;}
     private static final Map<UUID,Beam> BEAMS=new HashMap<>();
     public PrismaticBeam(Definition d){super(d);}
@@ -42,7 +49,7 @@ public final class PrismaticBeam extends AbilitySkill {
             b.jumps++;
             for(var t:p.level().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,new AABB(from,to).inflate(.625),t->SkillTargets.enemy(p,t)
                     &&AbilityTargeting.unobstructedHit(p,t.getBoundingBox(),from,to,.625).isPresent())){
-                c.damage(t,c.value(70,20,.25f),DamageCalc.Kind.MAGIC);YikeVfx.target(c,"beam_hit",t,.4f,4);
+                c.damage(t,DAMAGE.value(c),DamageCalc.Kind.MAGIC);YikeVfx.target(c,"beam_hit",t,.4f,4);
             }
             YikeAudio.play(p,"beam_tick",to,.25f,1+(b.jumps%2)*.06f);
         }

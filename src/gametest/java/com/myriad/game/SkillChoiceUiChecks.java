@@ -1,143 +1,193 @@
 package com.myriad.game;
 
+import com.myriad.character.ability.AbilityFormulaText;
+import com.myriad.character.rework.FirstGroupGrowth;
+import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.client.gui.SkillChoiceInteraction;
 import com.myriad.client.gui.SkillChoiceLayout;
+import com.myriad.client.gui.SkillChoiceLayout.Box;
 import com.myriad.client.gui.SkillChoiceTooltipLayout;
-import com.myriad.character.rework.FirstGroupSkills;
-import net.minecraft.gametest.framework.GameTestHelper;
+import java.util.List;
 import javax.imageio.ImageIO;
+import net.minecraft.gametest.framework.GameTestHelper;
 
-/** Geometry and input contracts; actual Minecraft font and mouse acceptance remain separate. */
+/** Production geometry and activation contracts. The real font and native input are checked in the client. */
 final class SkillChoiceUiChecks {
     static void verify(GameTestHelper h) {
+        h.assertTrue(SkillChoiceLayout.create(427, 240, 0).panel().w() == 367, "427×240 uses a 367px frame");
+        h.assertTrue(SkillChoiceLayout.create(320, 180, 0).panel().w() == 296, "320×180 uses a 296px frame");
+        h.assertTrue(SkillChoiceLayout.create(960, 540, 0).panel().w() == 640, "960×540 caps at a 640px frame");
         int states = 0;
         int tooltipStates = 0;
-        for (int width : new int[]{320, 384, 426, 427, 480, 576, 640, 960}) {
-            for (int height : new int[]{180, 240, 270, 344, 360, 480}) {
-                var base = SkillChoiceLayout.create(width, height, 0);
-                var panel = base.panel();
-                h.assertTrue(panel.w() <= 480, "Responsive panel retains a bounded readable size");
-                h.assertTrue(base.titleY() > panel.y() + panel.h() * .18 && base.viewport().y() >= base.statusY() + 12,
-                        "Header clears the complete sword crest before the four rows begin");
-                h.assertTrue(base.primary().bottom() <= panel.bottom() - 14,
-                        "Selected action stays above the complete bottom artwork frame");
-                h.assertTrue(panel.x() >= 0 && panel.right() <= width
-                        && panel.y() >= 0 && panel.bottom() <= height, "Panel stays on screen");
-                for (int index = 0; index < 3; index++) {
-                    var tab = base.tab(index);
-                    h.assertTrue(tab.x() < base.viewport().x() && tab.y() >= panel.y()
-                            && tab.bottom() < panel.bottom(), "Navigation stays at the far left");
-                    if (index > 0) {
-                        h.assertTrue(base.tab(index - 1).bottom() < tab.y(), "Navigation icons have a clear gap");
+        for (int width : new int[]{240, 280, 320, 384, 427, 480, 576, 640, 960}) {
+            for (int height : new int[]{135, 180, 240, 270, 360, 540}) {
+                for (int measuredLabel : new int[]{32, 104}) {
+                    var initial = SkillChoiceLayout.create(width, height, 0, measuredLabel, false);
+                    var selected = SkillChoiceLayout.create(width, height, 9999, measuredLabel, true);
+                    verifyFrame(h, initial, width, height);
+                    verifyFrame(h, selected, width, height);
+                    h.assertTrue(initial.panel().equals(selected.panel()) && initial.body().equals(selected.body()),
+                            "Pages and selection share the same outer frame and footer");
+                    h.assertTrue(initial.details() == null && initial.viewport().w() >= selected.viewport().w(),
+                            "Unselected skills and both shop pages use the full content width");
+                    if (width >= 640 && height >= 180) {
+                        h.assertTrue(selected.details() != null && selected.details().w() >= 160 && selected.details().w() <= 192
+                                && selected.viewport().w() >= 230 && !selected.details().overlaps(selected.viewport()),
+                                "Wide selected skill keeps an independent readable description column");
+                        var detailsTrack = selected.detailsTrack();
+                        var detailsView = selected.detailsViewport();
+                        h.assertTrue(detailsTrack.x() > detailsView.right() && contains(selected.details(), detailsTrack)
+                                && contains(selected.details(), detailsView), "Independent detail scrollbar sits beside the text");
                     }
-                }
-                h.assertTrue(base.primary().y() >= base.viewport().bottom()
-                        && base.primary().bottom() < panel.bottom(), "Independent action is fixed below the scroll area");
-                if (height >= 180) {
-                    h.assertTrue(base.maxY() == 0, "All four skill rows fit at every supported GUI height");
-                }
-                for (int requested : new int[]{-999, 9999}) {
-                    var layout = SkillChoiceLayout.create(width, height, requested);
-                    var view = layout.viewport();
-                    h.assertTrue(layout.scrollY() >= 0 && layout.scrollY() <= layout.maxY(), "Scroll clamps after resize");
+                    if (width <= 480) h.assertTrue(selected.details() == null, "Compact skill pages use the bounded tooltip");
+                    h.assertTrue(SkillChoiceLayout.create(width, height, -9999, measuredLabel, true).scrollY() == 0
+                            && selected.scrollY() == selected.maxY(), "Resize clamps persistent skill scroll");
+                    verifyScroll(h, selected.verticalTrack(), selected.maxY());
+                    var seenRows = new int[4];
                     for (int row = 0; row < 4; row++) {
                         int first = SkillChoiceLayout.firstIndex(row);
-                        var a = layout.card(first);
-                        var b = layout.card(first + 1);
-                        h.assertTrue(a.y() == b.y() && a.right() < b.x(), "Each category has two separate icons in one row");
-                        h.assertTrue(a.y() >= view.y() && a.bottom() <= view.bottom(), "Every full icon and rank baseline stays inside the viewport");
-                        h.assertTrue(a.x() - layout.category(first / 2).right() <= 8 && b.x() - a.right() <= 12, "Category and candidates stay close instead of stretching to fill width");
-                        h.assertTrue(a.x() >= view.x() && b.right() <= view.right(), "Both candidates fit horizontally");
-                        h.assertTrue(layout.category(first / 2).right() < a.x(), "Category labels align beside their icon pair");
-                        if (row > 0) {
-                            h.assertTrue(layout.card(SkillChoiceLayout.firstIndex(row - 1)).bottom() < a.y(), "The four categories do not overlap");
+                        seenRows[row] = first;
+                        var a = initial.card(first);
+                        var b = initial.card(first + 1);
+                        var category = initial.category(first / 2);
+                        h.assertTrue(a.y() == b.y() && category.right() < a.x() && a.right() < b.x(),
+                                "Group and both candidates have separate columns");
+                        h.assertTrue(a.x() >= initial.viewport().x() && b.right() <= initial.viewport().right(),
+                                "Both card targets fit the visible content width");
+                        for (int index = first; index <= first + 1; index++) {
+                            var target = initial.card(index);
+                            int targetScroll = initial.reveal(target, 0, initial.maxY());
+                            var reached = SkillChoiceLayout.create(width, height, targetScroll, measuredLabel, false);
+                            var card = reached.card(index);
+                            var view = reached.viewport();
+                            h.assertTrue(reached.canHit(card, card.x() + card.w() / 2, card.y() + card.h() / 2)
+                                    && !reached.canHit(card, card.x() + 1, view.y() - 1), "Focus can reveal every candidate and clipping rejects hits");
+                            for (int lines : new int[]{1, 15, 100, 300}) {
+                                var tip = SkillChoiceTooltipLayout.create(width, height, card, lines, 9999, 220,
+                                        reached.footerDividerY() - 3);
+                                var box = tip.box();
+                                h.assertTrue(box.x() >= 0 && box.y() >= 0 && box.right() <= width
+                                                && box.bottom() < reached.footerDividerY(),
+                                        "Long tooltips preserve screen bounds and leave the purchase footer uncovered");
+                                h.assertTrue(tip.scroll() + tip.visibleLines() == lines && box.w() >= 120,
+                                        "Readable popovers scroll to the complete final line");
+                                tooltipStates++;
+                            }
                         }
-                        h.assertTrue(!layout.canHit(a, a.x() + 1, view.y() - 1)
-                                && !layout.canHit(b, view.right(), b.y() + 1), "Clipped icons never receive clicks");
                     }
-                    h.assertTrue(SkillChoiceLayout.firstIndex(0) == 0 && SkillChoiceLayout.firstIndex(1) == 4
-                            && SkillChoiceLayout.firstIndex(2) == 2 && SkillChoiceLayout.firstIndex(3) == 6,
-                            "Row order is passive, major, regular, ultimate");
-                    var track = layout.verticalTrack();
-                    var thumb = layout.verticalThumb();
-                    h.assertTrue(thumb.y() >= track.y() && thumb.bottom() <= track.bottom(), "Scrollbar handle stays in its track");
-                    h.assertTrue(layout.scrollToVertical(-999) == 0
-                            && layout.scrollToVertical(99999) == layout.maxY(), "Scrollbar reaches both ends");
+                    h.assertTrue(java.util.Arrays.equals(seenRows, new int[]{0, 4, 2, 6}),
+                            "Display order stays passive, major, regular, ultimate");
+                    verifyShop(h, initial);
                     states++;
-                }
-                for (int index = 0; index < 8; index++) {
-                    var icon = base.card(index);
-                    var v = base.viewport();
-                    var moved = SkillChoiceLayout.create(width, height,
-                            icon.y() + icon.h() / 2 - v.y() - v.h() / 2);
-                    var target = moved.card(index);
-                    h.assertTrue(moved.canHit(target, target.x() + target.w() / 2, target.y() + target.h() / 2),
-                            "Every candidate center can be reached at the smallest supported GUI size");
-                    for (int lines : new int[]{1, 15, 100, 300}) {
-                        var tip = SkillChoiceTooltipLayout.create(width, height, target, lines, 9999);
-                        var b = tip.box();
-                        h.assertTrue(b.x() >= 0 && b.y() >= 0 && b.right() <= width && b.bottom() <= height,
-                                "Even the longest description stays inside the screen");
-                        h.assertTrue(tip.scroll() + tip.visibleLines() == lines,
-                                "Scrolling reaches every final line without truncation");
-                        h.assertTrue(b.w() >= 120 && tip.visibleLines() > 0, "Tooltip retains readable width and complete lines");
-                        tooltipStates++;
-                    }
-                }
-                for (int index = 0; index < 5; index++) {
-                    var b = base.attribute(index, 0);
-                    var v = base.viewport();
-                    int requested = Math.clamp(b.y() + b.h() / 2 - v.y() - v.h() / 2, 0, base.attributeMaximum());
-                    var moved = base.attribute(index, requested);
-                    h.assertTrue(base.canHit(moved, moved.x() + moved.w() / 2, moved.y() + moved.h() / 2),
-                            "All five growth icons are reachable and fit horizontally");
-                    if(index>0)h.assertTrue(base.attribute(index-1,0).x()==b.x()&&b.y()-base.attribute(index-1,0).y()==base.attributeRowHeight(),"Five attributes form aligned, evenly spaced vertical rows");
-                    var details = base.attributeDetails(index, requested);
-                    var row = base.attributeRow(index, requested);
-                    h.assertTrue(details.x() > moved.right() && details.right() <= v.right()
-                            && details.y() >= row.y() && details.bottom() <= row.bottom(),
-                            "The point count and current quote have room inside each attribute row");
-                    var buy = base.supplyAction(index, 0);
-                    h.assertTrue(buy.x() >= v.x() && buy.right() <= v.right(), "Explicit supply purchase fits the viewport");
                 }
             }
         }
-        h.assertTrue(SkillChoiceLayout.create(854,480,0).panel().w()>SkillChoiceLayout.create(427,240,0).panel().w(),
-                "C panel grows with the available GUI instead of remaining capped at 300 pixels");
-        var reference = SkillChoiceLayout.create(427, 240, 0);
-        var second = reference.card(1);
-        var shortTip = SkillChoiceTooltipLayout.create(427, 240, second, 2, 0, 64);
-        h.assertTrue(shortTip.box().w() == 64 && shortTip.box().x() > second.right(),
-                "Short descriptions use their measured width beside the second candidate");
-        var longTip = SkillChoiceTooltipLayout.create(427, 240, second, 100, 0, 220);
-        h.assertTrue(longTip.box().x() > second.right() && longTip.box().right() <= 427,
-                "Standard GUI uses readable right-side space before covering candidates");
+        verifyActivation(h);
+        verifyDamageText(h);
+        try (var input = SkillChoiceUiChecks.class.getResourceAsStream("/assets/myriad/textures/gui/skill_choice/meridian_crest.png")) {
+            h.assertTrue(input != null, "Original sword crest is packaged as a separate image");
+            var image = ImageIO.read(input);
+            h.assertTrue(image != null && image.getWidth() == 164 && image.getHeight() == 170
+                    && image.getColorModel().hasAlpha(), "Crest keeps its aspect ratio and transparent surround");
+        } catch (java.io.IOException e) {
+            throw new IllegalStateException(e);
+        }
+        System.out.println("[MYRIAD-SKILL-UI] PASS: " + states + " responsive layouts, " + tooltipStates
+                + " bounded tooltip states, selection/confirmation, focus and scrollbar contracts");
+    }
+
+    private static void verifyFrame(GameTestHelper h, SkillChoiceLayout layout, int width, int height) {
+        var panel = layout.panel();
+        h.assertTrue(panel.x() >= 12 && panel.right() + 12 <= width && panel.w() <= 640
+                && panel.y() >= 2 && panel.bottom() + 2 <= height, "Outer frame and shadow fit inside the GUI");
+        h.assertTrue(contains(panel, layout.body()) && contains(layout.body(), layout.viewport())
+                && contains(panel, layout.close()) && contains(panel, layout.headerText()), "Header, body and close part share panel bounds");
+        h.assertTrue(layout.primary().y() > layout.viewport().bottom() && contains(panel, layout.primary()),
+                "Explicit action stays fixed below the scroll region");
+        h.assertTrue(!layout.selectedLabel().overlaps(layout.primary()), "Selected name and action do not overlap");
+        for (int index = 0; index < 3; index++) {
+            var tab = layout.tab(index);
+            h.assertTrue(contains(panel, tab) && !tab.overlaps(layout.body()), "Tabs stay clear of the body");
+            if (index > 0) h.assertTrue(!tab.overlaps(layout.tab(index - 1)), "Each tab has its own click target");
+        }
+    }
+
+    private static void verifyShop(GameTestHelper h, SkillChoiceLayout layout) {
+        for (int index = 0; index < SkillChoiceLayout.ATTRIBUTE_ROWS; index++) {
+            var icon = layout.attribute(index, 0);
+            int scroll = layout.reveal(icon, 0, layout.attributeMaximum());
+            var row = layout.attributeRow(index, scroll);
+            var reached = layout.attribute(index, scroll);
+            var details = layout.attributeDetails(index, scroll);
+            h.assertTrue(layout.canHit(reached, reached.x() + reached.w() / 2, reached.y() + reached.h() / 2),
+                    "Every attribute icon can be selected and purchased");
+            h.assertTrue(contains(row, details) && details.x() > reached.right() && details.w() >= 110,
+                    "Attribute count and price have room beside the item icon");
+        }
+        int count = TacticalSupplySystem.supplyIds().size();
+        int max = layout.supplyMaximum(count);
+        for (int index = 0; index < count; index++) {
+            var buy = layout.supplyAction(index, 0);
+            int scroll = layout.reveal(buy, 0, max);
+            var reached = layout.supplyAction(index, scroll);
+            h.assertTrue(contains(layout.supply(index, scroll), reached)
+                    && layout.canHit(reached, reached.x() + reached.w() / 2, reached.y() + reached.h() / 2),
+                    "Every supply buy button can be revealed and clicked");
+        }
+        verifyScroll(h, layout.verticalTrack(), layout.attributeMaximum());
+        verifyScroll(h, layout.verticalTrack(), max);
+        h.assertTrue(FirstGroupGrowth.price(150) > Integer.MAX_VALUE, "Fixture includes a high-digit non-overflowing purchase quote");
+    }
+
+    private static void verifyScroll(GameTestHelper h, Box track, int maximum) {
+        var thumb = SkillChoiceLayout.thumb(track, maximum, maximum);
+        h.assertTrue(contains(track, thumb), "Thumb stays in the scrollbar track");
+        if (maximum == 0) return;
+        double offset = thumb.h() / 2.0;
+        h.assertTrue(SkillChoiceLayout.scrollTo(track, track.y() + offset, maximum, offset) == 0
+                && SkillChoiceLayout.scrollTo(track, thumb.y() + offset, maximum, offset) == maximum,
+                "Dragging a scrollbar with the original grab offset reaches both ends");
+    }
+
+    private static void verifyActivation(GameTestHelper h) {
         var clicks = new SkillChoiceInteraction();
-        h.assertTrue(!clicks.select("skill-a", false, true), "Single click selects without spending");
-        h.assertTrue(clicks.select("skill-a", true, true), "The second click on the same icon may spend one point");
-        h.assertTrue(!clicks.select("skill-a", true, true), "Additional double-click events cannot repeat that purchase");
-        h.assertTrue(!clicks.select("skill-b", true, true), "Two different icons are not a purchase double-click");
+        h.assertTrue(!SkillChoiceInteraction.sameActionTwice("skill-a", "confirm", true)
+                && SkillChoiceInteraction.sameActionTwice("confirm", "confirm", true),
+                "A quick selection followed by the explicit button is two distinct actions");
+        h.assertTrue(!clicks.select("skill-a", false, true), "Selecting with mouse or Enter does not activate");
+        h.assertTrue(clicks.select("skill-a", true, true) && !clicks.select("skill-a", true, true),
+                "The original same-icon double-click shortcut activates once");
+        h.assertTrue(!clicks.select("skill-b", true, true), "Two different cards are not a purchase double-click");
         h.assertTrue(!clicks.select("skill-b", false, false) && !clicks.select("skill-b", true, false),
                 "Unavailable choices remain inspectable without spending");
-        h.assertTrue(!clicks.confirm("skill-b", false, false), "A disabled explicit action cannot spend");
+        h.assertTrue(!clicks.confirm("skill-b", false, false), "A disabled explicit button cannot spend");
         h.assertTrue(clicks.confirm("skill-b", false, true) && !clicks.confirm("skill-b", true, true),
                 "Double-clicking the explicit action submits once");
         clicks.reset();
         h.assertTrue(clicks.selected().isEmpty() && !clicks.confirm("skill-b", false, true), "Page changes clear stale selections");
+        var ids = List.of("page:0", "skill-a", "skill-b", "details", "confirm", "close");
+        h.assertTrue(SkillChoiceInteraction.stepFocus(ids, "close", false) == 0
+                && SkillChoiceInteraction.stepFocus(ids, "page:0", true) == 5
+                && SkillChoiceInteraction.stepFocus(ids, "skill-b", false) == 3
+                && SkillChoiceInteraction.stepFocus(ids, "disappeared", false) == 0, "Tab and Shift+Tab cycle through existing controls");
         for (String role : FirstGroupSkills.ROLES) {
             var list = FirstGroupSkills.candidates(role);
             h.assertTrue(list.size() == 8 && FirstGroupSkills.opposite(list.get(2).index()) < 0
                     && FirstGroupSkills.opposite(list.get(3).index()) < 0, "Regular skills remain independent for every current hero");
         }
-        try (var input = SkillChoiceUiChecks.class.getResourceAsStream("/assets/myriad/textures/gui/skill_choice/meridian_hall.png")) {
-            h.assertTrue(input != null, "Existing illustrated panel remains packaged");
-            var image = ImageIO.read(input);
-            h.assertTrue(image != null && image.getWidth() == 1774 && image.getHeight() == 887,
-                    "The existing background artwork remains unchanged");
-        } catch (java.io.IOException e) {
-            throw new IllegalStateException(e);
-        }
-        System.out.println("[MYRIAD-SKILL-UI] PASS: " + states + " responsive scroll states, " + tooltipStates
-                + " bounded tooltip states, four icon rows, all growth icons reachable, single/double-click spending contract");
+    }
+
+    private static void verifyDamageText(GameTestHelper h) {
+        String legacyMechanics = "生命低于30%时，造成93＋22(r－1)＋55%S物理伤害，并获得40＋15(r－1)＋25%S护盾。";
+        String preview = AbilityFormulaText.evaluate(AbilityFormulaText.withoutInlineDamageAmounts(legacyMechanics), 2, 20);
+        h.assertTrue(preview.equals("生命低于30%时，造成物理伤害，并获得60护盾。"),
+                "Shared formulas replace old inline damage amounts without hiding health gates or shield scaling");
+        h.assertTrue(AbilityFormulaText.amount(100.5).equals("100.5") && AbilityFormulaText.amount(7.5).equals("7.5"),
+                "Mitigation-free forecasts keep the verified half-point precision");
+    }
+
+    private static boolean contains(Box parent, Box child) {
+        return child.x() >= parent.x() && child.y() >= parent.y()
+                && child.right() <= parent.right() && child.bottom() <= parent.bottom();
     }
 }

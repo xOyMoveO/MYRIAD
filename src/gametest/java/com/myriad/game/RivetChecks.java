@@ -79,6 +79,12 @@ final class RivetChecks {
                 if(done[0])return;
                 try {
                     if(tick%20==0){for(int col=0;col<8;col++)CombatChunks.hold(h.getLevel(),h.absolutePos(new BlockPos(8+col*20,12,4)));CombatChunks.hold(h.getLevel(),h.absolutePos(new BlockPos(1024,12,-30)));}
+                    if (tick == 199) {
+                        // Draft teleport uses these temporary fountains. Restore the loaded arena
+                        // before lane routing can connect a remote test fountain to real arena towers.
+                        fountains.clear();
+                        fountains.putAll(oldFountains);
+                    }
                     AbilityRuntime.tick(prep.p);manager.tick(h.getLevel().getServer(),h.getLevel().getGameTime());
                     if(tick==100){list.add(noWall.p);h.getLevel().getServer().getPlayerList().getPlayersByUUID().put(noWall.p.getUUID(),noWall.p);h.getLevel().players().add(noWall.p);manager.onPlayerJoin(noWall.p);h.assertTrue(noWall.p.position().distanceTo(noWall.origin)<.01&&(Long)field(GameManager.class,manager,"pickCountdownEndTick")==deadline&&noWall.packets.stream().filter(NetworkSetup.PickStatePayload.class::isInstance).map(NetworkSetup.PickStatePayload.class::cast).anyMatch(packet->packet.state()==1),"A teammate reconnecting during preparation receives its missed fountain transfer and closed draft without restarting the timer");}
                     if(tick==100)h.assertTrue(!TacticalAnchor.anchorReady(prep.p)&&manager.getPhase()==GameManager.Phase.PICKING&&TacticalAnchor.anchor(prep.p).until()==anchorUntil,"Preparation does not restart the countdown or anchor lifetime");
@@ -123,14 +129,14 @@ final class RivetChecks {
         if(i==15||i==36){f.rear=dummy(f,f.origin.add(0,0,i==36?4.8:2.9));if(i==36){clearWall(f,4);f.target.setPos(f.origin.add(0,0,2));}}
         if(i==17)ModShieldSystem.grant(f.target,"rivet_test_shield",1000,700);
         if(i==18)f.target.setPermanentlyInvulnerable(true);
-        if(i==19){rank(f,2,5);f.p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(230);}
-        if(i==20){rank(f,7,3);f.p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(230);}
+        if(i==19){rank(f,2,5);d.setFirstGroupAttribute("strength",10);f.p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(230);}
+        if(i==20){rank(f,7,3);d.setFirstGroupAttribute("strength",10);f.p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(230);}
         if(i==21){rank(f,0,5);f.p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(230);}
         if(i==22){rank(f,4,7);f.p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(230);}
         if(i==23){rank(f,6,3);f.p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(230);}
         if(i==24)rank(f,5,7);
         if(i==25)rank(f,3,5);
-        if(i==70){rank(f,1,5);f.p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(230);}
+        if(i==70){rank(f,1,5);d.setFirstGroupAttribute("strength",10);f.p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(230);}
         if(i>=56&&i<=61)rank(f,3,i-56);
         if(i==63){rank(f,0,5);f.p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(230);}
         if(i==65){clearWall(f,4);wall(f,5,3);}
@@ -227,7 +233,7 @@ final class RivetChecks {
                     if(tick==14&&i==29){int recovery=TacticalAnchor.recovery(p);h.assertTrue(recovery>0,"Q wall anchor impact starts owner recovery");d.setCooldown(node(3).getId(),0);SkillSystem.cast(p,1);h.assertTrue(TacticalAnchor.recovery(p)>=recovery-1,"Replacing an anchor cannot reset recovery");}
                     if(tick==18&&(i==47||i==52||i==70)){p.setPos(f.target.position().add(0,0,-1.2));p.getAttribute(ModAttributes.CRIT_CHANCE).setBaseValue(100);d.setCooldown(node(4).getId(),100);f.before=hp(f.target);p.getRandom().setSeed(28);basic(p,f.target);f.firstBasicLoss=f.before-hp(f.target);}
                     if(tick==19&&(i==47||i==52||i==70)){h.assertTrue(f.before-hp(f.target)>0&&d.getCooldown(node(4).getId())==60,"A real Q wall-followup basic hit consumes P2 and refunds exactly two seconds of E: "+i+" hpLoss="+(f.before-hp(f.target))+" cd="+d.getCooldown(node(4).getId())+" rhythm="+d.getBuff("g1_rivet_rhythm"));}
-                    if(tick==100&&(i==47||i==70)){float health=hp(f.target);p.getRandom().setSeed(28);basic(p,f.target);f.plainBasicLoss=health-hp(f.target);near(h,f.firstBasicLoss-f.plainBasicLoss,i==47?30:112,"Matched real critical basics isolate the uncritical P2 first/rank-five S230 bonus: "+i);}
+                    if(tick==100&&(i==47||i==70)){float health=hp(f.target);p.getRandom().setSeed(28);basic(p,f.target);f.plainBasicLoss=health-hp(f.target);near(h,f.firstBasicLoss-f.plainBasicLoss,i==47?30:99.5,"Matched real critical basics isolate the uncritical P2 baseline and rank-five bonus with ten purchases: "+i);}
                     if(tick==20&&i==19)h.assertTrue(d.getMana()==615&&d.getCooldown(node(2).getId())==140,"Grown Q commits its unchanged 55 mana and seven-second cooldown");
                     if(tick==20&&i==20)h.assertTrue(d.getMana()==520&&d.getCooldown(node(7).getId())==1000,"Grown R2 commits its unchanged 150 mana and fifty-second cooldown");
                     if(tick==20&&i==22)h.assertTrue(d.getMana()==595&&d.getCooldown(node(4).getId())==260&&d.getCooldown(node(3).getId())==120,"Grown E1 commits 75 mana/thirteen seconds and refunds exactly two seconds of W");
@@ -311,8 +317,8 @@ final class RivetChecks {
         if(i==15)h.assertTrue(f.maxZ>f.initialZ&&Math.abs(f.rear.getZ()-(f.origin.z+2.9))<.02,"Only the first crosshair target is pushed");
         if(i==17)h.assertTrue(ModShieldSystem.value(f.target)<1000&&f.sawRoot,"Shield absorption counts as an effective hit and still enables collision");
         if(i==18)h.assertTrue(loss(f)==0&&!f.sawRoot&&f.maxZ==f.initialZ,"Invulnerable targets cannot create effective Q hit rewards");
-        if(i==19)near(h,loss(f),377,"Rank-five S230 Q and its own wall formula deal 270+107");
-        if(i==20)near(h,loss(f),555,"Rank-three S230 R2 and its own wall formula deal 430+125");
+        if(i==19)near(h,loss(f),312,"Rank-five Q plus wall add 75 with ten strength purchases and ignore bonus spell power");
+        if(i==20)near(h,loss(f),475,"Rank-three R2 plus wall add 120 with ten strength purchases and ignore bonus spell power");
         if(i==21)near(h,ModShieldSystem.value(f.p),232,"Rank-five S230 station armor grows to 232");
 
         if(i==23)h.assertTrue(ModShieldSystem.sourceValue(f.p,"rivet_hold_protocol/"+f.p.getUUID())==0,"Hold shield expires with its real six-second zone");

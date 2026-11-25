@@ -20,9 +20,4 @@ abstract class LuoxiaSkill extends AbilitySkill {
         return !LuoxiaRework.holdsBow(c.player) || c.data.getBuff("g1_stun") > 0
                 || SilenceSystem.isSilenced(c.player);
     }
-
-    static float damageAtRank(Cast c, float rankOne, float rankMax, float wisdomRatio) {
-        return rankOne + (rankMax - rankOne) * (c.rank - 1) / Math.max(1, c.skill.maxRank() - 1)
-                + (c.strength - 30) * wisdomRatio;
-    }
 }

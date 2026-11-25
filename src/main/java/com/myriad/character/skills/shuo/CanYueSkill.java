@@ -1,6 +1,18 @@
 package com.myriad.character.skills.shuo;
 import com.myriad.character.ability.*;
+import java.util.List;
 public final class CanYueSkill extends AbilitySkill {
+    private static final AbilityDamageFormula DRAWN = AbilityDamageFormula.physicalFromSpell(280, 90, 1.35f, .80f)
+            .segment("skill.myriad.damage.moon_final", 1);
+    private static final AbilityDamageFormula FIRST_TWO = AbilityDamageFormula.physicalFromSpell(100, 40, .60f, .80f * 2 / 7)
+            .segment("skill.myriad.damage.moon_first_two", 2);
+    private static final AbilityDamageFormula THIRD = AbilityDamageFormula.physicalFromSpell(160, 60, .90f, .80f * 3 / 7)
+            .segment("skill.myriad.damage.moon_third", 1);
+
+    @Override public List<AbilityDamageFormula> damageFormulas() {
+        return List.of(DRAWN, FIRST_TWO, THIRD);
+    }
+
     public CanYueSkill(Definition d){super(d);}
     @Override public boolean hasOwnCastSound(){return true;}
     @Override public void release(AbilityRuntime.Cast c){
@@ -10,7 +22,7 @@ public final class CanYueSkill extends AbilitySkill {
             ShuoCombat.windup(c,6,()->{
                 ShuoCombat.cut(c,com.myriad.network.ShuoViewPayload.CUT_DOWN,8);
                 ShuoVisuals.slash(c,5,140,2);
-                ShuoCombat.cone(c,5,140,c.value(280,90,1.35f),0);
+                ShuoCombat.cone(c,5,140,DRAWN.value(c),0);
                 ShuoCombat.follow(c,6,()->ShuoCombat.sheathe(c.player));
             });return;
         }
@@ -34,7 +46,7 @@ public final class CanYueSkill extends AbilitySkill {
             float bonus=ShuoCombat.draw(c.player,step==0?com.myriad.network.ShuoViewPayload.CUT_LEFT:step==1?com.myriad.network.ShuoViewPayload.CUT_RIGHT:com.myriad.network.ShuoViewPayload.CUT_DOWN,7);
             ShuoVisuals.slash(c,step==2?4.5:4,step==2?90:110,step);
             var hits=ShuoCombat.coneAt(c,c.player.position(),c.forward(1),step==2?4.5:4,step==2?90:110,
-                (step==2?c.value(160,60,.9f):c.value(100,40,.6f))+bonus,0,step==0?.25f:0,20);
+                (step==2?THIRD.value(c):FIRST_TWO.value(c))+bonus,0,step==0?.25f:0,20);
             for(var id:hits){
                 long prior=m.targets.getOrDefault(id,0L);
                 if(step==2&&prior==3&&c.player.level().getEntity(id) instanceof net.minecraft.world.entity.LivingEntity t)c.root(t,10,false);

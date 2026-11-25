@@ -2,6 +2,15 @@ package com.myriad.character.skills.shuo;
 import com.myriad.character.ability.*;
 import java.util.*;
 public final class WuShengSkill extends AbilitySkill {
+    private static final AbilityDamageFormula DRAWN = AbilityDamageFormula.physicalFromSpell(240, 80, 1.20f, .80f)
+            .segment("skill.myriad.damage.empty_break", 1);
+    private static final AbilityDamageFormula SHEATHED = AbilityDamageFormula.physicalFromSpell(320, 100, 1.60f, .80f)
+            .segment("skill.myriad.damage.delayed_cut", 1);
+
+    @Override public List<AbilityDamageFormula> damageFormulas() {
+        return List.of(DRAWN, SHEATHED);
+    }
+
     public WuShengSkill(Definition d){super(d);}
     @Override public boolean hasOwnCastSound(){return true;}
     @Override public boolean canRelease(AbilityRuntime.Cast c){return c.data.getBuff("g1_root")==0;}
@@ -12,11 +21,11 @@ public final class WuShengSkill extends AbilitySkill {
                 if(c.data.getBuff("g1_stun")>0||c.data.getBuff("g1_root")>0)return;
                 ShuoCombat.cut(c,com.myriad.network.ShuoViewPayload.CUT_DOWN,8);
                 ShuoVisuals.slash(c,5,120,2);
-                ShuoCombat.cone(c,5,120,c.value(240,80,1.2f),12);
+                ShuoCombat.cone(c,5,120,DRAWN.value(c),12);
             },false,false);ShuoVisuals.trackMotion(c,true);return;
         }
         ShuoCombat.windup(c,14,()->{
-        float damage=c.value(320,100,1.6f)+ShuoCombat.draw(c.player,com.myriad.network.ShuoViewPayload.FLASH,10);
+        float damage=SHEATHED.value(c)+ShuoCombat.draw(c.player,com.myriad.network.ShuoViewPayload.FLASH,10);
         var targets=new HashSet<java.util.UUID>();
         var line=new ShuoSilentLineVisuals(c);
         c.actionDash(c.forward(12),7,1.3,(t,first)->{targets.add(t.getUUID());ShuoVisuals.mark(c,t);},()->{

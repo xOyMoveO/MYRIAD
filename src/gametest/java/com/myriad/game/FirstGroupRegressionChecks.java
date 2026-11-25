@@ -1,6 +1,7 @@
 package com.myriad.game;
 
 import com.myriad.character.CharacterType;
+import com.myriad.character.ability.AbilityDamageFormula;
 import com.myriad.character.ability.AbilityRuntime;
 import com.myriad.character.rework.FirstGroupGrowth;
 import com.myriad.character.rework.FirstGroupSkills;
@@ -115,17 +116,26 @@ final class FirstGroupRegressionChecks {
                         && p.getAttributeValue(ModAttributes.SPELL_POWER)==30, "No hidden AD/AP growth");
                 d.setFirstGroupAttribute("strength",2); FirstGroupGrowth.apply(p,d);
                 h.assertTrue(p.getAttributeValue(ModAttributes.PHYSICAL_ATTACK)==baseAttack + 2 * 15
-                        && p.getAttributeValue(ModAttributes.SPELL_POWER)==30, "Strength changes A only");
+                        && p.getAttributeValue(ModAttributes.SPELL_POWER)==30, "Strength buys 15 physical attack per point");
+                var physicalFormula=AbilityDamageFormula.purchased(com.myriad.combat.DamageCalc.Kind.PHYSICAL,45,15,.50f);
                 var context=AbilityRuntime.context(p,skills.get(2));
-                float before=context.value(45,15,.55f);
+                float baseSpell=context.spellPowerValue(45,15,.55f);
+                float basePhysical=physicalFormula.value(context);
+                h.assertTrue(context.totalPhysicalAttack==baseAttack+30 && context.totalSpellPower==30
+                        && context.purchasedPhysicalAttack==30 && context.purchasedSpellPower==0,
+                        "Cast context distinguishes total and purchased attributes");
                 d.setFirstGroupAttribute("strength",3); FirstGroupGrowth.apply(p,d);
-                h.assertTrue(AbilityRuntime.context(p,skills.get(2)).value(45,15,.55f)==before,
-                        "Buying Strength must not inflate a physical skill formula");
+                var strong=AbilityRuntime.context(p,skills.get(2));
+                h.assertTrue(strong.spellPowerValue(45,15,.55f)==baseSpell
+                        && physicalFormula.value(strong)==basePhysical+7.5f,
+                        "Strength grows the physical formula independently of the spell formula");
                 d.setFirstGroupAttribute("wisdom",2); FirstGroupGrowth.apply(p,d);
                 h.assertTrue(p.getAttributeValue(ModAttributes.PHYSICAL_ATTACK)==baseAttack + 3 * 15
-                        && p.getAttributeValue(ModAttributes.SPELL_POWER)==70, "Wisdom changes S only");
-                h.assertTrue(AbilityRuntime.context(p,skills.get(2)).value(45,15,.55f)>before,
-                        "Wisdom must enhance skill formula");
+                        && p.getAttributeValue(ModAttributes.SPELL_POWER)==70, "Wisdom buys 20 spell power per point");
+                var wise=AbilityRuntime.context(p,skills.get(2));
+                h.assertTrue(wise.spellPowerValue(45,15,.55f)>baseSpell
+                        && physicalFormula.value(wise)==physicalFormula.value(strong),
+                        "Wisdom grows the spell formula independently of the physical formula");
                 h.assertTrue(Math.abs(d.getModMaxHealth()-FirstGroupGrowth.health(role,20))<.01,
                         "Gold attributes must not increase HP");
                 d.setFirstGroupAttribute("strength",0); d.setFirstGroupAttribute("wisdom",0);

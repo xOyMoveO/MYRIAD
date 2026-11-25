@@ -1,5 +1,6 @@
 package com.myriad.character.skills.fenjue.rework;
 
+import com.myriad.character.ability.AbilityDamageFormula;
 import com.myriad.character.ability.AbilitySkill;
 import com.myriad.character.ability.AbilityRuntime;
 import com.myriad.character.ability.AbilityRuntime.Cast;
@@ -9,10 +10,19 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.*;
 import java.util.Comparator;
-import static com.myriad.combat.DamageCalc.Kind.*;
+import java.util.List;
 
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class HeavenFireSeaSkill extends AbilitySkill {
+    private static final AbilityDamageFormula LANDING =
+            AbilityDamageFormula.physicalFromSpell(140, 60, 1, .8f / (1 + 4 * .2f)).segment("skill.myriad.damage.segment.landing", 1);
+    private static final AbilityDamageFormula PULSE =
+            AbilityDamageFormula.physicalFromSpell(30, 12, .2f, .8f * .2f / (1 + 4 * .2f)).segment("skill.myriad.damage.segment.pulse", 4);
+
+    @Override public List<AbilityDamageFormula> damageFormulas() {
+        return List.of(LANDING, PULSE);
+    }
+
     public static final int FLIGHT_TICKS=18;
     public static final double RANGE=14,MIN_HEIGHT=5;
     /** Compensate a downhill landing so the takeoff-relative midpoint still reaches at least five blocks. */
@@ -28,9 +38,9 @@ public final class HeavenFireSeaSkill extends AbilitySkill {
  boolean[] landedOnce={false};
  c.actionLeap(at,FLIGHT_TICKS,arcHeight(c.player.position(),at),true,()->{
  landedOnce[0]=true;FlameSkillPresentation.play(c,com.myriad.network.FlameSkillViewPayload.SEA_LAND,10,gesture);
- Vec3 landed=c.player.position();FlameMajorAudio.seaImpact(c,landed);com.myriad.character.ability.AbilityVisuals.field(c,landed,5,80);c.area(landed,5,c.value(140,60,1),PHYSICAL);
+ Vec3 landed=c.player.position();FlameMajorAudio.seaImpact(c,landed);com.myriad.character.ability.AbilityVisuals.field(c,landed,5,80);c.area(landed,5,LANDING.value(c),LANDING.kind());
  c.repeat(80,30,i->FlameMajorAudio.burning(c,landed));
- c.repeat(80,20,i->c.pulse(landed,5,c.value(30,12,.2f),PHYSICAL));});
+ c.repeat(80,20,i->c.pulse(landed,5,PULSE.value(c),PULSE.kind()));});
  c.whileActive(32,age->{if(landedOnce[0])return false;
  if(age>0&&!AbilityRuntime.moving(c.player)){FlameSkillPresentation.play(c,com.myriad.network.FlameSkillViewPayload.CANCEL,0,gesture);return false;}return true;});}
 }
