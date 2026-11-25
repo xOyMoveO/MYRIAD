@@ -6,10 +6,18 @@ import com.myriad.combat.SkillTargets;
 import com.myriad.game.VisionSystem;
 import com.myriad.network.NightSkillViewPayload;
 import net.minecraft.world.phys.Vec3;
-import static com.myriad.combat.DamageCalc.Kind.PHYSICAL;
+import java.util.List;
+
 
 /** Lock one hero, 0.8-second interruptible windup, supported behind-target blink and one stab. */
 public final class ShadowExecutionSkill extends AbilitySkill {
+    private static final AbilityDamageFormula DAMAGE =
+            AbilityDamageFormula.physicalFromSpell(180, 70, 1.3f, .8f);
+
+    @Override public List<AbilityDamageFormula> damageFormulas() {
+        return List.of(DAMAGE);
+    }
+
     public static final int WINDUP_TICKS=16;
     public ShadowExecutionSkill(Definition definition){super(definition);}
     @Override public boolean canRelease(Cast c){
@@ -40,7 +48,7 @@ public final class ShadowExecutionSkill extends AbilitySkill {
             AbilityVisuals.burst(c,from.add(0,.4,0),.9);
             AbilityVisuals.burst(c,at.add(0,.35,0),.75);
             NightSkillPresentation.play(c,NightSkillViewPayload.STRIKE,10);
-            c.damage(target,c.value(180,70,1.3f),PHYSICAL);
+            c.damage(target,DAMAGE.value(c),DAMAGE.kind());
             NightVisuals.executionHit(c,target);
         });
         c.whileActive(WINDUP_TICKS,age->{

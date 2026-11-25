@@ -1,9 +1,17 @@
 package com.myriad.character.skills.yike;
 
 import com.myriad.character.ability.*;
+import com.myriad.combat.DamageCalc;
+import java.util.List;
 
 /** Paid on legal confirmation; an interrupted charge never refunds the ultimate. */
 public final class DistantBombardment extends AbilitySkill {
+    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 250, 85, 1.15f);
+
+    @Override public List<AbilityDamageFormula> damageFormulas() {
+        return List.of(DAMAGE);
+    }
+
     private static final java.util.Map<java.util.UUID,AbilityRuntime.Cast> CHARGES=new java.util.HashMap<>();
     public static void tick(net.minecraft.server.level.ServerPlayer p){
         var c=CHARGES.get(p.getUUID());if(c==null)return;
@@ -22,6 +30,6 @@ public final class DistantBombardment extends AbilitySkill {
         YikeVfx.event(c,"heavy_warning",c.point.add(0,.06,0),c.point.add(0,.06,0),4,2);
         YikeAudio.play(c.player,"heavy_charge",c.player.position(),.65f,.85f);
         CHARGES.put(c.player.getUUID(),c);
-        c.windup(12,0,()->{CHARGES.remove(c.player.getUUID());YikeProjectiles.heavy(c,c.point,c.value(250,85,1.15f));});
+        c.windup(12,0,()->{CHARGES.remove(c.player.getUUID());YikeProjectiles.heavy(c,c.point,DAMAGE.value(c));});
     }
 }

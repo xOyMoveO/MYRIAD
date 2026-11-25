@@ -9,6 +9,26 @@ import java.util.regex.Pattern;
 public final class AbilityFormulaText {
     private AbilityFormulaText() { }
     private static final String N="([0-9]+(?:\\.[0-9]+)?)";
+    private static final String AMOUNT = "[0-9]+(?:\\.[0-9]+)?";
+    private static final String RANK_TERM = "＋" + AMOUNT + "\\(r－1\\)";
+    private static final String POWER_TERM = "＋" + AMOUNT + "%S";
+    private static final String POWER = "(?:\\[" + AMOUNT + RANK_TERM + "\\]|\\(" + AMOUNT + "＋r\\)|" + AMOUNT + ")%S";
+    private static final Pattern EMBEDDED_DAMAGE = Pattern.compile(
+            "(?:" + AMOUNT + "(?:" + RANK_TERM + "(?:" + POWER_TERM + ")?|" + POWER_TERM + ")|" + POWER
+            + ")\\s*(?=物理伤害|魔法伤害|法术伤害|真实伤害|物伤)");
+
+    /** Remove legacy inline amounts whose damage segments are supplied by the owning ability. */
+    public static String withoutInlineDamageAmounts(String mechanics) {
+        return EMBEDDED_DAMAGE.matcher(mechanics).replaceAll("");
+    }
+
+    /** Display small per-point increments without concealing hundredths. */
+    public static String amount(double value) {
+        if (Math.abs(value) < .005) return "0";
+        var formatted = String.format(Locale.ROOT, "%.2f", value);
+        return formatted.replaceFirst("\\.?0+$", "");
+    }
+
     private static String replace(String text,String regex,Function<MatchResult,String> value){
         return Pattern.compile(regex).matcher(text).replaceAll(m->java.util.regex.Matcher.quoteReplacement(value.apply(m)));
     }

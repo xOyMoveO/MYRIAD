@@ -1,14 +1,22 @@
 package com.myriad.character.skills.rivet;
 
 import com.myriad.character.CharacterType;
+import com.myriad.character.ability.AbilityDamageFormula;
 import com.myriad.character.ability.AbilityRuntime;
 import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.combat.DamageCalc;
 import com.myriad.player.PlayerDataProvider;
 import net.minecraft.server.level.ServerPlayer;
+import java.util.List;
 
 /** Its reward is consumed only by a real basic-attack damage event, after the ordinary critical. */
 public final class BreachRhythm extends RivetSkill {
+    private static final AbilityDamageFormula BONUS = AbilityDamageFormula.physicalFromSpell(22.5f, 8, .25f, .25f);
+
+    @Override public List<AbilityDamageFormula> damageFormulas() {
+        return List.of(BONUS);
+    }
+
     public BreachRhythm(Definition definition) { super(definition); }
     @Override public void release(AbilityRuntime.Cast c) { }
     public static void wallHit(ServerPlayer player) {
@@ -29,7 +37,7 @@ public final class BreachRhythm extends RivetSkill {
         c.memory().until = 0;
         c.buff("g1_rivet_rhythm", 0);
         // direct=false selects the uncritical skill path and cannot dispatch this passive again.
-        c.damage(hit.target(), c.value(22.5f, 8, .25f), DamageCalc.Kind.PHYSICAL, false);
+        c.damage(hit.target(), BONUS.value(c), DamageCalc.Kind.PHYSICAL, false);
         RivetVfx.rhythmHit(c, hit.target());
         var major = FirstGroupSkills.resolve(CharacterType.byId(c.data.getCharacterId()), 2, c.data.getSkillLevels());
         if (major != null) c.data.setCooldown(major.getId(), Math.max(0, c.data.getCooldown(major.getId()) - 40));

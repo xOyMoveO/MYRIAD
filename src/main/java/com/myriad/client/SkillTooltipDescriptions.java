@@ -6,23 +6,24 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.myriad.character.CharacterType;
 import com.myriad.character.Skill;
+import com.myriad.character.ability.AbilityDamageFormula;
+import com.myriad.character.ability.AbilityFormulaText;
+import com.myriad.character.ability.AbilitySkill;
+import com.myriad.character.rework.FirstGroupGrowth;
+import com.myriad.character.skills.shuo.ShuoForms;
+import com.myriad.registry.ModAttributes;
+import net.minecraft.client.Minecraft;
+import net.minecraft.locale.Language;
+import net.minecraft.network.chat.Component;
 
 /** 角色技能面板使用的完整易读说明；机制与数值按当前技能等级融合展开。 */
 public final class SkillTooltipDescriptions {
     private SkillTooltipDescriptions() {}
 
     public static String describe(Skill skill, int rawLevel) {
-        if (skill instanceof com.myriad.character.ability.AbilitySkill ability) {
-            double strength=ClientDataHolder.attrValue(com.myriad.registry.ModAttributes.SPELL_POWER.value().getDescriptionId());
-            String form="";
-            if(ability.role().equals("shuo")&&!ability.isPassive()){
-                boolean recast=ClientDataHolder.buffTicks(ability.getId()+"_recast")>0;
-                form="当前招式："+com.myriad.character.skills.shuo.ShuoForms.name(ability.getId(),ClientDataHolder.syncedCounter("g1_shuo_drawn")>0,recast)+"。";
-            }
-            return (ability.baseAvailable()?"基础可用 · 强化 "+Math.max(0,rawLevel):"Lv."+Math.max(1,rawLevel))+" / "+ability.maxRank()+" · "+form
-                    +ability.evaluatedDescription(rawLevel,strength,ClientDataHolder.syncedCounter("g1_attribute_strength"));
-        }
+        if (skill instanceof AbilitySkill ability) return String.join(" ", abilityLines(ability, rawLevel, true));
         int lv = Math.max(1, rawLevel);
         return switch (skill.getId()) {
             // 影刹·夜影
@@ -150,8 +151,78 @@ public final class SkillTooltipDescriptions {
 
     /** 将长说明按完整语义分行，避免技能浮窗出现一整条难以阅读的长句。 */
     public static List<String> describeLines(Skill skill, int rawLevel) {
-        return readableLines(describe(skill, rawLevel));
+        return skill instanceof AbilitySkill ability ? abilityLines(ability, rawLevel, true)
+                : readableLines(describe(skill, rawLevel));
     }
+
+    public static List<String> previewLines(AbilitySkill ability, int rank) {
+        return abilityLines(ability, rank, false);
+    }
+
+    public static String abilityName(AbilitySkill ability) {
+        String explicitName = ability.nameKey() + ".name";
+        if (Language.getInstance().has(explicitName)) return text(explicitName);
+        return Component.translatableWithFallback(ability.nameKey(), ability.definition().name()).getString();
+    }
+
+    private static List<String> abilityLines(AbilitySkill skill, int rawRank, boolean usePlayer) {
+        int rank = Math.clamp(rawRank, skill.baseAvailable() ? 0 : 1, skill.maxRank());
+        var data = ClientDataHolder.get();
+        boolean currentRole = usePlayer && data != null && skill.role().equals(data.characterId());
+        double physical = currentRole ? ClientDataHolder.attrValue(ModAttributes.PHYSICAL_ATTACK.value().getDescriptionId()) : Double.NaN;
+        double spell = currentRole ? ClientDataHolder.attrValue(ModAttributes.SPELL_POWER.value().getDescriptionId()) : Double.NaN;
+        int strength = currentRole ? data.buffs().getOrDefault("g1_attribute_strength", 0) : 0;
+        int wisdom = currentRole ? data.buffs().getOrDefault("g1_attribute_wisdom", 0) : 0;
+        double innateSpell = FirstGroupGrowth.baselineSpellPower();
+        double innatePhysical = FirstGroupGrowth.baselinePhysicalAttack(CharacterType.byId(skill.role()));
+
+        String mechanics = skill.description();
+        String language = Minecraft.getInstance().getLanguageManager().getSelected();
+        if (!language.startsWith("zh_")) mechanics = Language.getInstance().getOrDefault(skill.descKey(), mechanics);
+        var formulas = skill.damageFormulas();
+        if (!formulas.isEmpty()) mechanics = AbilityFormulaText.withoutInlineDamageAmounts(mechanics);
+        var lines = new ArrayList<>(readableLines(AbilityFormulaText.evaluate(mechanics, rank, Double.isFinite(spell) ? spell : innateSpell)));
+        if (currentRole && skill.role().equals("shuo") && !skill.isPassive()) {
+            String form = ShuoForms.name(skill.getId(), ClientDataHolder.syncedCounter("g1_shuo_drawn") > 0,
+                    ClientDataHolder.buffTicks(skill.getId() + "_recast") > 0);
+            if (!form.isEmpty()) lines.add(0, text("skill.myriad.current_form", form));
+        }
+        for (var formula : formulas) {
+            boolean current = currentRole && switch (formula.scaling()) {
+                case TOTAL_PHYSICAL -> Double.isFinite(physical);
+                case TOTAL_SPELL -> Double.isFinite(spell);
+                default -> true;
+            };
+            double value = current ? formula.value(rank, physical, spell, strength, wisdom)
+                    : formula.value(rank, innatePhysical, innateSpell, 0, 0);
+            if (Double.isFinite(value)) lines.add(damageLine(formula, rank, value, current));
+        }
+        return lines;
+    }
+
+    private static String damageLine(AbilityDamageFormula formula, int rank, double value, boolean current) {
+        String kind = text(switch (formula.kind()) {
+            case PHYSICAL -> "skill.myriad.damage.physical";
+            case MAGIC -> "skill.myriad.damage.magic";
+            case TRUE -> "skill.myriad.damage.true";
+        });
+        var fragments = new ArrayList<String>();
+        if (formula.labelKey() != null && !formula.labelKey().isBlank() && Language.getInstance().has(formula.labelKey())) {
+            fragments.add(text(formula.labelKey()));
+        }
+        fragments.add(text(current ? "skill.myriad.damage.current" : "skill.myriad.damage.reference", AbilityFormulaText.amount(value), kind));
+        var slopeKey = switch (formula.scaling()) {
+            case PURCHASED_PHYSICAL, TOTAL_PHYSICAL -> "skill.myriad.damage.strength_per_point";
+            case PURCHASED_SPELL, TOTAL_SPELL -> "skill.myriad.damage.wisdom_per_point";
+            case FIXED -> "";
+        };
+        double perPoint = formula.perPoint(rank);
+        if (!slopeKey.isEmpty() && Double.isFinite(perPoint)) fragments.add(text(slopeKey, AbilityFormulaText.amount(perPoint)));
+        if (formula.maxHits() > 1) fragments.add(text("skill.myriad.damage.hit_count", formula.maxHits()));
+        return String.join(" · ", fragments);
+    }
+
+    private static String text(String key, Object... args) { return Component.translatable(key, args).getString(); }
 
     /**
      * 将任意技能说明按标点和可读宽度分行。中文优先保留完整分句，英文则优先在空格处换行。
@@ -193,6 +264,7 @@ public final class SkillTooltipDescriptions {
     /** 根据当前角色属性计算技能浮窗中的原始伤害；不预判目标防御、暴击或条件增伤。 */
     public static List<String> currentDamageLines(Skill skill, int rawLevel, int heroLevel,
             double physicalAttack, double spellPower, double bonusPhysicalAttack, double maxHealth) {
+        if (skill instanceof AbilitySkill) return List.of();
         String text = describe(skill, rawLevel);
         List<Double> values = new ArrayList<>();
         List<String> types = new ArrayList<>();
@@ -229,6 +301,7 @@ public final class SkillTooltipDescriptions {
 
         List<String> result = new ArrayList<>();
         for (int i = 0; i < values.size(); i++) {
+            if (!Double.isFinite(values.get(i))) continue;
             String prefix = labels.get(i) != null ? labels.get(i)
                     : values.size() == 1 ? "当前原始伤害" : "当前原始伤害" + (i + 1);
             result.add(prefix + "：" + decimal(values.get(i)) + "（" + types.get(i)

@@ -1,5 +1,6 @@
 package com.myriad.character.skills.fenjue.rework;
 
+import com.myriad.character.ability.AbilityDamageFormula;
 import com.myriad.character.ability.AbilitySkill;
 import com.myriad.character.ability.AbilityRuntime;
 import com.myriad.character.ability.AbilityRuntime.Cast;
@@ -11,10 +12,17 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.*;
 import java.util.Comparator;
-import static com.myriad.combat.DamageCalc.Kind.*;
+import java.util.List;
 
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class FlameStepSkill extends AbilitySkill {
+    private static final AbilityDamageFormula DAMAGE =
+            AbilityDamageFormula.physicalFromSpell(35, 12, .4f, .5f);
+
+    @Override public List<AbilityDamageFormula> damageFormulas() {
+        return List.of(DAMAGE);
+    }
+
     public static final double DISTANCE=8;
     public FlameStepSkill(Definition definition){super(definition);}
     @Override public boolean hasOwnCastSound(){return true;}
@@ -23,7 +31,7 @@ public final class FlameStepSkill extends AbilitySkill {
         var delta=c.forward(DISTANCE);
         boolean begins=AbilityTargeting.clearSweep(c.player,delta.scale(1.0/6));
         if(begins){FlameStepVfx.follow(c,0);FlameStepAudio.start(c);}
-        c.actionDash(delta,6,1.2,(t,first)->c.damage(t,c.value(35,12,.4f),PHYSICAL),()->{
+        c.actionDash(delta,6,1.2,(t,first)->c.damage(t,DAMAGE.value(c),DAMAGE.kind()),()->{
             if(!begins)return;
             if(!AbilityRuntime.valid(c.player)||c.data.getBuff("g1_stun")>0||c.data.getBuff("g1_root")>0){AbilityVisuals.cancelSkill(c);return;}
             // Cosmetic finish only. The dash's existing once-per-target damage remains unchanged.

@@ -1,18 +1,28 @@
 package com.myriad.character.skills.tianxing.rework;
 
+import com.myriad.character.ability.AbilityDamageFormula;
 import com.myriad.character.ability.AbilitySkill;
 import com.myriad.character.ability.AbilityRuntime.Cast;
 import com.myriad.character.ability.AbilityVisuals;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import static com.myriad.combat.DamageCalc.Kind.PHYSICAL;
+import java.util.List;
 
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class ThunderArcSkill extends AbilitySkill {
     public static final double CHAIN_RADIUS=4;
     public static final double RANGE=18,SPEED=2.5;
     public static final float CHAIN_RATIO=.35f;
+    private static final AbilityDamageFormula DAMAGE =
+            AbilityDamageFormula.physicalFromSpell(60, 18, .65f, .5f).segment("skill.myriad.damage.segment.primary", 1);
+    private static final AbilityDamageFormula CHAIN =
+            DAMAGE.scaled(CHAIN_RATIO).segment("skill.myriad.damage.segment.chain", 1);
+
+    @Override public List<AbilityDamageFormula> damageFormulas() {
+        return List.of(DAMAGE, CHAIN);
+    }
+
     public ThunderArcSkill(Definition definition){super(definition);}
     @Override public boolean hasOwnCastSound(){return true;}
     @Override public void present(Cast c){AbilityVisuals.charging(c,6,RANGE,.3);}
@@ -29,14 +39,13 @@ public final class ThunderArcSkill extends AbilitySkill {
         var secondary=c.player.level().getEntitiesOfClass(LivingEntity.class,new AABB(center,center).inflate(CHAIN_RADIUS),
                 t->t!=primary&&!t.isSpectator()&&!t.isRemoved()&&c.enemy(t)
                         &&t.position().distanceToSqr(center)<=CHAIN_RADIUS*CHAIN_RADIUS&&primary.hasLineOfSight(t));
-        float damage=c.value(60,18,.65f);
-        c.damage(primary,damage,PHYSICAL);
+        c.damage(primary,DAMAGE.value(c),DAMAGE.kind());
         c.slow(primary,.25f,30);
         Vec3 from=primary.getBoundingBox().getCenter();
         for(var target:secondary){
             AbilityVisuals.beam(c,from,target.getBoundingBox().getCenter(),.12);
             // Derived damage cannot crit again or trigger a new direct-hit passive/chain.
-            c.damage(target,damage*CHAIN_RATIO,PHYSICAL,false);
+            c.damage(target,CHAIN.value(c),CHAIN.kind(),false);
             AbilityVisuals.burst(c,target.position().add(0,.4,0),.45);
         }
     }

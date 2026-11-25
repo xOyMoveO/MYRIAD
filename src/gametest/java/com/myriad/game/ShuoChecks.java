@@ -176,7 +176,7 @@ final class ShuoChecks {
             h.assertTrue(!ShuoCombat.parry(p,p.damageSources().fall(),DamageCalc.Kind.PHYSICAL),"Environment not guarded");
             h.assertTrue(ShuoCombat.parry(p,physical,DamageCalc.Kind.PHYSICAL)&&!ShuoCombat.parry(p,physical,DamageCalc.Kind.PHYSICAL),"One frontal nontrue hit only");
             double mana=d.getMana();SkillSystem.cast(p,1);
-            h.assertTrue(d.getMana()==mana&&!w.recastAvailable(c)&&Math.abs(enemy.getHealth()-910)<.05,"Manual counter gives exactly 90 damage, no repeated payment; actual HP="+enemy.getHealth());
+            h.assertTrue(d.getMana()==mana&&!w.recastAvailable(c)&&Math.abs(enemy.getHealth()-938)<.05,"Manual counter gives exactly 62 damage, no repeated payment; actual HP="+enemy.getHealth());
             h.assertTrue(Math.abs(ModShieldSystem.value(p)-75)<.05,"Landed counter grants its separately sourced two-second shield");
             ModShieldSystem.clearFor(p); // Isolate the next incoming-damage fixture from the new counter shield.
             AbilityRuntime.clear(p);d.setBuff("g1_stun",0);ShuoCombat.guard(AbilityRuntime.context(p,w));
@@ -195,6 +195,7 @@ final class ShuoChecks {
     }
     private record Fixture(ServerPlayer p,LivingEntity target,int index,Vec3 origin,Vec3 endpoint,List<ShuoViewPayload> cues){}
     static void start(GameTestHelper h){
+        LastFiveDamageFormulaChecks.checkShuoDraws(h);
         ShuoFormChecks.start(h);
         ShuoWorldVfxChecks.start(h);
         ShuoMiniReworkChecks.start(h);
@@ -225,17 +226,17 @@ final class ShuoChecks {
                     AbilityRuntime.tick(p);
                     if(i==0){if(age==7)h.assertTrue(ShuoCombat.drawn(p)==false&&ShuoCombat.blocked(p),"Sheathing holds the 8tick lock");
                         if(age==8)h.assertTrue(!ShuoCombat.drawn(p)&&!ShuoCombat.blocked(p),"Sheathe completes exactly once");
-                        if(age==55){h.assertTrue(ShuoCombat.gauge(p)>=90,"Real per-tick sheathed accumulation");float bonus=ShuoCombat.draw(p,0,9);h.assertTrue(bonus>=75&&bonus<=80&&ShuoCombat.gauge(p)==0&&ShuoCombat.draw(p,0,9)==0,"Draw consumes one finite wisdom-scaled bonus");}}
+                        if(age==55){h.assertTrue(ShuoCombat.gauge(p)>=90,"Real per-tick sheathed accumulation");int gauge=ShuoCombat.gauge(p);float bonus=ShuoCombat.draw(p,0,9);h.assertTrue(Math.abs(bonus-52*gauge/100f)<.001&&ShuoCombat.gauge(p)==0&&ShuoCombat.draw(p,0,9)==0,"Draw consumes one finite zero-purchase draw bonus despite the test's spell-power buff");}}
                     if(i==1&&age==8)h.assertTrue(f.target.getHealth()==1000,"No early charged cone damage");
-                    if(i==1&&age==10)h.assertTrue(Math.abs(f.target.getHealth()-883)<.05,"Nine-tick fixed lane starts with 60% of 195");
-                    if(i==1&&age==16)h.assertTrue(Math.abs(f.target.getHealth()-805)<.05,"Fixed second cut restores total 195, not a duplicate full hit");
+                    if(i==1&&age==10)h.assertTrue(Math.abs(f.target.getHealth()-918.7)<.05,"Nine-tick fixed lane starts with 60% of 135.5");
+                    if(i==1&&age==16)h.assertTrue(Math.abs(f.target.getHealth()-864.5)<.05,"Fixed second cut restores total 135.5, not a duplicate full hit");
                     if(i==2&&(age==6||age==13)){var s=FirstGroupSkills.node("shuo",7);h.assertTrue(s.recastAvailable(AbilityRuntime.context(p,s)),"Manual combo window exists");s.recast(AbilityRuntime.context(p,s));}
-                    if(i==2&&age==20)h.assertTrue(Math.abs(f.target.getHealth()-430)<.05,"Three manual cuts 160 + 160 + 250; no hidden repeated hits");
+                    if(i==2&&age==20)h.assertTrue(Math.abs(f.target.getHealth()-577)<.05,"Three manual cuts 118 + 118 + 187; no hidden repeated hits");
                     if(i==3&&age==9)h.assertTrue(p.position().distanceTo(f.origin)<1E-7,"Dash does not teleport during windup");
-                    if(i==3&&age==20)h.assertTrue(p.position().distanceTo(f.endpoint)<.001&&Math.abs(f.target.getHealth()-895)<.05,"7-block bounded dash, initial 60% wound damage");
-                    if(i==3&&age==24)h.assertTrue(Math.abs(f.target.getHealth()-825)<.05,"Blade wound bursts once for remaining 40%");
+                    if(i==3&&age==20)h.assertTrue(p.position().distanceTo(f.endpoint)<.001&&Math.abs(f.target.getHealth()-928.6)<.05,"7-block bounded dash, initial 60% wound damage");
+                    if(i==3&&age==24)h.assertTrue(Math.abs(f.target.getHealth()-881)<.05,"Blade wound bursts once for remaining 40%");
                     if(i==4&&age==22)h.assertTrue(f.target.getHealth()==1000,"Ultimate marks without premature damage");
-                    if(i==4&&age==32)h.assertTrue(Math.abs(f.target.getHealth()-520)<.05&&!ShuoCombat.drawn(p),"Ultimate detonates 480 once after completed resheath");
+                    if(i==4&&age==32)h.assertTrue(Math.abs(f.target.getHealth()-632)<.05&&!ShuoCombat.drawn(p),"Ultimate detonates 368 once after completed resheath");
                     if(i==5&&age==32)h.assertTrue(f.target.getHealth()==1000&&!AbilityRuntime.channeling(p),"Brief windup control interruption cancels damage permanently");
                     if(i==6&&age==32)h.assertTrue(f.target.getHealth()==1000,"Brief control during resheath permanently cancels detonation even after control expires");
                     if(i==7&&age==10)h.assertTrue(f.target.getHealth()==1000&&!ShuoCombat.blocked(p),"Control exactly on the final charge tick cannot leave a permanent attack lock");

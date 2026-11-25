@@ -1,5 +1,6 @@
 package com.myriad.character.skills.sulan.rework;
 
+import com.myriad.character.ability.AbilityDamageFormula;
 import com.myriad.character.ability.AbilitySkill;
 import com.myriad.character.ability.AbilityRuntime;
 import com.myriad.character.ability.AbilityRuntime.Cast;
@@ -9,15 +10,22 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.*;
 import java.util.Comparator;
-import static com.myriad.combat.DamageCalc.Kind.*;
+import java.util.List;
 
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class SpiritWindMarkSkill extends AbilitySkill {
+    private static final AbilityDamageFormula DAMAGE =
+            AbilityDamageFormula.physicalFromSpell(25, 10, .25f, .5f);
+
+    @Override public List<AbilityDamageFormula> damageFormulas() {
+        return List.of(DAMAGE);
+    }
+
     public SpiritWindMarkSkill(Definition definition){super(definition);}
     @Override public boolean canRelease(Cast c){return c.target(14,false)!=null;}
  @Override public void release(Cast c){LivingEntity t=c.target(14,false);if(t==null)return;
  WindCastCues.release(c,t.position().add(0,t.getBbHeight()*.6,0).subtract(c.player.getEyePosition()));
- var m=c.memory(t.getUUID().toString());c.damage(t,c.value(25,10,.25f),PHYSICAL);
+ var m=c.memory(t.getUUID().toString());c.damage(t,DAMAGE.value(c),DAMAGE.kind());
  m.until=c.now()+80;c.slow(t,.2f,30);
  long active=m.until;
  c.whileActive(80,a->{

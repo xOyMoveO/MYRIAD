@@ -1,5 +1,6 @@
 package com.myriad.character.rework;
 
+import com.myriad.character.CharacterType;
 import com.myriad.game.*;
 import com.myriad.player.*;
 import com.myriad.registry.ModAttributes;
@@ -47,6 +48,20 @@ public final class FirstGroupGrowth {
         return 15.0 * strengthPoints;
     }
 
+    public static double purchasedSpellPower(int wisdomPoints) {
+        return 20.0 * wisdomPoints;
+    }
+
+    /** Innate physical attack for the active roster, before purchases and modifiers. */
+    public static double baselinePhysicalAttack(CharacterType role) {
+        return role == CharacterType.LUOXIA ? role.initialAd() : 65.0;
+    }
+
+    /** The active roster has no innate spell power growth with character level. */
+    public static double baselineSpellPower() {
+        return 30.0;
+    }
+
     public static double health(String role,int level){
         int[] pair=switch(role){
             case "rivet"->new int[]{700,110};
@@ -92,9 +107,9 @@ public final class FirstGroupGrowth {
             com.myriad.character.rework.SecondGroupMigration.clearLegacy(p,d);
         }
         d.setLevel(Math.clamp(d.getLevel(),1,20));d.ensureLevelRewards(d.getLevel());
-        var role=com.myriad.character.CharacterType.byId(d.getCharacterId());
-        base(p,ModAttributes.PHYSICAL_ATTACK,role==com.myriad.character.CharacterType.LUOXIA?role.initialAd():65);
-        base(p,ModAttributes.SPELL_POWER,30);
+        var role=CharacterType.byId(d.getCharacterId());
+        base(p,ModAttributes.PHYSICAL_ATTACK,baselinePhysicalAttack(role));
+        base(p,ModAttributes.SPELL_POWER,baselineSpellPower());
         base(p,ModAttributes.ATTACK_SPEED,.70);base(p,Attributes.MOVEMENT_SPEED,.10);
         base(p,ModAttributes.PHYSICAL_DEFENSE,45);base(p,ModAttributes.MAGIC_RESISTANCE,45);
         base(p,ModAttributes.MAX_MANA,700);base(p,ModAttributes.MANA_REGEN,4);base(p,ModAttributes.HEALTH_REGEN,2);
@@ -109,7 +124,7 @@ public final class FirstGroupGrowth {
     public static void apply(ServerPlayer p,PlayerData d){
         if(!FirstGroupSkills.active(d.getCharacterId()))return;
         modifier(p,ModAttributes.PHYSICAL_ATTACK,"strength",purchasedPhysicalAttack(d.firstGroupAttribute("strength")));
-        modifier(p,ModAttributes.SPELL_POWER,"wisdom",20.0*d.firstGroupAttribute("wisdom"));
+        modifier(p,ModAttributes.SPELL_POWER,"wisdom",purchasedSpellPower(d.firstGroupAttribute("wisdom")));
         modifier(p,ModAttributes.ATTACK_SPEED,"speed_as",.06*d.firstGroupAttribute("speed"));
         modifier(p,Attributes.MOVEMENT_SPEED,"speed_ms",.0015*d.firstGroupAttribute("speed"));
         modifier(p,ModAttributes.PHYSICAL_DEFENSE,"defense_pd",5.0*d.firstGroupAttribute("defense"));

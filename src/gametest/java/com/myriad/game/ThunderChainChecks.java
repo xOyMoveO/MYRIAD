@@ -50,12 +50,12 @@ final class ThunderChainChecks {
                         for(int i=0;i<fixtures.size();i++){
                             var f=fixtures.get(i);boolean hit=i<3;
                             float primaryBefore=i==2?10:1000;
-                            h.assertTrue(Math.abs(f.primary.getHealth()-(hit?Math.max(0,primaryBefore-f.damage):primaryBefore))<.02,"Main target hit once, rank/S formula, blocked and interrupted casts: case="+i+" hp="+f.primary.getHealth());
+                            h.assertTrue(Math.abs(f.primary.getHealth()-(hit?Math.max(0,primaryBefore-f.damage):primaryBefore))<.02,"Main target hit once, rank/Strength formula, blocked and interrupted casts: case="+i+" hp="+f.primary.getHealth());
                             for(var t:f.chained)h.assertTrue(Math.abs(t.getHealth()-(1000-(hit?f.damage*.35f:0)))<.02,"Every eligible side/vertical/boundary target receives exactly 35% once: case="+i+" hp="+t.getHealth());
                             for(var t:f.excluded)h.assertTrue(Math.abs(t.getHealth()-1000)<.02,"Friends, towers, outside radius, second-hop and blocked targets are untouched: case="+i+" hp="+t.getHealth());
                         }
                         var skill=FirstGroupSkills.node("tianxing",3);
-                        h.assertTrue(skill.displayName().equals("雷电劫")&&AbilityFormulaText.evaluate(skill.description(),5,100).contains("69"),"Current UI resolves both main and 35% chain formulas");
+                        h.assertTrue(skill.displayName().equals("雷电劫")&&Math.abs(skill.damageFormulas().get(1).value(5, 80, 100, 1, 0) - 55.65) < .02,"Current UI resolves both main and 35% chain formulas");
                         done[0]=true;fixtures.forEach(f->cleanup(h,f));
                         System.out.println("[MYRIAD-THUNDER-CHAIN] PASS: actual W, 6-tick windup, ranks/S, all 4-block secondaries incl. vertical/boundary, lethal primary, no piercing/recursion, allies/buildings/LOS/range exclusions, wall and stun");
                     }
@@ -67,8 +67,8 @@ final class ThunderChainChecks {
         Vec3 origin=Vec3.atBottomCenterOf(h.absolutePos(new BlockPos(95,100+index*12,40)));
         var players=new ArrayList<ServerPlayer>();var caster=player(h,origin,Faction.GUARDIAN,players,false);
         var d=PlayerDataProvider.get(caster);d.setCharacterId("tianxing");d.setLevel(20);d.setMana(700);
-        int rank=index==1?5:1;float strength=index==1?100:0;
-        d.setSkillLevel("g1_tianxing_n2",rank);caster.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(strength);
+        int rank=index==1?5:1;int strength=index==1?1:0;
+        d.setSkillLevel("g1_tianxing_n2",rank);caster.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(index==1?100:0);d.setFirstGroupAttribute("strength",strength);
         caster.getAttribute(ModAttributes.CRIT_CHANCE).setBaseValue(0);caster.getAttribute(ModAttributes.COOLDOWN_REDUCTION).setBaseValue(0);
         Vec3 contact=origin.add(0,0,5);LivingEntity primary;
         if(index==2){
@@ -90,7 +90,7 @@ final class ThunderChainChecks {
         for(int y=0;y<3;y++)block(h,blocks,BlockPos.containing(contact.add(-2,y,-1)));
         if(index==3)for(int x=-1;x<=1;x++)for(int y=0;y<3;y++)block(h,blocks,BlockPos.containing(origin.add(x,y,2)));
         if(index==2)primary.setHealth(10);
-        return new Fixture(caster,primary,chained,excluded,players,blocks,60+18*(rank-1)+.65f*strength);
+        return new Fixture(caster,primary,chained,excluded,players,blocks,79.5f+18*(rank-1)+7.5f*strength);
     }
     private static ServerPlayer player(GameTestHelper h,Vec3 at,Faction faction,List<ServerPlayer> list,boolean add){
         var p=(ServerPlayer)h.makeMockServerPlayer(GameType.SURVIVAL);

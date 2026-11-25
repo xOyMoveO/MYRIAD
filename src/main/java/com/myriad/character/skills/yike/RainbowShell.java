@@ -2,9 +2,16 @@ package com.myriad.character.skills.yike;
 
 import com.myriad.character.ability.*;
 import com.myriad.combat.DamageCalc;
+import java.util.List;
 
 /** The shell is paid at the muzzle, never when the Q input begins. */
 public final class RainbowShell extends AbilitySkill {
+    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 95, 18, .55f);
+
+    @Override public List<AbilityDamageFormula> damageFormulas() {
+        return List.of(DAMAGE);
+    }
+
     public RainbowShell(Definition d){super(d);}
     @Override public int commitWindupTicks(){return 5;}
     @Override public float windupWalkFactor(AbilityRuntime.Cast c){return .5f;}
@@ -16,7 +23,7 @@ public final class RainbowShell extends AbilitySkill {
     @Override public void release(AbilityRuntime.Cast c){
         var p=c.player;var direction=YikeStance.active(p)?YikeStance.aim(p):p.getLookAngle();
         double range=YikeStance.shotRange(p),speed=YikeStance.shotSpeed(p),radius=YikeStance.shotRadius(p);
-        float damage=c.value(95,18,.55f)*YikeStance.multiplier(p);
+        float damage=DAMAGE.value(c)*YikeStance.multiplier(p);
         boolean artillery=YikeStance.active(p);int remaining=YikeStance.shots(p);
         if(artillery)YikeStance.shotCommitted(c);
         YikeProjectiles.shell(c,direction,range,speed,radius,damage);

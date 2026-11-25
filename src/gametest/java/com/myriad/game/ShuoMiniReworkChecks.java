@@ -44,7 +44,7 @@ final class ShuoMiniReworkChecks {
                             h.assertTrue(ShuoCombat.parry(p,p.damageSources().mobAttack(f.t),com.myriad.combat.DamageCalc.Kind.PHYSICAL),"Actual guard opens manual counter");
                             SkillSystem.cast(p,1);
                             h.assertTrue(Math.abs(ModShieldSystem.value(p)-(i==5?75:0))<.01,"Counter shield requires an effective hit, fixture="+i+" shield="+ModShieldSystem.value(p)+" hp="+f.t.getHealth());
-                            h.assertTrue(Math.abs(f.t.getHealth()-(i==5?910:1000))<.01,"Counter reach excludes out-of-range target");
+                            h.assertTrue(Math.abs(f.t.getHealth()-(i==5?938:1000))<.01,"Counter reach excludes out-of-range target");
                         }
                     }
                     if(i==0&&age==5)f.t.setPos(f.origin.add(0,0,10));
@@ -59,18 +59,18 @@ final class ShuoMiniReworkChecks {
                         p.move(MoverType.SELF,AbilityTargeting.clampPrediction(p.position(),end,p.getDeltaMovement()));
                     }
                     AbilityRuntime.tick(p);
-                    if(i==1&&age==12)h.assertTrue(Math.abs(f.t.getHealth()-883)<.01&&f.miss.getHealth()==1000,"Seven-block line hits distant centre, not old wide-cone side targets");
+                    if(i==1&&age==12)h.assertTrue(Math.abs(f.t.getHealth()-918.7)<.01&&f.miss.getHealth()==1000,"Seven-block line hits distant centre, not old wide-cone side targets");
                     if(age==35){
-                        if(i==0)h.assertTrue(Math.abs(f.t.getHealth()-943)<.01,"Leaving the original retreat-cut position avoids its delayed 40%");
-                        if(i==1)h.assertTrue(Math.abs(f.t.getHealth()-805)<.01&&f.miss.getHealth()==1000,"Second lane preserves locked direction and total damage budget");
+                        if(i==0)h.assertTrue(Math.abs(f.t.getHealth()-959.8)<.01,"Leaving the original retreat-cut position avoids its delayed 40%");
+                        if(i==1)h.assertTrue(Math.abs(f.t.getHealth()-864.5)<.01&&f.miss.getHealth()==1000,"Second lane preserves locked direction and total damage budget");
                         if(i==2){
-                            h.assertTrue(p.position().distanceTo(f.origin.add(0,0,2))<.001&&Math.abs(f.t.getHealth()-430)<.01,"Optional chase is bounded two-block motion, and each of three cuts hits once");
+                            h.assertTrue(p.position().distanceTo(f.origin.add(0,0,2))<.001&&Math.abs(f.t.getHealth()-577)<.01,"Optional chase is bounded two-block motion, and each of three cuts hits once");
                             h.assertTrue(PlayerDataProvider.get(p).getMana()==550,"Manual chase never pays a second ultimate cost");
                         }
-                        if(i==3)h.assertTrue(Math.abs(f.t.getHealth()-296)<.05,"Real marked finisher uses 20% missing health = 5% bonus: 800-504");
-                        if(i==4)h.assertTrue(Math.abs(f.t.getHealth()-895)<.05,"Runtime cleanup removes delayed wound, retaining only actual initial hit");
+                        if(i==3)h.assertTrue(Math.abs(f.t.getHealth()-413.6)<.05,"Real marked finisher uses 20% missing health = 5% bonus: 800-386.4");
+                        if(i==4)h.assertTrue(Math.abs(f.t.getHealth()-928.6)<.05,"Runtime cleanup removes delayed wound, retaining only actual initial hit");
                         if(i==7||i==9)h.assertTrue(f.t.getHealth()==1000&&!f.t.hasEffect(net.minecraft.world.effect.MobEffects.SLOWNESS),"Wall or beyond-end target receives neither line damage nor control, fixture="+i);
-                        if(i==8)h.assertTrue(Math.abs(f.t.getHealth()-883)<.01,"Brief control after lane commitment permanently cancels its second hit");
+                        if(i==8)h.assertTrue(Math.abs(f.t.getHealth()-918.7)<.01,"Brief control after lane commitment permanently cancels its second hit");
                     }
                 }
                 if(age==55){done[0]=true;cleanup(all);System.out.println("[MYRIAD-SHUO-MINI-REWORK] PASS: fixed after-cut dodge, exact two-stage lane/side miss/locked aim, real guard hit-only shield, optional bounded combo chase, capped live finisher and delayed-wound cleanup");}

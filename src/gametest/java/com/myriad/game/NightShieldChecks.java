@@ -56,7 +56,7 @@ final class NightShieldChecks {
                 h.assertTrue(p.hasEffect(MobEffects.POISON)&&p.hasEffect(MobEffects.REGENERATION),"DoT and unrelated positive buffs are not erased");
                 h.assertTrue(Math.abs(ModShieldSystem.value(p)-50-expected)<.001,"Exact x1.7 full shield formula at every rank/strength; no multiplication of other shields");
                 h.assertTrue(Math.abs(d.getMana()-(mana-150))<.01&&d.getCooldown(skill.getId())==skill.getCooldownTicks(rank),"One normal mana payment and unchanged rank cooldown");
-                h.assertTrue(AbilityFormulaText.evaluate(skill.description(),rank,context.strength)
+                h.assertTrue(AbilityFormulaText.evaluate(skill.description(),rank,context.totalSpellPower)
                         .contains(String.format(java.util.Locale.ROOT,"%.1f",expected)),"Tooltip resolves the updated actual shield amount");
                 // A second, invalid request cannot cleanse for free while on cooldown.
                 AbilityRuntime.clear(p);d.setBuff("g1_stun",40);double remainingMana=d.getMana();float shield=ModShieldSystem.value(p);

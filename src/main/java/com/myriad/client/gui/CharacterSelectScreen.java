@@ -115,14 +115,15 @@ public final class CharacterSelectScreen extends Screen {
         g.enableScissor(v.x(),v.y(),v.right(),v.bottom());
         String[] categories={"passive_a","passive_b","regular_a","regular_b","main_a","main_b","ultimate_a","ultimate_b"};
         for(var skill:FirstGroupSkills.candidates(role.getId())){
-            var heading=Component.translatable("screen.myriad.choose."+categories[skill.index()]).append(" · ").append(skill.displayName());
+            var preview = SkillTooltipDescriptions.previewLines(skill, skill.baseAvailable() ? 0 : 1);
+            var heading=Component.translatable("screen.myriad.choose."+categories[skill.index()]).append(" · ").append(SkillTooltipDescriptions.abilityName(skill));
             for(var line:font.split(heading,v.w()-8)){g.text(font,line,v.x()+3,y,GOLD);y+=11;}
             int headingEnd=y;
-            for(var line:font.split(Component.literal(SkillTooltipDescriptions.describeLines(skill,1).stream().findFirst().orElse("")),v.w()-8)){
+            for(var line:font.split(Component.literal(preview.stream().findFirst().orElse("")),v.w()-8)){
                 g.text(font,line,v.x()+3,y,0xFFBFCED6);y+=10;
             }
             if(mx>=v.x()&&mx<v.right()&&my>=Math.max(v.y(),headingEnd-22)&&my<Math.min(v.bottom(),y)){
-                var lines=new ArrayList<Component>();for(String line:SkillTooltipDescriptions.describeLines(skill,1))lines.add(Component.literal(line));
+                var lines=new ArrayList<Component>();for(String line:preview)lines.add(Component.literal(line));
                 g.setComponentTooltipForNextFrame(font,lines,mx,my);
             }
             y+=10;

@@ -38,12 +38,15 @@ public final class CharacterGuideScreen extends Screen {
         paragraphs.add(Component.translatable("hero.guide."+type.getId()));
         boolean reworked=com.myriad.character.rework.FirstGroupSkills.active(type.getId());
         if(reworked){
-            paragraphs.add(Component.literal("20级、20技能点。被动、主要、终极各二选一；两个常规技能均可学。先在个人信息中学习，再用自己设置的技能按键释放。力量增强普攻和指定技能伤害，智慧增强按技能强度成长的效果。金币用于五属性和补给。"));
-            String[] labels={"被动A","被动B","常规一","常规二","主要A","主要B","终极A","终极B"};
-            for(var ability:com.myriad.character.rework.FirstGroupSkills.candidates(type.getId())){
-                paragraphs.add(Component.literal(labels[ability.index()]+" · "+ability.displayName()+" / 上限"+ability.maxRank()+"级"));
-                paragraphs.add(Component.literal(ability.evaluatedDescription(1,30,0)+"（1级、未购买属性预览）"));
-                if(!ability.isPassive())paragraphs.add(Component.translatable("hero.guide.resource",ability.getManaCost(),ability.getCooldownTicks(1)/20.0));
+            paragraphs.add(Component.translatable("hero.guide.reworked_controls"));
+            String[] labels = {"passive_a", "passive_b", "regular_a", "regular_b", "main_a", "main_b", "ultimate_a", "ultimate_b"};
+            for (var ability : com.myriad.character.rework.FirstGroupSkills.candidates(type.getId())) {
+                int rank = ability.baseAvailable() ? 0 : 1;
+                paragraphs.add(Component.translatable("hero.guide.reworked_rank",
+                        Component.translatable("screen.myriad.choose." + labels[ability.index()]),
+                        com.myriad.client.SkillTooltipDescriptions.abilityName(ability), ability.maxRank()));
+                paragraphs.add(Component.literal(String.join("\n", com.myriad.client.SkillTooltipDescriptions.previewLines(ability, rank))));
+                if (!ability.isPassive()) paragraphs.add(Component.translatable("hero.guide.resource", ability.getManaCost(), ability.getCooldownTicks(rank) / 20.0));
             }
         }else{
         paragraphs.add(Component.translatable("hero.guide.controls"));

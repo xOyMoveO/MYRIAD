@@ -1,10 +1,25 @@
 package com.myriad.character.skills.luoxia;
 
+import com.myriad.character.ability.AbilityDamageFormula;
 import com.myriad.character.ability.AbilityRuntime.Cast;
 import com.myriad.combat.DamageCalc;
 import net.minecraft.world.phys.Vec3;
+import java.util.List;
 
 final class SunsetLine extends LuoxiaSkill {
+    private static final AbilityDamageFormula FIRST = AbilityDamageFormula.purchased(DamageCalc.Kind.PHYSICAL, 175, 42.5f, .80f)
+            .segment("skill.myriad.damage.hero_first", 1);
+    private static final AbilityDamageFormula SECOND = FIRST.scaled(180f / 260)
+            .segment("skill.myriad.damage.hero_second", 1);
+    private static final AbilityDamageFormula THIRD = FIRST.scaled(125f / 260)
+            .segment("skill.myriad.damage.hero_third", 1);
+    private static final AbilityDamageFormula NON_HERO = AbilityDamageFormula.purchased(DamageCalc.Kind.PHYSICAL, 40, 10, .80f * .20f / 1.05f)
+            .segment("skill.myriad.damage.non_hero", 1);
+
+    @Override public List<AbilityDamageFormula> damageFormulas() {
+        return List.of(FIRST, SECOND, THIRD, NON_HERO);
+    }
+
     SunsetLine(Definition definition) { super(definition); }
     private static final int WINDUP = 17, LOCK_AT = 10;
     private static final double RANGE = 32;
@@ -19,7 +34,9 @@ final class SunsetLine extends LuoxiaSkill {
         } else LuoxiaVfx.charge(c, true);
     }
 
-    static float falloff(int hero) { return switch (hero) { case 1 -> 1; case 2 -> 180f / 260; default -> 125f / 260; }; }
+    private static AbilityDamageFormula heroDamage(int hero) {
+        return switch (hero) { case 1 -> FIRST; case 2 -> SECOND; default -> THIRD; };
+    }
 
     @Override public void release(Cast c) {
         var aim = c.memory("aim");
@@ -29,10 +46,10 @@ final class SunsetLine extends LuoxiaSkill {
         int[] heroes = {0};
         LuoxiaArrow.launch(c, direction, RANGE, 3.25, LuoxiaArrow.Shape.LANCE, false, target -> {
             if (c.hero(target)) {
-                c.damage(target, damageAtRank(c, 175, 260, 1.05f) * falloff(++heroes[0]), DamageCalc.Kind.PHYSICAL);
+                c.damage(target, heroDamage(++heroes[0]).value(c), DamageCalc.Kind.PHYSICAL);
                 return heroes[0] == 3;
             }
-            c.damage(target, damageAtRank(c, 40, 60, .20f), DamageCalc.Kind.PHYSICAL);
+            c.damage(target, NON_HERO.value(c), DamageCalc.Kind.PHYSICAL);
             return false;
         });
     }

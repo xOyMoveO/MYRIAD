@@ -60,14 +60,14 @@ final class NightDashRangeChecks {
                             "Actual Return reaches 7 blocks in the accelerated four-tick outward movement");
                     if(elapsed==8){
                         for(int i=0;i<2;i++){
-                            var f=fixtures.get(i);double expected=i==0?150:120;
-                            h.assertTrue(Math.abs(f.target.getHealth()-(1000-expected))<.05,"Targets beyond the old range are hit exactly once with the unchanged damage formula");
+                            var f=fixtures.get(i);double expected=i==0?94:74.5;
+                            h.assertTrue(Math.abs(f.target.getHealth()-(1000-expected))<.05,"Targets beyond the old range are hit exactly once at the zero-purchase baseline despite extra spell power");
                         }
                         var returning=fixtures.get(1);
                         h.assertTrue(returning.cast.skill.recastAvailable(returning.cast)&&returning.cast.memory().until>returning.cast.now(),"Original 3-second return window remains active");
                         returning.cast.skill.recast(returning.cast);
                         h.assertTrue(returning.player.position().distanceTo(returning.origin)<1E-6&&!returning.cast.skill.recastAvailable(returning.cast),"Second cast returns to the original anchor and consumes the window");
-                        h.assertTrue(Math.abs(returning.target.getHealth()-880)<.05,"Return teleport adds no second damage hit");
+                        h.assertTrue(Math.abs(returning.target.getHealth()-925.5)<.05,"Return teleport adds no second damage hit");
                         done[0]=true;fixtures.forEach(NightDashRangeChecks::cleanup);
                         System.out.println("[MYRIAD-NIGHT-DASH] PASS: real 9-block / 5-tick Assault, 7-block Return preview and motion, no outward teleport/overshoot, swept walls, far single hits and 3-second return anchor");
                     }

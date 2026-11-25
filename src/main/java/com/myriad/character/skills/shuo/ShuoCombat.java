@@ -5,7 +5,6 @@ import com.myriad.combat.*;
 import com.myriad.game.DefenseTowerEntity;
 import com.myriad.network.ShuoViewPayload;
 import com.myriad.player.*;
-import com.myriad.registry.ModAttributes;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
@@ -58,9 +57,11 @@ public final class ShuoCombat {
     public static float draw(ServerPlayer p,int action,int ticks){
         var s=state(p);float bonus=0;int passiveIndex=-1;var d=PlayerDataProvider.get(p);long now=p.level().getGameTime();
         if(!s.drawn){var passive=FirstGroupSkills.selected("shuo",0,d.getSkillLevels());int r=passive==null?0:d.skillLevel(passive.getId());
-            if(r>0){passiveIndex=passive.index();float strength=(float)p.getAttributeValue(ModAttributes.SPELL_POWER);
-                if(passive.index()==0)bonus=(40+12*(r-1)+.4f*strength)*s.gauge/100;
-                else if(s.riposteUntil>now)bonus=55+15*(r-1)+.5f*strength;
+            if(r>0){
+                passiveIndex=passive.index();
+                int purchasedStrength=d.firstGroupAttribute("strength");
+                if(passive instanceof CangFengSkill)bonus=CangFengSkill.BONUS.value(r,0,0,purchasedStrength,0)*s.gauge/100;
+                else if(s.riposteUntil>now)bonus=JianQieSkill.BONUS.value(r,0,0,purchasedStrength,0);
             }}
         s.drawn=true;s.charging=false;s.sheath=null;s.gauge=0;s.riposteUntil=0;
         ShuoWeaponState.sync(p,true);

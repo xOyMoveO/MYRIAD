@@ -159,9 +159,9 @@ final class ShuoPilotChecks {
                         if (age == 9) h.assertTrue(player.position().equals(origin) && target.getHealth() == 1000,
                                 "Nine completed action ticks cannot move or deal early damage");
                         if (age == 20) h.assertTrue(player.position().distanceTo(origin.add(0, 0, 7)) < .001
-                                && Math.abs(target.getHealth() - 895) < .05,
-                                "Seven-block collision-stepped dash deals the original 60 percent of 175 once");
-                        if (age == 24) h.assertTrue(Math.abs(target.getHealth() - 825) < .05,
+                                && Math.abs(target.getHealth() - 928.6) < .05,
+                                "Seven-block collision-stepped dash deals the original 60 percent split of the 119 zero-purchase total once");
+                        if (age == 24) h.assertTrue(Math.abs(target.getHealth() - 881) < .05,
                                 "Delayed wound deals the remaining 40 percent exactly once");
                         if (age == 25) {
                             h.assertTrue(packets.stream().anyMatch(ShuoViewPayload.class::isInstance)

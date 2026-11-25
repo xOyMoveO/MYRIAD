@@ -3,9 +3,17 @@ import com.myriad.character.ability.*;
 import com.myriad.character.ability.AbilityRuntime.Cast;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
-import static com.myriad.combat.DamageCalc.Kind.*;
+import java.util.List;
+
 /** Independent reusable branch. */
 public final class WarBladeSkill extends AbilitySkill {
+    private static final AbilityDamageFormula DAMAGE =
+            AbilityDamageFormula.physicalFromSpell(45, 20, .3f, .8f / 3).segment("skill.myriad.damage.segment.bonus_basic", 3);
+
+    @Override public List<AbilityDamageFormula> damageFormulas() {
+        return List.of(DAMAGE);
+    }
+
  public WarBladeSkill(Definition definition){super(definition);}
 
 @Override public void release(Cast c){
@@ -19,7 +27,7 @@ public final class WarBladeSkill extends AbilitySkill {
         return true;
     });
 }
-@Override public void onHit(AbilityRuntime.Hit h){if(!h.basic())return;Cast c=AbilityRuntime.context(h.player(),this);var m=c.memory();if(m.until<=c.now()||m.count<=0||c.now()-m.last<4)return;m.last=c.now();m.count--;c.damage(h.target(),c.value(45,20,.3f),PHYSICAL,false);AbilityVisuals.arc(c,c.player.position(),3,80);if(m.count==0)c.buff(getId()+"_ready",0);}
+@Override public void onHit(AbilityRuntime.Hit h){if(!h.basic())return;Cast c=AbilityRuntime.context(h.player(),this);var m=c.memory();if(m.until<=c.now()||m.count<=0||c.now()-m.last<4)return;m.last=c.now();m.count--;c.damage(h.target(),DAMAGE.value(c),DAMAGE.kind(),false);AbilityVisuals.arc(c,c.player.position(),3,80);if(m.count==0)c.buff(getId()+"_ready",0);}
 @Override public void present(Cast c){WarSpiritHandCues.cast(c);AbilityVisuals.field(c,c.player.position(),2,16);}
 }
 

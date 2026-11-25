@@ -2,9 +2,16 @@ package com.myriad.character.skills.yike;
 
 import com.myriad.character.ability.*;
 import com.myriad.combat.DamageCalc;
+import java.util.List;
 
 /** A committed warning is independent of the character's later controls. */
 public final class RefractionDenial extends AbilitySkill {
+    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 70, 18, .35f);
+
+    @Override public List<AbilityDamageFormula> damageFormulas() {
+        return List.of(DAMAGE);
+    }
+
     public RefractionDenial(Definition d){super(d);}
     @Override public int inputRecoveryTicks(){return 0;}
     @Override public boolean needsPoint(){return true;}
@@ -19,7 +26,7 @@ public final class RefractionDenial extends AbilitySkill {
         c.later(11,true,.5f,()->YikeStance.refreshMovement(c.player));YikeStance.refreshMovement(c.player);
         YikeVfx.event(c,"denial_warning",at,at,2.5f,11);YikeAudio.play(c.player,"warning",at,.4f,1.2f);
         c.later(11,false,()->{
-            for(var target:YikeGeometry.sphere(c,at,2.5)){c.damage(target,c.value(70,18,.35f),DamageCalc.Kind.MAGIC);c.slow(target,.30f,25);}
+            for(var target:YikeGeometry.sphere(c,at,2.5)){c.damage(target,DAMAGE.value(c),DamageCalc.Kind.MAGIC);c.slow(target,.30f,25);}
             YikeVfx.event(c,"denial_burst",at,at,2.5f,9);YikeAudio.play(c.player,"impact",at,.65f,1.15f);
         });
     }
