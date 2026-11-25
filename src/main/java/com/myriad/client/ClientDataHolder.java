@@ -1,6 +1,8 @@
 package com.myriad.client;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.player.LocalPlayer;
 
 import com.myriad.game.Faction;
 import com.myriad.game.GameManager;
@@ -13,6 +15,8 @@ public final class ClientDataHolder {
     private ClientDataHolder() {}
 
     private static volatile PlayerDataPayload data = null;
+    private static ClientLevel snapshotLevel;
+    private static LocalPlayer snapshotPlayer;
     /** buff 快照到达时的客户端游戏刻（本地递减显示用） */
     private static int buffSnapshotTick = 0;
     /** 技能冷却快照到达时的客户端游戏刻；所有技能栏数字均逐 tick 推算。 */
@@ -52,7 +56,10 @@ public final class ClientDataHolder {
                     && mc.gui.screen().getClass().getPackageName().equals("com.myriad.client.gui"))
                 mc.setScreenAndShow(null);
         }
-        net.minecraft.client.player.LocalPlayer p = Minecraft.getInstance().player;
+        Minecraft mc = Minecraft.getInstance();
+        LocalPlayer p = mc.player;
+        snapshotLevel = mc.level;
+        snapshotPlayer = p;
         buffSnapshotTick = p == null ? 0 : p.tickCount;
         skillCdSnapshotTick = buffSnapshotTick;
         basicAttackSnapshotTick = buffSnapshotTick;
@@ -69,6 +76,8 @@ public final class ClientDataHolder {
         HanzeFrostView.start(0);
         com.myriad.client.particle.AbilityMeshParticle.reset();
         data = null;
+        snapshotLevel = null;
+        snapshotPlayer = null;
         pickState = null;
         CombatStatsPanel.reset();
         MatchResultsStore.clear();
@@ -94,6 +103,23 @@ public final class ClientDataHolder {
 
     public static PlayerDataPayload get() {
         return data;
+    }
+
+    /** Reject snapshots held across dimension changes, respawns or a stalled update stream. */
+    static PlayerDataPayload currentPlayerSnapshot(Minecraft mc) {
+        PlayerDataPayload snapshot = data;
+        if (snapshot == null || mc.level == null || mc.player == null || mc.player != snapshotPlayer
+                || mc.level != snapshotLevel || mc.player.getId() != snapshot.ownerEntityId()
+                || !mc.level.dimension().identifier().equals(snapshot.dimension())) {
+            return null;
+        }
+        int age = mc.player.tickCount - buffSnapshotTick;
+        return age >= 0 && age <= 12 ? snapshot : null;
+    }
+
+    public static boolean canFight() {
+        PlayerDataPayload snapshot = currentPlayerSnapshot(Minecraft.getInstance());
+        return snapshot != null && snapshot.modEnabled() && snapshot.combatActive();
     }
 
     public static boolean inGame() {
@@ -198,9 +224,20 @@ public final class ClientDataHolder {
 
     /** 单个持续状态的逐 tick 剩余时间；同步计数器请使用 {@link #syncedCounter(String)}。 */
     public static int buffTicks(String key) {
-        var values=buffs();int remaining=values.getOrDefault(key,0);
-        if(key.equals("g1_root"))for(var entry:values.entrySet())if(entry.getKey().startsWith("g1_root/"))remaining=Math.max(remaining,entry.getValue());
-        return remaining;
+        if (data == null || key.startsWith("skill_charge_")) return 0;
+        int ticks = data.buffs().getOrDefault(key, 0);
+        if (key.equals("g1_root")) {
+            for (var entry : data.buffs().entrySet()) {
+                if (entry.getKey().startsWith("g1_root/")) ticks = Math.max(ticks, entry.getValue());
+            }
+        }
+        return syncedRemainingTicks(ticks);
+    }
+
+    static int syncedRemainingTicks(int ticks) {
+        LocalPlayer player = Minecraft.getInstance().player;
+        int elapsed = player == null ? 0 : Math.max(0, player.tickCount - buffSnapshotTick);
+        return Math.max(0, ticks - elapsed);
     }
 
     /** 不随客户端时间递减的同步计数器，例如技能充能层数。 */

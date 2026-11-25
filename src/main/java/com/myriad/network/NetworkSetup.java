@@ -70,7 +70,12 @@ public final class NetworkSetup {
             int basicAttackCooldownMax,
             float health,
             float maxHealth,
-            float shield) implements CustomPacketPayload {
+            float shield,
+            int levelCap,
+            int ownerEntityId,
+            Identifier dimension,
+            boolean combatActive,
+            boolean combatPreparing) implements CustomPacketPayload {
 
         public static final Type<PlayerDataPayload> TYPE =
                 new Type<>(Identifier.fromNamespaceAndPath(Myriad.MODID, "player_data"));
@@ -117,6 +122,11 @@ public final class NetworkSetup {
             buf.writeFloat(payload.health());
             buf.writeFloat(payload.maxHealth());
             buf.writeFloat(payload.shield());
+            buf.writeVarInt(payload.levelCap());
+            buf.writeVarInt(payload.ownerEntityId());
+            buf.writeIdentifier(payload.dimension());
+            buf.writeBoolean(payload.combatActive());
+            buf.writeBoolean(payload.combatPreparing());
         }
 
         private static PlayerDataPayload decode(FriendlyByteBuf buf) {
@@ -158,7 +168,12 @@ public final class NetworkSetup {
                     buf.readInt(),
                     buf.readFloat(),
                     buf.readFloat(),
-                    buf.readFloat());
+                    buf.readFloat(),
+                    buf.readVarInt(),
+                    buf.readVarInt(),
+                    buf.readIdentifier(),
+                    buf.readBoolean(),
+                    buf.readBoolean());
         }
 
         @Override

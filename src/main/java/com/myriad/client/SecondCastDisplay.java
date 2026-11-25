@@ -5,6 +5,6 @@ public final class SecondCastDisplay {
     private SecondCastDisplay() { }
 
     public static int remainingTicks(String skillId) {
-        return Math.max(0, ClientDataHolder.buffs().getOrDefault(skillId + "_recast", 0));
+        return ClientDataHolder.buffTicks(skillId + "_recast");
     }
 }

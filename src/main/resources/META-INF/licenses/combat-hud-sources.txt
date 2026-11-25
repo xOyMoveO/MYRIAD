@@ -1,0 +1,8 @@
+MYRIAD original combat HUD assets.
+
+assets/myriad/textures/gui/combat_hud.png
+  Original 2D pixel materials authored for MYRIAD. The panel frames, bars,
+  shield stripes and status symbols were drawn at integer pixel coordinates
+  and arranged without external image inputs.
+  Editable source and slice map: art_source/combat_hud/ in the source repository.
+  See META-INF/LICENSE-SCOPE.txt for the original-art terms. All Rights Reserved.

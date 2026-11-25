@@ -1,6 +1,8 @@
 package com.myriad.game;
 
-import com.myriad.client.SkillBarLayout;
+import com.google.gson.JsonParser;
+import com.myriad.client.CombatHudLayout;
+import com.myriad.client.HudLayoutConfig;
 import com.myriad.client.gui.TrainLayout;
 import com.myriad.character.CharacterType;
 import com.myriad.player.PlayerDataProvider;
@@ -14,6 +16,8 @@ final class TrainingUiChecks {
         verifyDeferredOpening(h);
         SkillChoiceUiChecks.verify(h);
         CharacterChoiceUiChecks.verify(h);
+        CombatHudStateChecks.run(h);
+        verifyHudMigration(h);
         int states=0;
         for(var size:new int[][]{{320,180},{320,240},{427,240},{576,344},{854,480},{960,540}}){
             var train=TrainLayout.create(size[0],size[1],9999);
@@ -26,19 +30,38 @@ final class TrainingUiChecks {
                 var label=moved.label(row);var actions=moved.actions(row);
                 h.assertTrue(label.right()<actions.x()&&actions.right()<box.right()&&actions.y()>=box.y()&&actions.bottom()<=box.bottom(),"Left labels never overlap right-hand switches/actions");
             }
-            for(int count:new int[]{4,5})for(boolean charge:new boolean[]{true,false}){
-                var dock=SkillBarLayout.at(size[0],size[1],count,charge,SkillBarLayout.DEFAULT_SCALE);
-                var original=SkillBarLayout.at(size[0],size[1],count,charge,1F);
-                h.assertTrue(dock.x()>=0&&dock.x()+dock.width()<=size[0]*.5F-96+.01F,"Skills stay left of the hotbar");
-                h.assertTrue(dock.y()-23*dock.scale()>=0&&dock.y()+(28+(charge?14:0))*dock.scale()<=size[1]-1.99F,"Icons, ranks, recasts and charges fit above the bottom edge");
-                h.assertTrue(dock.scale()>=original.scale()&&dock.scale()<=2F*original.scale()+.001F,"Narrow windows cap the new size without shrinking the old dock");
-                if(size[0]>=576)h.assertTrue(Math.abs(dock.scale()-2F*original.scale())<.001F,"Roomy viewports double the physical default icon scale");
+            for (float scale : new float[]{.5F, 1F, 2F}) {
+                var layout = CombatHudLayout.at(size[0], size[1], 0, 1, scale, 3, 2, true, null);
+                var panel = layout.bounds();
+                h.assertTrue(panel.x() == 6 && panel.y() >= 6 && panel.right() <= size[0] - 6,
+                        "The default panel stays within the left edge and viewport");
+                h.assertTrue(panel.right() <= size[0] / 2 - 98 || panel.bottom() <= size[1] - 29,
+                        "Large and compact combat panels clear the original hotbar");
+                h.assertTrue(layout.contentX() + CombatHudLayout.SLOT_STEP * 4 + CombatHudLayout.SLOT
+                        <= layout.width() - 6, "All five slots fit");
                 states++;
             }
         }
-        h.assertTrue(SkillBarLayout.savedScale(1,1F)==2F&&SkillBarLayout.savedScale(1,.8F)==.8F
-                &&SkillBarLayout.savedScale(1,1.3F)==1.3F&&SkillBarLayout.savedScale(2,1F)==1F,
-                "Migrate only the legacy default size, retaining custom and current settings");
+        var focused = CombatHudLayout.at(427, 240, 0, 1, 1, 2, 1, false,
+                new CombatHudLayout.Bounds(0, 120, 280, 120));
+        h.assertTrue(focused.compact() && focused.bounds().x() == 6
+                && focused.bounds().bottom() <= 114 && !focused.attackRow(),
+                "The focused chat layout retains critical combat rows above chat");
+        var twoChatLines = CombatHudLayout.focusedChat(332, 240, 2, 9, 1F);
+        var smallChat = CombatHudLayout.at(427, 240, 0, 1, 1F, 0, 0, false, twoChatLines);
+        h.assertTrue(twoChatLines.y() == 173 && smallChat.bounds().bottom() <= 167,
+                "A focused two-line chat remains clear of the panel at 854x480 with GUI scale 2");
+        var moved = CombatHudLayout.at(960, 540, .5F, .6F, 1.25F, 0, 0, false, null);
+        h.assertTrue(moved.bounds().x() == 480 && moved.bounds().bottom() == 324 && moved.scale() == 1.25F,
+                "A dragged panel uses one scale and retains its normalized bottom-left anchor");
+        var regular = CombatHudLayout.at(960, 540, 0, 1, 1.5F, 0, 0, false, null);
+        var larger = CombatHudLayout.at(960, 540, 0, 1, 1.55F, 0, 0, false, null);
+        h.assertTrue(!regular.compact() && !larger.compact() && larger.bounds().width() > regular.bounds().width(),
+                "Increasing the editor scale does not switch to smaller compact contents");
+        var offhand = CombatHudLayout.hotbar(576, 344, 29, 0);
+        var armed = CombatHudLayout.at(576, 344, 0, 1, 1F, 0, 0, false, offhand, null);
+        h.assertTrue(armed.bounds().bottom() <= offhand.y() - CombatHudLayout.GAP,
+                "The equipped offhand extender is treated as part of the vanilla hotbar");
         boolean mod=ModState.isEnabled(),training=TrainingMode.isEnabled(),cd=TrainingMode.isNoCooldown(),mana=TrainingMode.isNoMana(),gold=TrainingMode.isNoGoldCost();
         var p=(ServerPlayer)h.makeMockServerPlayer(GameType.SURVIVAL);
         p.connection=new net.minecraft.server.network.ServerGamePacketListenerImpl(h.getLevel().getServer(),
@@ -87,9 +110,32 @@ final class TrainingUiChecks {
             if(!alreadyOp)list.deop(identity);
             p.discard();TrainingMode.setEnabled(training);TrainingMode.setNoCooldown(cd);TrainingMode.setNoMana(mana);TrainingMode.setNoGoldCost(gold);ModState.setEnabled(mod);
         }
-        System.out.println("[MYRIAD-TRAINING-UI] PASS: "+states+" skill docks, responsive training/C panels, server guards, cooldowns, level budget and toggles");
+        System.out.println("[MYRIAD-TRAINING-UI] PASS: "+states+" combat HUD layouts, responsive training/C panels, server guards, cooldowns, level budget and toggles");
         h.succeed();
     }
+    private static void verifyHudMigration(GameTestHelper h) {
+        var legacy = JsonParser.parseString("""
+                {"skillsDockVersion": 2, "status": {"x": 0.45, "visible": false},
+                 "skills": {"x": 0.19, "scale": 1.65}, "attacks": {"y": 0.72, "scale": 1.2},
+                 "minimap": {"x": 0.68, "y": 0.31, "scale": 0.8, "visible": false},
+                 "target": {"x": 0.59, "y": 0.11, "scale": 1.1, "visible": true}}
+                """).getAsJsonObject();
+        var combat = HudLayoutConfig.stateFrom(legacy, HudLayoutConfig.Element.COMBAT);
+        var minimap = HudLayoutConfig.stateFrom(legacy, HudLayoutConfig.Element.MINIMAP);
+        var target = HudLayoutConfig.stateFrom(legacy, HudLayoutConfig.Element.TARGET);
+        h.assertTrue(combat.equals(new HudLayoutConfig.State(0, 1, 1, true)),
+                "Three legacy anchors migrate to one default-visible left-bottom combat panel");
+        h.assertTrue(minimap.equals(new HudLayoutConfig.State(.68F, .31F, .8F, false))
+                        && target.equals(new HudLayoutConfig.State(.59F, .11F, 1.1F, true)),
+                "Migration preserves the independent minimap and target preferences");
+        legacy.add("combat", JsonParser.parseString("""
+                {"x": 0.17, "y": 0.81, "scale": 1.35, "visible": false}
+                """));
+        h.assertTrue(HudLayoutConfig.stateFrom(legacy, HudLayoutConfig.Element.COMBAT)
+                        .equals(new HudLayoutConfig.State(.17F, .81F, 1.35F, false)),
+                "Current panel preferences take precedence when a legacy configuration also exists");
+    }
+
     private static void verifyDeferredOpening(GameTestHelper h){
         var q=new com.myriad.client.DeferredScreenRequest();Object session=new Object(),world=new Object();
         int[] opened={0};String[] screen={"chat"};
