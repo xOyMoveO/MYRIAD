@@ -128,10 +128,10 @@ final class RosterDeliveryChecks {
                     "Formal wire selection grants one skill point and locks the matching weapon: "+type.getId());
             candidates+=FirstGroupSkills.candidates(type.getId()).size();
         }
-        h.assertTrue(CharacterType.playableValues().length==14&&candidates==112,
-                "Formal selection exposes all fourteen complete eight-candidate heroes");
+        h.assertTrue(CharacterType.playableValues().length==15&&candidates==120,
+                "Formal selection exposes all fifteen complete eight-candidate heroes");
         try {
-            for(String id:new String[]{"keheng","yike","rivet"}) {
+            for(String id:new String[]{"keheng","yike","rivet","luoxia"}) {
                 p.level().getServer().getCommands().getDispatcher().execute("myriad char "+id,p.createCommandSourceStack());
                 h.assertTrue(id.equals(PlayerDataProvider.get(p).getCharacterId()),"New role command needs no training mode: "+id);
             }

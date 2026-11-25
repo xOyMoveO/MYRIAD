@@ -71,6 +71,7 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
         net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents.ALLOW_COMMAND.register(
                 MyriadClient::allowCommand);
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(client->{
+            com.myriad.client.LuoxiaInput.tick(client);
             var screen=client.gui.screen();
             boolean chat=screen instanceof net.minecraft.client.gui.screens.ChatScreen;
             SCREEN_REQUEST.tick(client.player==null?null:client.getConnection(),client.level,chat,screen!=null&&!chat);
@@ -119,6 +120,10 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
             return;
         }
 
+        if("luoxia".equals(com.myriad.client.ClientDataHolder.characterId())){
+            com.myriad.client.LuoxiaInput.press(mc);
+            event.setSwingHand(false);event.setCanceled(true);return;
+        }
         if("yike".equals(com.myriad.client.ClientDataHolder.characterId())){
             Packets.sendToServer(new NetworkSetup.BasicAttackPayload(-1));
             event.setSwingHand(false);event.setCanceled(true);return;

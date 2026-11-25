@@ -44,6 +44,7 @@ public final class ModItems {
 
     /** 六名既有角色的专属初始武器；战斗属性仍由模组角色系统接管。 */
     public static final java.util.function.Supplier<Item> RIVET_HAMMER=registerSimpleItem("rivet_hammer");
+    public static final java.util.function.Supplier<Item> GUIXIA_BOW=registerItem("guixia_bow",com.myriad.item.GuixiaBowItem::new);
     public static final java.util.function.Supplier<Item> HENGKE=registerSimpleItem("hengke");
     public static final java.util.function.Supplier<Item> YINGCI = registerSimpleItem("yingci");
     public static final java.util.function.Supplier<Item> LEITINGJIAN = registerSimpleItem("leitingjian");
@@ -111,6 +112,7 @@ public final class ModItems {
             case "hanze" -> SHUANGBING.get();
             case "tianxing" -> LEITINGJIAN.get();
             case "rivet" -> RIVET_HAMMER.get();
+            case "luoxia" -> GUIXIA_BOW.get();
             case "keheng" -> HENGKE.get();
             case "yike" -> HONG_LIE.get();
             case "shuo" -> SHUO_SWORD.get();
@@ -125,7 +127,7 @@ public final class ModItems {
     }
 
     public static boolean isInitialWeaponItem(ItemStack stack) {
-        return stack.is(RIVET_HAMMER.get()) || stack.is(HENGKE.get()) || stack.is(HONG_LIE.get()) || stack.is(YINGCI.get())
+        return stack.is(GUIXIA_BOW.get()) || stack.is(RIVET_HAMMER.get()) || stack.is(HENGKE.get()) || stack.is(HONG_LIE.get()) || stack.is(YINGCI.get())
                 || stack.is(SHUO_SWORD.get())
                 || stack.is(LEITINGJIAN.get())
                 || stack.is(LIEYANJIAN.get())

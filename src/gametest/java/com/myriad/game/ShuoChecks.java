@@ -45,7 +45,7 @@ final class ShuoChecks {
         finally{DamageCalc.clearSkillHit(p);}
     }
     static void verify(GameTestHelper h){
-        h.assertTrue(java.util.Arrays.equals(CharacterType.values(),new CharacterType[]{CharacterType.YIKE,CharacterType.YINGXIAO,CharacterType.TIANXING,CharacterType.FENJUE,CharacterType.XUANCHEN,CharacterType.SULAN,CharacterType.LINGYUAN,CharacterType.HANZE,CharacterType.QINGLUO,CharacterType.CHIXIAO,CharacterType.YUNSHENG,CharacterType.KEHENG,CharacterType.SHUO,CharacterType.RIVET}),"All thirteen existing enum ordinals remain unchanged and Rivet is appended");
+        h.assertTrue(java.util.Arrays.equals(CharacterType.values(),new CharacterType[]{CharacterType.YIKE,CharacterType.YINGXIAO,CharacterType.TIANXING,CharacterType.FENJUE,CharacterType.XUANCHEN,CharacterType.SULAN,CharacterType.LINGYUAN,CharacterType.HANZE,CharacterType.QINGLUO,CharacterType.CHIXIAO,CharacterType.YUNSHENG,CharacterType.KEHENG,CharacterType.SHUO,CharacterType.RIVET,CharacterType.LUOXIA}),"All existing enum ordinals remain unchanged and Luoxia is appended");
         int poses=0;for(int action=0;action<=ShuoViewPayload.MAX_ACTION;action++)for(int n=0;n<=100;n++)for(boolean drawn:new boolean[]{false,true})for(boolean mirror:new boolean[]{false,true})for(boolean slim:new boolean[]{false,true}){
             var f=ShuoRig.frame(action,n/100.0,drawn);var blade=ShuoRig.blade(f,mirror);var scabbard=ShuoRig.sheath(f,mirror);
             boolean attacking=ShuoViewPayload.basicAction(action)||action==ShuoViewPayload.FLASH||action==ShuoViewPayload.CUT_LEFT||action==ShuoViewPayload.CUT_RIGHT||action==ShuoViewPayload.CUT_DOWN||action==ShuoViewPayload.GUARD||action==ShuoViewPayload.COUNTER;

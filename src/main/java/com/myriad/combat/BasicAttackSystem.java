@@ -34,6 +34,10 @@ public final class BasicAttackSystem {
     private BasicAttackSystem() { }
 
     public static void tryAttack(ServerPlayer attacker, int targetId) {
+        if ("luoxia".equals(PlayerDataProvider.get(attacker).getCharacterId())) {
+            com.myriad.character.skills.luoxia.LuoxiaBow.input(attacker, targetId);
+            return;
+        }
         if (com.myriad.character.ability.AbilityRuntime.channeling(attacker)
                 || PlayerDataProvider.get(attacker).getBuff("g1_stun") > 0) return;
         if (!ModState.isEnabled()) return;
@@ -83,6 +87,7 @@ public final class BasicAttackSystem {
     }
 
     public static int cooldownRemaining(ServerPlayer player) {
+        if("luoxia".equals(PlayerDataProvider.get(player).getCharacterId()))return com.myriad.character.skills.luoxia.LuoxiaBow.remaining(player);
         if(VanillaMeleeAttack.usesVanilla(CharacterType.byId(PlayerDataProvider.get(player).getCharacterId())))
             return Math.max(0,(int)Math.ceil((1-player.getAttackStrengthScale(0))*player.getCurrentItemAttackStrengthDelay()));
         if("yike".equals(PlayerDataProvider.get(player).getCharacterId()))return com.myriad.character.skills.yike.YikeBasicAttack.remaining(player);
@@ -92,6 +97,7 @@ public final class BasicAttackSystem {
     }
 
     public static int cooldownTotal(ServerPlayer player) {
+        if("luoxia".equals(PlayerDataProvider.get(player).getCharacterId()))return com.myriad.character.skills.luoxia.LuoxiaBow.cooldownTotal();
         if(VanillaMeleeAttack.usesVanilla(CharacterType.byId(PlayerDataProvider.get(player).getCharacterId())))
             return Math.max(1,(int)Math.ceil(player.getCurrentItemAttackStrengthDelay()));
         if("yike".equals(PlayerDataProvider.get(player).getCharacterId()))return com.myriad.character.skills.yike.YikeBasicAttack.total(player);

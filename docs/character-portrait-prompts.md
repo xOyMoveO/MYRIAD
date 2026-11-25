@@ -1,4 +1,72 @@
-# 万象 · 角色头像提示词（2026-11-23）
+# 万象 · 角色头像提示词
+
+## 当前风格：落霞式高清像素（2026-11-24）
+
+统一构图、像素笔触、具有远近层次的场景与边缘光。各角色保留旧头像的脸型、发型、服装轮廓与代表色。落霞本人作为风格参考，不重绘。用内置 ImageGen 单独生成每个角色。
+
+复用方法：将角色的旧头像作为图 1（身份参考）、落霞头像作为图 2（画风参考）。拼接本节的通用提示词与逐角色段落。绘制新角色时只提交落霞参考，去掉旧身份图相关句子，再补充人物的年龄、发型、轮廓和服装。缩略图核对 24／40 px，导出不透明的 256×256 RGB PNG，沿用 `portraits/<id>` 路径。
+
+### 通用提示词
+
+> Use case: style-transfer. Output one square, full-bleed, opaque head-and-shoulders portrait for MYRIAD's character selection. Input image 1 is the old portrait of the exact person to redraw: preserve identity, adult age, hair design, accessories, clothing shapes, likeness and dominant hues, while replacing the cubic voxel rendering and old background. Input image 2 (Luoxia) is ONLY the target visual style: detailed hand-placed hard-edged 2D pixel clusters, subtly stylized natural face proportions, fine and carefully grouped material detail, layered atmospheric landscapes, saturated theme-limited colors, deep tinted shadows, and a luminous local rim light. Match this tight head-and-upper-shoulder crop with an eye-level subtle three-quarter view, face near center and eyes 34–43 percent down; shoulders may crop; eyes and defining hair/headwear remain comfortably visible when scaled to 24 px. Use an original quiet scenic backdrop described below, painted with broad pixel bands, atmospheric perspective and no details competing with the eyes. Do not borrow Luoxia's face, braid, outfit or sunset palette. No text, frame, UI, watermark, hands, large foreground item, photo finish, or 3D Minecraft cube anatomy. Show one adult person.
+
+### 夜影 · `yingxiao`
+
+> Subject and scene: Adult man; keep his charcoal hood, layered black fringe, lower cloth face mask and sharp violet eyes. Matte graphite and violet layered clothing. Background: softly layered indigo-violet rooftops before dawn and a slim lavender rim of light.
+
+### 天刑 · `tianxing`
+
+> Subject and scene: Stern adult man, midnight-blue high ponytail with blue-silver clasp, cobalt eyes, angular silver-white and navy collar armor. Background: cloudy blue mountain ridges under a clearing storm, one thin cyan fork in the far distance.
+
+### 焚诀 · `fenjue`
+
+> Subject and scene: Broad adult man with a swept copper-red mane, neat rust beard and amber eyes. Dark basalt-red armor, ember seams and bronze joins. Background: a dark volcanic ridge and coral-orange ember sky, no airborne objects crossing the face.
+
+### 墨尘 · `xuanchen`
+
+> Subject and scene: Adult male scholar with long ink-black hair, tall folded black scholar crown and pale jade clasp, black and ivory brushwork robes. Background: layered ink-wash cliffs and ochre paper-colored dusk, one softly lit paper seal far behind.
+
+### 素岚 · `sulan`
+
+> Subject and scene: Adult woman, high dark-brown ponytail held by a celadon ribbon, clear jade eyes, porcelain white and celadon robes. Background: pale jade and blue-green cliffs under a bright windy cloudscape, ribbon silhouette flowing into open air.
+
+### 凌渊 · `lingyuan`
+
+> Subject and scene: Mature adult man, silver hair in a high knot, long silver side locks and neat short silver beard, teal eyes, dark teal robes with faded gold piping. Background: stepped indigo floating mountains and a small distant golden temple.
+
+### 寒泽 · `hanze`
+
+> Subject and scene: Young adult man, long swept silver-white hair, blue eyes, high navy collar and angular frost-blue shoulder facets. Background: glacier silhouettes, pale blue-violet snow clouds, one faint icy glint at the shoulder.
+
+### 青萝 · `qingluo`
+
+> Subject and scene: Adult woman, dark brown twin buns, jade forehead pendant and tiny cream herb blossoms, green eyes, warm cream and sage botanical robe. Background: forest mist with golden-green canopy gaps and muted silhouettes of herbs.
+
+### 赤霄 · `chixiao`
+
+> Subject and scene: Adult man, tight red topknot, boxy short beard, resolute face, hematite lamellar armor with matte red lacquer and tarnished copper trim. Background: wine-red fortress ramparts, weathered banners under a muted bronze-hued sky. Do not add lava or flames.
+
+### 云笙 · `yunsheng`
+
+> Subject and scene: Adult woman, long dark indigo hair, airy ivory-and-cloud-blue attire, ceramic hair ornaments and jade beads, light blue eyes. Background: ivory-blue cloud terraces, distant single origami crane and pale dawn edge light.
+
+### 朔 · `shuo`
+
+> Subject and scene: Adult man, loose black fringe and angular tied-back black topknot with small slate-blue cloth tie, silver-gray eyes. Preserve inky navy wrap coat and ivory collar. Background: cool indigo moonlit mountain skyline, sparse thin crescent.
+
+### 刻衡 · `keheng`
+
+> Subject and scene: Adult man, neatly brushed-back blue-black hair, clear copper-gold eyes, fitted dark petrol coat with precision brass collar trim. Background: a muted teal sky and small broken amber timing arc at the edge, arc must not overlap the face.
+
+### 伊珂 · `yike`
+
+> Subject and scene: Adult woman, asymmetric short deep-violet bob and a narrow pale blue optic clipped to one temple, eyes unobstructed; technical ivory armor and short violet cape with a coral clasp. Background: lilac and cyan futurist skyline with quiet atmospheric clouds.
+
+### 铆钉 · `rivet`
+
+> Subject and scene: Adult man with short rust-brown hair, pronounced squared stubble jaw, broad proportions, amber eyes, amber safety goggles parked above his brows, steel-blue utilitarian armor and worn yellow collar. Background: industrial steel platforms and apricot sparks far away, face and goggles clear.
+
+## 历史方案：方块立体风（2026-11-23）
 
 用于角色选择、角色图鉴和个人信息页。统一为方形头像，保留各角色的年龄、发型、衣饰与主题色，不把科幻或工业角色画成同一套仙侠服装。本轮使用内置 ImageGen，为每个角色独立生成一张。
 

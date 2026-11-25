@@ -55,6 +55,7 @@ public final class AbilityVfxMaterials {
             WAR_HD_RIM=148,WAR_HD_FLAKES=149,SPIRIT_HD_RIBBON=150,SPIRIT_HD_SIGIL=151,
             SPIRIT_HD_RIM=152,SPIRIT_HD_FLAKES=153,WAR_HD_WAVE_MODEL=154,SPIRIT_HD_CRANE_MODEL=155,
             SPIRIT_HD_BEACON_MODEL=156;
-    public static final int MAX=SPIRIT_HD_BEACON_MODEL;
+    public static final int LUOXIA_WAKE=157,LUOXIA_IMPACT=158,LUOXIA_ARROW_MODEL=159;
+    public static final int MAX=LUOXIA_ARROW_MODEL;
     public static boolean flameGround(int material){return material==FENJUE_GROUND||material==FENJUE_FLOW_RING||material==FENJUE_FLOW_FIELD;}
 }

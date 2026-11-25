@@ -19,13 +19,13 @@ final class RosterRetirementChecks {
     private static final Set<String> RETIRED = Set.of(
             "lige", "shenli", "mingzhu", "zhechuan", "guanlan", "luoheng", "xuanjia", "wuxiang", "feiyu", "wanyue");
     private static final Set<String> FINAL_ROSTER = Set.of(
-            "yingxiao", "tianxing", "fenjue", "xuanchen", "sulan", "lingyuan", "hanze", "qingluo", "chixiao", "yunsheng", "shuo", "keheng", "yike", "rivet");
+            "yingxiao", "tianxing", "fenjue", "xuanchen", "sulan", "lingyuan", "hanze", "qingluo", "chixiao", "yunsheng", "shuo", "keheng", "yike", "rivet", "luoxia");
 
     static void verify(GameTestHelper h, ServerPlayer player) {
         var data = PlayerDataProvider.get(player);
         h.assertTrue(Set.copyOf(java.util.Arrays.stream(CharacterType.playableValues()).map(CharacterType::getId).toList()).equals(FINAL_ROSTER)
                 && FirstGroupSkills.ROLES.equals(FINAL_ROSTER),
-                "Registration and the candidate graph contain exactly the final fourteen heroes");
+                "Registration and the candidate graph agree on fifteen heroes");
         int candidates = 0;
         for (String id : FINAL_ROSTER) {
             var role = CharacterType.byId(id);
@@ -46,7 +46,7 @@ final class RosterRetirementChecks {
                     && copied.getGold() == 523 && copied.getMana() == 321,
                     "Valid role, skill and ordinary resources survive save/copy: " + id);
         }
-        h.assertTrue(candidates == 112, "The fourteen-hero roster contains 112 candidates");
+        h.assertTrue(candidates == 120, "The fifteen-hero roster contains 120 candidates");
         verifyRetainedRangedBasics(h, player);
         PlayerDataProvider.chooseCharacter(player, CharacterType.YINGXIAO);
         data.refundAllSkillPointsForTraining();
