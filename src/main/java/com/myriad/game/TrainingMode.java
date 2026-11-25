@@ -1,15 +1,35 @@
 package com.myriad.game;
 
-/**
- * 训练模式（服务端全局开关，命令 /myriad train on|off / GUI）。
- * 开启后：跳过正式对局阶段校验，只要已选择角色即可施放技能；玩家仍可选择
- * 守护或毁灭，技能、普攻和战术装置沿用正式对局的敌我规则。
- * 额外开关（train on 后默认全部关闭，由训练 GUI 单独开启）：
- *  - 无冷却：技能施放不进入冷却；
- *  - 无限金币：商店购买不消耗金币；
- *  - 无限蓝：技能施放不检查、不扣除法力。
- */
+import net.minecraft.server.level.ServerPlayer;
+
+/** Resolve individual practice settings, or the administrator's idle-world map preview settings. */
 public final class TrainingMode {
+    // No-argument accessors cover the existing administrator sandbox only. Personal visitors
+    // use their own options, and a running official match always uses official costs.
+    private static boolean legacyAvailable() {
+        var manager = GameManager.get();
+        return enabled && (manager == null || manager.getPhase() == GameManager.Phase.WAITING);
+    }
+
+    public static boolean isEnabled(ServerPlayer player) {
+        return TrainingGround.isTraining(player) || legacyAvailable();
+    }
+
+    public static boolean isNoCooldown(ServerPlayer player) {
+        var personal = TrainingGround.options(player);
+        return personal == null ? legacyAvailable() && noCooldown : personal.noCooldown;
+    }
+
+    public static boolean isNoMana(ServerPlayer player) {
+        var personal = TrainingGround.options(player);
+        return personal == null ? legacyAvailable() && noMana : personal.noMana;
+    }
+
+    public static boolean isNoGoldCost(ServerPlayer player) {
+        var personal = TrainingGround.options(player);
+        return personal == null ? legacyAvailable() && noGoldCost : personal.noGoldCost;
+    }
+
     private static boolean enabled = false;
     private static boolean noCooldown = false;
     private static boolean noGoldCost = false;
@@ -22,7 +42,7 @@ public final class TrainingMode {
     }
 
     public static void setEnabled(boolean value) {
-        if(!value)noCooldown=noGoldCost=noMana=false;
+        if (!value) noCooldown = noGoldCost = noMana = false;
         enabled = value;
     }
 

@@ -11,7 +11,8 @@ public final class MatchReminders {
     private MatchReminders() {}
     public static void tick(ServerPlayer player) {
         GameManager manager = GameManager.get();
-        if (TrainingMode.isEnabled() || manager == null || manager.getPhase() != GameManager.Phase.PLAYING) return;
+        if (TrainingMode.isEnabled(player) || manager == null || manager.getPhase() != GameManager.Phase.PLAYING
+                || !manager.isParticipant(player.getUUID())) return;
         var data = PlayerDataProvider.get(player);
         if (data == null || data.getCharacterId() == null || player.isSpectator()) return;
         long now = player.level().getGameTime();

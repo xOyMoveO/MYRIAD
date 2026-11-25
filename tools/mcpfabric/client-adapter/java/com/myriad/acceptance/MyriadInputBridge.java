@@ -112,6 +112,19 @@ public final class MyriadInputBridge implements ClientModInitializer {
         if (duration < 1 || duration > 20) throw RpcException.badRequest("holdTicks must be 1..20");
         if (c.optInt("captureFrames", 0) > 0) startCapture(c);
         String kind = c.getString("kind");
+        if (kind.equals("scroll")) {
+            var screen = mc.gui.screen();
+            if (screen == null) throw RpcException.badRequest("GUI scroll requires an open screen");
+            var window = mc.getWindow();
+            double x = c.getDouble("x"), y = c.getDouble("y"), amount = c.getDouble("amount");
+            if (!Double.isFinite(amount) || Math.abs(amount) > 20) throw RpcException.badRequest("Scroll must be within 20 steps");
+            mc.mouseHandler.onMove(window.handle(), x * window.getScreenWidth() / screen.width,
+                    y * window.getScreenHeight() / screen.height, 0, 0);
+            mc.mouseHandler.onScroll(window.handle(), 0, amount);
+            var result = state();
+            result.addProperty("inputRoute", "native_mouse_scroll");
+            return result;
+        }
         Held key;
         if (kind.equals("key")) {
             String name = c.getString("key");
@@ -146,7 +159,7 @@ public final class MyriadInputBridge implements ClientModInitializer {
                 default -> InputConstants.MOUSE_BUTTON_MIDDLE;
             };
             key = new Held(null, null, -1, nativeButton, tick + duration);
-        } else throw RpcException.badRequest("kind must be key or mouse");
+        } else throw RpcException.badRequest("kind must be key, mouse or scroll");
         inputWorld = mc.level;
         held.add(key);
         try { dispatch(key, InputConstants.PRESS); }
@@ -195,7 +208,15 @@ public final class MyriadInputBridge implements ClientModInitializer {
     private static JsonObject state() {
         Minecraft mc = Minecraft.getInstance();
         JsonObject o = new JsonObject();
-        o.addProperty("adapterVersion", 2);
+        o.addProperty("adapterVersion", 3);
+        var json = new com.google.gson.Gson();
+        o.add("lobby", json.toJsonTree(com.myriad.client.LobbyClient.snapshot()));
+        o.add("draft", json.toJsonTree(ClientDataHolder.pickState()));
+        o.addProperty("phase", ClientDataHolder.phase().name());
+        if (mc.level != null) {
+            o.addProperty("dimension", mc.level.dimension().identifier().toString());
+            o.addProperty("worldTick", mc.level.getGameTime());
+        }
         o.addProperty("platform", "fabric-26.3-sdl");
         o.addProperty("character", ClientDataHolder.characterId());
         o.addProperty("modEnabled", ClientDataHolder.modEnabled());
@@ -210,6 +231,8 @@ public final class MyriadInputBridge implements ClientModInitializer {
         o.addProperty("screen", mc.gui.screen() == null ? "none" : mc.gui.screen().getClass().getSimpleName());
         var data = ClientDataHolder.get();
         if (data != null) {
+            o.addProperty("gold", data.gold()); o.addProperty("noCooldown", data.noCooldown());
+            o.addProperty("noMana", data.noMana()); o.addProperty("noGoldCost", data.noGoldCost());
             o.addProperty("level", data.level()); o.addProperty("mana", data.mana());
             o.addProperty("skillPoints", data.skillPoints());
             JsonObject ranks = new JsonObject(); data.skillLevels().forEach(ranks::addProperty); o.add("skills", ranks);

@@ -14,18 +14,19 @@ if (config.host !== '127.0.0.1' || config.requireAuth !== true || !config.token)
   throw new Error('The project bridge must use 127.0.0.1 and bearer authentication.');
 }
 const inputFields = {
-  kind: { type: 'string', enum: ['key', 'mouse'] },
+  kind: { type: 'string', enum: ['key', 'mouse', 'scroll'] },
   key: { type: 'string', description: 'A KeyMapping name (key.myriad.skill_e) or raw key.keyboard.escape. Named mappings temporarily borrow an unused key and restore the original binding.' },
   button: { type: 'integer', minimum: 0, maximum: 2 },
   x: { type: 'number', description: 'GUI-scaled mouse X; required with y when a screen is open.' },
   y: { type: 'number' },
+  amount: { type: 'number', minimum: -20, maximum: 20, description: 'Vertical wheel steps for scroll input' },
   holdTicks: { type: 'integer', minimum: 1, maximum: 20, default: 1 },
   captureFrames: { type: 'integer', minimum: 0, maximum: 40, default: 0 },
   intervalTicks: { type: 'integer', minimum: 1, maximum: 10, default: 1 },
 };
 const tools = [
   { name: 'myriad_state', method: 'myriad.state', description: 'Read MYRIAD character, mana, learned skills, cooldowns, position and observed native input event counters.', properties: {}, readOnly: true },
-  { name: 'myriad_input', method: 'myriad.input', description: 'Test client only. Tap a mod KeyMapping or mouse button through Minecraft native handlers. Auto-release after holdTicks, restore bindings, and optionally capture the effect. Preserves server skill checks.', properties: inputFields, required: ['kind'] },
+  { name: 'myriad_input', method: 'myriad.input', description: 'Test client only. Tap a mod KeyMapping or send mouse clicks and wheel scrolling through Minecraft native handlers. Auto-release after holdTicks, restore bindings, and optionally capture the effect. Preserves server skill checks.', properties: inputFields, required: ['kind'] },
   { name: 'myriad_release_inputs', method: 'myriad.release', description: 'Release keys/mouse buttons held by the test adapter and restore temporary bindings.', properties: {} },
   { name: 'myriad_capture', method: 'myriad.capture', description: 'Start a bounded PNG frame sequence. Poll myriad_capture_status for paths and per-frame skill state.', properties: { captureFrames: { ...inputFields.captureFrames, minimum: 1, default: 20 }, intervalTicks: inputFields.intervalTicks } },
   { name: 'myriad_capture_status', method: 'myriad.captureStatus', description: 'Read progress and PNG paths of the latest frame capture; view the files to evaluate the effect.', properties: { captureId: { type: 'string' } }, required: ['captureId'], readOnly: true },

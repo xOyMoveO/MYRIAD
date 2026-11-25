@@ -43,11 +43,10 @@ public final class FirstGroupGrowth {
     }
     public static boolean buy(ServerPlayer p,PlayerData d,String key){
         if(!com.myriad.game.ModState.isEnabled()||!FirstGroupSkills.active(d.getCharacterId())||!ATTRIBUTES.contains(key))return false;
-        boolean training=TrainingMode.isEnabled();
-        if(!training&&(GameManager.get()==null||GameManager.get().getPhase()!=GameManager.Phase.PLAYING)||!BaseRules.canShop(p))return false;
+        if(!TrainingGround.canFight(p)||!BaseRules.canShop(p))return false;
         int rank=d.firstGroupAttribute(key),sum=ATTRIBUTES.stream().mapToInt(d::firstGroupAttribute).sum();
         if(rank>=ATTRIBUTE_CAP||sum>=TOTAL_POINTS){p.sendSystemMessage(Component.translatable("message.myriad.g1.attribute_max"));return false;}
-        boolean free=training&&TrainingMode.isNoGoldCost();int cost=price(rank);
+        boolean free=TrainingMode.isNoGoldCost(p);int cost=price(rank);
         if(!free&&d.getGold()<cost){p.sendSystemMessage(Component.translatable("message.myriad.equip_no_gold"));return false;}
         if(!free)d.spendGold(cost);
         d.setFirstGroupAttribute(key,rank+1);apply(p,d);PlayerDataProvider.syncToClient(p);return true;

@@ -151,7 +151,7 @@ public final class DamageCalc {
 
     private static Roll dealTypedDamage(LivingEntity attacker, LivingEntity target, float base, Kind kind, boolean basic) {
         if (attacker instanceof net.minecraft.server.level.ServerPlayer player
-                && com.myriad.combat.SkillTargets.ally(player, target)) {
+                && !SkillTargets.hostile(player, target)) {
             return new Roll(0.0F, false);
         }
         Roll roll = rollDamage(attacker, target, base, kind);

@@ -16,7 +16,7 @@ public final class RecallSystem {
     private static boolean eligible(ServerPlayer p) {
         return p.isAlive() && !p.isSpectator() && !p.isPassenger() && ModState.isEnabled()
                 && p.level() == p.level().getServer().overworld()
-                && (TrainingMode.isEnabled() || GameManager.get()!=null && GameManager.get().getPhase()==GameManager.Phase.PLAYING)
+                && TrainingGround.canFight(p)
                 && com.myriad.character.CharacterType.byId(PlayerDataProvider.get(p).getCharacterId()) != null;
     }
     public static void request(ServerPlayer p) {

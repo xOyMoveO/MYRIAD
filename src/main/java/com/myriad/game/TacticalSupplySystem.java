@@ -65,7 +65,7 @@ public final class TacticalSupplySystem {
     /** 使用对局金币购买补给；视野饰品互斥，购买时会自动替换。 */
     public static boolean buy(ServerPlayer player, String id) {
         PlayerData data = PlayerDataProvider.get(player);
-        if (data == null || (GameManager.get() == null && !TrainingMode.isEnabled())
+        if (data == null || (GameManager.get() == null && !TrainingMode.isEnabled(player))
                 || !BaseRules.canShop(player)) {
             if (data != null && ModState.isEnabled() && !BaseRules.canShop(player))
                 player.sendSystemMessage(Component.translatable("message.myriad.shop_base_only"));
@@ -81,7 +81,7 @@ public final class TacticalSupplySystem {
             player.sendSystemMessage(Component.translatable("message.myriad.pill_limit"));
             return false;
         }
-        boolean free = TrainingMode.isEnabled() && TrainingMode.isNoGoldCost();
+        boolean free = TrainingMode.isEnabled(player) && TrainingMode.isNoGoldCost(player);
         if (!free && data.getGold() < offer.price) {
             player.sendSystemMessage(Component.translatable("message.myriad.supply_no_gold"));
             return false;
@@ -116,14 +116,16 @@ public final class TacticalSupplySystem {
         TRUE_SIGHT_UNTIL.remove(playerId);
     }
 
+    public static void clearPlayer(ServerPlayer player) {
+        clearFor(List.of(player.getUUID()));
+    }
+
     public static boolean tryUse(ServerPlayer player, ItemStack stack) {
         if (stack == null || stack.isEmpty()) return false;
         if (!stack.is(ModItems.BLOOD_PILL.get()) && !stack.is(ModItems.MANA_PILL.get())
                 && !stack.is(ModItems.SPIRIT_SNARE.get()) && !stack.is(ModItems.SCOUT_TOTEM.get())
                 && !stack.is(ModItems.TRUE_SIGHT_CHARM.get())) return false;
-        GameManager manager = GameManager.get();
-        boolean playing = manager != null && manager.getPhase() == GameManager.Phase.PLAYING;
-        if (!playing && !TrainingMode.isEnabled()) {
+        if (!TrainingGround.canFight(player)) {
             player.sendSystemMessage(Component.translatable("message.myriad.supply_match_only"));
             return true;
         }
@@ -161,8 +163,8 @@ public final class TacticalSupplySystem {
             player.sendSystemMessage(Component.translatable("message.myriad.true_sight_active"));
             return true;
         }
-        Faction faction = manager == null ? data.getFaction() : manager.factionOf(player);
-        if (faction == null && TrainingMode.isEnabled()) faction = Faction.GUARDIAN;
+        Faction faction = factionOf(player);
+        if (faction == null && TrainingMode.isEnabled(player)) faction = Faction.GUARDIAN;
         Vec3 pos = stack.is(ModItems.SCOUT_TOTEM.get())
                 ? totemPlacementPoint(player) : placementPoint(player);
         if (faction == null || pos == null) {
@@ -191,11 +193,12 @@ public final class TacticalSupplySystem {
         if (now % 5 == 0) tickTotemPlacementPreview(level);
         if (now % 10 != 0) return;
         for (Deployable deployable : DEPLOYABLES) {
-            if (deployable.visual != null) deployable.visual.setGlowingTag(false);
+            if (deployable.level == level && deployable.visual != null) deployable.visual.setGlowingTag(false);
         }
         Iterator<Deployable> iterator = DEPLOYABLES.iterator();
         while (iterator.hasNext()) {
             Deployable deployable = iterator.next();
+            if (deployable.level != level) continue;
             if (deployable.expireTick <= now || deployable.visual == null || !deployable.visual.isAlive()) {
                 discard(deployable);
                 iterator.remove();
@@ -278,9 +281,7 @@ public final class TacticalSupplySystem {
     private static void hideTrapFromEnemies(ServerLevel level, Deployable trap) {
         if (trap.visual == null || !trap.visual.isAlive()) return;
         for (ServerPlayer viewer : level.players()) {
-            GameManager manager = GameManager.get();
-            Faction faction = manager == null ? null : manager.factionOf(viewer);
-            if (faction != null && faction != trap.faction) {
+            if (enemyOf(trap, viewer)) {
                 viewer.connection.send(new ClientboundRemoveEntitiesPacket(trap.visual.getId()));
             }
         }
@@ -293,11 +294,11 @@ public final class TacticalSupplySystem {
                 TRUE_SIGHT_UNTIL.remove(player.getUUID());
                 continue;
             }
-            GameManager manager = GameManager.get();
-            Faction faction = manager == null ? null : manager.factionOf(player);
+            Faction faction = factionOf(player);
             if (faction == null) continue;
             for (Deployable deployable : DEPLOYABLES) {
-                if (deployable.faction != faction && deployable.pos.distanceToSqr(player.position()) <= TRUE_SIGHT_RADIUS * TRUE_SIGHT_RADIUS) {
+                if (deployable.level == level && deployable.visual != null && enemyOf(deployable, player)
+                        && deployable.pos.distanceToSqr(player.position()) <= TRUE_SIGHT_RADIUS * TRUE_SIGHT_RADIUS) {
                     deployable.visual.setGlowingTag(true);
                     level.sendParticles(ParticleTypes.WITCH, deployable.pos.x, deployable.pos.y + 0.4, deployable.pos.z,
                             2, 0.2, 0.2, 0.2, 0.01);
@@ -305,7 +306,8 @@ public final class TacticalSupplySystem {
             }
             AABB area = player.getBoundingBox().inflate(15.0);
             for (ServerPlayer enemy : level.getEntitiesOfClass(ServerPlayer.class, area,
-                    p -> p.isAlive() && manager.factionOf(p) != faction)) {
+                    p -> p.isAlive() && p != player && factionOf(p) != null
+                            && (TrainingGround.isTraining(player) ? TrainingGround.mayInteract(player, p) : factionOf(p) != faction))) {
                 enemy.addEffect(new MobEffectInstance(MobEffects.GLOWING, 30, 0, true, false, true));
             }
         }
@@ -322,7 +324,7 @@ public final class TacticalSupplySystem {
             display.setPos(pos.x, pos.y + (kind == Kind.WARD ? 0.7 : 0.2), pos.z);
             level.addFreshEntity(ModEntityTracker.markGenerated(display));
         }
-        return new Deployable(owner.getUUID(), faction, pos, level.getGameTime() + duration, kind, display);
+        return new Deployable(level, owner.getUUID(), faction, pos, level.getGameTime() + duration, kind, display);
     }
 
     private static Vec3 placementPoint(ServerPlayer player) {
@@ -357,10 +359,8 @@ public final class TacticalSupplySystem {
 
     /** 仅向手持侦灵图腾的本人发送施法范围和准星落点预览。 */
     private static void tickTotemPlacementPreview(ServerLevel level) {
-        GameManager manager = GameManager.get();
-        boolean playing = manager != null && manager.getPhase() == GameManager.Phase.PLAYING;
-        if (!playing && !TrainingMode.isEnabled()) return;
         for (ServerPlayer player : level.players()) {
+            if (!TrainingGround.canFight(player)) continue;
             if (!player.getMainHandItem().is(ModItems.SCOUT_TOTEM.get())
                     && !player.getOffhandItem().is(ModItems.SCOUT_TOTEM.get())) continue;
             double centerY = player.getY() + 0.08;
@@ -388,9 +388,18 @@ public final class TacticalSupplySystem {
     }
 
     private static boolean enemyOf(Deployable deployable, ServerPlayer player) {
+        if (TrainingGround.isTraining(deployable.level)) {
+            ServerPlayer owner = deployable.level.getServer().getPlayerList().getPlayer(deployable.owner);
+            return owner != null && owner != player && TrainingGround.mayInteract(owner, player);
+        }
+        Faction faction = factionOf(player);
+        return faction != null && faction != deployable.faction;
+    }
+
+    private static Faction factionOf(ServerPlayer player) {
+        if (TrainingMode.isEnabled(player)) return PlayerDataProvider.get(player).getFaction();
         GameManager manager = GameManager.get();
-        return manager != null && manager.factionOf(player) != null
-                && manager.factionOf(player) != deployable.faction;
+        return manager == null || !manager.isParticipant(player.getUUID()) ? null : manager.factionOf(player);
     }
 
     private static boolean hasItem(ServerPlayer player, net.minecraft.world.item.Item item) {
@@ -477,11 +486,11 @@ public final class TacticalSupplySystem {
     }
 
     /** 战争迷雾读取的本阵营侦灵图腾位置快照。 */
-    public static List<Vec3> wardPositions(Faction faction) {
+    public static List<Vec3> wardPositions(ServerLevel level, Faction faction) {
         if (faction == null) return List.of();
         List<Vec3> result = new ArrayList<>();
         for (Deployable deployable : DEPLOYABLES) {
-            if (deployable.kind == Kind.WARD && deployable.faction == faction) result.add(deployable.pos);
+            if (deployable.level == level && deployable.kind == Kind.WARD && deployable.faction == faction) result.add(deployable.pos);
         }
         return List.copyOf(result);
     }
@@ -499,6 +508,17 @@ public final class TacticalSupplySystem {
                 > player.level().getGameTime();
     }
 
+    public static void clearFor(java.util.Collection<UUID> players) {
+        DEPLOYABLES.removeIf(deployable -> {
+            if (!players.contains(deployable.owner)) return false;
+            discard(deployable);
+            return true;
+        });
+        BLOOD_REMAINING.keySet().removeAll(players);
+        MANA_REMAINING.keySet().removeAll(players);
+        TRUE_SIGHT_UNTIL.keySet().removeAll(players);
+    }
+
     public static void clear() {
         for (Deployable deployable : DEPLOYABLES) discard(deployable);
         DEPLOYABLES.clear();
@@ -511,6 +531,6 @@ public final class TacticalSupplySystem {
 
     private record SupplyOffer(net.minecraft.world.item.Item item, int price, int count) { }
 
-    private record Deployable(UUID owner, Faction faction, Vec3 pos, long expireTick,
+    private record Deployable(ServerLevel level, UUID owner, Faction faction, Vec3 pos, long expireTick,
             Kind kind, ItemDisplay visual) { }
 }

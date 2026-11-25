@@ -108,13 +108,24 @@ public class HudOverlay implements HudElement {
         TeamSignalClient.render(gui,font);
         ControlStatusOverlay.render(gui,font);
         var preparation=ClientDataHolder.pickState();
-        if(preparation!=null&&preparation.state()==1&&preparation.countdownTick()>=0&&Minecraft.getInstance().level!=null){
-            int seconds=(int)Math.max(0,(preparation.countdownTick()-Minecraft.getInstance().level.getGameTime()+19)/20);
-            if(seconds>0){
-                String label=Component.translatable("rivet".equals(data.characterId())?"hud.myriad.rivet.preparation":"hud.myriad.match.preparation",seconds).getString();
-                int px=(Minecraft.getInstance().getWindow().getGuiScaledWidth()-font.width(label))/2;
-                gui.fill(px-5,18,px+font.width(label)+5,32,0xCC111C24);gui.text(font,label,px,20,0xFFEBAF4C);
-            }
+        int seconds = LobbyClient.preparationSeconds();
+        if (seconds < 0 && preparation != null && preparation.state() == 1 && preparation.countdownTick() >= 0
+                && Minecraft.getInstance().level != null) {
+            seconds = (int)Math.max(0,(preparation.countdownTick()-Minecraft.getInstance().level.getGameTime()+19)/20);
+        }
+        var queue = LobbyClient.snapshot();
+        Component notice = null;
+        if (seconds > 0) {
+            notice = Component.translatable("rivet".equals(data.characterId())
+                    ? "hud.myriad.rivet.preparation" : "hud.myriad.match.preparation", seconds);
+        } else if (queue != null && queue.position() > 0 && queue.voteSeconds() >= 0) {
+            notice = Component.translatable("lobby.myriad.proposal_hud", queue.count()/2, queue.count()/2,
+                    queue.voteSeconds(), com.myriad.MyriadClient.KEY_LOBBY.getTranslatedKeyMessage());
+        }
+        if (notice != null) {
+            int px = (Minecraft.getInstance().getWindow().getGuiScaledWidth() - font.width(notice)) / 2;
+            gui.fill(px-5, 18, px+font.width(notice)+5, 32, 0xDD111C24);
+            gui.text(font, notice, px, 20, 0xFFFFD79A);
         }
         HudLayoutConfig.render(gui, HudLayoutConfig.Element.INFO, () -> {
             float s = fitScale();
@@ -428,7 +439,7 @@ public class HudOverlay implements HudElement {
         if ("rivet".equals(data.characterId())) {
             int active=ClientDataHolder.syncedCounter("g1_rivet_anchor_active"),recovery=ClientDataHolder.buffTicks("g1_rivet_anchor_recovery");
             var pick=ClientDataHolder.pickState();
-            boolean preparing=pick!=null&&pick.state()==1&&pick.countdownTick()>=0&&Minecraft.getInstance().level!=null&&pick.countdownTick()>Minecraft.getInstance().level.getGameTime();
+            boolean preparing=LobbyClient.preparationSeconds()>0 || pick!=null&&pick.state()==1&&pick.countdownTick()>=0&&Minecraft.getInstance().level!=null&&pick.countdownTick()>Minecraft.getInstance().level.getGameTime();
             String status=active<=0?Component.translatable("hud.myriad.rivet.no_anchor").getString():preparing?Component.translatable("hud.myriad.rivet.anchor_preparing").getString():recovery>0?Component.translatable("hud.myriad.rivet.anchor_recovery",recovery/20.0f).getString():Component.translatable("hud.myriad.rivet.anchor_ready").getString();
             if(active>0)status=Component.translatable("hud.myriad.rivet.anchor_status",status,ClientDataHolder.buffTicks("g1_rivet_anchor_remaining")/20.0f).getString();
             gui.text(font,status,x+width/2-font.width(status)/2,y-24,recovery>0||preparing?0xFFEBAF4C:0xFF70D8E0);

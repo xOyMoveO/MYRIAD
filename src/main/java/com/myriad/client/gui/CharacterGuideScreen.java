@@ -17,6 +17,7 @@ public final class CharacterGuideScreen extends Screen {
         addRenderableWidget(Button.builder(Component.translatable("gui.back"), b -> onClose()).bounds(width/2-50,height-27,100,20).build());
     }
     @Override public boolean isPauseScreen() { return false; }
+    public boolean isQueueDraft() { return parent instanceof DraftScreen; }
     public boolean isChoosePreview() { return parent instanceof CharacterSelectScreen; }
     @Override public void tick() {
         if (!isChoosePreview() && (!com.myriad.client.ClientDataHolder.modEnabled()

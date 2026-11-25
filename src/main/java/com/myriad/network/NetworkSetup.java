@@ -642,29 +642,6 @@ public final class NetworkSetup {
         }
     }
 
-    /** 开局管理：开始游戏（客户端 -> 服务端）；mode 0=均衡随机分配后开始，1=按当前手动分配开始 */
-    public record StartMatchPayload(int mode, String arenaId) implements CustomPacketPayload {
-        public static final Type<StartMatchPayload> TYPE =
-                new Type<>(Identifier.fromNamespaceAndPath(Myriad.MODID, "start_match"));
-
-        public static final StreamCodec<FriendlyByteBuf, StartMatchPayload> STREAM_CODEC =
-                StreamCodec.ofMember(StartMatchPayload::write, StartMatchPayload::decode);
-
-        private static void write(StartMatchPayload payload, FriendlyByteBuf buf) {
-            buf.writeInt(payload.mode());
-            buf.writeUtf(payload.arenaId(), 8);
-        }
-
-        private static StartMatchPayload decode(FriendlyByteBuf buf) {
-            return new StartMatchPayload(buf.readInt(), buf.readUtf(8));
-        }
-
-        @Override
-        public Type<? extends CustomPacketPayload> type() {
-            return TYPE;
-        }
-    }
-
     public record SelectArenaPayload(String arenaId) implements CustomPacketPayload {
         public static final Type<SelectArenaPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(Myriad.MODID, "select_arena"));
         public static final StreamCodec<FriendlyByteBuf, SelectArenaPayload> CODEC = StreamCodec.of(
@@ -1302,7 +1279,6 @@ public final class NetworkSetup {
         PayloadTypeRegistry.serverboundPlay().register(SelectArenaPayload.TYPE, SelectArenaPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(RequestTeamListPayload.TYPE, RequestTeamListPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(SetTeamPayload.TYPE, SetTeamPayload.STREAM_CODEC);
-        PayloadTypeRegistry.serverboundPlay().register(StartMatchPayload.TYPE, StartMatchPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(GameSettingsPayload.TYPE, GameSettingsPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(RequestGameSettingsPayload.TYPE, RequestGameSettingsPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(UpdateSettingPayload.TYPE, UpdateSettingPayload.STREAM_CODEC);
@@ -1346,7 +1322,7 @@ public final class NetworkSetup {
                     || !Float.isFinite(payload.magicDefense())) return;
             net.minecraft.world.entity.Entity entity = player.level().getEntity(payload.entityId());
             if (entity instanceof net.minecraft.world.entity.LivingEntity living
-                    && com.myriad.game.JiarenManager.isJiaren(living.getUUID())
+                    && com.myriad.game.JiarenManager.mayEdit(player, living)
                     && player.distanceToSqr(living) <= 36.0) {
                 com.myriad.game.JiarenManager.setDefenses(living,
                         payload.physicalDefense(), payload.magicDefense());
@@ -1400,11 +1376,6 @@ public final class NetworkSetup {
                 (payload, context) -> {
             ServerPlayer player = context.player();
             PlayerDataProvider.setTeamByAdmin(player, payload.playerName(), payload.factionId());
-        });
-        ServerPlayNetworking.registerGlobalReceiver(StartMatchPayload.TYPE,
-                (payload, context) -> {
-            ServerPlayer player = context.player();
-            PlayerDataProvider.startMatchFromUi(player, payload.mode(), payload.arenaId());
         });
         ServerPlayNetworking.registerGlobalReceiver(RequestGameSettingsPayload.TYPE,
                 (payload, context) -> {

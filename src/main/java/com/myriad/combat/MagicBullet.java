@@ -19,8 +19,6 @@ import net.minecraft.world.phys.Vec3;
 import com.myriad.character.CharacterType;
 import com.myriad.character.ability.ActionTime;
 import com.myriad.character.ability.AbilityRuntime;
-import com.myriad.game.Faction;
-import com.myriad.game.GameManager;
 import com.myriad.player.PlayerData;
 import com.myriad.player.PlayerDataProvider;
 
@@ -45,6 +43,9 @@ public final class MagicBullet {
     private static final DustParticleOptions YUNSHENG_GLOW = new DustParticleOptions(0xEDFFF9, .8F);
 
     private static final class Bullet {
+        final ServerLevel level;
+        Bullet(ServerLevel level) { this.level = level; }
+
         Vec3 pos;
         Vec3 dir;
         double traveled;
@@ -86,7 +87,7 @@ public final class MagicBullet {
         if (!PlayerDataProvider.isInitialWeapon(held)) {
             return;
         }
-        if (!isMage(player)) {
+        if (!isMage(player) || !BasicAttackSystem.canAttackNow(player, PlayerDataProvider.get(player))) {
             return;
         }
 
@@ -105,7 +106,7 @@ public final class MagicBullet {
             return;
         }
         Vec3 pos = player.getEyePosition().add(dir.scale(0.5));
-        Bullet b = new Bullet();
+        Bullet b = new Bullet(level);
         b.pos = pos;
         b.dir = dir;
         b.traveled = 0;
@@ -147,7 +148,7 @@ public final class MagicBullet {
             return;
         }
         ServerLevel level = (ServerLevel) player.level();
-        list.removeIf(b -> {boolean ended=tickOne(level,player,b);if(ended){
+        list.removeIf(b -> {boolean ended=b.level!=level || tickOne(level,player,b);if(ended){
             ActionTime.clearTarget(b.flight);
             if(b.visualId>0)MagicBulletVisuals.end(player,b.visualTheme,b.visualId);
         }return ended;});
@@ -256,7 +257,7 @@ public final class MagicBullet {
                 e -> e != caster && e.isAlive()
                         && !(e instanceof net.minecraft.world.entity.decoration.ArmorStand)
                         && !(e instanceof net.minecraft.world.entity.decoration.Mannequin)
-                        && !isAlly(caster, e))) {
+                        && SkillTargets.hostile(caster, e))) {
             Vec3 rel = e.getBoundingBox().getCenter().subtract(from);
             double t = rel.dot(delta) / lenSqr;
             if (t < 0 || t > 1) {
@@ -270,10 +271,6 @@ public final class MagicBullet {
             }
         }
         return best;
-    }
-
-    private static boolean isAlly(ServerPlayer caster, LivingEntity other) {
-        return SkillTargets.ally(caster, other);
     }
 
     /** 玩家退出时清理其全部飞行中的魔法弹 */
@@ -310,7 +307,7 @@ public final class MagicBullet {
                 continue;
             }
             var caster=level.getServer().getPlayerList().getPlayer(entry.getKey());
-            list.removeIf(b -> {if(!inside.test(b.pos))return false;ActionTime.clearTarget(b.flight);
+            list.removeIf(b -> {if(b.level!=level||!inside.test(b.pos))return false;ActionTime.clearTarget(b.flight);
                 if(b.visualId>0&&caster!=null&&caster.level()==level)
                     MagicBulletVisuals.end(caster,b.visualTheme,b.visualId);
                 intercepted.accept(b.pos);return true;});

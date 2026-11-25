@@ -5,6 +5,8 @@ import net.minecraft.server.level.ServerPlayer;
 
 import com.myriad.Myriad;
 import com.myriad.game.GameManager;
+import com.myriad.game.TrainingGround;
+import com.myriad.game.TrainingMode;
 import com.myriad.player.PlayerData;
 import com.myriad.player.PlayerDataProvider;
 
@@ -28,10 +30,10 @@ public final class SkillSystem {
             return;
         }
 
-        boolean training = com.myriad.game.TrainingMode.isEnabled();
+        boolean training = TrainingMode.isEnabled(player);
         GameManager manager = GameManager.get();
-        if (!training && (manager == null || manager.getPhase() != GameManager.Phase.PLAYING
-                && !(slot == CharacterType.SLOT_W && manager.preparationFor(player)))) {
+        if (!TrainingGround.canFight(player)
+                && !(slot == CharacterType.SLOT_W && manager != null && manager.preparationFor(player))) {
             Myriad.LOGGER.info("[cast] {} rejected: phase={}", player.getName().getString(),
                     manager == null ? "no-manager" : manager.getPhase());
             player.sendSystemMessage(Component.translatable("message.myriad.match_not_playing"));
@@ -69,8 +71,8 @@ public final class SkillSystem {
             player.sendSystemMessage(Component.translatable("message.myriad.skill_not_learned"));
             return;
         }
-        boolean noCd = training && com.myriad.game.TrainingMode.isNoCooldown();
-        boolean noMana = training && com.myriad.game.TrainingMode.isNoMana();
+        boolean noCd = TrainingMode.isNoCooldown(player);
+        boolean noMana = TrainingMode.isNoMana(player);
 
         // 冷却（训练模式无冷却开关开启时跳过）
         boolean chixiaoReturn = type == CharacterType.CHIXIAO && slot == CharacterType.SLOT_W

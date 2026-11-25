@@ -36,6 +36,24 @@ public class PlayerData {
     private int gold = 0;
     /** 本局累计获得金币；消费不减少，开局时由 GameManager 重置。 */
     private int matchGoldEarned = 0;
+    private java.util.UUID queueRound;
+    private boolean openingPurseClaimed;
+
+    public boolean belongsToQueueRound(java.util.UUID id) { return id.equals(queueRound); }
+    public void beginQueueRound(java.util.UUID id) {
+        queueRound = id;
+        openingPurseClaimed = false;
+    }
+    public boolean openingPurseClaimed() { return openingPurseClaimed; }
+    public void grantOpeningPurse() {
+        if (openingPurseClaimed) return;
+        setGold(500);
+        resetMatchGoldEarned(500);
+        openingPurseClaimed = true;
+    }
+    private transient boolean practiceWallet;
+
+    public void setPracticeWallet(boolean value) { practiceWallet = value; }
 
     // ---- 阵营 ----
     private Faction faction = null;
@@ -118,7 +136,7 @@ public class PlayerData {
 
     public void addGold(int amount) {
         addWalletGold(amount);
-        if (amount > 0 && !com.myriad.game.TrainingMode.isEnabled())
+        if (amount > 0 && !practiceWallet && !com.myriad.game.TrainingMode.isEnabled())
             this.matchGoldEarned = (int)Math.min(Integer.MAX_VALUE, (long)this.matchGoldEarned + amount);
     }
 
@@ -487,6 +505,8 @@ public class PlayerData {
         this.xp = old.xp;
         this.gold = old.gold;
         this.matchGoldEarned = old.matchGoldEarned;
+        this.queueRound = old.queueRound;
+        this.openingPurseClaimed = old.openingPurseClaimed;
         this.faction = old.faction;
         this.mana = old.mana;
         this.modMaxHealth = old.modMaxHealth;

@@ -43,6 +43,8 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
     public static final KeyMapping KEY_SKILL_F =
             new KeyMapping("key.myriad.skill_f", InputConstants.UNKNOWN.getValue(), KEY_CATEGORY);
     /** 个人信息界面 */
+    public static final KeyMapping KEY_LOBBY =
+            new KeyMapping("key.myriad.lobby", InputConstants.KEY_H, KEY_CATEGORY);
     public static final KeyMapping KEY_INFO =
             new KeyMapping("key.myriad.info", InputConstants.KEY_C, KEY_CATEGORY);
     public static final KeyMapping KEY_RECALL =
@@ -54,6 +56,7 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
     @Override
     public void onInitializeClient() {
         NetworkSetup.registerClient();
+        com.myriad.client.LobbyClient.register();
         onRegisterGuiLayers();
         onRegisterKeyMappings();
         onRegisterParticleProviders();
@@ -72,14 +75,15 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
                 MyriadClient::allowCommand);
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(client->{
             com.myriad.client.LuoxiaInput.tick(client);
+            com.myriad.client.LobbyClient.tick(client);
             var screen=client.gui.screen();
             boolean chat=screen instanceof net.minecraft.client.gui.screens.ChatScreen;
             SCREEN_REQUEST.tick(client.player==null?null:client.getConnection(),client.level,chat,screen!=null&&!chat);
         });
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.JOIN.register(
-                (handler, sender, client) -> {SCREEN_REQUEST.clear();com.myriad.client.ClientDataHolder.resetConnection();});
+                (handler, sender, client) -> {SCREEN_REQUEST.clear();com.myriad.client.LobbyClient.clear();com.myriad.client.ClientDataHolder.resetConnection();});
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT.register(
-                (handler, client) -> {SCREEN_REQUEST.clear();com.myriad.client.ClientDataHolder.resetConnection();});
+                (handler, client) -> {SCREEN_REQUEST.clear();com.myriad.client.LobbyClient.clear();com.myriad.client.ClientDataHolder.resetConnection();});
     }
 
     /** Called at Minecraft.startAttack, including keyboard or mouse rebound attacks. */
@@ -524,7 +528,7 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
 
     private static void onRegisterKeyMappings() {
         for (KeyMapping key : new KeyMapping[]{KEY_SKILL_Q, KEY_SKILL_W, KEY_SKILL_E, KEY_SKILL_R,
-                KEY_SKILL_F, KEY_INFO, KEY_SHOP, KEY_RECALL, KEY_SIGNAL, KEY_DEATH_RECAP})
+                KEY_SKILL_F, KEY_LOBBY, KEY_INFO, KEY_SHOP, KEY_RECALL, KEY_SIGNAL, KEY_DEATH_RECAP})
             net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper.registerKeyMapping(key);
     }
 
@@ -534,7 +538,7 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
         if(mc.player==null)return true;
         Runnable open=switch(command.strip()) {
             case "myriad choose" -> ()->mc.setScreenAndShow(new com.myriad.client.gui.CharacterSelectScreen());
-            case "myriad start" -> ()->mc.setScreenAndShow(new com.myriad.client.gui.TeamManageScreen());
+            case "myriad lobby" -> com.myriad.client.LobbyClient::open;
             case "myriad settings" -> ()->mc.setScreenAndShow(new com.myriad.client.gui.SettingsScreen());
             case "myriad minimap" -> ()->mc.setScreenAndShow(new com.myriad.client.gui.MinimapPositionScreen(null));
             case "myriad hud" -> ()->mc.setScreenAndShow(new com.myriad.client.gui.HudEditorScreen(null));
@@ -585,9 +589,8 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
         if (event.getAction() != InputConstants.PRESS) {
             return;
         }
-        // 开局选人阶段：屏蔽 ESC（选择期间无法退出界面）
-        if (com.myriad.client.ClientDataHolder.pickActive()
-                && event.getKey() == InputConstants.KEY_ESCAPE) {
+        if (event.matches(KEY_LOBBY) && Minecraft.getInstance().gui.screen() == null) {
+            com.myriad.client.LobbyClient.open();
             return;
         }
         // 初始武器锁定：选中槽 0 时抢先消费丢弃键（无法丢弃影刺）

@@ -100,14 +100,14 @@ public final class AbilityRuntime {
     }
     public static boolean valid(ServerPlayer p){
         return ModState.isEnabled()&&p.isAlive()&&!p.isRemoved()&&!p.isSpectator()
-                &&(TrainingMode.isEnabled()||GameManager.get()!=null&&(GameManager.get().getPhase()==GameManager.Phase.PLAYING||GameManager.get().preservesPreparedState(p)));
+                &&(TrainingGround.canFight(p)||GameManager.get()!=null&&GameManager.get().preservesPreparedState(p));
     }
     /** Preparation is a strict exception for the free tactical anchor, never a general cast bypass. */
     public static boolean preparationFor(ServerPlayer p,AbilitySkill skill){
         return skill.getId().equals("rivet_tactical_anchor")&&GameManager.get()!=null&&GameManager.get().preparationFor(p);
     }
     private static boolean castPhase(ServerPlayer p,AbilitySkill skill){
-        return TrainingMode.isEnabled()||GameManager.get()!=null&&(GameManager.get().getPhase()==GameManager.Phase.PLAYING||preparationFor(p,skill));
+        return TrainingGround.canFight(p)||preparationFor(p,skill);
     }
     private static boolean learned(PlayerData d,AbilitySkill skill){return skill.baseAvailable()||d.skillLevel(skill.getId())>0;}
     /** Independent flights consume both explicit action sources and current spatial fields. */
@@ -128,7 +128,7 @@ public final class AbilityRuntime {
         var selected=FirstGroupSkills.resolve(CharacterType.byId(d.getCharacterId()),skill.slot(),d.getSkillLevels());
         if(selected!=skill)return null;
         if(!skill.canCastWhileControlled()&&(d.getBuff("g1_stun")>0||com.myriad.combat.SilenceSystem.isSilenced(p)))return null;
-        if(!TrainingMode.isEnabled()&&!learned(d,skill)){message(p,"message.myriad.skill_not_learned");return null;}
+        if(!TrainingMode.isEnabled(p)&&!learned(d,skill)){message(p,"message.myriad.skill_not_learned");return null;}
         Cast c=context(p,skill);Owner o=c.owner;
         if(com.myriad.character.skills.shuo.ShuoCombat.blocked(p))return null;
         if(skill.recastAvailable(c)&&(!SkillChargeSystem.active(p)||skill.recastDuringChannel())){
@@ -138,7 +138,7 @@ public final class AbilityRuntime {
         if(SkillChargeSystem.active(p))return null;
         boolean controlBreak=skill.canCastWhileControlled()&&controlled(p);
         if(o.preparing!=null||o.channelUntil>c.now()||moving(p)&&!controlBreak||c.now()-o.lastCast<skill.inputRecoveryTicks()&&!controlBreak)return null;
-        boolean noCd=TrainingMode.isEnabled()&&TrainingMode.isNoCooldown(),noMana=preparationFor(p,skill)||TrainingMode.isEnabled()&&TrainingMode.isNoMana();
+        boolean noCd=TrainingMode.isNoCooldown(p),noMana=preparationFor(p,skill)||TrainingMode.isNoMana(p);
         if(!noCd&&!skill.cooldownReady(c)){message(p,"message.myriad.g1.not_ready");return null;}
         if(!noMana&&d.getMana()<skill.manaCost(c)){message(p,"message.myriad.not_enough_mana");return null;}
         if(skill.needsPoint()){
@@ -152,12 +152,12 @@ public final class AbilityRuntime {
         var o=owner(p);var skill=FirstGroupSkills.byId(o.pending);if(skill==null)return;
         var d=PlayerDataProvider.get(p);if(!valid(p)||!castPhase(p,skill)||!skill.role().equals(d.getCharacterId())){cancel(p);return;}
         if(FirstGroupSkills.resolve(CharacterType.byId(d.getCharacterId()),skill.slot(),d.getSkillLevels())!=skill){cancel(p);return;}
-        if(!TrainingMode.isEnabled()&&!learned(d,skill)){cancel(p);return;}
+        if(!TrainingMode.isEnabled(p)&&!learned(d,skill)){cancel(p);return;}
         Cast c=context(p,skill);
         if(o.preparing!=null&&skill.interruptPreparation(c))o.preparing.cancelCast();
         if(d.getBuff("g1_stun")>0||com.myriad.combat.SilenceSystem.isSilenced(p)
                 ||moving(p)||o.channelUntil>p.level().getGameTime()||p.level().getGameTime()-o.lastCast<skill.inputRecoveryTicks())return;
-        boolean noCd=TrainingMode.isEnabled()&&TrainingMode.isNoCooldown(),noMana=preparationFor(p,skill)||TrainingMode.isEnabled()&&TrainingMode.isNoMana();
+        boolean noCd=TrainingMode.isNoCooldown(p),noMana=preparationFor(p,skill)||TrainingMode.isNoMana(p);
         if(!noCd&&!skill.cooldownReady(c)||!noMana&&d.getMana()<skill.manaCost(c))return;
         c.point=c.point(skill.pointRange(c));if(c.point==null){message(p,"message.myriad.g1.invalid_point");return;}
         begin(c,o.pendingWindup);
@@ -207,7 +207,7 @@ public final class AbilityRuntime {
         if(now%10==0){for(var debuff:new ArrayList<>(DEBUFFS))if(!debuff.target.isAlive()||debuff.target.level()!=p.level()&&debuff.target.isRemoved()||debuff.target.level().getGameTime()>=debuff.until){
             var a=debuff.target.getAttribute(Attributes.MOVEMENT_SPEED);if(a!=null)a.removeModifier(debuff.id);DEBUFFS.remove(debuff);}}
     }
-    private static boolean inPreparation(ServerPlayer p){return !TrainingMode.isEnabled()&&GameManager.get()!=null&&GameManager.get().preservesPreparedState(p);}
+    private static boolean inPreparation(ServerPlayer p){return !TrainingMode.isEnabled(p)&&GameManager.get()!=null&&GameManager.get().preservesPreparedState(p);}
     public static double ordinarySlowRate(LivingEntity t){
         var a=t.getAttribute(Attributes.MOVEMENT_SPEED);if(a==null)return 1;
         double rate=1;
@@ -269,10 +269,11 @@ public final class AbilityRuntime {
     public static void hit(ServerPlayer p,LivingEntity target,float damage,boolean basic,String source,boolean direct,int kind){
         // Post-hit runs after health deduction. A lethal hit still earns attack resources,
         // while damage(target,...) independently refuses extra damage to an already dead unit.
-        if(damage>0&&!basic&&!SkillTargets.ally(p,target)&&!(target instanceof DefenseTowerEntity)){
+        if (!SkillTargets.hostile(p, target)) return;
+        if(damage>0&&!basic&&!(target instanceof DefenseTowerEntity)){
             var receipt=SOURCE.get();if(receipt!=null&&receipt.skill.equals(source))receipt.confirmed=true;
         }
-        if(!valid(p)||damage<=0||!direct||SkillTargets.ally(p,target)||target instanceof DefenseTowerEntity)return;
+        if(!valid(p)||damage<=0||!direct||target instanceof DefenseTowerEntity)return;
         if(basic)com.myriad.character.skills.keheng.KehengBasic.contact(p,target);
         if(basic){p.removeEffect(MobEffects.INVISIBILITY);PlayerDataProvider.get(p).setStealthBonus(false);}
         var passive=passive(p);if(passive!=null)passive.onHit(new Hit(p,target,damage,basic,source,direct,
@@ -304,12 +305,12 @@ public final class AbilityRuntime {
         /** Revalidate at the actual payment boundary; rejected/cancelled handles cannot be replayed. */
         public boolean commit(){
             if(!accepted||committed||phase==Phase.WINDUP||phase==Phase.CANCELLED||phase==Phase.COMPLETED)return false;
-            boolean noCd=TrainingMode.isEnabled()&&TrainingMode.isNoCooldown();
-            boolean noMana=preparationFor(player,skill)||TrainingMode.isEnabled()&&TrainingMode.isNoMana();
+            boolean noCd=TrainingMode.isNoCooldown(player);
+            boolean noMana=preparationFor(player,skill)||TrainingMode.isNoMana(player);
             if(OWNERS.get(player.getUUID())!=owner||owner.preparing!=this||owner.level!=player.level()
                     ||!valid(player)||!castPhase(player,skill)||!skill.role().equals(data.getCharacterId())
                     ||FirstGroupSkills.resolve(CharacterType.byId(data.getCharacterId()),skill.slot(),data.getSkillLevels())!=skill
-                    ||!TrainingMode.isEnabled()&&!learned(data,skill)
+                    ||!TrainingMode.isEnabled(player)&&!learned(data,skill)
                     ||!skill.canCastWhileControlled()&&(data.getBuff("g1_stun")>0||SilenceSystem.isSilenced(player))
                     ||!noCd&&!skill.cooldownReady(this)||!noMana&&data.getMana()<skill.manaCost(this)
                     ||skill.needsPoint()&&!AbilityTargeting.legalGround(player,point,skill.pointRange(this),skill.requiresStandingPoint())
@@ -416,6 +417,7 @@ public final class AbilityRuntime {
         public void buff(String key,int ticks){data.setBuff(key,ticks);}
         public void haste(float percent,int ticks){slow(player,-percent,ticks);}
         public void slow(LivingEntity t,float percent,int ticks){
+            if (!TrainingGround.mayInteract(player, t)) return;
             double tenacity=percent>0&&t instanceof ServerPlayer?Math.clamp(t.getAttributeValue(ModAttributes.TENACITY),0,60)/100:0;
             int duration=Math.max(1,(int)Math.ceil(ticks*(1-tenacity)));
             var attr=t.getAttribute(Attributes.MOVEMENT_SPEED);if(attr==null)return;
@@ -424,6 +426,7 @@ public final class AbilityRuntime {
             DEBUFFS.removeIf(d->d.target==t&&d.id.equals(id));DEBUFFS.add(new Debuff(t,id,t.level().getGameTime()+duration));
         }
         public void root(LivingEntity t,int ticks,boolean stun){
+            if (!TrainingGround.mayInteract(player, t)) return;
             t.addEffect(new MobEffectInstance(MobEffects.SLOWNESS,ticks,6,false,false));
             if(t instanceof ServerPlayer hero){double ten=Math.clamp(t.getAttributeValue(ModAttributes.TENACITY),0,60)/100;
                 int duration=Math.max(1,(int)Math.ceil(ticks*(1-ten)));

@@ -1,7 +1,10 @@
 package com.myriad.game;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -18,6 +21,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.level.GameType;
 
+import com.myriad.character.CharacterType;
 import com.myriad.player.PlayerData;
 import com.myriad.player.PlayerDataProvider;
 
@@ -43,7 +47,7 @@ public class GameManager {
     public enum Phase {
         /** 等待开局 */
         WAITING,
-        /** 角色选择阶段（毁灭先选，轮流 30 秒，角色唯一） */
+        /** 含轮流选角与全员锁定后的十秒泉水准备。 */
         PICKING,
         /** 对局进行中 */
         PLAYING,
@@ -113,11 +117,20 @@ public class GameManager {
             return null;
         }
     }
-    /** 阵营伤害增益（天道威压）：阵营 -> 到期游戏刻（可叠加层数记录） */
-    /** 角色选择：轮次顺序（毁灭先选，再守护，各阵营按加入顺序） */
+    /** 已锁定的蛇形选角顺序，掉线时保留席位。 */
     private final List<UUID> pickOrder = new ArrayList<>();
+    /** Admission order is retained even when draft order is shuffled or players disconnect. */
+    private final List<UUID> queueRoster = new ArrayList<>();
+    private final Map<UUID, String> queueNames = new HashMap<>();
+    private final Map<UUID, String> preselected = new HashMap<>();
+    private final Set<UUID> invalidatedPreselection = new HashSet<>();
+    private UUID queueRound;
+    private record OfflineStats(int level, int gold) {}
+    private final Map<UUID, OfflineStats> offlineStats = new HashMap<>();
+    private long pickToken;
+    private transient boolean checkDraftPool = true;
     private int pickIndex = 0;
-    /** 当前选择者截止游戏刻（30 秒后自动选） */
+    /** 当前选角名额的服务端绝对截止刻。 */
     private long pickDeadlineTick = -1;
     /** 全部选完后的开局倒计时截止游戏刻（10 秒；-1 = 未开始倒计时） */
     private long pickCountdownEndTick = -1;
@@ -131,23 +144,29 @@ public class GameManager {
     /** 整局最终承伤（减伤后，包含模组护盾实际吸收）与实际受到治疗。 */
     private final Map<UUID, Double> damageTaken = new HashMap<>();
     private final Map<UUID, Double> healingReceived = new HashMap<>();
-    private transient boolean returnToLobbyPending;
+    private com.myriad.network.NetworkSetup.MatchResultsPayload pendingResults;
     public void recordDamage(ServerPlayer attacker, net.minecraft.world.entity.LivingEntity target, float amount) {
-        if (phase == Phase.PLAYING && target instanceof ServerPlayer && amount > 0)
+        if (phase == Phase.PLAYING && target instanceof ServerPlayer victim && amount > 0
+                && countsForMatch(attacker) && countsForMatch(victim))
             heroDamage.merge(attacker.getUUID(), (double) amount, Double::sum);
     }
 
     public void recordDamageTaken(ServerPlayer target, float amount) {
-        if (phase == Phase.PLAYING && amount > 0)
+        if (phase == Phase.PLAYING && amount > 0 && countsForMatch(target))
             damageTaken.merge(target.getUUID(), (double) amount, Double::sum);
     }
 
     public void recordHealingReceived(ServerPlayer target, float amount) {
-        if (phase == Phase.PLAYING && amount > 0)
+        if (phase == Phase.PLAYING && amount > 0 && countsForMatch(target))
             healingReceived.merge(target.getUUID(), (double) amount, Double::sum);
     }
 
-    public static com.google.gson.JsonElement snapshot() { return MatchProgress.JSON.toJsonTree(instance); }
+    public static com.google.gson.JsonElement snapshot() {
+        if (instance != null && instance.server != null && instance.isQueuedMatch()) {
+            for (ServerPlayer player : instance.matchPlayers()) instance.rememberPlayerStats(player);
+        }
+        return MatchProgress.JSON.toJsonTree(instance);
+    }
     public static void restore(com.google.gson.JsonElement value, MinecraftServer server) {
         instance = MatchProgress.JSON.fromJson(value, GameManager.class);
         instance.setServer(server);
@@ -180,11 +199,37 @@ public class GameManager {
     }
 
     public Faction factionOf(ServerPlayer player) {
-        if (TrainingMode.isEnabled()) {
+        if (TrainingMode.isEnabled(player)) {
             PlayerData data = PlayerDataProvider.get(player);
             if (data != null) return data.getFaction();
         }
         return factions.get(player.getUUID());
+    }
+
+    public boolean isParticipant(UUID id) {
+        return phase != Phase.WAITING && factions.containsKey(id);
+    }
+
+    public boolean isQueuedMatch() { return !queueRoster.isEmpty(); }
+    public long queuePickToken() { return pickToken; }
+    public String queuePreselected(UUID id) { return preselected.getOrDefault(id, ""); }
+    public UUID queueCurrentPicker() { return currentPicker(); }
+    public List<UUID> queuePickOrder() { return List.copyOf(pickOrder); }
+    public String queuePickedRole(UUID id) {
+        for (var pick : charPicks.entrySet()) if (pick.getValue().equals(id)) return pick.getKey();
+        return "";
+    }
+    public String queueName(UUID id) { return queueNames.getOrDefault(id, ""); }
+    public Faction queueFaction(UUID id) { return factions.get(id); }
+    public long queueDeadline() { return currentPicker() == null ? -1 : pickDeadlineTick; }
+    public long queuePreparationDeadline() { return pickCountdownEndTick; }
+
+    private boolean countsForMatch(ServerPlayer player) {
+        return isQueuedMatch() ? factions.containsKey(player.getUUID()) : !TrainingGround.isTraining(player);
+    }
+
+    private List<ServerPlayer> matchPlayers() {
+        return server.getPlayerList().getPlayers().stream().filter(this::countsForMatch).toList();
     }
 
     public int killsOf(ServerPlayer player) { return matchKills.getOrDefault(player.getUUID(), 0); }
@@ -201,23 +246,23 @@ public class GameManager {
         loadSpiritVeinSpawns();
     }
 
-    private boolean arenaCapacityAllows(List<ServerPlayer> players) {
-        if (players.size() <= MatchArena.active().teamSize * 2) return true;
-        broadcast(Component.translatable("message.myriad.arena_capacity", MatchArena.active().displayName(),
-                MatchArena.active().teamSize * 2));
-        return false;
-    }
-
     public void onPlayerJoin(ServerPlayer player) {
-        if (ModState.isEnabled() && pendingRoundReset.remove(player.getUUID())) {
-            PlayerDataProvider.resetForHostSession(player);
-            player.setGameMode(GameType.ADVENTURE);
+        if (pendingRoundReset.remove(player.getUUID())) {
+            if (ModState.isEnabled()) {
+                PlayerDataProvider.resetForHostSession(player);
+                player.setGameMode(GameType.ADVENTURE);
+                LobbySystem.teleportToLobby(player);
+            } else {
+                // VanillaSession has already restored the vanilla inventory and game mode.
+                PlayerDataProvider.set(player, new PlayerData());
+            }
         }
         if (ModState.isEnabled() && phase == Phase.WAITING) GuideBook.give(player);
         if (!joinOrder.contains(player.getUUID())) {
             joinOrder.add(player.getUUID());
         }
         Faction faction = factions.get(player.getUUID());
+        if (TrainingGround.isTraining(player) || isQueuedMatch() && faction == null) return;
         if (faction == null && phase == Phase.PLAYING) {
             // 对局中途加入：补人数较少的阵营。
             long guardianCount = factions.values().stream().filter(f -> f == Faction.GUARDIAN).count();
@@ -231,67 +276,91 @@ public class GameManager {
             }
             faction = guardianCount <= destructionCount ? Faction.GUARDIAN : Faction.DESTRUCTION;
             assign(player, faction);
-            PlayerData lateData = PlayerDataProvider.get(player);
-            lateData.setGold(500);
-            lateData.resetMatchGoldEarned(500);
+            PlayerDataProvider.get(player).grantOpeningPurse();
             player.setGameMode(GameType.ADVENTURE);
             // 中途加入：清空背包其余物品，仅保留初始武器
             PlayerDataProvider.resetInitialInventory(player);
         }
         PlayerData data = PlayerDataProvider.get(player);
         if (data != null && faction != null) {
+            if (isQueuedMatch()) {
+                // A world checkpoint and the separate player save can come from adjacent autosaves.
+                // Reconcile the authoritative reservation and keep the purse receipt beside the wallet.
+                String locked = queuePickedRole(player.getUUID());
+                String savedRole = data.getCharacterId();
+                boolean wrongRole = savedRole != null && !savedRole.equals(locked);
+                if (!data.belongsToQueueRound(queueRound) || wrongRole
+                        || phase == Phase.PICKING && data.openingPurseClaimed()) {
+                    data = resetQueuePlayer(player, faction);
+                    pendingPreparationBase.add(player.getUUID());
+                }
+                data.setFaction(faction);
+                if (!locked.isEmpty() && !locked.equals(data.getCharacterId())) applyPick(player, CharacterType.byId(locked));
+                if (phase == Phase.PLAYING) data.grantOpeningPurse();
+            }
             data.setFaction(faction);
             com.myriad.player.PlayerNames.refresh(player);
+            if (invalidatedPreselection.remove(player.getUUID())) notifyPreselectionTaken(player);
             if ((phase == Phase.PLAYING || phase == Phase.PICKING && pickCountdownEndTick >= 0)
                     && pendingPreparationBase.remove(player.getUUID())) {
                 LaneSystem.teleportPlayersToBases(server.overworld(), List.of(player));
                 player.setGameMode(GameType.ADVENTURE);
                 // An offline participant also missed finishPicking's starting purse.
-                if (phase == Phase.PLAYING) { data.setGold(500); data.resetMatchGoldEarned(500); }
+                if (phase == Phase.PLAYING && !isQueuedMatch()) data.grantOpeningPurse();
             }
         }
         // Connection-local pick state is empty after reconnect; resend without restarting the countdown.
         if (phase == Phase.PICKING) broadcastPickState();
     }
 
+    private void rememberPlayerStats(ServerPlayer player) {
+        PlayerData data = PlayerDataProvider.get(player);
+        offlineStats.put(player.getUUID(), new OfflineStats(data.getLevel(), data.getMatchGoldEarned()));
+    }
+
     public void onPlayerQuit(ServerPlayer player) {
+        if (isQueuedMatch() && isParticipant(player.getUUID())) rememberPlayerStats(player);
         // Keep the player's faction, character reservation and K/D for reconnecting.
         if (phase == Phase.WAITING) factions.remove(player.getUUID());
     }
 
-    /** 开局：按加入顺序将玩家均衡分配到守护与毁灭。 */
-    public void startMatch(MinecraftServer server) {
+    /** Lock exactly the admitted players. All validation precedes leaving training or resetting a player. */
+    public boolean startQueuedMatch(MinecraftServer server, List<ServerPlayer> players) {
+        MatchArena.Mode mode = MatchArena.active();
+        int count = players.size();
+        if (phase != Phase.WAITING || !ModState.isEnabled() || !MatchArena.available(server, mode)
+                || count < 2 || count % 2 != 0 || count > mode.teamSize * 2
+                || mode == MatchArena.Mode.RIFT && count != mode.teamSize * 2) return false;
+        Set<UUID> ids = new HashSet<>();
+        for (ServerPlayer player : players) {
+            if (player == null || server.getPlayerList().getPlayer(player.getUUID()) != player
+                    || !ids.add(player.getUUID())) return false;
+        }
+        if (CharacterType.playableValues().length < count) {
+            for (ServerPlayer player : players) player.sendSystemMessage(Component.translatable("message.myriad.queue_role_pool"));
+            return false;
+        }
+
         this.server = server;
-        List<ServerPlayer> players = new ArrayList<>(server.getPlayerList().getPlayers());
-        if (players.isEmpty()) {
-            return;
+        queueRound = UUID.randomUUID();
+        MonsterManager.reloadArena(server);
+        JiarenManager.clearGenerated(server.overworld());
+        for (ServerPlayer player : players) {
+            TrainingGround.leaveForMatch(player);
+            queueRoster.add(player.getUUID());
+            if (!joinOrder.contains(player.getUUID())) joinOrder.add(player.getUUID());
+            queueNames.put(player.getUUID(), player.getName().getString());
         }
-        if (phase == Phase.PLAYING || phase == Phase.PICKING) {
-            broadcast(Component.translatable("message.myriad.match_already_running"));
-            return;
-        }
-        if (!arenaCapacityAllows(players)) return;
-        com.myriad.Myriad.LOGGER.info("[match] start: {} player(s): {}",
-                players.size(), players.stream().map(p -> p.getName().getString() + "@" + System.identityHashCode(p))
-                        .toList());
         factions.clear();
-        java.util.Collections.shuffle(players);
-        // 对称 PvP：自动均分两阵营；奇数人数时守护多一人。
-        int guardianCount = Math.max(1, (players.size() + 1) / 2);
-        guardianCount = Math.min(guardianCount, players.size() - 1);
-        boolean swap = server.overworld().getRandom().nextBoolean();
-        for (int i = 0; i < players.size(); i++) {
-            assign(players.get(i), (i < guardianCount) != swap ? Faction.GUARDIAN : Faction.DESTRUCTION);
-        }
-        // 开局重置：清空背包其余物品，仅保留初始武器
-        for (ServerPlayer p : players) {
-            PlayerDataProvider.resetInitialInventory(p);
-        }
+        List<ServerPlayer> shuffled = new ArrayList<>(players);
+        Collections.shuffle(shuffled);
+        for (int i = 0; i < count; i++) assign(shuffled.get(i), i < count / 2 ? Faction.GUARDIAN : Faction.DESTRUCTION);
         guardianScore = 0;
         destructionScore = 0;
         winner = null;
         resetMatchObjectives();
         beginPicking(server);
+        return true;
     }
 
     private void assign(ServerPlayer player, Faction faction) {
@@ -307,92 +376,32 @@ public class GameManager {
         com.myriad.player.PlayerNames.refresh(player);
     }
 
-    /** 手动分配开局：使用当前 PlayerData 阵营直接开局，未分配玩家自动补入毁灭。 */
-    public void startMatchWithCurrent(MinecraftServer server) {
-        this.server = server;
-        List<ServerPlayer> players = new ArrayList<>(server.getPlayerList().getPlayers());
-        if (players.isEmpty() || phase == Phase.PLAYING || phase == Phase.PICKING) {
-            if (phase == Phase.PLAYING || phase == Phase.PICKING) {
-                broadcast(Component.translatable("message.myriad.match_already_running"));
-            }
-            return;
-        }
-        int guardianCount = 0;
-        int destructionCount = 0;
-        if (!arenaCapacityAllows(players)) return;
-        for (ServerPlayer p : players) {
-            PlayerData data = PlayerDataProvider.get(p);
-            if (data != null && data.getFaction() == Faction.GUARDIAN) {
-                guardianCount++;
-            } else if (data != null && data.getFaction() == Faction.DESTRUCTION) {
-                destructionCount++;
-            }
-        }
-        if (guardianCount == 0 || destructionCount == 0 || Math.abs(guardianCount - destructionCount) > 1) {
-            broadcast(Component.translatable("message.myriad.team_need_both"));
-            return;
-        }
-        if (Math.max(guardianCount, destructionCount) > MatchArena.active().teamSize) {
-            broadcast(Component.translatable("message.myriad.arena_team_capacity", MatchArena.active().teamSize));
-            return;
-        }
-        factions.clear();
-        for (ServerPlayer p : players) {
-            PlayerData data = PlayerDataProvider.get(p);
-            Faction f = data == null ? null : data.getFaction();
-            if (f == null) {
-                f = guardianCount <= destructionCount ? Faction.GUARDIAN : Faction.DESTRUCTION;
-                data.setFaction(f);
-                com.myriad.player.PlayerNames.refresh(p);
-                if (f == Faction.GUARDIAN) guardianCount++; else destructionCount++;
-            }
-            assign(p, f);
-        }
-        // 开局重置：清空背包其余物品，仅保留初始武器
-        for (ServerPlayer p : players) {
-            PlayerDataProvider.resetInitialInventory(p);
-        }
-        guardianScore = 0;
-        destructionScore = 0;
-        winner = null;
-        resetMatchObjectives();
-        beginPicking(server);
-    }
-
-    // ---- 角色选择阶段：毁灭先选，轮流 30 秒，每个角色仅一人可选 ----
-
-    /** 进入角色选择阶段（训练模式跳过，直接开局） */
     private void beginPicking(MinecraftServer server) {
         this.server = server;
         TrainingMode.setEnabled(false);
-        TrainingMode.setNoCooldown(false);
-        TrainingMode.setNoGoldCost(false);
-        TrainingMode.setNoMana(false);
-        // Manual character previews must not reserve heroes or carry progression into draft.
-        PlayerDataProvider.clearModGeneratedState(server);
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            Faction team = factions.get(player.getUUID());
-            PlayerDataProvider.resetForHostSession(player);
-            PlayerDataProvider.get(player).setFaction(team);
-        }
+        for (ServerPlayer player : matchPlayers()) resetQueuePlayer(player, factions.get(player.getUUID()));
         pickOrder.clear();
         pendingPreparationBase.clear();
-        List<UUID> destruction = new ArrayList<>();
-        List<UUID> guardian = new ArrayList<>();
-        for (UUID uid : joinOrder) {
-            Faction f = factions.get(uid);
-            if (f == Faction.DESTRUCTION) {
-                destruction.add(uid);
-            } else if (f == Faction.GUARDIAN) {
-                guardian.add(uid);
-            }
+        boolean guardianFirst = MatchArena.active() == MatchArena.Mode.DUEL;
+        List<UUID> first = new ArrayList<>();
+        List<UUID> second = new ArrayList<>();
+        Faction openingSide = guardianFirst ? Faction.GUARDIAN : Faction.DESTRUCTION;
+        List<UUID> teamOrder = guardianFirst ? queueRoster : joinOrder;
+        for (UUID id : teamOrder) {
+            Faction faction = factions.get(id);
+            if (faction == openingSide) first.add(id);
+            else if (faction != null) second.add(id);
         }
-        // Opening side picks one, then alternate two consecutive picks per side.
-        int y = 0, x = 0;
-        if (!destruction.isEmpty()) pickOrder.add(destruction.get(y++));
-        while (y < destruction.size() || x < guardian.size()) {
-            for (int n = 0; n < 2 && x < guardian.size(); n++) pickOrder.add(guardian.get(x++));
-            for (int n = 0; n < 2 && y < destruction.size(); n++) pickOrder.add(destruction.get(y++));
+        if (guardianFirst) {
+            Collections.shuffle(first);
+            Collections.shuffle(second);
+        }
+        pickToken = queueRound.getMostSignificantBits() & Long.MAX_VALUE;
+        checkDraftPool = true;
+        if (!first.isEmpty()) pickOrder.add(first.removeFirst());
+        while (!second.isEmpty() || !first.isEmpty()) {
+            for (int i = 0; i < 2 && !second.isEmpty(); i++) pickOrder.add(second.removeFirst());
+            for (int i = 0; i < 2 && !first.isEmpty(); i++) pickOrder.add(first.removeFirst());
         }
         pickIndex = 0;
         charPicks.clear();
@@ -403,13 +412,22 @@ public class GameManager {
             return;
         }
         phase = Phase.PICKING;
-        pickDeadlineTick = server.overworld().getGameTime() + PICK_TICKS;
+        pickDeadlineTick = server.overworld().getGameTime() + pickTicks();
         broadcast(Component.translatable("message.myriad.pick_start"));
-        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
-            com.myriad.network.Packets.sendToPlayer(p,
-                    new com.myriad.network.NetworkSetup.OpenPickScreenPayload());
-        }
         broadcastPickState();
+    }
+
+    private PlayerData resetQueuePlayer(ServerPlayer player, Faction faction) {
+        PlayerDataProvider.clearMatchPlayerState(player);
+        PlayerDataProvider.resetForHostSession(player);
+        PlayerData data = PlayerDataProvider.get(player);
+        if (isQueuedMatch()) data.beginQueueRound(queueRound);
+        data.setFaction(faction);
+        return data;
+    }
+
+    private int pickTicks() {
+        return isQueuedMatch() && MatchArena.active() == MatchArena.Mode.DUEL ? 20 * 20 : PICK_TICKS;
     }
 
     /** 当前轮到谁选择（null = 无） */
@@ -428,32 +446,70 @@ public class GameManager {
         if (charPicks.containsKey(type.getId())) {
             return false;
         }
+        completePick(player.getUUID(), player, type, false);
+        return true;
+    }
+
+    public boolean queuePreselect(ServerPlayer player, String role) {
+        UUID id = player.getUUID();
+        CharacterType type = CharacterType.byId(role);
+        if (!isQueuedMatch() || phase != Phase.PICKING || currentPicker() == null || !isParticipant(id)
+                || id.equals(currentPicker()) && server.overworld().getGameTime() >= pickDeadlineTick
+                || charPicks.containsValue(id) || type == null || charPicks.containsKey(type.getId())) return false;
+        preselected.put(id, type.getId());
+        invalidatedPreselection.remove(id);
+        return true;
+    }
+
+    public boolean queueLock(ServerPlayer player, String role) {
+        return isQueuedMatch() && server.overworld().getGameTime() < pickDeadlineTick
+                && onPick(player, CharacterType.byId(role));
+    }
+
+    private static void applyPick(ServerPlayer player, CharacterType type) {
         PlayerData data = PlayerDataProvider.get(player);
-        if (data == null) {
-            return false;
-        }
         data.setCharacterId(type.getId());
-        // 开局选角即获得 1 个技能点（至少 1 点，不叠加）
         data.setSkillPoints(Math.max(1, data.getSkillPoints()));
-        charPicks.put(type.getId(), player.getUUID());
         PlayerDataProvider.applyChosenCharacter(player, data);
         PlayerDataProvider.syncToClient(player);
-        broadcast(Component.translatable("message.myriad.pick_chosen",
-                player.getName().getString(), Component.translatable(type.nameKey())));
+    }
+
+    private static void notifyPreselectionTaken(ServerPlayer player) {
+        player.sendSystemMessage(Component.translatable("message.myriad.queue_preselection_taken"));
+    }
+
+    private void completePick(UUID id, ServerPlayer player, CharacterType type, boolean automatic) {
+        String role = type.getId();
+        charPicks.put(role, id);
+        preselected.remove(id);
+        invalidatedPreselection.remove(id);
+        preselected.entrySet().removeIf(entry -> {
+            if (!entry.getValue().equals(role)) return false;
+            ServerPlayer owner = server.getPlayerList().getPlayer(entry.getKey());
+            if (owner == null) invalidatedPreselection.add(entry.getKey());
+            else notifyPreselectionTaken(owner);
+            return true;
+        });
+        if (player != null) applyPick(player, type);
+        broadcast(Component.translatable(automatic ? "message.myriad.pick_auto" : "message.myriad.pick_chosen",
+                player == null ? queueName(id) : player.getName().getString(), Component.translatable(type.nameKey())));
         advancePick(server);
         broadcastPickState();
-        return true;
     }
 
     private void advancePick(MinecraftServer server) {
         pickIndex++;
+        if (isQueuedMatch()) {
+            pickToken++;
+            checkDraftPool = true;
+        }
         if (pickIndex >= pickOrder.size()) {
             // 全部选择完成即在泉水准备；复用原有十秒，不再次延长或开战重传送。
             preparePlayers(server);
             pickCountdownEndTick = server.overworld().getGameTime() + PICK_COUNTDOWN_TICKS;
             broadcast(Component.translatable("message.myriad.pick_all_done", PICK_COUNTDOWN_TICKS / 20));
         } else {
-            pickDeadlineTick = server.overworld().getGameTime() + PICK_TICKS;
+            pickDeadlineTick = server.overworld().getGameTime() + pickTicks();
         }
     }
 
@@ -469,7 +525,7 @@ public class GameManager {
                 && factions.containsKey(player.getUUID());
     }
     private void preparePlayers(MinecraftServer server) {
-        List<ServerPlayer> players=new ArrayList<>(server.getPlayerList().getPlayers());
+        List<ServerPlayer> players = matchPlayers();
         pendingPreparationBase.addAll(factions.keySet());
         LaneSystem.teleportPlayersToBases(server.overworld(),players);
         for(ServerPlayer player:players){
@@ -480,7 +536,7 @@ public class GameManager {
 
     /** 选人阶段每 tick：全部选完后的倒计时结束即开局；否则处理超时自动选 / 掉线跳过 / 无可用角色跳过 */
     public void tick(MinecraftServer server, long gameTime) {
-        if (returnToLobbyPending) {
+        if (phase == Phase.ENDED) {
             resetToLobby(server, true);
             return;
         }
@@ -509,6 +565,22 @@ public class GameManager {
             return;
         }
         ServerPlayer cp = server.getPlayerList().getPlayer(cur);
+        if (isQueuedMatch()) {
+            if (!checkDraftPool && gameTime < pickDeadlineTick) return;
+            List<CharacterType> available = availableForFaction(factions.get(cur));
+            checkDraftPool = false;
+            if (available.isEmpty()) {
+                List<UUID> roster = List.copyOf(queueRoster);
+                broadcast(Component.translatable("message.myriad.queue_role_pool"));
+                resetToLobby(server, true);
+                QueueLobby.restoreRoster(server, roster);
+            } else if (gameTime >= pickDeadlineTick) {
+                CharacterType selected = CharacterType.byId(preselected.get(cur));
+                if (!available.contains(selected)) selected = available.get(server.overworld().getRandom().nextInt(available.size()));
+                completePick(cur, cp, selected, true);
+            }
+            return;
+        }
         if (cp == null || !cp.isAlive()) {
             advancePick(server);
             broadcastPickState();
@@ -527,7 +599,7 @@ public class GameManager {
     }
 
     private void enforcePlayingModes(MinecraftServer server) {
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+        for (ServerPlayer player : matchPlayers()) {
             if (!factions.containsKey(player.getUUID())) continue;
             if (HeroRespawnSystem.isWaiting(player)) continue;
             if (player.gameMode.getGameModeForPlayer() == GameType.SPECTATOR) player.setCamera(player);
@@ -543,7 +615,7 @@ public class GameManager {
         long elapsed = gameTime - matchStartTime;
         if (elapsed <= 0 || elapsed % 100 != 0) return;
         var awards = new java.util.LinkedHashMap<ServerPlayer, Integer>();
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+        for (ServerPlayer player : matchPlayers()) {
             if (factionOf(player) == null) continue;
             if (PlayerDataProvider.get(player) == null) continue;
             awards.put(player, GlobalBalance.goldIncome(MatchBalance.farmReward(player, 10, false)));
@@ -568,23 +640,7 @@ public class GameManager {
             broadcastPickState();
             return;
         }
-        com.myriad.character.CharacterType type = avail.get(0);
-        PlayerData data = PlayerDataProvider.get(player);
-        if (data == null) {
-            advancePick(server);
-            broadcastPickState();
-            return;
-        }
-        data.setCharacterId(type.getId());
-        // 开局选角即获得 1 个技能点（至少 1 点，不叠加）
-        data.setSkillPoints(Math.max(1, data.getSkillPoints()));
-        charPicks.put(type.getId(), player.getUUID());
-        PlayerDataProvider.applyChosenCharacter(player, data);
-        PlayerDataProvider.syncToClient(player);
-        broadcast(Component.translatable("message.myriad.pick_auto",
-                player.getName().getString(), Component.translatable(type.nameKey())));
-        advancePick(server);
-        broadcastPickState();
+        completePick(player.getUUID(), player, avail.getFirst(), true);
     }
 
     /** 对称模式下双方共享的未选择角色池。 */
@@ -613,15 +669,11 @@ public class GameManager {
             spiritVeinAvailableAt = matchStartTime + 60L * 20L;
             broadcast(Component.translatable("message.myriad.vein_will_open", 60));
         }
-        List<ServerPlayer> players = new ArrayList<>(server.getPlayerList().getPlayers());
+        List<ServerPlayer> players = matchPlayers();
         // 正常选角已在准备期开始时传送，开战保留这十秒内的站位和锚点。
         // 无选角顺序的极端开局仍沿用直接就位。
         if (pickOrder.isEmpty()) LaneSystem.teleportPlayersToBases(server.overworld(), players);
-        for (ServerPlayer player : players) {
-            PlayerData data = PlayerDataProvider.get(player);
-            data.setGold(500);
-            data.resetMatchGoldEarned(500);
-        }
+        for (ServerPlayer player : players) PlayerDataProvider.get(player).grantOpeningPurse();
         // 地图编辑和训练时玩家可能处于创造/旁观模式；正式对局统一使用冒险模式，
         // 既允许战斗与物品交互，又避免玩家破坏战场方块。
         for (ServerPlayer player : players) {
@@ -646,6 +698,7 @@ public class GameManager {
             return;
         }
         com.myriad.network.MatchTabPayload.sync(server);
+        if (isQueuedMatch()) return;
         UUID cur = currentPicker();
         String curName = "";
         String curFaction = "";
@@ -670,7 +723,7 @@ public class GameManager {
                 takenUuids.put(type.getId(), uid.toString());
             }
         }
-        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+        for (ServerPlayer p : matchPlayers()) {
             Faction myF = factions.get(p.getUUID());
             com.myriad.network.Packets.sendToPlayer(p,
                     new com.myriad.network.NetworkSetup.PickStatePayload(
@@ -791,7 +844,7 @@ public class GameManager {
 
     /** 英雄击杀：金币、经验与连杀赏金，保证双方发生正面冲突时有明确收益。 */
     public void onHeroKill(ServerPlayer killer, ServerPlayer victim) {
-        if (phase != Phase.PLAYING || killer == victim
+        if (phase != Phase.PLAYING || killer == victim || !countsForMatch(killer) || !countsForMatch(victim)
                 || factionOf(killer) == null || factionOf(killer) == factionOf(victim)) {
             return;
         }
@@ -819,7 +872,7 @@ public class GameManager {
             var announcement = new com.myriad.network.KillAnnouncementPayload(
                     killer.getUUID(), killer.getName().getString(), victim.getUUID(),
                     victim.getName().getString(), multiKill);
-            for (ServerPlayer viewer : server.getPlayerList().getPlayers()) {
+            for (ServerPlayer viewer : matchPlayers()) {
                 com.myriad.network.Packets.sendToPlayer(viewer, announcement);
             }
         }
@@ -827,11 +880,11 @@ public class GameManager {
 
     /** 记录一次实际发生的英雄死亡；击杀奖励与“不扣命”效果不影响 K/D 统计。 */
     public void recordHeroDeath(ServerPlayer victim, net.minecraft.world.entity.Entity killerEntity) {
-        if (phase != Phase.PLAYING || factionOf(victim) == null) return;
+        if (phase != Phase.PLAYING || !countsForMatch(victim) || factionOf(victim) == null) return;
         matchDeaths.merge(victim.getUUID(), 1, Integer::sum);
         multiKills.remove(victim.getUUID());
         com.myriad.player.PlayerNames.refresh(victim);
-        if (killerEntity instanceof ServerPlayer killer && killer != victim
+        if (killerEntity instanceof ServerPlayer killer && killer != victim && countsForMatch(killer)
                 && factionOf(killer) != null && factionOf(killer) != factionOf(victim)) {
             matchKills.merge(killer.getUUID(), 1, Integer::sum);
             com.myriad.player.PlayerNames.refresh(killer);
@@ -839,7 +892,9 @@ public class GameManager {
     }
 
     private void resetMatchObjectives() {
-        if (server != null) HeroRespawnSystem.reset(server);
+        if (server != null) {
+            HeroRespawnSystem.reset(server, factions.keySet());
+        }
         spiritVeins.clear();
         clearSpiritVeinBonuses();
         spiritVeinAvailableAt = -1;
@@ -861,7 +916,7 @@ public class GameManager {
         for (Map.Entry<Integer, SpiritVein> entry : spiritVeins.entrySet()) {
             SpiritVein vein = entry.getValue();
             int guardian = 0, destruction = 0;
-            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            for (ServerPlayer player : matchPlayers()) {
                 if (!player.isAlive() || player.isSpectator() || player.level() != server.overworld()
                         || player.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(vein.pos))
                                 > vein.radius() * vein.radius()) continue;
@@ -962,7 +1017,7 @@ public class GameManager {
 
     /** 向每名玩家同步其当前所在灵脉；范围外发送隐藏状态，避免 HUD 残留。 */
     private void syncSpiritVeinHud(MinecraftServer server, boolean available) {
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+        for (ServerPlayer player : matchPlayers()) {
             Map.Entry<Integer, SpiritVein> current = null;
             double nearest = Double.MAX_VALUE;
             if (available && player.isAlive() && player.level() == server.overworld()) {
@@ -989,7 +1044,7 @@ public class GameManager {
 
     /** 持续控制收益：每 5 秒发给全队，死亡成员同样获得团队目标收益。 */
     private void rewardSpiritVeinPulse(Faction faction, SpiritVein vein) {
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+        for (ServerPlayer player : matchPlayers()) {
             if (factionOf(player) == faction) {
                 com.myriad.player.PlayerData data = PlayerDataProvider.get(player);
                 if (data != null) {
@@ -1004,7 +1059,7 @@ public class GameManager {
     /** 月=法强、火=物攻、木=物防与法防；控制权转移时移除旧阵营并赋予新阵营。 */
     private void refreshSpiritVeinBonuses() {
         if (server == null) return;
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+        for (ServerPlayer player : matchPlayers()) {
             clearSpiritVeinBonuses(player);
             Faction faction = factionOf(player);
             if (faction == null || phase != Phase.PLAYING) continue;
@@ -1028,7 +1083,7 @@ public class GameManager {
 
     private void clearSpiritVeinBonuses() {
         if (server == null) return;
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) clearSpiritVeinBonuses(player);
+        for (ServerPlayer player : matchPlayers()) clearSpiritVeinBonuses(player);
     }
 
     private static void clearSpiritVeinBonuses(ServerPlayer player) {
@@ -1067,15 +1122,8 @@ public class GameManager {
             return;
         }
         if (gameTime - matchStartTime >= GameRules.matchDurationTicks()) {
-            if (guardianScore == destructionScore) {
-                phase = Phase.ENDED;
-                matchEndTime = gameTime;
-                broadcast(MatchMessages.Tone.NEUTRAL,
-                        Component.translatable("message.myriad.match_draw", guardianScore));
-                syncAll();
-            } else {
-                endMatch(guardianScore > destructionScore ? Faction.GUARDIAN : Faction.DESTRUCTION);
-            }
+            endMatch(guardianScore == destructionScore ? null
+                    : guardianScore > destructionScore ? Faction.GUARDIAN : Faction.DESTRUCTION);
         }
     }
 
@@ -1093,43 +1141,37 @@ public class GameManager {
         this.phase = Phase.ENDED;
         this.matchEndTime = server == null ? matchStartTime : server.overworld().getGameTime();
         clearSpiritVeinBonuses();
-        broadcast(MatchMessages.Tone.SUCCESS,
+        if (winner == null) broadcast(MatchMessages.Tone.NEUTRAL,
+                Component.translatable("message.myriad.match_draw", guardianScore));
+        else broadcast(MatchMessages.Tone.SUCCESS,
                 Component.translatable("message.myriad.match_end", winner.displayName()));
         long seconds = Math.max(0, matchEndTime - matchStartTime) / 20;
         broadcast(MatchMessages.Tone.OBJECTIVE,
                 Component.translatable("message.myriad.results_header", seconds / 60, seconds % 60));
-        java.util.List<com.myriad.network.NetworkSetup.MatchResultEntry> resultEntries =
-                new java.util.ArrayList<>();
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            PlayerData data = PlayerDataProvider.get(player);
-            Faction faction = factionOf(player);
+        List<com.myriad.network.NetworkSetup.MatchResultEntry> resultEntries = new ArrayList<>();
+        List<UUID> roster = isQueuedMatch() ? queueRoster : matchPlayers().stream().map(ServerPlayer::getUUID).toList();
+        for (UUID id : roster) {
+            ServerPlayer player = server.getPlayerList().getPlayer(id);
+            PlayerData data = player == null ? null : PlayerDataProvider.get(player);
+            OfflineStats last = offlineStats.getOrDefault(id, new OfflineStats(1, 0));
+            Faction faction = player == null ? queueFaction(id) : factionOf(player);
+            String character = data == null ? queuePickedRole(id) : data.getCharacterId();
             resultEntries.add(new com.myriad.network.NetworkSetup.MatchResultEntry(
-                    player.getName().getString(), faction == null ? "" : faction.getName(),
-                    data.getCharacterId() == null ? "" : data.getCharacterId(), data.getLevel(),
-                    killsOf(player), deathsOf(player), data.getMatchGoldEarned(),
-                    (int)Math.round(heroDamage.getOrDefault(player.getUUID(), 0.0)),
-                    (int)Math.round(damageTaken.getOrDefault(player.getUUID(), 0.0)),
-                    (int)Math.round(healingReceived.getOrDefault(player.getUUID(), 0.0))));
+                    player == null ? queueName(id) : player.getName().getString(),
+                    faction == null ? "" : faction.getName(), character == null ? "" : character,
+                    data == null ? last.level() : data.getLevel(), matchKills.getOrDefault(id, 0),
+                    matchDeaths.getOrDefault(id, 0), data == null ? Math.max(500, last.gold()) : data.getMatchGoldEarned(),
+                    (int)Math.round(heroDamage.getOrDefault(id, 0.0)), (int)Math.round(damageTaken.getOrDefault(id, 0.0)),
+                    (int)Math.round(healingReceived.getOrDefault(id, 0.0))));
         }
-        var resultsPayload = new com.myriad.network.NetworkSetup.MatchResultsPayload(
-                winner.getName(), (int)seconds, resultEntries);
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            player.setCamera(player);
-            player.setGameMode(GameType.ADVENTURE);
-            com.myriad.network.Packets.sendToPlayer(player, resultsPayload);
-            player.sendSystemMessage(Component.translatable("message.myriad.results_click")
-                    .withStyle(net.minecraft.network.chat.Style.EMPTY
-                            .withColor(net.minecraft.ChatFormatting.AQUA)
-                            .withUnderlined(true)
-                            .withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/myriad results"))
-                            .withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(
-                                    Component.translatable("message.myriad.results_click_hover")))));
-        }
+        pendingResults = new com.myriad.network.NetworkSetup.MatchResultsPayload(
+                winner == null ? "" : winner.getName(), (int)seconds, List.copyOf(resultEntries));
         try {
             java.nio.file.Files.writeString(server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT)
                     .resolve("myriad_last_match.json"), MatchProgress.JSON.toJson(snapshot()));
         } catch (Exception ex) { com.myriad.Myriad.LOGGER.warn("Could not save last match results", ex); }
-        returnToLobbyPending = true; // defer entity cleanup until the death event finishes
+        // Persist ENDED before returning from the death event. The next tick handles lobby cleanup.
+        MatchProgress.save(server);
         syncAll();
     }
 
@@ -1167,30 +1209,37 @@ public class GameManager {
         }
     }
 
-    /** 重置并重新开局 */
-    public void restart(MinecraftServer server) {
-        resetToLobby(server, true);
-        ModState.setEnabled(true);
-        TrainingMode.setEnabled(false);
-        startMatch(server);
-    }
-
     public void resetToLobby(MinecraftServer server, boolean teleport) {
         this.server = server;
+        List<ServerPlayer> participants = List.copyOf(matchPlayers());
+        var results = pendingResults;
+        Set<UUID> finishedRoster = results == null ? Set.of() : Set.copyOf(factions.keySet());
+        pendingResults = null;
+        resetMatchObjectives();
         phase = Phase.WAITING;
         winner = null;
-        returnToLobbyPending = false;
-        resetMatchObjectives();
-        PlayerDataProvider.clearModGeneratedState(server);
+        for (ServerPlayer player : participants) {
+            PlayerDataProvider.clearMatchPlayerState(player);
+            BaseRules.logout(player);
+        }
+        TacticalSupplySystem.clearFor(isQueuedMatch() ? queueRoster : factions.keySet());
+        MonsterManager.reloadArena(server);
+        JiarenManager.clearGenerated(server.overworld());
+        ModEntityTracker.clearGenerated(server.overworld());
         LaneSystem.tick(server.overworld());
-        ModEntityTracker.clearGenerated(server);
-        BaseRules.clear();
         pickOrder.clear(); pendingPreparationBase.clear(); charPicks.clear(); heroDamage.clear(); damageTaken.clear(); healingReceived.clear();
         pickIndex = 0; pickDeadlineTick = -1; pickCountdownEndTick = -1;
         matchStartTime = -1; matchEndTime = -1; guardianScore = 0; destructionScore = 0;
-        pendingRoundReset.addAll(joinOrder);
+        pendingRoundReset.addAll(isQueuedMatch() ? queueRoster : joinOrder);
         factions.clear();
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+        queueRoster.clear();
+        queueNames.clear();
+        preselected.clear();
+        invalidatedPreselection.clear();
+        queueRound = null;
+        offlineStats.clear();
+        pickToken = 0;
+        for (ServerPlayer player : participants) {
             pendingRoundReset.remove(player.getUUID());
             player.setCamera(player);
             PlayerDataProvider.resetForHostSession(player);
@@ -1207,6 +1256,22 @@ public class GameManager {
         syncAll();
         com.myriad.network.MatchTabPayload.sync(server);
         MatchProgress.save(server);
+        if (results != null && teleport && ModState.isEnabled()) {
+            for (UUID id : finishedRoster) {
+                ServerPlayer player = server.getPlayerList().getPlayer(id);
+                if (player == null) continue;
+                // Give the buttons the post-cleanup queue token even before the next lobby tick.
+                QueueLobby.sync(player);
+                com.myriad.network.Packets.sendToPlayer(player, results);
+                player.sendSystemMessage(Component.translatable("message.myriad.results_click")
+                        .withStyle(net.minecraft.network.chat.Style.EMPTY
+                                .withColor(net.minecraft.ChatFormatting.AQUA)
+                                .withUnderlined(true)
+                                .withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/myriad results"))
+                                .withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(
+                                        Component.translatable("message.myriad.results_click_hover")))));
+            }
+        }
     }
 
     private void broadcast(Component message) {
@@ -1214,14 +1279,16 @@ public class GameManager {
     }
 
     private void broadcast(MatchMessages.Tone tone, Component message) {
-        MatchMessages.broadcast(server, tone, message);
+        if (server != null) {
+            for (ServerPlayer player : matchPlayers()) MatchMessages.send(player, tone, message);
+        }
     }
 
     private void syncAll() {
         if (server == null) {
             return;
         }
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+        for (ServerPlayer player : matchPlayers()) {
             PlayerDataProvider.syncToClient(player);
         }
     }
@@ -1252,7 +1319,7 @@ public class GameManager {
         if (server == null) {
             return;
         }
-        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+        for (ServerPlayer p : matchPlayers()) {
             com.myriad.network.Packets.sendToPlayer(p,
                     new com.myriad.network.NetworkSetup.MatchStartedPayload());
         }

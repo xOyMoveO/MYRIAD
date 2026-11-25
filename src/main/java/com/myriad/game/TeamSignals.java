@@ -11,7 +11,7 @@ import net.minecraft.world.phys.*;
 
 /** All admission, position, audience and lifecycle decisions are server-owned. */
 public final class TeamSignals {
-    private record Active(TeamSignalsPayload.Entry entry,Faction team,String role,String dimension,long until) {}
+    private record Active(TeamSignalsPayload.Entry entry,Faction team,String role,String dimension,boolean personalTraining,long until) {}
     private record Rate(long last,ArrayDeque<Long> times) {}
     private static final List<Active> ACTIVE=new ArrayList<>();
     private static final Map<UUID,Rate> RATES=new HashMap<>();
@@ -24,15 +24,24 @@ public final class TeamSignals {
     public static void rejected(ServerPlayer p){long now=p.level().getGameTime();Long previous=FEEDBACK.get(p.getUUID());
         if(previous==null||now<previous||now-previous>=20){FEEDBACK.put(p.getUUID(),now);
             p.sendSystemMessage(net.minecraft.network.chat.Component.translatable("signal.myriad.rejected"),true);}}
-    private static boolean playing(){var manager=GameManager.get();return TeamSignalRules.allowed(ModState.isEnabled(),TrainingMode.isEnabled(),manager==null?null:manager.getPhase());}
-    private static Faction teamOf(ServerPlayer p){return TrainingMode.isEnabled()?PlayerDataProvider.get(p).getFaction()
+    private static boolean playing(ServerPlayer player){
+        return ModState.isEnabled() && TrainingGround.canFight(player);
+    }
+    private static Faction teamOf(ServerPlayer p){return TrainingMode.isEnabled(p)?PlayerDataProvider.get(p).getFaction()
             :GameManager.get()==null?null:GameManager.get().factionOf(p);}
     private static long start(){var active=GameManager.get();return active==null?-1:active.getMatchStartTime();}
     private static boolean contextChanged(){return match!=GameManager.get()||trainingSession!=TrainingMode.isEnabled()||matchStart!=start();}
     private static void bindContext(){match=GameManager.get();trainingSession=TrainingMode.isEnabled();matchStart=start();}
     private static void resetContext(MinecraftServer server){
-        if(!SENT.isEmpty())for(var p:server.getPlayerList().getPlayers())send(p,List.of());
-        clear();
+        ACTIVE.removeIf(signal -> !signal.personalTraining);
+        for (var player : server.getPlayerList().getPlayers()) {
+            if (TrainingGround.isTraining(player)) continue;
+            UUID id = player.getUUID();
+            RATES.remove(id);
+            ATTEMPTS.remove(id);
+            FEEDBACK.remove(id);
+            if (SENT.contains(id)) send(player, List.of());
+        }
     }
     public static Entity viewpoint(ServerPlayer p){
         if(!p.isSpectator())return p.isAlive()?p:null;
@@ -42,7 +51,7 @@ public final class TeamSignals {
                 &&teamOf(p)!=null&&teamOf(p)==teamOf(ally)?ally:null;
     }
     public static boolean request(ServerPlayer p,TeamSignalRequest request){
-        if(!playing()||!request.valid())return false;
+        if(!playing(p)||!request.valid())return false;
         if(contextChanged()){resetContext(p.level().getServer());bindContext();}
         Faction team=teamOf(p); Entity eye=viewpoint(p);
         if(team==null||eye==null||PlayerDataProvider.get(p).getFaction()!=team)return false;
@@ -65,19 +74,20 @@ public final class TeamSignals {
         rate.times.add(now);RATES.put(p.getUUID(),new Rate(now,rate.times));
         while(ACTIVE.stream().filter(a->a.entry.sender().equals(p.getUUID())).count()>=2)
             ACTIVE.remove(ACTIVE.stream().filter(a->a.entry.sender().equals(p.getUUID())).findFirst().orElseThrow());
-        while(ACTIVE.stream().filter(a->a.team==team).count()>=TeamSignalsPayload.LIMIT){
-            ACTIVE.remove(ACTIVE.stream().filter(a->a.team==team).findFirst().orElseThrow()); }
+        String dimension = p.level().dimension().identifier().toString();
+        while(ACTIVE.stream().filter(a->a.team==team && a.dimension.equals(dimension)).count()>=TeamSignalsPayload.LIMIT){
+            ACTIVE.remove(ACTIVE.stream().filter(a->a.team==team && a.dimension.equals(dimension)).findFirst().orElseThrow()); }
         String name=p.getName().getString();if(name.length()>64)name=name.substring(0,64);
         ACTIVE.add(new Active(new TeamSignalsPayload.Entry(++serial,p.getUUID(),name,request.kind(),point,100),team,
-                PlayerDataProvider.get(p).getCharacterId(),p.level().dimension().identifier().toString(),now+100));
+                PlayerDataProvider.get(p).getCharacterId(),dimension,TrainingGround.isTraining(p),now+100));
         publish(p.level().getServer());return true;
     }
     public static void tick(MinecraftServer server){
-        if(!playing()||contextChanged()){
-            resetContext(server); if(playing())bindContext(); return;
+        if(contextChanged()){
+            resetContext(server); bindContext();
         }
         boolean changed=ACTIVE.removeIf(a->{var p=server.getPlayerList().getPlayer(a.entry.sender());
-            return p==null||teamOf(p)!=a.team||PlayerDataProvider.get(p).getFaction()!=a.team
+            return p==null||!playing(p)||teamOf(p)!=a.team||PlayerDataProvider.get(p).getFaction()!=a.team
                     ||!Objects.equals(PlayerDataProvider.get(p).getCharacterId(),a.role)||!p.level().dimension().identifier().toString().equals(a.dimension)
                     ||p.level().getGameTime()>=a.until;});
         RATES.keySet().removeIf(id->server.getPlayerList().getPlayer(id)==null);
@@ -88,7 +98,7 @@ public final class TeamSignals {
     }
     private static void publish(MinecraftServer server){for(var p:server.getPlayerList().getPlayers()){
         Faction team=teamOf(p);var list=new ArrayList<TeamSignalsPayload.Entry>();
-        if(team!=null&&team==PlayerDataProvider.get(p).getFaction()&&(p.isAlive()&&!p.isSpectator()||HeroRespawnSystem.isWaiting(p)))
+        if(playing(p)&&team!=null&&team==PlayerDataProvider.get(p).getFaction()&&(p.isAlive()&&!p.isSpectator()||HeroRespawnSystem.isWaiting(p)))
             for(var a:ACTIVE)if(a.team==team&&a.dimension.equals(p.level().dimension().identifier().toString())&&a.until>p.level().getGameTime()){
                 var e=a.entry;list.add(new TeamSignalsPayload.Entry(e.serial(),e.sender(),e.name(),e.kind(),e.position(),(int)(a.until-p.level().getGameTime())));}
         if(!list.isEmpty()||SENT.contains(p.getUUID()))send(p,list);

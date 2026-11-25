@@ -88,6 +88,10 @@ public final class MapSystem {
                         (float) point.x(), (float) point.z()))
                 .toList();
         for (ServerPlayer viewer : level.players()) {
+            if (manager.isQueuedMatch() && !manager.isParticipant(viewer.getUUID())) {
+                Packets.sendToPlayer(viewer, emptySnapshot());
+                continue;
+            }
             Faction viewerFaction = manager.factionOf(viewer);
             List<NetworkSetup.MinimapMarker> markers = new ArrayList<>();
             markers.addAll(camps);

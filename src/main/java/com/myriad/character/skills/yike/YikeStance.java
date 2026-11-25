@@ -104,7 +104,7 @@ public final class YikeStance {
         var q = YikeRework.q(c.player);
         return q != null && c.skill == q && c.data.skillLevel(q.getId()) > 0
                 && s.shots > 0 && nextShotTicks(c.player) <= (s.fired && !c.accepted() ? 5 : 0)
-                && (unlimitedMana() || c.data.getMana() >= 35);
+                && (TrainingMode.isNoMana(c.player) || c.data.getMana() >= 35);
     }
 
     /** Q owns mana payment; this consumes exactly one shell for the same committed cast. */
@@ -118,7 +118,7 @@ public final class YikeStance {
         s.shots--;
         s.nextShot = c.now() + (s.mobile ? 27 : 22);
         if (s.shots == 0) exit(c.player, "empty");
-        else if (!unlimitedMana() && c.data.getMana() < 35) exit(c.player, "mana");
+        else if (!TrainingMode.isNoMana(c.player) && c.data.getMana() < 35) exit(c.player, "mana");
     }
 
     /** W calls this only after its legal ground warning has actually been committed. */
@@ -152,7 +152,7 @@ public final class YikeStance {
             exit(p, "control");
             return false;
         }
-        if (!unlimitedMana() && PlayerDataProvider.get(p).getMana() < 35) {
+        if (!TrainingMode.isNoMana(p) && PlayerDataProvider.get(p).getMana() < 35) {
             exit(p, "mana");
             return false;
         }
@@ -215,7 +215,7 @@ public final class YikeStance {
     private static void finish(ServerPlayer p, State s) {
         refreshMovement(p);
         var q = s.q;
-        if (s.fired && q != null && !(TrainingMode.isEnabled() && TrainingMode.isNoCooldown())) {
+        if (s.fired && q != null && !TrainingMode.isNoCooldown(p)) {
             var d = PlayerDataProvider.get(p);
             double reduction = Math.clamp(p.getAttributeValue(ModAttributes.COOLDOWN_REDUCTION), 0, 60);
             int full = Math.max(1, (int) (q.getCooldownTicks(Math.max(1, d.skillLevel(q.getId()))) * (1 - reduction / 100)));
@@ -223,8 +223,6 @@ public final class YikeStance {
         }
         YikeVfx.event(s.deployment, "exit", p.getEyePosition(), p.getEyePosition().add(s.aim), 0, 1);
     }
-
-    private static boolean unlimitedMana() { return TrainingMode.isEnabled() && TrainingMode.isNoMana(); }
 
     private static Vec3 turnToward(Vec3 from, Vec3 to) {
         double angle = Math.acos(Math.clamp(from.dot(to), -1, 1));

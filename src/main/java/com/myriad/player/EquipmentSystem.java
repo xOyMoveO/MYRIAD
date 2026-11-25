@@ -68,8 +68,7 @@ public final class EquipmentSystem {
         }
         int pay = Math.max(0, def.totalPrice() - discount);
         // 训练模式无限金币：不扣金币
-        boolean free = com.myriad.game.TrainingMode.isEnabled()
-                && com.myriad.game.TrainingMode.isNoGoldCost();
+        boolean free = com.myriad.game.TrainingMode.isNoGoldCost(player);
         if (!free && data.getGold() < pay) {
             com.myriad.game.MatchMessages.send(player,
                     com.myriad.game.MatchMessages.Tone.WARNING,
