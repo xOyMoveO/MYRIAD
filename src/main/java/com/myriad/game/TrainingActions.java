@@ -83,7 +83,7 @@ public final class TrainingActions {
             case "remove_dummy" -> JiarenManager.removeNearby(player);
             case "sparring" -> {
                 if (personal == null) return;
-                personal.sparring = value;
+                TrainingGround.setSparring(player, value);
                 QueueLobby.sync(player);
             }
             case "faction_guardian", "faction_destruction" -> {

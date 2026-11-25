@@ -6,6 +6,7 @@ import com.myriad.character.SkillSystem;
 import com.myriad.character.rework.FirstGroupGrowth;
 import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.combat.DamageCalc;
+import com.myriad.combat.MeleeAssistTargeting;
 import com.myriad.combat.SkillTargets;
 import com.myriad.player.PlayerDataProvider;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.BiConsumer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
@@ -23,8 +25,12 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 
 final class TrainingGroundCombatChecks {
     /** Run on the synthetic dedicated fixture: vanilla GameTestServer omits modded dimensions. */
@@ -102,9 +108,12 @@ final class TrainingGroundCombatChecks {
             check.accept(partner.getHealth() == before, "The raw damage event rejects an unconsented vanilla attack");
             TrainingActions.apply(actor, "sparring", true);
             check.accept(!SkillTargets.enemy(actor, partner) && !SkillTargets.enemy(partner, actor), "One-sided consent is ineffective");
+            check.accept(!preselectsAheadOfBlock(actor, partner),
+                    "One-sided consent preserves the native block click even when the other player is in assist range");
             TrainingActions.apply(partner, "sparring", true);
             check.accept(SkillTargets.enemy(actor, partner) && SkillTargets.enemy(partner, actor)
                     && practice.getFaction() == other.getFaction(), "Mutual consent enables both directions, even for the same practice faction");
+            check.accept(preselectsAheadOfBlock(actor, partner), "Mutual consent enables assist for a graze ahead of the block");
             partner.damageCooldownTime = 0;
             DamageCalc.dealSkillDamage(actor, partner, 35, DamageCalc.Kind.TRUE, 0);
             check.accept(partner.getHealth() < before, "Consensual skill damage reaches the other player's health pool");
@@ -123,8 +132,11 @@ final class TrainingGroundCombatChecks {
             partner.damageCooldownTime = 0;
             DamageCalc.dealSkillDamage(actor, partner, 35, DamageCalc.Kind.TRUE, 0);
             check.accept(partner.getHealth() == after && !SkillTargets.enemy(actor, partner), "Either player can revoke consent before impact");
+            check.accept(!preselectsAheadOfBlock(actor, partner), "Revoked consent restores the native block click");
             check.accept(SkillTargets.enemy(actor, dummy) && !SkillTargets.enemy(partner, dummy),
                     "Only the dummy owner can practise damage against it");
+            check.accept(preselectsAheadOfBlock(actor, dummy) && !preselectsAheadOfBlock(partner, dummy),
+                    "An owned attack dummy can take over a grazing click and another owner's dummy preserves the block");
             TrainingActions.apply(partner, "remove_dummy", true);
             check.accept(dummy.isAlive(), "A visitor cannot remove another player's nearby dummy");
 
@@ -172,6 +184,35 @@ final class TrainingGroundCombatChecks {
                 "Player enters the generated practice dimension");
         player.hasChangedDimension();
         player.connection.handleAcceptPlayerLoad(new ServerboundPlayerLoadedPacket());
+    }
+
+    private static boolean preselectsAheadOfBlock(ServerPlayer attacker, LivingEntity target) {
+        var level = attacker.level();
+        var origin = new Vec3(.5, 100, .5);
+        var obstruction = new BlockPos(0, 101, 2);
+        var originalBlock = level.getBlockState(obstruction);
+        var oldAttackerPos = attacker.position();
+        var oldTargetPos = target.position();
+        float oldYaw = attacker.getYRot();
+        float oldPitch = attacker.getXRot();
+        try {
+            attacker.setPos(origin);
+            attacker.setYRot(0);
+            attacker.setXRot(0);
+            target.setPos(origin.add(target.getBbWidth() / 2 + .08, 0, 1.2));
+            level.setBlockAndUpdate(obstruction, Blocks.STONE.defaultBlockState());
+            if (attacker.pick(attacker.entityInteractionRange(), 1, false).getType() != HitResult.Type.BLOCK) {
+                throw new IllegalStateException("Expected a native block behind the graze fixture");
+            }
+            return MeleeAssistTargeting.find(attacker,
+                    candidate -> TrainingGround.mayPreselectPracticeTarget(attacker, candidate)) == target;
+        } finally {
+            level.setBlockAndUpdate(obstruction, originalBlock);
+            attacker.setPos(oldAttackerPos);
+            attacker.setYRot(oldYaw);
+            attacker.setXRot(oldPitch);
+            target.setPos(oldTargetPos);
+        }
     }
 
     private static ServerPlayer player(MinecraftServer server, List<EmbeddedChannel> channels, int index) {

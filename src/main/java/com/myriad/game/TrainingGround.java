@@ -8,14 +8,21 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentTarget;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 
@@ -23,15 +30,20 @@ import net.minecraft.world.level.GameType;
 public final class TrainingGround {
     private static final String BEFORE_TRAINING = "myriad_before_training";
     private static final Map<UUID, Options> visitors = new HashMap<>();
+    private static final AttachmentType<Boolean> SPARRING = AttachmentRegistry.create(
+            Identifier.parse("myriad:training_sparring"), builder -> builder.copyOnDeath().syncWith(ByteBufCodecs.BOOL,
+                    (target, viewer) -> target instanceof ServerPlayer opponent && isTraining(opponent)
+                            && isTraining(viewer) && opponent.level() == viewer.level()));
 
     static final class Options {
         boolean noCooldown;
         boolean noMana;
         boolean noGoldCost;
-        boolean sparring;
     }
 
     private TrainingGround() {}
+
+    public static void initialize() {}
 
     public static boolean isTraining(ServerLevel level) {
         return level.dimension().equals(TrainingGroundMap.KEY);
@@ -45,9 +57,22 @@ public final class TrainingGround {
         return isTraining(player) ? visitors.get(player.getUUID()) : null;
     }
 
-    public static boolean isSparring(ServerPlayer player) {
-        var options = options(player);
-        return options != null && options.sparring;
+    public static boolean isSparring(Player player) {
+        return player.level().dimension().equals(TrainingGroundMap.KEY)
+                && (!(player instanceof ServerPlayer serverPlayer) || isTraining(serverPlayer))
+                && ((AttachmentTarget) player).getAttachedOrElse(SPARRING, false);
+    }
+
+    static void setSparring(ServerPlayer player, boolean enabled) {
+        if (isTraining(player) && enabled != isSparring(player)) {
+            ((AttachmentTarget) player).setAttached(SPARRING, enabled);
+        }
+    }
+
+    /** Prediction in the training dimension uses only tracked consent and the owner's dummy marker. */
+    public static boolean mayPreselectPracticeTarget(Player player, LivingEntity target) {
+        return target instanceof Player opponent ? isSparring(player) && isSparring(opponent)
+                : !(target instanceof Villager) || JiarenManager.isOwnedPracticeAttackTarget(player, target);
     }
 
     public static boolean canFight(ServerPlayer player) {
@@ -127,6 +152,7 @@ public final class TrainingGround {
     public static void onLogout(ServerPlayer player) {
         // Keep the persistent snapshot until login. The disconnect event can fire after playerdata is saved.
         if (visitors.remove(player.getUUID()) != null) {
+            ((AttachmentTarget) player).removeAttached(SPARRING);
             JiarenManager.clearOwned(player);
             TacticalSupplySystem.clearPlayer(player);
         }
@@ -185,6 +211,7 @@ public final class TrainingGround {
         var tag = EntityState.data(player);
         var previous = tag.getCompound(BEFORE_TRAINING);
         if (previous.isEmpty() && !isTraining(player.level())) return false;
+        ((AttachmentTarget) player).removeAttached(SPARRING);
         visitors.remove(player.getUUID());
         JiarenManager.clearOwned(player);
         TacticalSupplySystem.clearPlayer(player);

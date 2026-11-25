@@ -6,6 +6,8 @@ import com.myriad.combat.VanillaMeleeAttack;
 import com.myriad.game.CherryRiftMonsterEntity;
 import com.myriad.game.Faction;
 import com.myriad.game.LaneMinionEntity;
+import com.myriad.game.TrainingGround;
+import com.myriad.game.TrainingGroundMap;
 import com.myriad.network.NetworkSetup.MeleeAssistPayload;
 import com.myriad.network.Packets;
 import com.myriad.player.PlayerDataProvider;
@@ -44,10 +46,10 @@ public final class MeleeAssistInput {
 
     private static boolean visibleOpponent(LocalPlayer player, LivingEntity target) {
         if (target.isInvisible() || target.isInvisibleTo(player)) return false;
-        var lobby = LobbyClient.snapshot();
+        boolean practice = player.level().dimension().equals(TrainingGroundMap.KEY);
+        if (practice && !TrainingGround.mayPreselectPracticeTarget(player, target)) return false;
         if (target instanceof Player) {
-            return FogOfWarClient.shouldRenderPlayer(target.getId())
-                    && (lobby != null && lobby.training() ? lobby.sparring() : !player.isAlliedTo(target));
+            return FogOfWarClient.shouldRenderPlayer(target.getId()) && (practice || !player.isAlliedTo(target));
         }
         if (target instanceof LaneMinionEntity minion) {
             return ClientDataHolder.faction() != (minion.style() < 3 ? Faction.GUARDIAN : Faction.DESTRUCTION);
