@@ -2,6 +2,8 @@ package com.myriad.client.gui;
 
 import com.mojang.blaze3d.platform.InputConstants;
 
+import com.myriad.client.CombatHudOverlay;
+import com.myriad.client.DpsTracker;
 import com.myriad.client.HudLayoutConfig;
 import com.myriad.client.MinimapConfig;
 import com.myriad.client.MinimapOverlay;
@@ -16,7 +18,7 @@ import net.minecraft.network.chat.Component;
 /** 可视化 HUD 编辑器：左键拖动，滚轮缩放，右键切换显隐。 */
 public final class HudEditorScreen extends Screen {
     private final Screen parent;
-    private HudLayoutConfig.Element selected = HudLayoutConfig.Element.STATUS;
+    private HudLayoutConfig.Element selected = HudLayoutConfig.Element.COMBAT;
     private HudLayoutConfig.Element dragging;
     private double dragOffsetX;
     private double dragOffsetY;
@@ -32,16 +34,20 @@ public final class HudEditorScreen extends Screen {
         int buttonW = Math.min(96, Math.max(58, (width - 30) / 4));
         int totalW = buttonW * 4 + 18;
         int startX = (width - totalW) / 2;
-        addRenderableWidget(Button.builder(Component.translatable("screen.myriad.hud_editor.reset_one"), button ->
-                        HudLayoutConfig.reset(selected))
+        addRenderableWidget(Button.builder(Component.translatable("screen.myriad.hud_editor.reset_one"), button -> {
+                    HudLayoutConfig.reset(selected);
+                    rebuild();
+                })
                 .bounds(startX, y, buttonW, 20).build());
         addRenderableWidget(Button.builder(visibilityLabel(), button -> {
                     var state = HudLayoutConfig.state(selected);
                     HudLayoutConfig.set(selected, state.x(), state.y(), state.scale(), !state.visible());
                     rebuild();
                 }).bounds(startX + buttonW + 6, y, buttonW, 20).build());
-        addRenderableWidget(Button.builder(Component.translatable("screen.myriad.hud_editor.reset_all"), button ->
-                        HudLayoutConfig.resetAll())
+        addRenderableWidget(Button.builder(Component.translatable("screen.myriad.hud_editor.reset_all"), button -> {
+                    HudLayoutConfig.resetAll();
+                    rebuild();
+                })
                 .bounds(startX + (buttonW + 6) * 2, y, buttonW, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> onClose())
                 .bounds(startX + (buttonW + 6) * 3, y, buttonW, 20).build());
@@ -74,8 +80,14 @@ public final class HudEditorScreen extends Screen {
             var state = HudLayoutConfig.state(hit);
             rebuild();
             dragging = hit;
-            dragOffsetX = event.x() - state.x() * width;
-            dragOffsetY = event.y() - state.y() * height;
+            if (hit == HudLayoutConfig.Element.COMBAT) {
+                PreviewRect preview = rect(hit);
+                dragOffsetX = event.x() - preview.x;
+                dragOffsetY = event.y() - preview.y - preview.h;
+            } else {
+                dragOffsetX = event.x() - state.x() * width;
+                dragOffsetY = event.y() - state.y() * height;
+            }
             setDragging(true);
             return true;
         }
@@ -117,42 +129,45 @@ public final class HudEditorScreen extends Screen {
     }
 
     private HudLayoutConfig.Element elementAt(double mouseX, double mouseY) {
+        if (contains(rect(HudLayoutConfig.Element.COMBAT), mouseX, mouseY)) return HudLayoutConfig.Element.COMBAT;
         HudLayoutConfig.Element[] elements = HudLayoutConfig.Element.values();
         for (int i = elements.length - 1; i >= 0; i--) {
             PreviewRect rect = rect(elements[i]);
-            if (mouseX >= rect.x && mouseX <= rect.x + rect.w
-                    && mouseY >= rect.y && mouseY <= rect.y + rect.h) return elements[i];
+            if (contains(rect, mouseX, mouseY)) return elements[i];
         }
         return null;
     }
 
+    private static boolean contains(PreviewRect rect, double x, double y) {
+        return x >= rect.x && x < rect.x + rect.w && y >= rect.y && y < rect.y + rect.h;
+    }
+
     private PreviewRect rect(HudLayoutConfig.Element element) {
         var state = HudLayoutConfig.state(element);
+        if (element == HudLayoutConfig.Element.COMBAT || element == HudLayoutConfig.Element.DPS) {
+            var layout = CombatHudOverlay.preview(width, height);
+            if (element == HudLayoutConfig.Element.COMBAT) {
+                if (layout == null) return new PreviewRect(0, 0, 0, 0);
+                var bounds = layout.bounds();
+                return new PreviewRect(bounds.x(), bounds.y(), bounds.width(), bounds.height());
+            }
+            var bounds = DpsTracker.position(width, height, 90,
+                    HudLayoutConfig.state(HudLayoutConfig.Element.COMBAT).visible() ? layout : null, state);
+            if (bounds == null) return new PreviewRect(0, 0, 0, 0);
+            return new PreviewRect(bounds.x(), bounds.y(), bounds.width(), bounds.height());
+        }
         BaseRect base = defaultRect(element);
         float defaultAnchorX = element.defaultX() * width;
         float defaultAnchorY = element.defaultY() * height;
         float targetAnchorX = state.x() * width;
         float targetAnchorY = state.y() * height;
         // 与 HudLayoutConfig.render 完全一致：先平移到目标锚点，再以该锚点缩放原始 HUD。
-        float transformScale = element.transformScale(state);
+        float transformScale = state.scale();
         int x = Math.round(targetAnchorX + (base.x - defaultAnchorX) * transformScale);
         int y = Math.round(targetAnchorY + (base.y - defaultAnchorY) * transformScale);
         int w = Math.max(1, Math.round(base.w * transformScale));
         int h = Math.max(1, Math.round(base.h * transformScale));
         return new PreviewRect(x, y, w, h);
-    }
-
-    private BaseRect skillDockRect(){
-        var data=com.myriad.client.ClientDataHolder.get();
-        var type=data==null?null:com.myriad.character.CharacterType.byId(data.characterId());
-        int count=0;boolean charges=false;
-        if(type!=null)for(int slot=0;slot<com.myriad.character.CharacterType.SKILL_SLOTS;slot++){
-            var skill=com.myriad.character.rework.FirstGroupSkills.resolve(type,slot,data.skillLevels());
-            if(skill!=null){count++;charges|=com.myriad.client.SkillChargeDisplay.chargeCount(skill,data.buffs())>=0;}
-        }
-        var dock=com.myriad.client.SkillBarLayout.at(width,height,Math.max(1,count),charges,
-                HudLayoutConfig.state(HudLayoutConfig.Element.SKILLS).scale());
-        return new BaseRect(dock.x(),dock.y()-23*dock.scale(),dock.width(),dock.height());
     }
 
     /** 每个 HUD 在未经过 HudLayoutConfig 变换前的实际默认绘制边界。 */
@@ -161,12 +176,8 @@ public final class HudEditorScreen extends Screen {
         float centerX = width * .5F;
         float centerY = height * .5F;
         return switch (element) {
-            case INFO -> new BaseRect(6 * fit, 6 * fit, 148 * fit, 45 * fit);
-            case STATUS -> new BaseRect((centerX - 205) * fit, (height - 62) * fit,
-                    260 * fit, 44 * fit);
-            case SKILLS -> skillDockRect();
-            // 普攻区包含角色专属层数、能量和节奏提示，按最大常用占用区域显示。
-            case ATTACKS -> new BaseRect(centerX + 85, height - 73, 145, 63);
+            case INFO -> new BaseRect(6 * fit, 6 * fit, 148 * fit, 25 * fit);
+            case COMBAT, DPS -> throw new IllegalArgumentException(element.id());
             case MINIMAP -> new BaseRect(
                     MinimapConfig.x(width, MinimapOverlay.SIZE),
                     MinimapConfig.y(height, MinimapOverlay.SIZE),
@@ -176,7 +187,6 @@ public final class HudEditorScreen extends Screen {
             case OBJECTIVE -> new BaseRect(centerX - 91, 9, 182, 43);
             case ANNOUNCEMENTS -> new BaseRect(centerX - 112, height * .12F - 18, 224, 38);
             case PROMPTS -> new BaseRect(centerX - 87, centerY - 33, 174, 97);
-            case DPS -> new BaseRect(4, height - 21, 90, 14);
             case COMBAT_STATS -> new BaseRect(width - 162, 88, 154, 76);
             case FEEDBACK -> new BaseRect(centerX - 14, centerY - 14, 28, 28);
             // 世界飘字和头顶血条会跟随投影目标；这里显示其默认参考区域。
@@ -201,8 +211,13 @@ public final class HudEditorScreen extends Screen {
         Font font = Minecraft.getInstance().font;
         HudLayoutConfig.Element hovered = elementAt(mouseX, mouseY);
         for (HudLayoutConfig.Element element : HudLayoutConfig.Element.values()) {
-            drawPreview(gui, font, element, element == selected, element == hovered);
+            if (element != HudLayoutConfig.Element.COMBAT) {
+                drawPreview(gui, font, element, element == selected, element == hovered);
+            }
         }
+
+        drawPreview(gui, font, HudLayoutConfig.Element.COMBAT,
+                selected == HudLayoutConfig.Element.COMBAT, hovered == HudLayoutConfig.Element.COMBAT);
 
         Component title = Component.translatable("screen.myriad.hud_editor.title");
         gui.text(font, title, 8, 7, 0xFFFFE5A1);
@@ -219,6 +234,7 @@ public final class HudEditorScreen extends Screen {
     private void drawPreview(GuiGraphicsExtractor gui, Font font, HudLayoutConfig.Element element,
             boolean selectedNow, boolean hovered) {
         PreviewRect rect = rect(element);
+        if (rect.w == 0 || rect.h == 0) return;
         var state = HudLayoutConfig.state(element);
         int fill = state.visible() ? (selectedNow ? 0xAA17384A : hovered ? 0x99304B57 : 0x78202D36) : 0x783B2026;
         int border = selectedNow ? 0xFFFFD66B : hovered ? 0xFF63E5FF : state.visible() ? 0xFF668C9D : 0xFFB95A65;

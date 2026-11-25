@@ -4,18 +4,16 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.network.chat.Component;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
 
 import com.myriad.character.CharacterType;
 import com.myriad.character.Skill;
-import com.myriad.game.GameRules;
 import com.myriad.network.NetworkSetup;
 import com.myriad.network.NetworkSetup.PlayerDataPayload;
 
-/**
- * 游戏内 HUD：阵营 / 等级 / 经验 / 金币 / 法力 / 携带灵源 / 对局计分 / 技能栏。
- */
+/** 对局信息、个人战斗面板和世界提示。 */
 public class HudOverlay implements HudElement {
     public static final HudOverlay INSTANCE = new HudOverlay();
 
@@ -68,14 +66,10 @@ public class HudOverlay implements HudElement {
     }
 
     private static final int LINE_HEIGHT = 12;
-    /** 技能栏 / buff 列表的放大倍数 */
-    private static final float UI_SCALE = 1.5f;
     /** 界面适配基准宽度（guiScale=2、854 宽窗口），guiScale 越大文本整体收缩，保证完整显示 */
     private static final float FIT_REF_WIDTH = 427.0f;
     private static final int TEXT_COLOR = 0xFFFFFFFF;
     private static final int HIGHLIGHT_COLOR = 0xFF55FFFF;
-    private static final int CD_COLOR = 0xFFFFAA00;
-    private static final int READY_COLOR = 0xFF55FF55;
 
     /** 适配玩家界面尺寸的缩放因子：guiScale 越大（屏幕逻辑宽越小）文本越小，保证完整显示 */
     private static float fitScale() {
@@ -106,7 +100,9 @@ public class HudOverlay implements HudElement {
         }
         Font font = Minecraft.getInstance().font;
         TeamSignalClient.render(gui,font);
-        ControlStatusOverlay.render(gui,font);
+        var combatLayout = CombatHudOverlay.draw(gui, font);
+        ControlStatusOverlay.render(gui, font, combatLayout != null);
+        YikeHud.drawMuzzle(gui, font);
         var preparation=ClientDataHolder.pickState();
         int seconds = LobbyClient.preparationSeconds();
         if (seconds < 0 && preparation != null && preparation.state() == 1 && preparation.countdownTick() >= 0
@@ -127,28 +123,24 @@ public class HudOverlay implements HudElement {
             gui.fill(px-5, 18, px+font.width(notice)+5, 32, 0xDD111C24);
             gui.text(font, notice, px, 20, 0xFFFFD79A);
         }
-        HudLayoutConfig.render(gui, HudLayoutConfig.Element.INFO, () -> {
+        if (data.combatActive() || data.combatPreparing()) HudLayoutConfig.render(gui, HudLayoutConfig.Element.INFO, () -> {
             float s = fitScale();
             int line = (int) (LINE_HEIGHT * s);
             gui.pose().pushMatrix();
             gui.pose().scale(s);
             int x = 6;
             int y = 6;
-            gui.text(font, Component.literal("阵营: " + ClientDataHolder.factionName())
-                            .withStyle(net.minecraft.ChatFormatting.BOLD), x, y, HIGHLIGHT_COLOR);
-            y += line;
-            gui.text(font, "等级: " + data.level() + "  经验: " + data.xp() + "/" + data.xpToNext(), x, y, TEXT_COLOR);
-            y += line;
-            gui.text(font, Component.translatable("hud.myriad.destroy_crystal"), x, y, TEXT_COLOR);
-            y += line;
-            gui.text(font, Component.translatable("hud.myriad.gold", data.gold()), x, y, 0xFFFFD34F);
+            Component faction = Component.literal("阵营: " + ClientDataHolder.factionName())
+                    .withStyle(net.minecraft.ChatFormatting.BOLD);
+            Component objective = Component.translatable("hud.myriad.destroy_crystal");
+            boolean occluded = combatLayout != null && Minecraft.getInstance().gui.screen() instanceof ChatScreen
+                    && (overlapsInfoRow(gui, combatLayout.bounds(), x, y, font.width(faction), font.lineHeight)
+                    || overlapsInfoRow(gui, combatLayout.bounds(), x, y + line, font.width(objective), font.lineHeight));
+            if (!occluded) {
+                gui.text(font, faction, x, y, HIGHLIGHT_COLOR);
+                gui.text(font, objective, x, y + line, TEXT_COLOR);
+            }
             gui.pose().popMatrix();
-        });
-        HudLayoutConfig.render(gui, HudLayoutConfig.Element.SKILLS, () -> renderSkillBar(gui, font, data));
-        HudLayoutConfig.render(gui, HudLayoutConfig.Element.ATTACKS, () -> {
-            renderBasicAttackBar(gui, font, data);
-            renderMagicBulletBar(gui, font, data);
-            com.myriad.client.YikeHud.draw(gui,font);
         });
         HudLayoutConfig.render(gui, HudLayoutConfig.Element.MINIMAP, () -> MinimapOverlay.render(gui, font));
         HudLayoutConfig.render(gui, HudLayoutConfig.Element.BUFFS, () -> renderBuffs(gui, font));
@@ -164,7 +156,7 @@ public class HudOverlay implements HudElement {
             KillAnnouncementOverlay.render(gui, font);
             TowerAlertOverlay.render(gui, font);
         });
-        HudLayoutConfig.render(gui, HudLayoutConfig.Element.DPS, () -> DpsTracker.render(gui, font));
+        DpsTracker.render(gui, font, combatLayout);
         HudLayoutConfig.render(gui, HudLayoutConfig.Element.COMBAT_STATS,
                 () -> CombatStatsPanel.render(gui, font));
         HudLayoutConfig.render(gui, HudLayoutConfig.Element.FLOATERS, () -> {
@@ -178,6 +170,16 @@ public class HudOverlay implements HudElement {
             MinionHealthBars.render(gui, font, partialTick);
         });
         HudLayoutConfig.render(gui, HudLayoutConfig.Element.TAB, () -> MatchTabOverlay.render(gui, font));
+    }
+
+    private static boolean overlapsInfoRow(GuiGraphicsExtractor gui, CombatHudLayout.Bounds panel,
+                                           int x, int y, int width, int height) {
+        var pose = gui.pose(); // The same scale and position already applied to both INFO text rows.
+        float left = pose.m20() + x * pose.m00();
+        float top = pose.m21() + y * pose.m11();
+        float right = left + (width + 1) * pose.m00();
+        float bottom = top + (height + 1) * pose.m11();
+        return left < panel.right() && right > panel.x() && top < panel.bottom() && bottom > panel.y();
     }
 
     /** 复活倒计时与观战目标提示。 */
@@ -411,199 +413,5 @@ public class HudOverlay implements HudElement {
             }
         }
         return null;
-    }
-
-    /** 物品栏右侧：自定义普攻的攻速回复条，满条即代表下一击可用。 */
-    private void renderBasicAttackBar(GuiGraphicsExtractor gui, Font font, PlayerDataPayload data) {
-        int sw = Minecraft.getInstance().getWindow().getGuiScaledWidth();
-        int sh = Minecraft.getInstance().getWindow().getGuiScaledHeight();
-        int width = 48;
-        int height = 5;
-        int x = sw / 2 + 94;
-        int y = sh - 25;
-        int max = Math.max(1, data.basicAttackCooldownMax());
-        int cooldown = ClientDataHolder.basicAttackCooldownNow();
-        boolean vanillaMelee=com.myriad.combat.VanillaMeleeAttack.usesVanilla(CharacterType.byId(data.characterId()));
-        var attackPlayer=Minecraft.getInstance().player;
-        if(vanillaMelee&&attackPlayer!=null)max=Math.max(1,(int)Math.ceil(attackPlayer.getCurrentItemAttackStrengthDelay()));
-        float ready = 1.0F - Math.min(1.0F, Math.max(0.0F, cooldown / (float) max));
-        boolean fullReady = cooldown <= 0;
-        int fill = Math.round(width * ready);
-        int color = fullReady ? 0xFF62E88E : 0xFF57C9F5;
-        gui.fill(x - 1, y - 1, x + width + 1, y + height + 1, 0xFF111827);
-        gui.fill(x, y, x + width, y + height, 0xAA07111F);
-        if (fill > 0) gui.fill(x, y, x + fill, y + height, color);
-        String label = fullReady ? "普攻" : String.format("%.1fs", cooldown / 20.0F);
-        gui.text(font, label, x + (width - font.width(label)) / 2, y - 10,
-                fullReady ? 0xFF9FFFD0 : 0xFFB9ECFF);
-        if ("rivet".equals(data.characterId())) {
-            int active=ClientDataHolder.syncedCounter("g1_rivet_anchor_active"),recovery=ClientDataHolder.buffTicks("g1_rivet_anchor_recovery");
-            var pick=ClientDataHolder.pickState();
-            boolean preparing=LobbyClient.preparationSeconds()>0 || pick!=null&&pick.state()==1&&pick.countdownTick()>=0&&Minecraft.getInstance().level!=null&&pick.countdownTick()>Minecraft.getInstance().level.getGameTime();
-            String status=active<=0?Component.translatable("hud.myriad.rivet.no_anchor").getString():preparing?Component.translatable("hud.myriad.rivet.anchor_preparing").getString():recovery>0?Component.translatable("hud.myriad.rivet.anchor_recovery",recovery/20.0f).getString():Component.translatable("hud.myriad.rivet.anchor_ready").getString();
-            if(active>0)status=Component.translatable("hud.myriad.rivet.anchor_status",status,ClientDataHolder.buffTicks("g1_rivet_anchor_remaining")/20.0f).getString();
-            gui.text(font,status,x+width/2-font.width(status)/2,y-24,recovery>0||preparing?0xFFEBAF4C:0xFF70D8E0);
-        } else if ("keheng".equals(data.characterId())) {
-            int marks=ClientDataHolder.syncedCounter("g1_keheng_marks"),icd=ClientDataHolder.buffTicks("g1_keheng_step_cd");
-            String status=ClientDataHolder.buffTicks("g1_keheng_follow")>0?Component.translatable("hud.myriad.keheng.follow").getString():
-                    data.skillLevels().getOrDefault("keheng_hengbu",0)>0?Component.translatable("hud.myriad.keheng.step",icd/20.0f).getString():
-                    Component.translatable("hud.myriad.keheng.marks",marks,ClientDataHolder.buffTicks("g1_keheng_mark_window")/20.0f).getString();
-            gui.text(font,status,x+width/2-font.width(status)/2,y-24,0xFF42D9BD);
-        } else if ("shuo".equals(data.characterId())) {
-            int gauge=Math.clamp(ClientDataHolder.syncedCounter("g1_shuo_gauge"),0,100);
-            var passive=com.myriad.character.rework.FirstGroupSkills.selected("shuo",0,data.skillLevels());
-            boolean edge=passive!=null&&passive.index()==0&&data.skillLevels().getOrDefault(passive.getId(),0)>0;
-            String stance=ClientDataHolder.buffTicks("g1_shuo_sheathing")>0?"回鞘中":ClientDataHolder.isChanneling()?"蓄势":ClientDataHolder.syncedCounter("g1_shuo_drawn")>0?"出鞘·连击式 · 右键回鞘":edge?"收鞘·拔刀式 · 藏锋 "+gauge+"%":"收鞘·拔刀式";
-            if(passive!=null&&passive.index()==1&&data.skillLevels().getOrDefault(passive.getId(),0)>0&&ClientDataHolder.syncedCounter("g1_shuo_ready")>0)stance+=" · 见切就绪";
-            gui.text(font,stance,x-font.width(stance)/2+width/2,y-26,0xFFD8EEFF);
-            if(edge){gui.fill(x,y-14,x+width,y-10,0xCC172333);
-                gui.fill(x,y-14,x+Math.round(width*gauge/100F),y-10,0xFFE7F7FF);}
-        } else if (com.myriad.character.rework.FirstGroupSkills.SECOND_GROUP.contains(data.characterId())) {
-            var passive=com.myriad.character.rework.FirstGroupSkills.selected(data.characterId(),0,data.skillLevels());
-            if(passive!=null&&ClientDataHolder.buffTicks(passive.getId()+"_ready")>0){
-                SkillIcon.drawBuff(gui,font,x+width/2-7,y-29,14,passive);
-                gui.text(font,"就绪",x+width/2-10,y-12,0xFFFFE7A0);
-            }
-        } else if ("chixiao".equals(data.characterId())) {
-            int stacks = Math.max(0, Math.min(3, ClientDataHolder.syncedCounter("chixiao_passive")));
-            int internalCd = ClientDataHolder.buffTicks("chixiao_passive_cd");
-            int alpha = stacks == 0 ? (internalCd > 0 ? 125 : 45) : 80 + stacks * 55;
-            int iconColor = (alpha << 24) | (stacks >= 3 ? 0xFFE75A24 : 0xFF9C3A2F);
-            int ix = x + width / 2 - 6; int iy = y - 23;
-            gui.fill(ix - 1, iy - 1, ix + 13, iy + 13, 0xCC1A1010);
-            gui.fill(ix, iy, ix + 12, iy + 12, iconColor);
-            gui.text(font, "战", ix + 2, iy + 2, stacks >= 3 ? 0xFFFFFF88 : 0xFFFFFFFF);
-            if (stacks >= 3) { gui.fill(ix - 2, iy - 2, ix + 14, iy - 1, 0xFFFFC84A); gui.fill(ix - 2, iy + 13, ix + 14, iy + 14, 0xFFFFC84A); }
-            if (internalCd > 0) gui.text(font, String.valueOf((internalCd + 19) / 20), ix + 3, iy + 3, 0xFFFFD060);
-        } else if ("sulan".equals(data.characterId())) {
-            boolean windReady = ClientDataHolder.syncedCounter("sulan_passive_ready") > 0;
-            Skill[] passives = {com.myriad.character.rework.FirstGroupSkills.selected("sulan",0,data.skillLevels())};
-            if (passives.length > 0) {
-                int ix = x + 11, iy = y - 31;
-                if (windReady) gui.fill(ix - 2, iy - 2, ix + 16, iy + 16, 0xFF84FFE0);
-                SkillIcon.drawBuff(gui, font, ix, iy, 14, passives[0]);
-                if (!windReady) gui.fill(ix, iy, ix + 14, iy + 14, 0xA8000000);
-                gui.text(font, Component.translatable(windReady ? "hud.myriad.wind_ready" : "hud.myriad.wind_charging"),
-                        ix + 18, iy + 3, windReady ? 0xFF84FFE0 : 0xFF74808C);
-            }
-        }
-    }
-
-    /** 法师专属：位于普攻条下方的蓝色法术弹攻速回复条。 */
-    private void renderMagicBulletBar(GuiGraphicsExtractor gui, Font font, PlayerDataPayload data) {
-        String character = data.characterId();
-        if (!"xuanchen".equals(character) && !"hanze".equals(character)
-                && !"qingluo".equals(character) && !"yunsheng".equals(character)) return;
-        int sw = Minecraft.getInstance().getWindow().getGuiScaledWidth();
-        int sh = Minecraft.getInstance().getWindow().getGuiScaledHeight();
-        int width = 48, height = 5;
-        int x = sw / 2 + 94;
-        int y = sh - 17;
-        int max = Math.max(1, ClientDataHolder.magicBulletCooldownMax());
-        int cooldown = ClientDataHolder.magicBulletCooldownNow();
-        float ready = 1.0F - Math.min(1.0F, Math.max(0.0F, cooldown / (float) max));
-        boolean fullReady = cooldown <= 0;
-        int fill = Math.round(width * ready);
-        gui.fill(x - 1, y - 1, x + width + 1, y + height + 1, 0xFF101827);
-        gui.fill(x, y, x + width, y + height, 0xCC06162B);
-        if (fill > 0) gui.fill(x, y, x + fill, y + height,
-                fullReady ? 0xFF58AFFF : 0xFF267DD8);
-        String label = fullReady ? "法术弹" : String.format("%.1fs", cooldown / 20.0F);
-        gui.text(font, label, x - font.width(label) - 4, y - 2,
-                fullReady ? 0xFF8DCCFF : 0xFF69AEEA);
-    }
-
-    /** Compact horizontal skill dock to the left of the vanilla hotbar. */
-    private void renderSkillBar(GuiGraphicsExtractor gui, Font font, PlayerDataPayload data) {
-        CharacterType type = CharacterType.byId(data.characterId());
-        if (type == null) {
-            return;
-        }
-        int screenHeight = Minecraft.getInstance().getWindow().getGuiScaledHeight();
-        java.util.List<Skill> skills = new java.util.ArrayList<>();
-        java.util.List<Integer> slots = new java.util.ArrayList<>();
-        String[] keyLabels = { "①", "②", "③", "④", "⑤" };
-        for (int slot = 0; slot < CharacterType.SKILL_SLOTS; slot++) {
-            Skill skill = com.myriad.character.rework.FirstGroupSkills.resolve(type, slot, data.skillLevels());
-            if (skill != null) {
-                skills.add(skill);
-                slots.add(slot);
-            }
-        }
-        if (skills.isEmpty()) {
-            return;
-        }
-        boolean hasCharges=skills.stream().anyMatch(skill->SkillChargeDisplay.chargeCount(skill,data.buffs())>=0);
-        var dock=SkillBarLayout.at(Minecraft.getInstance().getWindow().getGuiScaledWidth(),screenHeight,
-                skills.size(),hasCharges,HudLayoutConfig.state(HudLayoutConfig.Element.SKILLS).scale());
-        float total = dock.scale();
-        int slotSize = 28;
-        int gap = 4;
-        gui.pose().pushMatrix();
-        gui.pose().translate(dock.x(),dock.y());
-        gui.pose().scale(total);
-        int x = 0;
-        int y = 0;
-        for (int i = 0; i < skills.size(); i++) {
-            Skill skill = skills.get(i);
-            int slot = slots.get(i);
-            int cx = x + i * (slotSize + gap);
-            int cdTicks = ClientDataHolder.cooldownTicks(slot);
-            int lv = data.skillLevels().getOrDefault(skill.getId(), 0);
-            boolean ultimate = skill.isUltimate();
-            SkillIcon.draw(gui, font, cx, y, slotSize, skill, ultimate, cdTicks <= 0, keyLabels[slot]);
-            if (cdTicks > 0) {
-                gui.fill(cx, y, cx + slotSize, y + slotSize, 0x66000000);
-                String cd = String.valueOf((cdTicks + 19) / 20);
-                gui.text(font, cd, cx + (slotSize - font.width(cd)) / 2, y + slotSize - 9, CD_COLOR);
-            }
-            int charges = SkillChargeDisplay.chargeCount(skill, data.buffs());
-            if (charges >= 0) {
-                String count = Integer.toString(charges);
-                int badgeWidth = Math.max(10, font.width(count) + 6);
-                int badgeX = cx + (slotSize - badgeWidth) / 2;
-                int badgeY = y + slotSize + 1;
-                gui.fill(badgeX, badgeY, badgeX + badgeWidth, badgeY + font.lineHeight + 2, 0xCC101722);
-                String chargeKey = "skill_charge_" + skill.getId();
-                int remaining = data.buffs().getOrDefault(chargeKey + "_remaining", 0);
-                int totalTicks = data.buffs().getOrDefault(chargeKey + "_total", 0);
-                if (remaining > 0 && totalTicks > 0 && charges < skill.getMaxCharges()) {
-                    double progress = 1.0 - Math.min(1.0, remaining / (double) totalTicks);
-                    int ringCx = cx + slotSize / 2;
-                    int ringCy = badgeY + (font.lineHeight + 2) / 2;
-                    for (int part = 0; part < 24; part++) {
-                        double angle = -Math.PI / 2 + Math.PI * 2 * part / 24.0;
-                        int px = ringCx + (int)Math.round(Math.cos(angle) * (badgeWidth / 2.0 + 2));
-                        int py = ringCy + (int)Math.round(Math.sin(angle) * (font.lineHeight / 2.0 + 3));
-                        int color = part / 24.0 <= progress ? 0xFF65DDF2 : 0xFF334653;
-                        gui.fill(px, py, px + 1, py + 1, color);
-                    }
-                }
-                gui.text(font, count, badgeX + (badgeWidth - font.width(count)) / 2, badgeY + 1,
-                        charges > 0 ? 0xFF72E8FF : 0xFF8A929C);
-            }
-            int secondCastTicks = SecondCastDisplay.remainingTicks(skill.getId());
-            if (secondCastTicks > 0) {
-                String seconds = String.format(java.util.Locale.ROOT, "%.1fs", secondCastTicks / 20.0F);
-                int timeX = cx + (slotSize - font.width(seconds)) / 2;
-                int timeY = y - font.lineHeight * 2 - 5;
-                gui.fill(timeX - 2, timeY - 1, timeX + font.width(seconds) + 2,
-                        timeY + font.lineHeight + 1, 0xD0181018);
-                gui.text(font, seconds, timeX, timeY, secondCastTicks <= 10 ? 0xFFFF746A : 0xFFFFD46A);
-            }
-            // 状态标签放在图标上方完整一行，避免与图标边框和内容重叠。
-            int labelY = y - font.lineHeight - 2;
-            if (lv <= 0 && skill instanceof com.myriad.character.ability.AbilitySkill ability && ability.baseAvailable()) {
-                String lvLabel = Component.translatable("hud.myriad.rivet.base_anchor").getString();
-                gui.text(font,lvLabel,cx+slotSize-font.width(lvLabel)-1,labelY,0xFFEBAF4C);
-            } else if (lv <= 0) {
-                String lvLabel = "未学习";
-                gui.text(font, lvLabel, cx + slotSize - font.width(lvLabel) - 1, labelY, 0xFF9E9E9E);
-            } else {
-                String lvLabel = "Lv" + lv;
-                gui.text(font, lvLabel, cx + slotSize - font.width(lvLabel) - 1, labelY, 0xFF55FFFF);
-            }
-        }
-        gui.pose().popMatrix();
     }
 }

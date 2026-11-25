@@ -10,8 +10,7 @@ import com.myriad.network.Packets;
 
 import com.myriad.character.CharacterType;
 import com.myriad.client.HudOverlay;
-import com.myriad.client.LowHealthOverlay;
-import com.myriad.client.StatusOverlay;
+import com.myriad.client.CombatHudState;
 import com.myriad.client.particle.SulanBladeArcParticle;
 import com.myriad.client.particle.SpiritMoteParticle;
 import com.myriad.client.particle.RainbowMoteParticle;
@@ -87,20 +86,24 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
     }
 
     /** Called at Minecraft.startAttack, including keyboard or mouse rebound attacks. */
-    public static boolean attack() {
+    public static AttackInput attack(boolean allowMeleeAssist) {
         AttackInput event = new AttackInput();
         onInteractionKeyMapping(event);
+        Minecraft mc = Minecraft.getInstance();
+        event.setMeleeAssist(allowMeleeAssist && !event.isCanceled()
+                && com.myriad.client.MeleeAssistInput.shouldAssist(mc));
         com.myriad.client.firstperson.KehengView.attack(event);
         com.myriad.client.firstperson.NightDaggerView.onAttack(event);
         com.myriad.client.firstperson.ThunderSwordView.onAttack(event);
         com.myriad.client.firstperson.FlameDaoView.onAttack(event);
         com.myriad.client.firstperson.ShuoView.onAttack(event);
         com.myriad.client.firstperson.WindBladeView.onAttack(event);
-        return event.isCanceled();
+        if (event.isMeleeAssist()) com.myriad.client.MeleeAssistInput.send(mc.player);
+        return event;
     }
 
     /**
-     * 近战完全交还原版攻击输入；仅远程专属普攻使用自定义请求。
+     * Preserve native attack input for exact melee selections and route dedicated ranged attacks.
      */
     private static void onInteractionKeyMapping(AttackInput event) {
         if (!com.myriad.client.ClientDataHolder.modEnabled()) return;
@@ -505,24 +508,18 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
     }
 
     private static void onRegisterGuiLayers() {
-        net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry.attachElementBefore(
-                net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements.CROSSHAIR,
-                Identifier.fromNamespaceAndPath(Myriad.MODID, "low_health"), LowHealthOverlay::render);
         net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry.addLast(
-                Identifier.fromNamespaceAndPath(Myriad.MODID,"hud"), HudOverlay.INSTANCE);
-        wrapStatusLayer(net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements.HEALTH_BAR, StatusOverlay.HEALTH);
-        wrapStatusLayer(net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements.FOOD_BAR, StatusOverlay.MANA);
-        wrapStatusLayer(net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements.EXPERIENCE_LEVEL, StatusOverlay.LEVEL);
-        wrapStatusLayer(net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements.INFO_BAR, StatusOverlay.NOOP);
-        wrapStatusLayer(net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements.INFO_BAR_FOREGROUND, StatusOverlay.NOOP);
+                Identifier.fromNamespaceAndPath(Myriad.MODID, "hud"), HudOverlay.INSTANCE);
+        suppressStatusLayer(net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements.HEALTH_BAR);
+        suppressStatusLayer(net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements.FOOD_BAR);
+        suppressStatusLayer(net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements.EXPERIENCE_LEVEL);
+        suppressStatusLayer(net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements.INFO_BAR);
+        suppressStatusLayer(net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements.INFO_BAR_FOREGROUND);
     }
 
-    private static void wrapStatusLayer(Identifier id,
-            net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement replacement) {
+    private static void suppressStatusLayer(Identifier id) {
         net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry.replaceElement(id, original -> (gui, delta) -> {
-            if (com.myriad.client.ClientDataHolder.modEnabled()
-                    && com.myriad.client.ClientDataHolder.inGame()) replacement.extractRenderState(gui, delta);
-            else original.extractRenderState(gui, delta);
+            if (!CombatHudState.suppressesVanillaStatus()) original.extractRenderState(gui, delta);
         });
     }
 

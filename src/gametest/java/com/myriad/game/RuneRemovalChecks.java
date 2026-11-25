@@ -77,7 +77,8 @@ final class RuneRemovalChecks {
                 java.util.Map.of("test_skill", 40), java.util.Map.of(), 4, 0,
                 java.util.Map.of("test_skill", 1), true, 6, true, -1,
                 java.util.List.of(), java.util.Map.of("test_attribute", 1.5),
-                20, 2, 3, 4, 70, 2000, 100);
+                20, 2, 3, 4, 70, 2000, 100, LevelSystem.maxLevel(data), player.getId(),
+                player.level().dimension().identifier(), true, false);
         var buffer = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
         try {
             com.myriad.network.NetworkSetup.PlayerDataPayload.STREAM_CODEC.encode(buffer, payload);

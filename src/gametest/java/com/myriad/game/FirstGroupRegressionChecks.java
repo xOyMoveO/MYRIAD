@@ -1,6 +1,5 @@
 package com.myriad.game;
 
-import com.google.gson.Gson;
 import com.myriad.character.CharacterType;
 import com.myriad.character.ability.AbilityRuntime;
 import com.myriad.character.rework.FirstGroupGrowth;
@@ -41,7 +40,6 @@ final class FirstGroupRegressionChecks {
             NightBasicNeedleChecks.verify(h);
             NightShieldChecks.verify(h);
             SharedControlChecks.start(h);
-            AbilityContractChecks.start(h);
             LevelUpPresentationChecks.verify(h);
             RosterRetirementChecks.verify(h, p);
             RuneRemovalChecks.run(h, p);
@@ -135,7 +133,7 @@ final class FirstGroupRegressionChecks {
             }
             h.assertTrue(classes.size()==FirstGroupSkills.ROLES.size()*8,"Every registered hero owns eight independent candidate implementations");
             var d=PlayerDataProvider.get(p); d.setCharacterId("yingxiao"); d.setLevel(20);
-            d.refundAllSkillPointsForTraining(); d.setGold(10000);
+            d.refundAllSkillPointsForTraining();
             var pig=h.spawn(net.minecraft.world.entity.EntityTypes.PIG,new net.minecraft.core.BlockPos(3,2,3));
             pig.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(1000);
             pig.setHealth(1000);
@@ -145,15 +143,7 @@ final class FirstGroupRegressionChecks {
                 h.assertTrue(Math.abs(hp-pig.getHealth()-100)<.01,"No hidden damage multiplier for "+kind);
             }
             pig.discard();
-            for(int i=0;i<10;i++)h.assertTrue(FirstGroupGrowth.buy(p,d,"strength"),"Valid strength purchase");
-            h.assertTrue(!FirstGroupGrowth.buy(p,d,"strength"),"Per-attribute cap is 10");
-            for(int i=0;i<5;i++)h.assertTrue(FirstGroupGrowth.buy(p,d,"wisdom"),"Valid wisdom purchase");
-            h.assertTrue(!FirstGroupGrowth.buy(p,d,"defense"),"Total purchased points cap is 15");
-            h.assertTrue(d.getGold()==5100,"Server deducts exact increasing per-attribute prices");
-            var copy=new PlayerData();copy.copyStateFrom(d);
-            var saved=new Gson().fromJson(new Gson().toJson(d),PlayerData.class);
-            h.assertTrue(copy.firstGroupAttribute("strength")==10 && saved.firstGroupAttribute("wisdom")==5,
-                    "Persistence and player cloning retain purchased attributes");
+            AttributeGrowthChecks.verify(h,p,d);
             String passive=FirstGroupSkills.node("yingxiao",0).getId();
             PlayerDataProvider.upgradeSkill(p,passive);
             PlayerDataProvider.upgradeSkill(p,FirstGroupSkills.node("yingxiao",1).getId());
@@ -184,6 +174,7 @@ final class FirstGroupRegressionChecks {
             ThunderSkillReleaseChecks.start(h);
             FenjueReleaseChecks.start(h);
             FenjueLeapChecks.start(h);
+            AbilityContractChecks.start(h);
             SecondGroupExecutionChecks.run(h,()->{AbilityRuntime.clear(p);ModState.setEnabled(mod);TrainingMode.setEnabled(training);});
             deferred[0]=true;
             h.runAfterDelay(4,()->{try{

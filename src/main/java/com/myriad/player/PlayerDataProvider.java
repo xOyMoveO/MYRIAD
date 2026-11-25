@@ -117,6 +117,9 @@ public final class PlayerDataProvider {
         GameManager manager = GameManager.get();
         boolean showMatch = manager != null && !TrainingGround.isTraining(player)
                 && (!manager.isQueuedMatch() || manager.isParticipant(player.getUUID()));
+        boolean combatPreparing = manager != null && manager.getPhase() == GameManager.Phase.PICKING
+                && manager.isParticipant(player.getUUID()) && manager.queuePreparationDeadline() >= 0
+                && player.level().getServer().overworld().getGameTime() < manager.queuePreparationDeadline();
         int xpToNext = LevelSystem.xpToNext(data.getLevel());
         // 属性快照（descriptionId -> 当前值，供客户端属性面板显示；模组属性不在 syncable 列表，需显式收集）
         java.util.Map<String, Double> attrs = new java.util.HashMap<>();
@@ -186,7 +189,12 @@ public final class PlayerDataProvider {
                 com.myriad.combat.BasicAttackSystem.cooldownTotal(player),
                 player.getHealth(),
                 data.getModMaxHealth(),
-                data.getModShield()));
+                data.getModShield(),
+                LevelSystem.maxLevel(data),
+                player.getId(),
+                player.level().dimension().identifier(),
+                TrainingGround.canFight(player),
+                combatPreparing));
         Myriad.LOGGER.debug("[sync] -> {}@{}: lv={} char={} faction={} phase={}",
                 player.getName().getString(), System.identityHashCode(player), data.getLevel(), data.getCharacterId(),
                 data.getFaction(), manager == null ? "-" : manager.getPhase());

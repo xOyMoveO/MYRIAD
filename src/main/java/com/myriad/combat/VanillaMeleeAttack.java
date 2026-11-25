@@ -4,8 +4,11 @@ import com.myriad.character.CharacterType;
 import com.myriad.character.ability.AbilityRuntime;
 import com.myriad.game.ModState;
 import com.myriad.game.VisionSystem;
+import com.myriad.player.PlayerData;
 import com.myriad.player.PlayerDataProvider;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import java.util.UUID;
@@ -25,13 +28,33 @@ public final class VanillaMeleeAttack {
         };
     }
 
+    private static boolean canStart(ServerPlayer player, PlayerData data) {
+        return ModState.isEnabled() && usesVanilla(CharacterType.byId(data.getCharacterId()))
+                && BasicAttackSystem.canAttackNow(player, data) && !AbilityRuntime.channeling(player)
+                && player.getAttackStrengthScale(.5f) >= 1 && data.getBuff("g1_stun") <= 0
+                && PlayerDataProvider.isInitialWeapon(player.getMainHandItem());
+    }
+
+    /** Intent only: recompute the selection from authoritative player state. */
+    public static void tryAssist(ServerPlayer player) {
+        var weapon = player.getMainHandItem();
+        if (!BasicAttackAssist.enabled() || !player.connection.hasClientLoaded()
+                || !canStart(player, PlayerDataProvider.get(player)) || player.isUsingItem()
+                || !weapon.isItemEnabled(player.level().enabledFeatures())
+                || weapon.has(DataComponents.PIERCING_WEAPON) || player.cannotAttackWithItem(weapon, 5)) return;
+        LivingEntity target = MeleeAssistTargeting.find(player, living -> BasicAttackAssist.canAssist(player, living));
+        // Fabric invokes AttackEntityCallback at Player.attack, including for this entry point.
+        if (target == null) return;
+        player.resetLastActionTime();
+        player.attack(target);
+        if (player.getAttackStrengthScale(0) == 0) {
+            player.swing(InteractionHand.MAIN_HAND, weapon.getAttackAnimation(), false);
+        }
+    }
+
     public static boolean prepare(ServerPlayer player,Entity raw){
         var data=PlayerDataProvider.get(player);
-        if(!ModState.isEnabled()||!usesVanilla(CharacterType.byId(data.getCharacterId()))
-                ||!BasicAttackSystem.canAttackNow(player,data)||AbilityRuntime.channeling(player)
-                ||player.getAttackStrengthScale(.5f)<1
-                ||data.getBuff("g1_stun")>0||!PlayerDataProvider.isInitialWeapon(player.getMainHandItem())
-                ||!(raw instanceof LivingEntity target)||!target.isAlive()||target==player
+        if(!canStart(player,data)||!(raw instanceof LivingEntity target)||!target.isAlive()||target==player
                 ||!SkillTargets.hostile(player,target)
                 ||target instanceof net.minecraft.world.entity.player.Player victim&&(victim.isCreative()||victim.isSpectator())
                 ||!player.isWithinEntityInteractionRange(target,0)||!player.hasLineOfSight(target)

@@ -32,8 +32,11 @@ public final class CombatRegressionTests {
         register("yike", YikeChecks::run);
         register("rivet", RivetChecks::run);
         register("luoxia", LuoxiaChecks::run);
+        register("projectile_basic_assist", ProjectileBasicAssistChecks::run);
+        register("chixiao_opening_pace", ChixiaoOpeningPaceChecks::run);
         register("hero_action_time", HeroActionTimeChecks::run);
         register("first_group", FirstGroupRegressionChecks::run);
+        register("melee_assist", MeleeAssistChecks::run);
         register("staff_first_person", StaffCastChecks::run);
         register("lingyuan_first_person", LingyuanHandCueChecks::run);
         register("war_spirit_first_person", WarSpiritHandChecks::run);

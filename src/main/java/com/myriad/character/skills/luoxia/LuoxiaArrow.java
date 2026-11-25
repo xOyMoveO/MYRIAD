@@ -4,10 +4,9 @@ import com.myriad.character.ability.AbilityRuntime;
 import com.myriad.character.ability.AbilityRuntime.Cast;
 import com.myriad.character.ability.AbilityTargeting;
 import com.myriad.character.ability.ActionTime;
+import com.myriad.combat.ProjectileBasicAttack;
 import com.myriad.combat.SkillTargets;
 import com.myriad.combat.WindWallSystem;
-import com.myriad.game.DefenseTowerEntity;
-import com.myriad.game.VisionSystem;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -101,31 +100,48 @@ final class LuoxiaArrow {
                     finish();
                     return false;
                 }
-                Vec3 end = clip(c, pos, raw);
-                Vec3 wall = WindWallSystem.interceptProjectile(c.player, pos, end);
-                if (wall != null) end = wall;
+                var segment = basic ? ProjectileBasicAttack.clip(c.player, pos, raw) : null;
+                if (segment != null) segment.showWindIntercept();
+                Vec3 end = segment == null ? clip(c, pos, raw) : segment.end();
                 var hits = new ArrayList<Contact>();
-                for (var target : c.player.level().getEntitiesOfClass(LivingEntity.class, new AABB(pos, end).inflate(radius),
-                        t -> !t.isSpectator() && !(t instanceof Player p && p.isCreative()) && !struck.contains(t.getUUID())
-                                && (SkillTargets.enemy(c.player, t) || basic && t instanceof DefenseTowerEntity
-                                    && t.isAlive() && !SkillTargets.ally(c.player, t)))) {
-                    var bounds = target.getBoundingBox();
-                    if (bounds.contains(pos)) hits.add(new Contact(target, pos));
-                    else AbilityTargeting.unobstructedHit(c.player, bounds, pos, end, radius)
-                            .ifPresent(contact -> hits.add(new Contact(target, contact)));
+                if (segment != null) {
+                    var candidates = segment.candidates(radius, t -> !struck.contains(t.getUUID()));
+                    var baselineQuery = new AABB(pos, end).inflate(radius);
+                    for (var target : candidates) {
+                        var bounds = target.getBoundingBox();
+                        if (!baselineQuery.intersects(bounds)) continue;
+                        Vec3 at = bounds.contains(pos) ? pos : bounds.inflate(radius).clip(pos, end).orElse(null);
+                        if (at != null && segment.reaches(at, bounds, remaining)) hits.add(new Contact(target, at));
+                    }
+                    if (hits.isEmpty()) {
+                        var assisted = ProjectileBasicAttack.firstAssistedHit(segment, candidates, radius, remaining);
+                        if (assisted != null) hits.add(new Contact(assisted.target(), assisted.point()));
+                    }
+                } else {
+                    Vec3 wall = WindWallSystem.interceptProjectile(c.player, pos, end);
+                    if (wall != null) end = wall;
+                    for (var target : c.player.level().getEntitiesOfClass(LivingEntity.class, new AABB(pos, end).inflate(radius),
+                            t -> !t.isSpectator() && !(t instanceof Player p && p.isCreative()) && !struck.contains(t.getUUID())
+                                    && SkillTargets.enemy(c.player, t))) {
+                        var bounds = target.getBoundingBox();
+                        if (bounds.contains(pos)) hits.add(new Contact(target, pos));
+                        else AbilityTargeting.unobstructedHit(c.player, bounds, pos, end, radius)
+                                .ifPresent(contact -> hits.add(new Contact(target, contact)));
+                    }
                 }
                 hits.sort(Comparator.comparingDouble(hit -> hit.point().distanceToSqr(pos)));
                 for (Contact hit : hits) {
                     struck.add(hit.target.getUUID());
-                    // A hidden building is allowed to block, but a basic hit cannot damage it through fog.
-                    boolean stop = basic && hit.target instanceof DefenseTowerEntity && !VisionSystem.canSee(c.player, hit.target)
-                            || impact.test(hit.target);
+                    boolean stop = impact.test(hit.target);
                     LuoxiaVfx.impact(c, hit.point, direction, shape.heavy);
                     if (stop) { LuoxiaVfx.wake(c, pos, hit.point, shape); finish(); return false; }
                 }
                 LuoxiaVfx.wake(c, pos, end, shape);
                 remaining -= pos.distanceTo(end);
-                if (end.distanceToSqr(raw) > 1E-8 || remaining <= 1E-6) { finish(); return false; }
+                if ((segment != null ? segment.blocked() : end.distanceToSqr(raw) > 1E-8) || remaining <= 1E-6) {
+                    finish();
+                    return false;
+                }
                 LuoxiaVfx.flight(c, pos, end, shape, id);
                 pos = end;
                 return true;

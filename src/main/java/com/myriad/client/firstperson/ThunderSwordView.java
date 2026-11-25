@@ -61,7 +61,7 @@ public final class ThunderSwordView {
         var mc=Minecraft.getInstance();
         if(!event.isAttack()||event.isCanceled()||!event.shouldSwingHand()||!enabled(mc)||busy(mc)
                 ||mc.player.getAttackStrengthScale(.5f)<1)return;
-        if(mc.hitResult!=null&&mc.hitResult.getType()==HitResult.Type.BLOCK)return;
+        if(!event.isMeleeAssist()&&mc.hitResult!=null&&mc.hitResult.getType()==HitResult.Type.BLOCK)return;
         checkOwner(mc);if(SKILL.active(mc.player.tickCount))return;MOTION.attack(mc.player.tickCount,mc.player.getCurrentItemAttackStrengthDelay());
     }
     public static boolean render(HandRenderContext event){

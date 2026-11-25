@@ -13,7 +13,7 @@ public final class AbilityFormulaText {
         return Pattern.compile(regex).matcher(text).replaceAll(m->java.util.regex.Matcher.quoteReplacement(value.apply(m)));
     }
     private static double n(MatchResult m,int group){return Double.parseDouble(m.group(group));}
-    private static String number(double n){return Math.abs(n-Math.rint(n))<.0001?String.format(Locale.ROOT,"%.0f",n):String.format(Locale.ROOT,"%.1f",n);}
+    public static String number(double n){return Math.abs(n-Math.rint(n))<.0001?String.format(Locale.ROOT,"%.0f",n):String.format(Locale.ROOT,"%.1f",n);}
     public static String evaluate(String description,int rawRank,double strength){
         int rank=Math.max(1,rawRank);
         String text=replace(description,N+"＋"+N+"\\(r－1\\)＋"+N+"%S",m->number(n(m,1)+n(m,2)*(rank-1)+n(m,3)*strength/100));

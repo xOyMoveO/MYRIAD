@@ -94,10 +94,14 @@ public class PlayerData {
     private int skillPoints = 0;
     /** 技能 id -> 技能等级（默认 0 = 未学习，加点后才可释放） */
     private final Map<String, Integer> skillLevels = new HashMap<>();
-    /** First-group purchased ranks persist with the existing version-tolerant Gson attachment. */
-    private final Map<String,Integer> firstGroupAttributes=new LinkedHashMap<>();
-    public int firstGroupAttribute(String key){return Math.clamp(firstGroupAttributes.getOrDefault(key,0),0,10);}
-    public void setFirstGroupAttribute(String key,int rank){firstGroupAttributes.put(key,Math.clamp(rank,0,10));}
+    /** Attribute purchase counts retain their existing attachment field and currency balance. */
+    private final Map<String, Integer> firstGroupAttributes = new LinkedHashMap<>();
+    public int firstGroupAttribute(String key) {
+        return Math.max(0, firstGroupAttributes.getOrDefault(key, 0));
+    }
+    public void setFirstGroupAttribute(String key, int rank) {
+        firstGroupAttributes.put(key, Math.max(0, rank));
+    }
 
     // ---- 汲取/运输 ----
     private transient boolean channeling = false;

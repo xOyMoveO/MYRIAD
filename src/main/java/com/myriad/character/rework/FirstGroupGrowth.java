@@ -10,12 +10,43 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.*;
 import java.util.*;
 
-/** First-batch prototype tuning; explicit values, no hidden damage/health multipliers. */
+/** Per-match attribute purchases and the roster's baseline growth. */
 public final class FirstGroupGrowth {
     private FirstGroupGrowth(){}
     public static final List<String> ATTRIBUTES=List.of("strength","wisdom","speed","defense","cooldown");
-    public static final int TOTAL_POINTS=15, ATTRIBUTE_CAP=10;
-    public static int price(int rank){return 180+40*Math.clamp(rank,0,9);}
+    public static final long PRICE_OVERFLOW = -1;
+    public static final int HASTE_PER_POINT = 3;
+    private static final List<Long> PRICES = purchasePrices();
+
+    private static List<Long> purchasePrices() {
+        var prices = new ArrayList<Long>();
+        long price = 360;
+        while (true) {
+            prices.add(price);
+            // Round the extra fifth of the previous price without multiplying a large integer.
+            long increase = price / 5 + (price % 5 >= 3 ? 1 : 0);
+            if (price > Long.MAX_VALUE - increase) return List.copyOf(prices);
+            price += increase;
+        }
+    }
+
+    /** A rank counts all previous purchases, including free training purchases. */
+    public static long price(int rank) {
+        return rank < PRICES.size() ? PRICES.get(Math.max(0, rank)) : PRICE_OVERFLOW;
+    }
+
+    public static String purchaseError(int rank, int gold, boolean free) {
+        if (rank == Integer.MAX_VALUE) return "message.myriad.g1.attribute_rank_overflow";
+        if (free) return null;
+        long price = price(rank);
+        if (price == PRICE_OVERFLOW) return "message.myriad.g1.attribute_price_overflow";
+        return price > gold ? "message.myriad.equip_no_gold" : null;
+    }
+
+    public static double purchasedPhysicalAttack(int strengthPoints) {
+        return 15.0 * strengthPoints;
+    }
+
     public static double health(String role,int level){
         int[] pair=switch(role){
             case "rivet"->new int[]{700,110};
@@ -44,11 +75,11 @@ public final class FirstGroupGrowth {
     public static boolean buy(ServerPlayer p,PlayerData d,String key){
         if(!com.myriad.game.ModState.isEnabled()||!FirstGroupSkills.active(d.getCharacterId())||!ATTRIBUTES.contains(key))return false;
         if(!TrainingGround.canFight(p)||!BaseRules.canShop(p))return false;
-        int rank=d.firstGroupAttribute(key),sum=ATTRIBUTES.stream().mapToInt(d::firstGroupAttribute).sum();
-        if(rank>=ATTRIBUTE_CAP||sum>=TOTAL_POINTS){p.sendSystemMessage(Component.translatable("message.myriad.g1.attribute_max"));return false;}
-        boolean free=TrainingMode.isNoGoldCost(p);int cost=price(rank);
-        if(!free&&d.getGold()<cost){p.sendSystemMessage(Component.translatable("message.myriad.equip_no_gold"));return false;}
-        if(!free)d.spendGold(cost);
+        int rank=d.firstGroupAttribute(key);
+        boolean free=TrainingMode.isNoGoldCost(p);
+        String error=purchaseError(rank,d.getGold(),free);
+        if(error!=null){p.sendSystemMessage(Component.translatable(error));return false;}
+        if(!free)d.spendGold((int)price(rank));
         d.setFirstGroupAttribute(key,rank+1);apply(p,d);PlayerDataProvider.syncToClient(p);return true;
     }
     public static void initialize(ServerPlayer p,PlayerData d){
@@ -77,13 +108,13 @@ public final class FirstGroupGrowth {
     }
     public static void apply(ServerPlayer p,PlayerData d){
         if(!FirstGroupSkills.active(d.getCharacterId()))return;
-        modifier(p,ModAttributes.PHYSICAL_ATTACK,"strength",15*d.firstGroupAttribute("strength"));
-        modifier(p,ModAttributes.SPELL_POWER,"wisdom",20*d.firstGroupAttribute("wisdom"));
+        modifier(p,ModAttributes.PHYSICAL_ATTACK,"strength",purchasedPhysicalAttack(d.firstGroupAttribute("strength")));
+        modifier(p,ModAttributes.SPELL_POWER,"wisdom",20.0*d.firstGroupAttribute("wisdom"));
         modifier(p,ModAttributes.ATTACK_SPEED,"speed_as",.06*d.firstGroupAttribute("speed"));
         modifier(p,Attributes.MOVEMENT_SPEED,"speed_ms",.0015*d.firstGroupAttribute("speed"));
-        modifier(p,ModAttributes.PHYSICAL_DEFENSE,"defense_pd",5*d.firstGroupAttribute("defense"));
-        modifier(p,ModAttributes.MAGIC_RESISTANCE,"defense_mr",5*d.firstGroupAttribute("defense"));
-        modifier(p,ModAttributes.COOLDOWN_REDUCTION,"cooldown",3*d.firstGroupAttribute("cooldown"));
+        modifier(p,ModAttributes.PHYSICAL_DEFENSE,"defense_pd",5.0*d.firstGroupAttribute("defense"));
+        modifier(p,ModAttributes.MAGIC_RESISTANCE,"defense_mr",5.0*d.firstGroupAttribute("defense"));
+        modifier(p,ModAttributes.COOLDOWN_REDUCTION,"cooldown",(double)HASTE_PER_POINT*d.firstGroupAttribute("cooldown"));
         for(String key:ATTRIBUTES)d.setBuff("g1_attribute_"+key,d.firstGroupAttribute(key));
         PlayerHealthSystem.recalculate(p);
         p.connection.send(new net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket(p.getId(),p.getAttributes().getSyncableAttributes()));

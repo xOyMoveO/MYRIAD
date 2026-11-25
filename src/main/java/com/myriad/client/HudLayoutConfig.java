@@ -15,9 +15,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 public final class HudLayoutConfig {
     public enum Element {
         INFO("info", .02F, .04F, true),
-        STATUS("status", .50F, .92F, true),
-        SKILLS("skills", .25F, .96F, true),
-        ATTACKS("attacks", .68F, .91F, true),
+        COMBAT("combat", 0F, 1F, true),
         MINIMAP("minimap", .92F, .12F, true),
         BUFFS("buffs", .96F, .08F, true),
         TARGET("target", .50F, .05F, true),
@@ -46,8 +44,6 @@ public final class HudLayoutConfig {
         public String id() { return id; }
         public float defaultX() { return defaultX; }
         public float defaultY() { return defaultY; }
-        public float transformScale(State state) { return this == SKILLS ? 1F : state.scale(); }
-        private float maximumScale() { return this == SKILLS ? 4F : 2F; }
     }
 
     public record State(float x, float y, float scale, boolean visible) { }
@@ -85,7 +81,7 @@ public final class HudLayoutConfig {
         float targetY = state.y() * height;
         gui.pose().pushMatrix();
         gui.pose().translate(targetX, targetY);
-        gui.pose().scale(element.transformScale(state));
+        gui.pose().scale(state.scale());
         gui.pose().translate(-defaultX, -defaultY);
         draw.run();
         gui.pose().popMatrix();
@@ -122,8 +118,7 @@ public final class HudLayoutConfig {
     }
 
     private static State defaults(Element element) {
-        return new State(element.defaultX, element.defaultY, element == Element.SKILLS ? SkillBarLayout.DEFAULT_SCALE : 1F,
-                element.defaultVisible);
+        return new State(element.defaultX, element.defaultY, 1F, element.defaultVisible);
     }
 
     private static void ensureLoaded() {
@@ -135,32 +130,37 @@ public final class HudLayoutConfig {
         try {
             JsonObject root = JsonParser.parseString(Files.readString(path)).getAsJsonObject();
             menuAnimations = !root.has("menuAnimations") || root.get("menuAnimations").getAsBoolean();
-            int skillsVersion = root.has("skillsDockVersion") ? root.get("skillsDockVersion").getAsInt() : 0;
             for (Element element : Element.values()) {
-                if(element==Element.SKILLS && skillsVersion<1)continue;
-                if (!root.has(element.id) || !root.get(element.id).isJsonObject()) continue;
-                JsonObject value = root.getAsJsonObject(element.id);
-                State fallback = defaults(element);
-                float scale = value.has("scale") ? value.get("scale").getAsFloat() : fallback.scale();
-                setWithoutSave(element,
-                        value.has("x") ? value.get("x").getAsFloat() : fallback.x(),
-                        value.has("y") ? value.get("y").getAsFloat() : fallback.y(),
-                        element == Element.SKILLS ? SkillBarLayout.savedScale(skillsVersion, scale) : scale,
-                        value.has("visible") ? value.get("visible").getAsBoolean() : fallback.visible());
+                STATES.put(element, stateFrom(root, element));
             }
         } catch (Exception e) {
             Myriad.LOGGER.warn("[hud] failed to load layout", e);
         }
     }
 
+    /** Only current group IDs are loaded. The retired status, skills and attack anchors do not
+     * describe the new panel and are discarded while independent group states are preserved. */
+    public static State stateFrom(JsonObject root, Element element) {
+        State fallback = defaults(element);
+        if (!root.has(element.id) || !root.get(element.id).isJsonObject()) return fallback;
+        JsonObject value = root.getAsJsonObject(element.id);
+        return clamped(value.has("x") ? value.get("x").getAsFloat() : fallback.x(),
+                value.has("y") ? value.get("y").getAsFloat() : fallback.y(),
+                value.has("scale") ? value.get("scale").getAsFloat() : fallback.scale(),
+                value.has("visible") ? value.get("visible").getAsBoolean() : fallback.visible());
+    }
+
     private static void setWithoutSave(Element element, float x, float y, float scale, boolean visible) {
-        STATES.put(element, new State(clamp01(x), clamp01(y), Math.clamp(scale, .50F, element.maximumScale()), visible));
+        STATES.put(element, clamped(x, y, scale, visible));
+    }
+
+    private static State clamped(float x, float y, float scale, boolean visible) {
+        return new State(clamp01(x), clamp01(y), Math.clamp(scale, .50F, 2F), visible);
     }
 
     private static void save() {
         JsonObject root = new JsonObject();
         root.addProperty("menuAnimations", menuAnimations);
-        root.addProperty("skillsDockVersion",SkillBarLayout.DOCK_VERSION);
         for (Element element : Element.values()) {
             State state = STATES.get(element);
             JsonObject value = new JsonObject();

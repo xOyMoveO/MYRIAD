@@ -6,6 +6,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentTarget;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
+import net.minecraft.core.UUIDUtil;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntitySpawnReason;
@@ -13,6 +18,7 @@ import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
 
@@ -27,6 +33,8 @@ import net.minecraft.world.phys.Vec3;
 public final class JiarenManager {
     private JiarenManager() {}
 
+    public static void initialize() {}
+
     /** 假人最大生命（mod 独立跟踪） */
     public static final float MAX_HP = 100000.0f;
 
@@ -35,9 +43,17 @@ public final class JiarenManager {
     private static final Map<UUID, UUID> FRIENDLY_OWNER = new HashMap<>();
 
     private static final Map<UUID, UUID> PRACTICE_OWNER = new HashMap<>();
+    private static final AttachmentType<UUID> PRACTICE_ATTACK_OWNER = AttachmentRegistry.create(
+            Identifier.parse("myriad:training_dummy_attack_owner"), builder -> builder.syncWith(UUIDUtil.STREAM_CODEC,
+                    (target, viewer) -> target instanceof LivingEntity dummy && viewer.level() == dummy.level()
+                            && TrainingGround.isTraining(viewer) && ownedBy(viewer, dummy)));
 
     public static boolean ownedBy(ServerPlayer player, LivingEntity target) {
         return player.getUUID().equals(PRACTICE_OWNER.get(target.getUUID()));
+    }
+
+    public static boolean isOwnedPracticeAttackTarget(Player player, LivingEntity target) {
+        return player.getUUID().equals(((AttachmentTarget) target).getAttached(PRACTICE_ATTACK_OWNER));
     }
 
     public static boolean mayEdit(ServerPlayer player, LivingEntity target) {
@@ -87,7 +103,8 @@ public final class JiarenManager {
 
     private static void createInternal(ServerPlayer player, boolean friendly) {
         ServerLevel level = (ServerLevel) player.level();
-        if (TrainingGround.isTraining(player)) {
+        boolean practice = TrainingGround.isTraining(player);
+        if (practice) {
             // Replace the player's previous dummy of this type so unattended requests cannot fill the arena.
             for (UUID id : Set.copyOf(PRACTICE_OWNER.keySet())) {
                 if (player.getUUID().equals(PRACTICE_OWNER.get(id)) && FRIENDLY_OWNER.containsKey(id) == friendly) {
@@ -115,9 +132,15 @@ public final class JiarenManager {
         if (physicalDefense != null) physicalDefense.setBaseValue(0.0);
         if (magicDefense != null) magicDefense.setBaseValue(0.0);
         villager.setHealth(20.0f);
-        level.addFreshEntity(ModEntityTracker.markGenerated(villager));
+        if (practice) {
+            PRACTICE_OWNER.put(villager.getUUID(), player.getUUID());
+            if (!friendly) ((AttachmentTarget) villager).setAttached(PRACTICE_ATTACK_OWNER, player.getUUID());
+        }
+        if (!level.addFreshEntity(ModEntityTracker.markGenerated(villager))) {
+            forget(villager.getUUID());
+            return;
+        }
         JIAREN.add(villager.getUUID());
-        if (TrainingGround.isTraining(player)) PRACTICE_OWNER.put(villager.getUUID(), player.getUUID());
         if (friendly) FRIENDLY_OWNER.put(villager.getUUID(), player.getUUID());
         HP.put(villager.getUUID(), MAX_HP);
         player.sendSystemMessage(Component.translatable("message.myriad.jiaren_created"));

@@ -28,6 +28,8 @@ public final class Myriad implements ModInitializer {
         com.myriad.player.PlayerDataProvider.initialize();
         com.myriad.player.EntityState.initialize();
         com.myriad.combat.VanillaArrowTime.initialize();
+        com.myriad.game.TrainingGround.initialize();
+        com.myriad.game.JiarenManager.initialize();
         com.myriad.network.NetworkSetup.register();
         com.myriad.platform.ServerCallbacks.initialize();
         com.myriad.network.LobbyNetworking.register();

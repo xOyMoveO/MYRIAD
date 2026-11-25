@@ -67,26 +67,22 @@ public record SkillChoiceLayout(Box panel, Box viewport, int labelWidth, int til
         int left = Math.clamp(panel.w / 12, 16, 25);
         return new Box(panel.x + left, viewport.y + 1 + index * (size + 8), size, size);
     }
-    public static final int ATTRIBUTE_ROWS=5,ATTRIBUTE_LEVELS=10;
+    public static final int ATTRIBUTE_ROWS=5;
     public int attributeRowHeight(){return Math.clamp((viewport.h-28)/ATTRIBUTE_ROWS,36,52);}
     public Box attributeRow(int index,int requestedScroll){
         return new Box(viewport.x,viewport.y+28+index*attributeRowHeight()-requestedScroll,viewport.w,attributeRowHeight());
     }
-    /** Only the left icon is a purchase target; rank cells are read-only indicators. */
+    /** Only the left icon is a purchase target. */
     public Box attribute(int index, int requestedScroll) {
         var row=attributeRow(index,requestedScroll);
         int size=Math.clamp(row.h-12,20,32);
         return new Box(row.x+6,row.y+2,size,size);
     }
-    public Box attributeCell(int row,int index,int requestedScroll){
+    public Box attributeDetails(int row,int requestedScroll){
         var icon=attribute(row,requestedScroll);
-        int left=icon.right()+8,available=Math.max(1,viewport.right()-4-left);
-        int size=Math.max(2,Math.min(22,(available-2*(ATTRIBUTE_LEVELS-1))/ATTRIBUTE_LEVELS));
-        int gap=Math.max(1,(available-ATTRIBUTE_LEVELS*size)/(ATTRIBUTE_LEVELS-1));
-        int full=ATTRIBUTE_LEVELS*size+(ATTRIBUTE_LEVELS-1)*gap;
-        return new Box(left+(available-full)/2+index*(size+gap),icon.y+(icon.h-size)/2,size,size);
+        int left=icon.right()+10;
+        return new Box(left,icon.y(),Math.max(1,viewport.right()-4-left),attributeRowHeight()-4);
     }
-    public static boolean attributeCellLit(int rank,int index){return index>=0&&index<Math.clamp(rank,0,ATTRIBUTE_LEVELS);}
     public int attributeMaximum() {
         return Math.max(0,28+ATTRIBUTE_ROWS*attributeRowHeight()-viewport.h);
     }

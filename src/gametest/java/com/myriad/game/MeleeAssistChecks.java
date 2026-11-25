@@ -1,0 +1,174 @@
+package com.myriad.game;
+
+import com.myriad.character.CharacterType;
+import com.myriad.character.ability.AbilityRuntime;
+import com.myriad.character.rework.FirstGroupGrowth;
+import com.myriad.combat.BasicAttackAssist;
+import com.myriad.combat.BasicAttackSystem;
+import com.myriad.combat.VanillaMeleeAttack;
+import com.myriad.player.PlayerDataProvider;
+import com.myriad.registry.ModAttributes;
+import com.myriad.registry.ModItems;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.network.CommonListenerCookie;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.util.Unit;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+
+final class MeleeAssistChecks {
+    private MeleeAssistChecks() {}
+
+    static void run(GameTestHelper helper) {
+        geometry(helper);
+        boolean wasEnabled = ModState.isEnabled();
+        boolean wasTraining = TrainingMode.isEnabled();
+        var player = (ServerPlayer) helper.makeMockServerPlayer(GameType.SURVIVAL);
+        player.connection = new ServerGamePacketListenerImpl(helper.getLevel().getServer(),
+                new Connection(PacketFlow.SERVERBOUND), player,
+                CommonListenerCookie.createInitial(player.getGameProfile(), false)) {
+            @Override public void send(Packet<?> packet) {}
+        };
+        player.connection.handleAcceptPlayerLoad(new ServerboundPlayerLoadedPacket());
+        BlockPos base = helper.absolutePos(new BlockPos(3, 6, 3));
+        Vec3 origin = Vec3.atBottomCenterOf(base);
+        BlockPos wall = base.offset(0, 1, 2);
+        var level = helper.getLevel();
+        try {
+            ModState.setEnabled(true);
+            TrainingMode.setEnabled(true);
+            var data = PlayerDataProvider.get(player);
+            data.setCharacterId("lingyuan");
+            CharacterType.applyInitialAttributes(player, CharacterType.LINGYUAN);
+            FirstGroupGrowth.initialize(player, data);
+            var weapon = new ItemStack(ModItems.LINGYUAN_SWORD.get());
+            weapon.set(DataComponents.UNBREAKABLE, Unit.INSTANCE);
+            player.setItemSlot(EquipmentSlot.MAINHAND, weapon);
+            player.getAttribute(ModAttributes.CRIT_CHANCE).removeModifiers();
+            player.getAttribute(ModAttributes.CRIT_CHANCE).setBaseValue(0);
+            player.getAttribute(Attributes.ENTITY_INTERACTION_RANGE).removeModifiers();
+            player.getAttribute(Attributes.ENTITY_INTERACTION_RANGE).setBaseValue(2);
+            player.setPos(origin);
+            player.setXRot(0);
+            player.setYRot(0);
+            player.setNoGravity(true);
+
+            JiarenManager.create(player);
+            JiarenManager.createFriendly(player);
+            var dummies = level.getEntitiesOfClass(LivingEntity.class, new AABB(origin, origin).inflate(5),
+                    target -> JiarenManager.isJiaren(target.getUUID()));
+            var target = dummies.stream().filter(e -> !JiarenManager.isFriendlyDummy(player, e)).findFirst().orElseThrow();
+            var ally = dummies.stream().filter(e -> JiarenManager.isFriendlyDummy(player, e)).findFirst().orElseThrow();
+            var ambient = helper.spawn(EntityTypes.VILLAGER, new BlockPos(4, 6, 3));
+            var strength = LivingEntity.class.getDeclaredField("attackStrengthTicker");
+            strength.setAccessible(true);
+            float fullHealth = JiarenManager.hp(target.getUUID());
+
+            place(ambient, origin, .03, 1.2);
+            strength.setInt(player, 200);
+            VanillaMeleeAttack.tryAssist(player);
+            helper.assertTrue(ambient.getHealth() == ambient.getMaxHealth(), "Ambient villagers receive no assist");
+            ambient.discard();
+
+            place(target, origin, .10, 1.2);
+            VanillaMeleeAttack.tryAssist(player);
+            helper.assertTrue(JiarenManager.hp(target.getUUID()) == fullHealth, "A .10-wide miss stays empty");
+
+            place(ally, origin, .03, .8);
+            VanillaMeleeAttack.tryAssist(player);
+            helper.assertTrue(JiarenManager.hp(ally.getUUID()) == fullHealth, "Friendly dummies receive no assist");
+            ally.setPos(origin.add(0, 0, .8));
+            place(target, origin, .08, 1.2);
+            VanillaMeleeAttack.tryAssist(player);
+            helper.assertTrue(JiarenManager.hp(target.getUUID()) == fullHealth,
+                    "An exact invalid target keeps priority over an assisted enemy");
+            ally.setPos(origin.add(3, 0, 0));
+
+            target.setInvisible(true);
+            VanillaMeleeAttack.tryAssist(player);
+            target.setInvisible(false);
+            data.setBuff("g1_stun", 20);
+            VanillaMeleeAttack.tryAssist(player);
+            data.setBuff("g1_stun", 0);
+            strength.setInt(player, 0);
+            VanillaMeleeAttack.tryAssist(player);
+            helper.assertTrue(JiarenManager.hp(target.getUUID()) == fullHealth && strength.getInt(player) == 0,
+                    "Invisible targets, stun and incomplete recovery cannot produce an assisted hit");
+
+            strength.setInt(player, 200);
+            place(target, origin, .08, 2.02 + target.getBbWidth() / 2);
+            VanillaMeleeAttack.tryAssist(player);
+            helper.assertTrue(JiarenManager.hp(target.getUUID()) == fullHealth, "The original box cannot exceed reach");
+
+            level.setBlockAndUpdate(wall, Blocks.STONE.defaultBlockState());
+            place(target, origin, .08, 1.52 + target.getBbWidth() / 2);
+            VanillaMeleeAttack.tryAssist(player);
+            helper.assertTrue(JiarenManager.hp(target.getUUID()) == fullHealth,
+                    "The part of the temporary box protruding through a wall cannot take damage");
+
+            place(target, origin, .08, 1.2);
+            VanillaMeleeAttack.tryAssist(player);
+            float after = JiarenManager.hp(target.getUUID());
+            helper.assertTrue(after < fullHealth && strength.getInt(player) == 0,
+                    "A .08 graze before a wall uses the native hit and recovery chain");
+            VanillaMeleeAttack.tryAssist(player);
+            helper.assertTrue(JiarenManager.hp(target.getUUID()) == after,
+                    "Repeated assist intents during recovery cannot deal a second hit");
+
+            level.setBlockAndUpdate(wall, Blocks.AIR.defaultBlockState());
+            strength.setInt(player, 200);
+            target.damageCooldownTime = 0;
+            place(target, origin, .08, 1.98 + target.getBbWidth() / 2);
+            VanillaMeleeAttack.tryAssist(player);
+            helper.assertTrue(JiarenManager.hp(target.getUUID()) < after,
+                    "A graze whose original contact is still inside native reach remains available");
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        } finally {
+            level.setBlockAndUpdate(wall, Blocks.AIR.defaultBlockState());
+            JiarenManager.removeNearby(player);
+            AbilityRuntime.clear(player);
+            BasicAttackSystem.clearFor(player.getUUID());
+            player.discard();
+            ModState.setEnabled(wasEnabled);
+            TrainingMode.setEnabled(wasTraining);
+        }
+        helper.succeed();
+    }
+
+    private static void geometry(GameTestHelper helper) {
+        var original = new AABB(.08, 0, 1, .68, 1.8, 1.6);
+        var start = new Vec3(0, .9, 0);
+        var end = new Vec3(0, .9, 3);
+        var first = BasicAttackAssist.contact(start, end, false, 3, original, 0, .15);
+        helper.assertTrue(first != null && first.originalPoint().distanceToSqr(new Vec3(.08, .9, 1)) < 1e-12,
+                "Return the nearest contact on the original box, separately from the expanded hit");
+        helper.assertTrue(BasicAttackAssist.contact(start, end, false, 3, original, 0, 0) == null,
+                "0% restores the native hit boundaries");
+        helper.assertTrue(BasicAttackAssist.contact(start, first.point(), true, 3, original, 0, .15) == null,
+                "A solid obstruction wins at the same contact point");
+        var nearer = BasicAttackAssist.contact(start, end, false, 3, original.move(-.04, 0, .3), 0, .15);
+        var earlier = BasicAttackAssist.contact(start, end, false, 3, original.move(0, 0, -.3), 0, .15);
+        helper.assertTrue(nearer != null && earlier != null && BasicAttackAssist.precedes(nearer, 10, first, 1)
+                && BasicAttackAssist.precedes(earlier, 10, first, 1) && BasicAttackAssist.precedes(first, 1, first, 2),
+                "Assist tie-breaking uses lateral offset, contact distance and stable entity ID in order");
+    }
+
+    private static void place(LivingEntity entity, Vec3 origin, double gap, double depth) {
+        entity.setPos(origin.add(entity.getBbWidth() / 2 + gap, 0, depth));
+    }
+}

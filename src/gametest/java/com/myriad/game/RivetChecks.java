@@ -148,8 +148,16 @@ final class RivetChecks {
         if(i>=40&&i<=46||i==62||i==63)f.target.setPos(f.origin.add(6,0,0));
         if(Set.of(22,23,44,45,46,54).contains(i)){f.ally=player(h,f,f.origin.add(1,0,0));var ad=PlayerDataProvider.get(f.ally);ad.setCharacterId("shuo");ad.setFaction(Faction.GUARDIAN);factions.put(f.ally.getUUID(),Faction.GUARDIAN);f.level.players().remove(f.ally);f.level.addNewPlayer(f.ally);}
         if(i==0){f.ally=player(h,f,f.origin.add(1,0,-1));f.other=player(h,f,f.origin.add(-1,0,-1));for(var observer:new ServerPlayer[]{f.ally,f.other}){PlayerDataProvider.get(observer).setCharacterId("shuo");var side=observer==f.ally?Faction.GUARDIAN:Faction.DESTRUCTION;PlayerDataProvider.get(observer).setFaction(side);factions.put(observer.getUUID(),side);}}
-        if(i==45){f.other=player(h,f,f.origin.add(.5,0,0));PlayerDataProvider.chooseCharacter(f.other,CharacterType.byId("rivet"));var od=PlayerDataProvider.get(f.other);od.setFaction(Faction.GUARDIAN);od.setLevel(20);od.refundAllSkillPointsForTraining();for(int rank=0;rank<2;rank++)PlayerDataProvider.upgradeSkill(f.other,node(4).getId());factions.put(f.other.getUUID(),Faction.GUARDIAN);}
-        if(i==39){f.other=player(h,f,f.origin);PlayerDataProvider.chooseCharacter(f.other,CharacterType.byId("rivet"));var od=PlayerDataProvider.get(f.other);od.setFaction(Faction.GUARDIAN);od.setLevel(20);od.refundAllSkillPointsForTraining();PlayerDataProvider.upgradeSkill(f.other,node(2).getId());factions.put(f.other.getUUID(),Faction.GUARDIAN);}
+        if(i==45||i==39){
+            f.other=player(h,f,i==45?f.origin.add(.5,0,0):f.origin);
+            factions.put(f.other.getUUID(),Faction.GUARDIAN);
+            PlayerDataProvider.chooseCharacter(f.other,CharacterType.byId("rivet"));
+            var od=PlayerDataProvider.get(f.other);od.setFaction(Faction.GUARDIAN);od.setLevel(20);od.refundAllSkillPointsForTraining();
+            var skill=node(i==45?4:2);
+            int rank=i==45?2:1;
+            for(int purchased=0;purchased<rank;purchased++)PlayerDataProvider.upgradeSkill(f.other,skill.getId());
+            h.assertTrue(od.skillLevel(skill.getId())==rank,"Second formal Rivet learns the skill before two-owner scene "+i);
+        }
         if(i==52||i==53){f.target.discard();var pos=BlockPos.containing(f.origin.add(0,0,2));MonsterManager.spawn(f.level,pos,MonsterType.OBSIDIAN_TORTOISE_WARDEN);f.target=f.level.getEntitiesOfClass(Mob.class,new AABB(pos).inflate(2),MonsterManager::isMonster).getFirst();((Mob)f.target).setNoAi(true);f.target.setNoGravity(true);f.target.setPos(f.origin.add(0,0,2));h.assertTrue(com.myriad.character.skills.keheng.KehengTimeFields.managedNpcRate(f.target,f.level.getGameTime())==1,"A real managed large boss remains immune to local slow");}
         if(i>=71){
             clearWall(f,4);
