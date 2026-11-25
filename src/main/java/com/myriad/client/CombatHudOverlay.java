@@ -22,7 +22,6 @@ import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.HumanoidArm;
-import net.minecraft.world.entity.player.ChatVisiblity;
 import net.minecraft.world.entity.player.Player;
 
 public final class CombatHudOverlay {
@@ -77,9 +76,30 @@ public final class CombatHudOverlay {
 
     private static Layout layout(int width, int height, HudLayoutConfig.State config, Snapshot state,
                                  int roleRows, int controls, Bounds chat) {
-        boolean charges = state != null && state.activeSlots().stream().anyMatch(slot -> slot.charges() >= 0);
         return CombatHudLayout.at(width, height, config.x(), config.y(), config.scale(),
-                roleRows, controls, charges, hotbar(width, height), chat);
+                roleRows, controls, hasCharges(state), hotbar(width, height), chat);
+    }
+
+    private static boolean hasCharges(Snapshot state) {
+        return state != null && state.activeSlots().stream().anyMatch(slot -> slot.charges() >= 0);
+    }
+
+    public static int focusedChatLineLimit(int vanillaLines, int historyLines, int lineHeight) {
+        var mc = Minecraft.getInstance();
+        if (!(mc.gui.screen() instanceof ChatScreen) || mc.gui.hud.isHidden() || vanillaLines <= 1
+                || historyLines <= 1) return vanillaLines;
+        var config = HudLayoutConfig.state(HudLayoutConfig.Element.COMBAT);
+        if (!config.visible()) return vanillaLines;
+        var state = CombatHudState.current();
+        if (state == null) return vanillaLines;
+
+        int width = mc.getWindow().getGuiScaledWidth();
+        int height = mc.getWindow().getGuiScaledHeight();
+        int roleRows = CombatHudRoleStatus.rows(state).size();
+        int controls = controlRows(state).size();
+        return CombatHudLayout.chatLineLimit(width, height, config.x(), config.y(), config.scale(),
+                roleRows, controls, hasCharges(state), hotbar(width, height), chatWidth(mc),
+                lineHeight, mc.options.chatScale().get(), vanillaLines, historyLines);
     }
 
     private static Bounds hotbar(int width, int height) {
@@ -106,12 +126,14 @@ public final class CombatHudOverlay {
         var options = mc.options;
         var chat = mc.gui.hud.getChat();
         var lines = (ChatComponentAccessor)chat;
-        int lineHeight = (int)(9 * (1 + options.chatLineSpacing().get()));
+        int lineHeight = lines.myriad$chatLineHeight();
         int available = Math.max(0, lines.myriad$visibleChatLines().size() - lines.myriad$chatScroll());
-        int count = options.chatVisibility().get() == ChatVisiblity.HIDDEN ? 0
-                : Math.min(available, chat.getLinesPerPage());
-        int width = ChatComponent.getWidth(options.chatWidth().get()) + 12;
-        return CombatHudLayout.focusedChat(width, screenHeight, count, lineHeight, options.chatScale().get());
+        int count = Math.min(available, chat.getLinesPerPage());
+        return CombatHudLayout.focusedChat(chatWidth(mc), screenHeight, count, lineHeight, options.chatScale().get());
+    }
+
+    private static int chatWidth(Minecraft mc) {
+        return ChatComponent.getWidth(mc.options.chatWidth().get()) + 12;
     }
 
     private static void drawPanel(GuiGraphicsExtractor gui, Font font, Layout layout, Snapshot state,

@@ -51,6 +51,17 @@ final class TrainingUiChecks {
         var smallChat = CombatHudLayout.at(427, 240, 0, 1, 1F, 0, 0, false, twoChatLines);
         h.assertTrue(twoChatLines.y() == 173 && smallChat.bounds().bottom() <= 167,
                 "A focused two-line chat remains clear of the panel at 854x480 with GUI scale 2");
+        var chatHotbar = CombatHudLayout.hotbar(427, 240, 0, 0);
+        int densePage = CombatHudLayout.chatLineLimit(427, 240, 0, 1, 1F, 3, 2, true,
+                chatHotbar, 332, 9, 1F, 20, 70);
+        var denseChat = CombatHudLayout.focusedChat(332, 240, densePage, 9, 1F);
+        var densePanel = CombatHudLayout.at(427, 240, 0, 1, 1F, 3, 2, true, chatHotbar, denseChat);
+        h.assertTrue(densePage > 1 && densePage < 20 && densePanel != null && densePanel.scale() >= .8F
+                        && densePanel.bounds().x() == 6 && densePanel.bounds().bottom() <= denseChat.y() - 6,
+                "A long focused history yields scrollable lines and a readable panel with all combat rows");
+        h.assertTrue(CombatHudLayout.chatLineLimit(427, 240, 0, 1, .5F, 0, 0, false,
+                        chatHotbar, 332, 9, 1F, 20, 2) == 20,
+                "Short focused history retains vanilla page size even with a smaller custom panel");
         var moved = CombatHudLayout.at(960, 540, .5F, .6F, 1.25F, 0, 0, false, null);
         h.assertTrue(moved.bounds().x() == 480 && moved.bounds().bottom() == 324 && moved.scale() == 1.25F,
                 "A dragged panel uses one scale and retains its normalized bottom-left anchor");

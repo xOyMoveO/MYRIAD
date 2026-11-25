@@ -44,6 +44,25 @@ public final class CombatHudLayout {
         return new Bounds(0, height - chatHeight, width, chatHeight);
     }
 
+    /** Page-size limit shared by chat rendering, links and the scroll position. */
+    public static int chatLineLimit(int width, int height, float xAnchor, float yAnchor, float scale,
+                                    int roleRows, int controlRows, boolean charges, Bounds hotbar,
+                                    int chatWidth, int lineHeight, double chatScale, int vanillaLines, int historyLines) {
+        int normalLines = Math.min(vanillaLines, historyLines);
+        if (normalLines <= 1) return vanillaLines;
+        float minimum = Math.min(scale, .8F);
+        var normal = at(width, height, xAnchor, yAnchor, scale, roleRows, controlRows, charges,
+                hotbar, focusedChat(chatWidth, height, normalLines, lineHeight, chatScale));
+        if (normal != null && normal.scale() >= minimum) return vanillaLines;
+
+        for (int lines = normalLines - 1; lines > 1; lines--) {
+            var candidate = at(width, height, xAnchor, yAnchor, scale, roleRows, controlRows, charges,
+                    hotbar, focusedChat(chatWidth, height, lines, lineHeight, chatScale));
+            if (candidate != null && candidate.scale() >= minimum) return lines;
+        }
+        return 1;
+    }
+
     public static Layout at(int width, int height, float xAnchor, float yAnchor, float scale,
                             int roleRows, int controlRows, boolean charges, Bounds hotbar, Bounds chat) {
         int wantedX = Math.max(GAP, Math.round(width * xAnchor));
@@ -85,7 +104,7 @@ public final class CombatHudLayout {
         }
 
         fittedScale = fit(fittedScale, maxBottom - GAP, rawHeight);
-        if (fittedScale <= 0 || chat != null && fittedScale < .65F) return null;
+        if (fittedScale <= 0) return null;
         int minBottom = Math.min(maxBottom, ceiling(rawHeight * fittedScale) + GAP);
         int bottom = Math.clamp(wantedBottom, minBottom, maxBottom);
         int drawnWidth = ceiling(rawWidth * fittedScale);

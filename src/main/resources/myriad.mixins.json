@@ -28,6 +28,7 @@
     "MyriadMouseMixin",
     "MyriadMinecraftClientMixin",
     "ChatComponentAccessor",
+    "ChatComponentMixin",
     "MyriadLocalPlayerMixin",
     "MyriadHandRendererMixin",
     "MyriadCameraMixin",
