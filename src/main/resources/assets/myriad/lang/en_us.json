@@ -131,6 +131,8 @@
   "screen.myriad.g1.maxed": "Max",
   "screen.myriad.g1.choose": "Learn",
   "screen.myriad.g1.upgrade": "+1",
+  "screen.myriad.g1.tab_skills": "Skills",
+  "screen.myriad.g1.tab_attributes": "Attributes",
   "skill.myriad.damage.segment.primary": "Primary hit",
   "skill.myriad.damage.segment.splash": "Splash",
   "skill.myriad.damage.segment.chain": "Chain",

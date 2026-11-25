@@ -131,6 +131,8 @@
   "screen.myriad.g1.maxed": "已满",
   "screen.myriad.g1.choose": "选择",
   "screen.myriad.g1.upgrade": "+1",
+  "screen.myriad.g1.tab_skills": "技能",
+  "screen.myriad.g1.tab_attributes": "属性",
   "skill.myriad.damage.segment.primary": "主伤害",
   "skill.myriad.damage.segment.splash": "溅射",
   "skill.myriad.damage.segment.chain": "连锁",

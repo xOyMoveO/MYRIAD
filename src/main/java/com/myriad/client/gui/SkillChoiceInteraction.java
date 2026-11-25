@@ -1,7 +1,20 @@
 package com.myriad.client.gui;
 
+import java.util.List;
+
 /** Selection and double-click contract, independent of client rendering and packets. */
 public final class SkillChoiceInteraction {
+    public static int stepFocus(List<String> ids, String focused, boolean backwards) {
+        int current = ids.indexOf(focused);
+        if (current < 0) return backwards ? ids.size() - 1 : 0;
+        return Math.floorMod(current + (backwards ? -1 : 1), ids.size());
+    }
+
+    // Minecraft can report a double click even if the pointer moved to a different action.
+    public static boolean sameActionTwice(String previous, String current, boolean twice) {
+        return twice && previous.equals(current);
+    }
+
     private String selected="";
     private boolean doubleConsumed;
     public String selected(){return selected;}
