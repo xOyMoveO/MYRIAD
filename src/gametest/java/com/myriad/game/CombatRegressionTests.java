@@ -31,6 +31,7 @@ public final class CombatRegressionTests {
         register("keheng", KehengChecks::run);
         register("yike", YikeChecks::run);
         register("rivet", RivetChecks::run);
+        register("luoxia", LuoxiaChecks::run);
         register("hero_action_time", HeroActionTimeChecks::run);
         register("first_group", FirstGroupRegressionChecks::run);
         register("staff_first_person", StaffCastChecks::run);

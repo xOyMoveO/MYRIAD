@@ -1,0 +1,96 @@
+package com.myriad.character.skills.luoxia;
+
+import com.myriad.character.ability.AbilityMeshBuilder;
+import com.myriad.character.ability.AbilityVfxGeometry.Quad;
+import com.myriad.network.AbilityVfxPayload;
+import com.myriad.character.ability.RosterProjectileModels;
+import java.util.ArrayList;
+import java.util.List;
+import net.minecraft.world.phys.Vec3;
+import static com.myriad.character.ability.AbilityVfxGeometry.*;
+import static com.myriad.character.ability.AbilityMeshBuilder.*;
+import static com.myriad.character.ability.AbilityVfxMaterials.*;
+
+public final class LuoxiaGeometry {
+    private static final int WHITE = 0xFFF2CB, GOLD = 0xFFC65D, CORAL = 0xFF765B, VIOLET = 0x624A83;
+    private static final RosterProjectileModels ARROWS = RosterProjectileModels.load("luoxia_arrows.json");
+    private LuoxiaGeometry() {}
+
+    public static List<Quad> build(AbilityVfxPayload p, float age, boolean reduced) {
+        Vec3 at = p.from(), to = p.to(), forward = direction(at, to);
+        if (p.kind() == FLIGHT) {
+            var arrow = LuoxiaArrow.Shape.fromWire((int)p.angle());
+            var faces = new ArrayList<Quad>(ARROWS.faces(arrow.model));
+            var tip = at.lerp(to, Math.clamp(age, 0, 1));
+            ARROWS.append(faces, arrow.model, tip, forward, arrow.length, LUOXIA_ARROW_MODEL, 1);
+            return faces;
+        }
+        var g = new AbilityMeshBuilder(p, age, reduced);
+        Vec3 right = side(forward), up = right.cross(forward);
+        double r = p.radius(), phase = g.progress;
+        switch (p.kind()) {
+            case BEAM -> {
+                g.line(at, to, up, .052, VIOLET, .85);
+                g.line(at, to, right, .030, CORAL, .95);
+                g.line(at, to, up, .014, WHITE, 1);
+                if (!reduced) for (double x = 2; x < at.distanceTo(to); x += 2) {
+                    var point = at.add(forward.scale(x));
+                    g.line(point.subtract(right.scale(.064)), point.add(right.scale(.064)), up, .018, GOLD, .85);
+                }
+            }
+            case TRAIL -> {
+                boolean step = p.angle() == 2;
+                var from = at.lerp(to, phase * .55);
+                double length = from.distanceTo(to);
+                if (length > .001) {
+                    int frame = Math.min(3, (int)(phase*4));
+                    g.frame(from.lerp(to,.5), forward, step ? right : up, length*.63, r*2.4,
+                            LUOXIA_WAKE, frame, .92*(1-phase*.55));
+                    if (!step && !reduced) g.frame(from.lerp(to,.5), forward, right, length*.6, r*1.8,
+                            LUOXIA_WAKE, frame, .55*(1-phase));
+                }
+                g.line(from, to, step ? UP : right, r * 2, VIOLET, .28 * (1-phase));
+                g.line(from, to, UP, r, step ? GOLD : CORAL, .70 * (1-phase));
+                g.line(from.lerp(to, .45), to, up, r * .34, WHITE, .9 * (1-phase));
+                if (!reduced) for (int n = 0; n < 4; n++) {
+                    var s = from.lerp(to, (n + .5) / 4).add(right.scale((n % 2 == 0 ? 1 : -1)*r*(.5+phase)));
+                    g.line(s, s.add(forward.scale(r*(1.6+phase))), up, r*.32, n % 2 == 0 ? GOLD : CORAL, .8*(1-phase));
+                }
+            }
+            case BURST -> {
+                int frame = Math.min(3, (int)(phase*4));
+                g.frame(at, right, up, r*(.8+phase*.45), r*(.8+phase*.45), LUOXIA_IMPACT, frame, .98);
+                if (!reduced) g.frame(at, forward, up, r*.72, r*.72, LUOXIA_IMPACT, frame, .63);
+                for (int i = 0; i < (reduced ? 5 : 9); i++) {
+                    double angle = i * Math.PI * 2 / (reduced ? 5 : 9);
+                    Vec3 ray = right.scale(Math.cos(angle)).add(up.scale(Math.sin(angle)));
+                    var start = at.add(ray.scale(r*(.15+phase*.62)));
+                    var end = start.add(ray.scale(r*(.65-.4*phase))).add(forward.scale(.12));
+                    g.line(start, end, forward, .044*(1-phase), i%3==0 ? WHITE : i%3==1 ? GOLD : CORAL, .97*(1-phase));
+                }
+            }
+            case SHIELD -> {
+                for (int sign : new int[]{-1, 1}) {
+                    Vec3 shift = right.scale(sign * r * .65);
+                    Vec3 spine = at.add(shift).add(0,.03,0);
+                    Vec3 tip = spine.add(right.scale(sign*r*.9)).add(0,r*.93,0);
+                    g.triangle(tip, spine.add(0,r*.34,0), spine.subtract(right.scale(sign*r*.27)), GOLD, .92);
+                    g.line(spine, tip, forward, .035, WHITE, 1);
+                    g.line(spine.add(0,-.08,0), tip.add(0,-.09,0), forward, .045, VIOLET, .55);
+                }
+            }
+            case CHARGE -> {
+                int count = reduced ? 4 : 8;
+                for (int n = 0; n < count; n++) {
+                    Vec3 radial = right.scale(Math.cos(n * 2*Math.PI/count)).add(up.scale(Math.sin(n * 2*Math.PI/count)));
+                    double span = (p.angle() == 1 ? 1-phase*.55 : .25+phase*.88) * r;
+                    var start = at.add(radial.scale(span*.40));
+                    g.line(start, at.add(radial.scale(span)).subtract(forward.scale(phase*.1)),
+                            forward, .032, n%2==0 ? WHITE : CORAL, .88);
+                }
+            }
+            default -> {}
+        }
+        return g.result();
+    }
+}

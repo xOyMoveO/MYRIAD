@@ -58,7 +58,7 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
         // packets and bounds its lifetime; an end signal still removes it immediately.
         boolean movingBody=recipe.kind()==AbilityVfxGeometry.FLIGHT
                 &&(recipe.theme()==5&&recipe.variant()==4||(recipe.theme()==0||recipe.theme()==1||recipe.theme()==3
-                    ||recipe.theme()==4||recipe.theme()==11||FrostHerbLayers.owns(recipe)
+                    ||recipe.theme()==4||recipe.theme()==11||recipe.theme()==14||FrostHerbLayers.owns(recipe)
                     ||com.myriad.character.ability.WarSpiritModels.flight(recipe))&&recipe.instance()>0
                 ||com.myriad.character.skills.yike.YikeVfxGeometry.movingBody(recipe));
         age=movingBody?0:(int)Math.clamp(level.getGameTime()-recipe.started(),0,lifetime);
@@ -178,7 +178,7 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
         boolean reduced=mc.options.particles().get()!=net.minecraft.server.level.ParticleStatus.ALL||distance>32;
         boolean thunderModel=com.myriad.character.skills.tianxing.rework.ThunderVfxGeometry.usesProjectileModel(recipe);
         boolean rosterModel=com.myriad.character.skills.keheng.KehengVfx.usesProjectileModel(recipe)
-                ||recipe.theme()==12&&recipe.kind()==AbilityVfxGeometry.FLIGHT
+                ||(recipe.theme()==12||recipe.theme()==14)&&recipe.kind()==AbilityVfxGeometry.FLIGHT
                 ||(recipe.theme()==4||FrostHerbLayers.owns(recipe))&&recipe.kind()==AbilityVfxGeometry.FLIGHT
                 ||com.myriad.character.skills.hanze.rework.IceVfxGeometry.usesSpikeModel(recipe)
                 ||com.myriad.character.skills.xuanchen.rework.InkVfxGeometry.usesModel(recipe)

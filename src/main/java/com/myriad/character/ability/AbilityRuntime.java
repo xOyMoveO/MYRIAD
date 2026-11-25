@@ -70,6 +70,7 @@ public final class AbilityRuntime {
         com.myriad.character.skills.shuo.ShuoCombat.clear(p);
         com.myriad.character.skills.yike.YikeRework.clear(p);
         com.myriad.character.skills.rivet.RivetRework.clear(p);
+        com.myriad.character.skills.luoxia.LuoxiaBow.clear(p);
         com.myriad.character.skills.fenjue.rework.FlameHitVisuals.clear(p);
         SkillChargeSystem.clear(p);
         com.myriad.character.skills.keheng.KehengTimeFields.clear(p);
@@ -193,6 +194,7 @@ public final class AbilityRuntime {
         com.myriad.character.skills.shuo.ShuoCombat.tick(p);
         com.myriad.character.skills.yike.YikeRework.tick(p);
         com.myriad.character.skills.rivet.RivetRework.tick(p);
+        com.myriad.character.skills.luoxia.LuoxiaBow.tick(p);
         var passive=passive(p);if(passive!=null&&!inPreparation(p))passive.tickPassive(context(p,passive));
         if(!o.pending.isEmpty()&&now>o.pendingUntil){cancel(p);}
         if(!o.pending.isEmpty()&&now%4==0){var skill=FirstGroupSkills.byId(o.pending);if(skill!=null){Cast c=context(p,skill);Vec3 point=c.point(skill.pointRange(c));
@@ -361,9 +363,16 @@ public final class AbilityRuntime {
         public boolean damage(LivingEntity target,float amount,DamageCalc.Kind kind){return damage(target,amount,kind,true);}
         /** Reports effective HP/shield loss from the ordinary damage event path, including independent NPC pools. */
         public boolean damage(LivingEntity target,float amount,DamageCalc.Kind kind,boolean direct){
+            return damage(target,amount,kind,direct,!direct||kind==DamageCalc.Kind.TRUE);
+        }
+        /** Explicit multi-shot cadence. Keeps effective-hit callbacks and bypasses only vanilla hurt recovery. */
+        public boolean damageRapid(LivingEntity target,float amount,DamageCalc.Kind kind){
+            return damage(target,amount,kind,true,true);
+        }
+        private boolean damage(LivingEntity target,float amount,DamageCalc.Kind kind,boolean direct,boolean rapid){
             if(amount<=0||!target.isAlive()||!SkillTargets.enemy(player,target))return false;
             Source old=SOURCE.get(),receipt=new Source(skill.getId(),direct,castToken);SOURCE.set(receipt);
-            try{if(!direct||kind==DamageCalc.Kind.TRUE)DamageCalc.dealUncriticalSkillDamage(player,target,amount,kind,skill.slot()<0?4:skill.slot());
+            try{if(rapid)DamageCalc.dealUncriticalSkillDamage(player,target,amount,kind,skill.slot()<0?4:skill.slot());
                 else DamageCalc.dealSkillDamage(player,target,amount,kind,skill.slot());
                 return receipt.confirmed;
             }finally{if(old==null)SOURCE.remove();else SOURCE.set(old);}

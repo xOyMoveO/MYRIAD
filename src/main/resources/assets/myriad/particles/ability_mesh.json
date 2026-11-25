@@ -156,6 +156,9 @@
     "myriad:vfx/spirit_hd_flakes",
     "myriad:vfx/war_hd_wave_model",
     "myriad:vfx/spirit_hd_crane_model",
-    "myriad:vfx/spirit_hd_beacon_model"
+    "myriad:vfx/spirit_hd_beacon_model",
+    "myriad:vfx/luoxia_wake",
+    "myriad:vfx/luoxia_impact",
+    "myriad:vfx/luoxia_arrow_atlas"
   ]
 }

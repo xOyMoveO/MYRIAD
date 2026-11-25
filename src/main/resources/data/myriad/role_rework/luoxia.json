@@ -1,0 +1,108 @@
+{
+  "skills": [
+    {
+      "role": "luoxia",
+      "id": "luoxia_chase_dusk",
+      "index": 0,
+      "maxRank": 5,
+      "mana": 0,
+      "cooldowns": [
+        0
+      ],
+      "name": "追霞续弦",
+      "description": "普攻命中敌方角色后，1.2秒内下次拉弓加快。快弓伤害90%，继续命中可续。",
+      "iconAlias": "luoxia_chase_dusk"
+    },
+    {
+      "role": "luoxia",
+      "id": "luoxia_steady_dusk",
+      "index": 1,
+      "maxRank": 5,
+      "mana": 0,
+      "cooldowns": [
+        0
+      ],
+      "name": "凝霞满弓",
+      "description": "拉弓约0.75秒进入满弓，射程26格，伤害121–145%，满弓时移速降低20%。",
+      "iconAlias": "luoxia_steady_dusk"
+    },
+    {
+      "role": "luoxia",
+      "id": "luoxia_dusk_mark",
+      "index": 2,
+      "maxRank": 5,
+      "mana": 45,
+      "cooldowns": [
+        140
+      ],
+      "name": "雁过霞痕",
+      "description": "20格平射，命中敌方角色时标记3秒。下一发普攻或技能箭消耗标记并造成额外物理伤害。",
+      "iconAlias": "luoxia_dusk_mark"
+    },
+    {
+      "role": "luoxia",
+      "id": "luoxia_slant_step",
+      "index": 3,
+      "maxRank": 5,
+      "mana": 45,
+      "cooldowns": [
+        220
+      ],
+      "name": "斜照撤步",
+      "description": "沿移动方向滑步3格，无输入时后撤。遇墙停止，保留普攻拉弓进度。",
+      "iconAlias": "luoxia_slant_step"
+    },
+    {
+      "role": "luoxia",
+      "id": "luoxia_feather_burst",
+      "index": 4,
+      "maxRank": 7,
+      "mana": 65,
+      "cooldowns": [
+        160
+      ],
+      "name": "飞羽连弦",
+      "description": "0.5秒内连射三支19格轻箭，每箭随准星单独调整。对同一目标第三箭半伤。",
+      "iconAlias": "luoxia_feather_burst"
+    },
+    {
+      "role": "luoxia",
+      "id": "luoxia_last_sun",
+      "index": 5,
+      "maxRank": 7,
+      "mana": 65,
+      "cooldowns": [
+        200
+      ],
+      "name": "一点残阳",
+      "description": "蓄势0.5秒，可缓慢移动。射出28格高速重箭，命中首个敌方单位即停止。",
+      "iconAlias": "luoxia_last_sun"
+    },
+    {
+      "role": "luoxia",
+      "id": "luoxia_thousand_feathers",
+      "index": 6,
+      "maxRank": 3,
+      "mana": 145,
+      "cooldowns": [
+        1100
+      ],
+      "name": "千羽照野",
+      "description": "短暂蓄势后连发三轮窄扇箭幕，射程22格。同一敌方单位每轮最多受击一次。",
+      "iconAlias": "luoxia_thousand_feathers"
+    },
+    {
+      "role": "luoxia",
+      "id": "luoxia_sunset_line",
+      "index": 7,
+      "maxRank": 3,
+      "mana": 155,
+      "cooldowns": [
+        1200
+      ],
+      "name": "霞沉一线",
+      "description": "原地蓄势0.85秒，末段锁线预警。重箭飞行32格，贯穿小兵和至多3名英雄，撞墙停止。",
+      "iconAlias": "luoxia_sunset_line"
+    }
+  ]
+}

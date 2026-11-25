@@ -899,6 +899,7 @@ public final class PlayerDataProvider {
     /** 初始武器名字与颜色（按角色区分：墨尘=墨杖黑色，夜影=影刺金色，天刑=雷霆剑蓝色） */
     private static net.minecraft.network.chat.Component initialWeaponName(String characterId) {
         if("rivet".equalsIgnoreCase(characterId))return Component.translatable("item.myriad.rivet_hammer").withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xEBAF4C));
+        if("luoxia".equalsIgnoreCase(characterId))return Component.translatable("item.myriad.guixia_bow").withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xFFC65D));
         if("keheng".equalsIgnoreCase(characterId))return Component.translatable("item.myriad.hengke").withStyle(net.minecraft.ChatFormatting.BOLD)
                 .withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0x42D9BD));
 

@@ -19,6 +19,7 @@ public final class FirstGroupGrowth {
     public static double health(String role,int level){
         int[] pair=switch(role){
             case "rivet"->new int[]{700,110};
+            case "luoxia"->new int[]{575,75};
             case "keheng"->new int[]{600,85};
             case "yike"->new int[]{550,75};
             case "shuo"->new int[]{640,100};
@@ -61,7 +62,9 @@ public final class FirstGroupGrowth {
             com.myriad.character.rework.SecondGroupMigration.clearLegacy(p,d);
         }
         d.setLevel(Math.clamp(d.getLevel(),1,20));d.ensureLevelRewards(d.getLevel());
-        base(p,ModAttributes.PHYSICAL_ATTACK,65);base(p,ModAttributes.SPELL_POWER,30);
+        var role=com.myriad.character.CharacterType.byId(d.getCharacterId());
+        base(p,ModAttributes.PHYSICAL_ATTACK,role==com.myriad.character.CharacterType.LUOXIA?role.initialAd():65);
+        base(p,ModAttributes.SPELL_POWER,30);
         base(p,ModAttributes.ATTACK_SPEED,.70);base(p,Attributes.MOVEMENT_SPEED,.10);
         base(p,ModAttributes.PHYSICAL_DEFENSE,45);base(p,ModAttributes.MAGIC_RESISTANCE,45);
         base(p,ModAttributes.MAX_MANA,700);base(p,ModAttributes.MANA_REGEN,4);base(p,ModAttributes.HEALTH_REGEN,2);

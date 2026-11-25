@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -27,4 +28,11 @@ public abstract class MyriadMinecraftClientMixin {
     }
     @Inject(method="renderFrame",at=@At("HEAD"))
     private void myriad$suppressHurtCamera(boolean tick,CallbackInfo ci) { MyriadClient.beforeRenderFrame(); }
+
+    @Redirect(method="handleKeybinds",at=@At(value="INVOKE",
+            target="Lnet/minecraft/client/multiplayer/MultiPlayerGameMode;releaseUsingItem(Lnet/minecraft/world/entity/player/Player;)V"))
+    private void myriad$keepLuoxiaDraw(net.minecraft.client.multiplayer.MultiPlayerGameMode gameMode,
+            net.minecraft.world.entity.player.Player player) {
+        if (!player.getUseItem().is(com.myriad.registry.ModItems.GUIXIA_BOW.get())) gameMode.releaseUsingItem(player);
+    }
 }
