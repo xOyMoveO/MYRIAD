@@ -4,6 +4,7 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.network.chat.Component;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
 
@@ -129,10 +130,16 @@ public class HudOverlay implements HudElement {
             gui.pose().scale(s);
             int x = 6;
             int y = 6;
-            gui.text(font, Component.literal("阵营: " + ClientDataHolder.factionName())
-                            .withStyle(net.minecraft.ChatFormatting.BOLD), x, y, HIGHLIGHT_COLOR);
-            y += line;
-            gui.text(font, Component.translatable("hud.myriad.destroy_crystal"), x, y, TEXT_COLOR);
+            Component faction = Component.literal("阵营: " + ClientDataHolder.factionName())
+                    .withStyle(net.minecraft.ChatFormatting.BOLD);
+            Component objective = Component.translatable("hud.myriad.destroy_crystal");
+            boolean occluded = combatLayout != null && Minecraft.getInstance().gui.screen() instanceof ChatScreen
+                    && (overlapsInfoRow(gui, combatLayout.bounds(), x, y, font.width(faction), font.lineHeight)
+                    || overlapsInfoRow(gui, combatLayout.bounds(), x, y + line, font.width(objective), font.lineHeight));
+            if (!occluded) {
+                gui.text(font, faction, x, y, HIGHLIGHT_COLOR);
+                gui.text(font, objective, x, y + line, TEXT_COLOR);
+            }
             gui.pose().popMatrix();
         });
         HudLayoutConfig.render(gui, HudLayoutConfig.Element.MINIMAP, () -> MinimapOverlay.render(gui, font));
@@ -163,6 +170,16 @@ public class HudOverlay implements HudElement {
             MinionHealthBars.render(gui, font, partialTick);
         });
         HudLayoutConfig.render(gui, HudLayoutConfig.Element.TAB, () -> MatchTabOverlay.render(gui, font));
+    }
+
+    private static boolean overlapsInfoRow(GuiGraphicsExtractor gui, CombatHudLayout.Bounds panel,
+                                           int x, int y, int width, int height) {
+        var pose = gui.pose(); // The same scale and position already applied to both INFO text rows.
+        float left = pose.m20() + x * pose.m00();
+        float top = pose.m21() + y * pose.m11();
+        float right = left + (width + 1) * pose.m00();
+        float bottom = top + (height + 1) * pose.m11();
+        return left < panel.right() && right > panel.x() && top < panel.bottom() && bottom > panel.y();
     }
 
     /** 复活倒计时与观战目标提示。 */
