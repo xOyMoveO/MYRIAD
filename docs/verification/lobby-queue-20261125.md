@@ -13,7 +13,7 @@
 | 地图与素材 | `data/myriad/dimension/training_ground.json` 登记独立世界，`data/myriad/structure/training_ground.nbt` 随包提供带标距射道的练习场。`TrainingGroundMap.java` 首次放置地图。`textures/gui/lobby/`、`textures/gui/draft/` 与 `textures/gui/sprites/{lobby,draft,match}/` 提供两套正式背景、面板、按钮、队徽、锁定角标及光带。 |
 | 制作与验收 | `tools/arena-check/build_training_ground.py` 生成地形；`tools/slice_match_ui.py` 按 `art_source/match_ui/` 的原图重切部件。`ArenaFixtureChecks.java`、`TrainingGroundCombatChecks.java` 和测试客户端的输入桥接覆盖排队、并发训练与操作回读。 |
 
-Java 入口相对 `src/main/java/com/myriad/`，发行资源相对 `src/main/resources/`。客户端纹理目录位于 `assets/myriad/` 下。完整文件列表可在本次功能提交中执行 `git show --name-only --format= HEAD` 查看。
+Java 入口相对 `src/main/java/com/myriad/`，发行资源相对 `src/main/resources/`。客户端纹理目录位于 `assets/myriad/` 下。完整文件列表可在本次功能提交中执行 `git show --name-only --format= e0cde42` 查看。
 
 ## 可复现命令
 
@@ -54,3 +54,5 @@ bash ./gradlew --offline runArenaFixtureServer -PmyriadGameTests -ParenaFixtureS
 - **胜负与再排**。为缩短合成地图测试，测试管理员提高参赛者物攻，并传送到两座塔和水晶旁，按正常塔序用普攻击破。四位参赛者自动看到结算页；一人点击再排后独占队列第一位，其余三人返回大厅，两位练习者仍留在训练场。
 - **3v3 满员开局**。同一服务器和六个真实客户端使用相同的交付包。六人满员触发一局，经六手选出不同角色。关闭选角后 H 能恢复当轮状态；在 380×252 的 GUI 上成功翻页、选择寒泽并锁定。六人完成准备并各领 500 金。
 - **5v5**。十个席位通过合成服务器测试，十个独立客户端同场及正式地图的十人整局仍待实机验收。截图供人工查看材质、动效与可读性，平衡和手感须在实战中评价。
+
+[380×252 窗口的六人选角](assets/lobby-queue-v1/narrow-draft.png) · [2v2 自动结算及再排入口](assets/lobby-queue-v1/results-final.png)
