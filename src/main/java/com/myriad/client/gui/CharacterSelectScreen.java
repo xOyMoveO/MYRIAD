@@ -18,20 +18,26 @@ import static com.myriad.client.gui.SkillChoiceTheme.*;
 
 /** /myriad choose: portrait cards and scrollable skill preview, without historical role factions. */
 public final class CharacterSelectScreen extends Screen {
+    private final Screen parent;
+    private final boolean browseOnly;
     private String selectedId;
     private int scrollRow,detailScroll,detailMaximum;
     private Map<String,Boolean> taken=Map.of();
     private String current="";
     private CharacterChoiceLayout layout;
     private Button confirm;
-    public CharacterSelectScreen(){
-        super(Component.translatable("screen.myriad.choose.title"));
+    public CharacterSelectScreen(){this(null,false);}
+    public CharacterSelectScreen(Screen parent, boolean browseOnly){
+        super(Component.translatable(browseOnly ? "lobby.myriad.guide" : "screen.myriad.choose.title"));
+        this.parent=parent;
+        this.browseOnly=browseOnly;
         Packets.sendToServer(new NetworkSetup.RequestSyncPayload());
     }
+    @Override public void onClose(){Minecraft.getInstance().setScreenAndShow(parent);}
     @Override public boolean isPauseScreen(){return false;}
     private boolean available(String id){return CharacterType.byId(id)!=null&&CharacterChoiceLayout.available(id,ClientDataHolder.characterId(),ClientDataHolder.takenCharacters());}
     private boolean canConfirm(){
-        return CharacterChoiceLayout.canConfirm(ClientDataHolder.modEnabled(), available(selectedId));
+        return !browseOnly && CharacterChoiceLayout.canConfirm(ClientDataHolder.modEnabled(), available(selectedId));
     }
     @Override protected void init(){
         var roles=CharacterType.playableValues();
@@ -51,12 +57,13 @@ public final class CharacterSelectScreen extends Screen {
         addRenderableWidget(new PanelButton(layout.guide(),Component.translatable("hero.guide.open"),b->{
             var role=CharacterType.byId(selectedId);if(role!=null)Minecraft.getInstance().setScreenAndShow(new CharacterGuideScreen(this,role));
         }));
-        confirm=addRenderableWidget(new PanelButton(layout.confirm(),Component.translatable("screen.myriad.choose.confirm"),b->{
-            // Read the latest sync again, never a map captured when the window opened.
-            if(!canConfirm())return;
-            Packets.sendToServer(new NetworkSetup.ChooseCharacterPayload(selectedId));onClose();
-        }));
-        confirm.active=canConfirm();
+        if (!browseOnly) {
+            confirm=addRenderableWidget(new PanelButton(layout.confirm(),Component.translatable("screen.myriad.choose.confirm"),b->{
+                if(!canConfirm())return;
+                Packets.sendToServer(new NetworkSetup.ChooseCharacterPayload(selectedId));onClose();
+            }));
+            confirm.active=canConfirm();
+        }
         addRenderableWidget(new PanelButton(layout.close(),Component.literal("×"),b->onClose()));
     }
     @Override public void tick(){
@@ -94,7 +101,7 @@ public final class CharacterSelectScreen extends Screen {
     }
     private void drawDetails(GuiGraphicsExtractor g,CharacterType role,SkillChoiceLayout.Box b,int mx,int my){
         fit(g,Component.translatable(role.nameKey()).getString(),b.x()+9,b.y()+10,b.w()-18,GOLD);
-        String state=ClientDataHolder.get()==null?"screen.myriad.choose.syncing"
+        String state=browseOnly?"lobby.myriad.guide_details":ClientDataHolder.get()==null?"screen.myriad.choose.syncing"
                 :!ClientDataHolder.modEnabled()?"screen.myriad.choose.require_mod"
                 :role.getId().equals(current)?"screen.myriad.choose.current"
                 :available(role.getId())?"screen.myriad.choose.preview":"screen.myriad.choose.occupied";
@@ -140,7 +147,7 @@ public final class CharacterSelectScreen extends Screen {
         }
         @Override protected void extractContents(GuiGraphicsExtractor g,int mx,int my,float partial){
             var b=new SkillChoiceLayout.Box(getX(),getY(),getWidth(),getHeight());
-            boolean selected=role.getId().equals(selectedId),free=available(role.getId());card(g,b,selected,!free,isHoveredOrFocused());
+            boolean selected=role.getId().equals(selectedId),free=browseOnly||available(role.getId());card(g,b,selected,!free,isHoveredOrFocused());
             int size=Math.min(46,b.h()-23),x=b.x()+(b.w()-size)/2,y=b.y()+4;
             if(!CharacterPortrait.draw(g,role,x,y,size,free?1:.38f)){
                 plate(g,new SkillChoiceLayout.Box(x,y,size,size),0xFF476773,0xD0152935);

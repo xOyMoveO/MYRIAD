@@ -1,7 +1,6 @@
 package com.myriad.combat;
 
-import com.myriad.game.Faction;
-import com.myriad.game.GameManager;
+import com.myriad.game.TrainingGround;
 import com.myriad.game.ModState;
 import com.myriad.player.PlayerData;
 import com.myriad.player.PlayerDataProvider;
@@ -57,12 +56,10 @@ public final class BasicAttackSystem {
     }
 
     public static boolean canAttackNow(ServerPlayer player, PlayerData data) {
-        GameManager manager = GameManager.get();
         return player.isAlive() && !player.isSpectator()
                 && !com.myriad.character.skills.shuo.ShuoCombat.blocked(player)
                 && data.getPlacementType() == 0
-                && (com.myriad.game.TrainingMode.isEnabled()
-                    || manager != null && manager.getPhase() == GameManager.Phase.PLAYING);
+                && TrainingGround.canFight(player);
     }
 
     /** Historical geometry utility for archived tests only; no live melee attack calls it. */

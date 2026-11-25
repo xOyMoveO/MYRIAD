@@ -112,10 +112,11 @@ final class FirstGroupRegressionChecks {
                 d.setLevel(20); LevelSystem.applyLevelAttributes(p,20);
                 h.assertTrue(LevelSystem.maxLevel(d)==20 && Math.abs(d.getModMaxHealth()-FirstGroupGrowth.health(role,20))<.01,
                         "First batch reaches level 20 with its designed HP");
-                h.assertTrue(p.getAttributeValue(ModAttributes.PHYSICAL_ATTACK)==65
+                int baseAttack = "luoxia".equals(role) ? 100 : 65;
+                h.assertTrue(p.getAttributeValue(ModAttributes.PHYSICAL_ATTACK)==baseAttack
                         && p.getAttributeValue(ModAttributes.SPELL_POWER)==30, "No hidden AD/AP growth");
                 d.setFirstGroupAttribute("strength",2); FirstGroupGrowth.apply(p,d);
-                h.assertTrue(p.getAttributeValue(ModAttributes.PHYSICAL_ATTACK)==95
+                h.assertTrue(p.getAttributeValue(ModAttributes.PHYSICAL_ATTACK)==baseAttack + 2 * 15
                         && p.getAttributeValue(ModAttributes.SPELL_POWER)==30, "Strength changes A only");
                 var context=AbilityRuntime.context(p,skills.get(2));
                 float before=context.value(45,15,.55f);
@@ -123,7 +124,7 @@ final class FirstGroupRegressionChecks {
                 h.assertTrue(AbilityRuntime.context(p,skills.get(2)).value(45,15,.55f)==before,
                         "Buying Strength must not inflate a physical skill formula");
                 d.setFirstGroupAttribute("wisdom",2); FirstGroupGrowth.apply(p,d);
-                h.assertTrue(p.getAttributeValue(ModAttributes.PHYSICAL_ATTACK)==110
+                h.assertTrue(p.getAttributeValue(ModAttributes.PHYSICAL_ATTACK)==baseAttack + 3 * 15
                         && p.getAttributeValue(ModAttributes.SPELL_POWER)==70, "Wisdom changes S only");
                 h.assertTrue(AbilityRuntime.context(p,skills.get(2)).value(45,15,.55f)>before,
                         "Wisdom must enhance skill formula");

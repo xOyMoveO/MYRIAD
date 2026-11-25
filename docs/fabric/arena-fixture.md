@@ -70,12 +70,23 @@ bash ./gradlew runArenaFixtureServer -PmyriadGameTests -ParenaFixtureStage=read-
 
 开发入口仍是 `runArenaFixtureServer -PmyriadGameTests`，不传 stage 时保持正常独立服务器运行，供 #44 接入真实客户端；不自动创建 fixture 玩家。它含测试 mod，仅用于隔离复现，发行验收应再使用主 JAR 独立服务器。
 
+### 同服训练场与正式比赛
+
+在上文生成的合成服务器中运行。正式对局使用所选图的完整名单，另有两名训练玩家。独立服务器会加载发行资源中的训练维度，等待出生区可以处理实体，再核对进出、重连还原、切磋授权、假人归属、个人训练加成，以及正式局开战和结算时训练能否继续。
+
+```sh
+bash ./gradlew --offline runArenaFixtureServer -PmyriadGameTests -ParenaFixtureStage=training -ParenaFixtureMode=3v3
+# 检查另一种规模时，将最后的 3v3 改为 5v5。
+```
+
+逐项结果位于合成服务器的 `world/arena-fixture-training.json`。核对实际 `arena`、`dedicated: true`、`passed: true`、`checks` 和服务器日志的 `ARENA_FIXTURE_PASS: stage=training`。同一存档重跑会更新该报告，每次分别保存。此项使用进程内测试玩家，客户端操作体验单独验收。
+
 ## #44 独立服务器与真实客户端
 
 1. 创建新合成实例、核对构建摘要和 manifest；独立端口启动，连接至少两个真实客户端。需要满员测试时分别用6/10名真实参与者；同进程 fixture 通过不等于真实联机通过。
-2. 控制台 `op <测试账号>`、`myriad mod on`、`myriad arena 3v3`；客户端在共享大厅通过队伍界面分队、选择手动或随机开始。也可管理员 `myriad team xuanxiao <名称>` / `myriad team youming <名称>` 后在队伍界面开始。
+2. 控制台 `op <测试账号>`、`myriad mod on`、`myriad arena 3v3`；客户端按 H 排队。两人或四人可由一人提议并等候 15 秒，六人则直接开局。
 3. 按真实轮次选唯一角色，核对两端收到的准备/入泉/开战；检查当前模式的塔、泉、水晶、草丛、视野、边界、营地和计时刷新。实际等待首波70秒，检查按当前路线行走；合法普攻依次拆同一路塔和水晶，结束回共享大厅。
-4. `myriad restart` 检查新草稿与清理；关闭后切至5v5，重复完整流程。修改点位后保存、正常 `stop`、重启比对两模式坐标。进行中新局再正常退出/重启，独立服务器应恢复受支持的状态；`myriad mod off` 后重启保持关闭。
+4. 通过结算页的「再排一局」检查重新报名与清理；回到空闲阶段后切至 5v5，由十人排队重复完整流程。修改点位后保存、正常 `stop`、重启比对两模式坐标。进行中新局再正常退出/重启，独立服务器应恢复受支持的状态；`myriad mod off` 后重启保持关闭。
 5. 独立创建本地/LAN合成世界，退出世界后再次打开，确认没有续局；记录主持人与客户端输入、阶段和清理结果。此步骤由真实客户端整合执行，不能用“专用处理器测试通过”替代实际退出世界。
 
 以上均是合成测试世界的客观联机检查。视觉和主观结论另记人工结果。

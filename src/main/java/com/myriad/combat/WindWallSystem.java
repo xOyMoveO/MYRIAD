@@ -16,8 +16,6 @@ import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-import com.myriad.game.Faction;
-import com.myriad.game.GameManager;
 import com.myriad.player.PlayerData;
 
 /** Shared wind-wall state, real-time expiry, swept interception and presentation. */
@@ -115,7 +113,7 @@ public final class WindWallSystem {
         }else renderWall(level, wall);
         // 阻挡飞行投射物（精确判断：仅在风墙 6×4×0.6 内）
         for (Projectile p : level.getEntitiesOfClass(Projectile.class, box.inflate(4.0))) {
-            if (p.getOwner() != null && com.myriad.combat.SkillTargets.ally(player, p.getOwner())) continue;
+            if (p.getOwner() != null && !SkillTargets.hostile(player, p.getOwner())) continue;
             Vec3 hit = segmentHit(wall, p.position().subtract(p.getDeltaMovement()), p.position());
             if (hit == null) hit = segmentHit(wall, p.position(), p.position().add(p.getDeltaMovement()));
             if (hit == null) continue;
@@ -132,11 +130,11 @@ public final class WindWallSystem {
         // 阻挡本模组魔法弹
         MagicBullet.blockIn(level, id -> {
             var caster = level.getServer().getPlayerList().getPlayer(id);
-            return !id.equals(player.getUUID()) && (caster == null || !com.myriad.combat.SkillTargets.ally(player, caster));
+            return !id.equals(player.getUUID()) && (caster == null || SkillTargets.hostile(player, caster));
         }, p -> inWall(wall, p),p->showIntercept(presentation,p,wall.flat));
         // 穿过减速 50%（2 秒）
         for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, box,
-                e -> e != player && com.myriad.combat.SkillTargets.alive(e) && !isAlly(player, e))) {
+                e -> SkillTargets.enemy(player, e))) {
             if (wall.slowEnemies && inWall(wall, e.position())) {
                 e.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 40, 2, false, false, false));
             }
@@ -181,12 +179,11 @@ public final class WindWallSystem {
         Vec3 closest = null;
         ServerPlayer wallOwner = null;
         Vec3 wallNormal = Vec3.ZERO;
-        Faction own = com.myriad.game.LaneSystem.factionOf(caster);
         for (var entry : WALLS.entrySet()) {
             Wall wall = entry.getValue();
             if (wall.level != caster.level() || wall.until <= caster.level().getGameTime() || entry.getKey().equals(caster.getUUID())) continue;
             ServerPlayer owner = caster.level().getServer().getPlayerList().getPlayer(entry.getKey());
-            if (owner != null && own != null && own == com.myriad.game.LaneSystem.factionOf(owner)) continue;
+            if (owner != null && !SkillTargets.hostile(caster, owner)) continue;
             Vec3 at = segmentHit(wall, from, to);
             if (at != null && (closest == null || from.distanceToSqr(at) < from.distanceToSqr(closest))) {
                 closest=at;
@@ -273,16 +270,4 @@ public final class WindWallSystem {
         WALLS.remove(playerId);
     }
 
-    private static boolean isAlly(ServerPlayer caster, LivingEntity other) {
-        if (!(other instanceof ServerPlayer otherPlayer)) {
-            return false;
-        }
-        GameManager manager = GameManager.get();
-        if (manager == null) {
-            return false;
-        }
-        Faction a = manager.factionOf(caster);
-        Faction b = manager.factionOf(otherPlayer);
-        return a != null && a == b;
-    }
 }

@@ -44,7 +44,7 @@ public final class DeathRecaps {
     }
     private static boolean participant(ServerPlayer p) {
         var m = GameManager.get();
-        return ModState.isEnabled() && !TrainingMode.isEnabled() && m != null && m.getPhase() == GameManager.Phase.PLAYING
+        return ModState.isEnabled() && !TrainingMode.isEnabled(p) && m != null && m.isParticipant(p.getUUID()) && m.getPhase() == GameManager.Phase.PLAYING
                 && m.factionOf(p) != null && FirstGroupSkills.active(PlayerDataProvider.get(p).getCharacterId());
     }
     private static Tape tape(ServerPlayer p) {

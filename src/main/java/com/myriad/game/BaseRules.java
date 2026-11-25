@@ -17,8 +17,13 @@ public final class BaseRules {
         return player.level().dimension()==net.minecraft.world.level.Level.OVERWORLD && base!=null
                 && player.position().distanceToSqr(net.minecraft.world.phys.Vec3.atBottomCenterOf(base))<=100;
     }
-    public static boolean canShop(ServerPlayer player){return TrainingMode.isEnabled() || HeroRespawnSystem.isWaiting(player)
-            || player.isAlive()&&!player.isSpectator()&&inside(player);}
+    public static boolean canShop(ServerPlayer player){
+        if(!ModState.isEnabled())return false;
+        if(TrainingMode.isEnabled(player))return true;
+        var match=GameManager.get();
+        return match!=null && match.isParticipant(player.getUUID())
+                && (HeroRespawnSystem.isWaiting(player) || player.isAlive()&&!player.isSpectator()&&inside(player));
+    }
     public static void tick(ServerPlayer player){
         RecallSystem.tick(player);
         long now=player.level().getGameTime();var s=STATES.computeIfAbsent(player.getUUID(),id->new State());
@@ -28,7 +33,7 @@ public final class BaseRules {
             s.shopAllowed = shopAllowed;
             com.myriad.network.UiFeedbackPayload.shopAccess(player, shopAllowed);
         }
-        boolean active=ModState.isEnabled()&&(TrainingMode.isEnabled()||GameManager.get()!=null&&GameManager.get().getPhase()==GameManager.Phase.PLAYING);
+        boolean active=ModState.isEnabled() && !TrainingGround.isTraining(player) && TrainingGround.canFight(player);
         if(active&&s.inside&&!inside&&now>=s.combatUntil&&player.isAlive()&&!player.isSpectator())s.until=now+160;
         s.inside=inside;
         if(!active||!player.isAlive()||player.isSpectator()||now>=s.until)stop(player,s);

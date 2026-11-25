@@ -19,7 +19,7 @@ public final class FlameHitVisuals {
     public static boolean eligible(ServerPlayer p,LivingEntity target,float effective){
         return ModState.isEnabled()&&p.isAlive()&&!p.isSpectator()&&Float.isFinite(effective)&&effective>0
                 &&"fenjue".equals(PlayerDataProvider.get(p).getCharacterId())&&p.level()==target.level()
-                &&p!=target&&!(target instanceof DefenseTowerEntity)&&!SkillTargets.ally(p,target);
+                &&!(target instanceof DefenseTowerEntity)&&SkillTargets.hostile(p,target);
     }
     /** Bounded per-owner cosmetic budget. Does not suppress any damage, proc, status or audio. */
     public static final class Cadence {

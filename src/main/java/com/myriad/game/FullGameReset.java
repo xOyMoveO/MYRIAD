@@ -29,11 +29,13 @@ public final class FullGameReset {
                 Files.move(temp, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             }
         } finally { Files.deleteIfExists(temp); }
+        TrainingGround.closeAll(server);
         TrainingMode.setEnabled(false);
         TrainingMode.setNoCooldown(false);
         TrainingMode.setNoGoldCost(false);
         TrainingMode.setNoMana(false);
         GameManager.get().resetToLobby(server, true);
+        QueueLobby.reset(server);
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             com.myriad.player.EntityState.data(player).putString(KEY, generation);
         }

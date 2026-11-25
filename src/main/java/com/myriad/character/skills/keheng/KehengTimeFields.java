@@ -101,8 +101,9 @@ public final class KehengTimeFields {
         CLEANSED.entrySet().removeIf(e->e.getValue()<=now);
     }
     public static void needle(AbilityRuntime.Cast c,LivingEntity t,double rate){
+        if (!SkillTargets.enemy(c.player, t)) return;
         if(t instanceof ServerPlayer p){if(!susceptible(p,c.now()))return;}
-        else if(!susceptibleNpc(t)||!SkillTargets.enemy(c.player,t))return;
+        else if(!susceptibleNpc(t))return;
         var tenacity=t.getAttribute(ModAttributes.TENACITY);
         int duration=(int)Math.ceil(25*(1-Math.clamp(tenacity==null?0:tenacity.getValue(),0,60)/100));
         NEEDLES.add(new Needle(c,t,rate,c.now()+duration,"keheng_needle_"+c.castId()));
@@ -120,7 +121,7 @@ public final class KehengTimeFields {
         if(previous!=null)for(var source:previous)ActionTime.remove(p.getUUID(),source.owner,source.key);
         long now=p.level().getGameTime();var sources=new ArrayList<Published>();
         if(susceptible(p,now)){
-            for(var n:NEEDLES)if(n.target==p&&now<n.until&&n.cast.player.level()==p.level()){
+            for(var n:NEEDLES)if(n.target==p&&now<n.until&&SkillTargets.enemy(n.cast.player,p)){
                 ActionTime.apply(p.getUUID(),n.cast.player.getUUID(),n.key,n.rate,n.until);sources.add(new Published(n.cast.player.getUUID(),n.key));
                 com.myriad.combat.DeathRecaps.control(n.cast.player,p,n.cast.skill.getId(),2,now);}
             for(var f:FIELDS)if(f.cast.player.level()==p.level()&&f.active(now)&&SkillTargets.enemy(f.cast.player,p)&&f.contains(f.corridor?p.getBoundingBox().getCenter():p.position())){
@@ -157,7 +158,7 @@ public final class KehengTimeFields {
     /** Vanilla arrows retain their actual entity owner (player or mob); ownerless arrows have no enemy attribution. */
     public static double projectileRate(Entity owner,Vec3 at,long now){double rate=1;
         if(owner==null||!ModState.isEnabled())return rate;
-        for(var f:FIELDS)if(f.cast.player.level()==owner.level()&&f.active(now)&&!SkillTargets.ally(f.cast.player,owner)&&f.contains(at))rate=Math.min(rate,f.flightRate);
+        for(var f:FIELDS)if(f.cast.player.level()==owner.level()&&f.active(now)&&SkillTargets.hostile(f.cast.player,owner)&&f.contains(at))rate=Math.min(rate,f.flightRate);
         return rate;
     }
     public static void clear(ServerPlayer p){

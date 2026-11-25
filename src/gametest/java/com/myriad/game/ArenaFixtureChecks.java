@@ -5,6 +5,7 @@ import com.google.gson.JsonParser;
 import com.mojang.authlib.GameProfile;
 import com.myriad.combat.DamageCalc;
 import com.myriad.network.NetworkSetup;
+import com.myriad.network.LobbyNetworking;
 import com.myriad.player.PlayerDataProvider;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -51,6 +52,8 @@ public final class ArenaFixtureChecks implements ModInitializer {
         FILES.add("myriad_lobby.json"); FILES.add("myriad_arena_selection.json");
     }
     private static MinecraftServer pendingDedicated;
+    private static int trainingWarmupTicks;
+    private static boolean trainingForcedChunk;
     @Override public void onInitialize() {
         Registry.register(BuiltInRegistries.TEST_FUNCTION, Identifier.parse("myriad:arena_fixture"), ArenaFixtureChecks::run);
         for(String mode:List.of("3v3","5v5")) Registry.register(BuiltInRegistries.TEST_FUNCTION,
@@ -70,6 +73,21 @@ public final class ArenaFixtureChecks implements ModInitializer {
                         Files.readString(manifest)).getAsJsonObject().get("kind").getAsString()))
                     throw new IllegalStateException("Dedicated fixture stages require the generator's new synthetic instance");
                 switch (stage) {
+                    case "training" -> {
+                        var training = server.getLevel(TrainingGroundMap.KEY);
+                        if (training == null) throw new IllegalStateException("Training dimension missing from dedicated server");
+                        var spawnChunk = net.minecraft.world.level.ChunkPos.containing(TrainingGroundMap.SPAWN);
+                        if (trainingWarmupTicks++ == 0)
+                            trainingForcedChunk = training.setChunkForced(spawnChunk.x(), spawnChunk.z(), true);
+                        if (!training.areEntitiesActuallyLoadedAndTicking(spawnChunk)) {
+                            if (trainingWarmupTicks > 300) throw new IllegalStateException("Training spawn did not become entity ticking");
+                            pendingDedicated = server;
+                            return;
+                        }
+                        String mode = System.getProperty("myriad.arenaFixtureMode", "3v3");
+                        suite.check(MatchArena.select(server, mode), "Configured synthetic arena available for concurrent training");
+                        TrainingGroundCombatChecks.run(server, suite::check);
+                    }
                     case "write" -> { suite.scenarios(); suite.begin(System.getProperty("myriad.arenaFixtureMode","3v3")); suite.facilities(); MatchProgress.save(server); }
                     case "read" -> suite.restored();
                     case "read-off" -> {
@@ -85,13 +103,25 @@ public final class ArenaFixtureChecks implements ModInitializer {
                 suite.report(stage, error);
                 com.myriad.Myriad.LOGGER.error("ARENA_FIXTURE_FAILED", error);
                 throw new IllegalStateException(error);
-            } finally { suite.removePlayers(); server.halt(false); }
+            } finally {
+                if (pendingDedicated == null) {
+                    if (trainingForcedChunk) {
+                        var chunk = net.minecraft.world.level.ChunkPos.containing(TrainingGroundMap.SPAWN);
+                        server.getLevel(TrainingGroundMap.KEY).setChunkForced(chunk.x(), chunk.z(), false);
+                    }
+                    trainingWarmupTicks = 0;
+                    trainingForcedChunk = false;
+                    suite.removePlayers();
+                    server.halt(false);
+                }
+            }
         });
     }
     private static void run(GameTestHelper helper) {
         Suite suite = new Suite(helper.getLevel().getServer());
         try {
             suite.install(); suite.scenarios();
+            suite.smallQueueGames();
             suite.begin("3v3");
             MatchProgress.endHostSession(suite.server);
             suite.check(GameManager.get().getPhase() == GameManager.Phase.WAITING,
@@ -107,7 +137,7 @@ public final class ArenaFixtureChecks implements ModInitializer {
         Suite suite=new Suite(helper.getLevel().getServer());
         try {
             suite.install();suite.begin(mode);
-            var invader=suite.players.getFirst();var defender=suite.players.getLast();
+            var invader=suite.players.getFirst();var defender=suite.opponent(invader);
             var faction=GameManager.get().factionOf(defender);
             var tower=LaneSystem.towerPoint(faction,LaneSystem.Lane.MID,1);
             invader.setPos(Vec3.atBottomCenterOf(tower).add(-7,0,0));
@@ -186,6 +216,19 @@ public final class ArenaFixtureChecks implements ModInitializer {
                 check(!buf.isReadable(), "registered C2S codec consumes " + payload.type().id());
             } finally { buf.release(); }
         }
+        ServerPlayer opponent(ServerPlayer player) {
+            var faction = GameManager.get().factionOf(player);
+            return players.stream().filter(p -> GameManager.get().factionOf(p) != null && GameManager.get().factionOf(p) != faction).findFirst().orElseThrow();
+        }
+        void lobby(ServerPlayer player, String action, String role) {
+            var view = QueueLobby.snapshot(player);
+            long token = switch (action) {
+                case "propose" -> view.proposalToken();
+                case "lock", "preselect" -> view.pickToken();
+                default -> view.queueToken();
+            };
+            receive(player, new LobbyNetworking.Action(action, role, token));
+        }
         void clock(long tick) { ((ServerLevelData)server.overworld().getLevelData()).setGameTime(tick); }
         void tick() { PlayerDataProvider.onServerTick(server); }
         void scenarios() throws Exception {
@@ -230,24 +273,21 @@ public final class ArenaFixtureChecks implements ModInitializer {
             check(Arrays.equals(otherLayout,Files.readAllBytes(MatchArena.configuration(world,MatchArena.Mode.byId(other),CONFIGS[0]))), "editing one profile preserves the other profile bytes");
             MatchArena.shutdown(); MatchArena.initialize(server);
             check(MatchArena.active().id.equals(mode), "selected mode survives configuration lifecycle reload");
-            // Real administrator team command, then real UI start receiver uses the manual assignments.
-            for(int i=0;i<count;i++) command("myriad team " + (i<count/2?"guardian":"destruction") + " ArenaFixture"+i);
-            server.getPlayerList().op(new net.minecraft.server.players.NameAndId(players.getFirst().getGameProfile()),Optional.of(net.minecraft.server.permissions.LevelBasedPermissionSet.OWNER),Optional.empty());
-            receive(players.getFirst(),new NetworkSetup.StartMatchPayload(1,mode));
-            check(GameManager.get().getPhase()==GameManager.Phase.PICKING, "registered UI start receiver enters draft with assigned teams");
-            check(players.stream().filter(p -> GameManager.get().factionOf(p)==Faction.GUARDIAN).count()==count/2, "manual teams remain balanced at mode capacity");
+            for (ServerPlayer player : players) lobby(player, "join", "");
+            check(GameManager.get().getPhase()==GameManager.Phase.PICKING, "full queue enters exactly one draft via its registered C2S receiver");
+            check(players.stream().filter(p -> GameManager.get().factionOf(p)==Faction.GUARDIAN).count()==count/2, "queued teams are balanced at mode capacity");
             check(command("myriad team destruction ArenaFixture0")==0,"draft rejects administrator team-command changes");
             check(command("myriad arena " + other)==0 && !LaneSystem.setCrystalPoint(Faction.DESTRUCTION,crystal.offset(4,0,0)), "draft rejects mode switching and point edits");
             var order=pickOrder();
             String chosen="shuo";
             var wrong=players.stream().filter(p -> !p.getUUID().equals(order.getFirst())).findFirst().orElseThrow();
-            receive(wrong,new NetworkSetup.ChooseCharacterPayload(chosen));
+            lobby(wrong,"lock",chosen);
             check(PlayerDataProvider.get(wrong).getCharacterId()==null, "out-of-turn pick payload is rejected");
             var roles=new ArrayList<>(List.of(com.myriad.character.CharacterType.playableValues()));
             for(int i=0;i<order.size();i++) {
                 ServerPlayer p=server.getPlayerList().getPlayer(order.get(i));
-                if(i>0) { receive(p,new NetworkSetup.ChooseCharacterPayload(roles.getFirst().getId())); check(PlayerDataProvider.get(p).getCharacterId()==null,"already reserved character is rejected"); }
-                receive(p,new NetworkSetup.ChooseCharacterPayload(roles.get(i).getId()));
+                if(i>0) { lobby(p,"lock",roles.getFirst().getId()); check(PlayerDataProvider.get(p).getCharacterId()==null,"already reserved character is rejected"); }
+                lobby(p,"lock",roles.get(i).getId());
                 check(roles.get(i).getId().equals(PlayerDataProvider.get(p).getCharacterId()),"current participant can pick a unique character");
             }
             check(GameManager.get().getPhase()==GameManager.Phase.PICKING && players.stream().allMatch(p -> p.distanceToSqr(Vec3.atBottomCenterOf(LaneSystem.fountainPoint(GameManager.get().factionOf(p))))<20), "complete draft enters the configured fountains while phase remains PICKING");
@@ -257,6 +297,125 @@ public final class ArenaFixtureChecks implements ModInitializer {
             check(GameManager.get().getPhase()==GameManager.Phase.PLAYING,"normal match tick starts combat at the preparation deadline");
             check(command("myriad arena " + other)==0,"playing rejects mode selection");
         }
+        void smallQueueGames() throws Exception {
+            command("myriad mod on");
+            command("myriad arena 3v3");
+            var manager = GameManager.get();
+            for (int i = 0; i < 5; i++) player(i);
+            var first = players.get(0);
+            var second = players.get(1);
+            var late = players.get(4);
+            checkQueueReset(first, second, late);
+            for (int size : List.of(2, 4)) {
+                for (var player : players.subList(0, size)) lobby(player, "join", "");
+                var savedJoin = new LobbyNetworking.Action("join", "", QueueLobby.snapshot(first).queueToken());
+                receive(first, savedJoin);
+                check(QueueLobby.snapshot(first).count() == size, "duplicate join leaves one ticket");
+                long obsoleteProposal = QueueLobby.snapshot(first).proposalToken();
+                check(obsoleteProposal != 0, "the eligible roster has a live proposal token");
+                lobby(first, "propose", "");
+                check(QueueLobby.snapshot(second).voteSeconds() == 15, "one player starts a visible 15-second countdown");
+                lobby(second, "leave", "");
+                check(QueueLobby.snapshot(first).voteSeconds() < 0 && QueueLobby.snapshot(first).position() == 1,
+                        "withdrawal cancels the proposal while the first player keeps their position");
+                lobby(second, "join", "");
+                receive(first, new LobbyNetworking.Action("propose", "", obsoleteProposal));
+                check(QueueLobby.snapshot(first).voteSeconds() < 0, "expired proposal request cannot start a later vote");
+                lobby(first, "propose", "");
+                lobby(late, "join", "");
+                check(QueueLobby.snapshot(first).voteSeconds() < 0 && !QueueLobby.snapshot(first).canPropose(),
+                        "arrival cancels the old proposal and an odd roster cannot start");
+                lobby(late, "leave", "");
+                lobby(first, "propose", "");
+                long proposed = server.overworld().getGameTime();
+                clock(proposed + 299); QueueLobby.tick(server);
+                check(manager.getPhase() == GameManager.Phase.WAITING, "small games wait all 300 ticks");
+                clock(proposed + 300); QueueLobby.tick(server);
+                var order = pickOrder();
+                check(manager.getPhase() == GameManager.Phase.PICKING && order.size() == size,
+                        "deadline locks exactly the proposed roster");
+                var expected = size == 2 ? List.of(Faction.GUARDIAN, Faction.DESTRUCTION)
+                        : List.of(Faction.GUARDIAN, Faction.DESTRUCTION, Faction.DESTRUCTION, Faction.GUARDIAN);
+                check(order.stream().map(server.getPlayerList()::getPlayer).map(manager::factionOf).toList().equals(expected),
+                        "small game uses the right blue-first snake sequence");
+                var unpicked = server.getPlayerList().getPlayer(order.getLast());
+                var opening = server.getPlayerList().getPlayer(order.getFirst());
+                lobby(unpicked, "preselect", "shuo");
+                check("shuo".equals(QueueLobby.snapshot(unpicked).preselected()) && QueueLobby.snapshot(opening).preselected().isEmpty(),
+                        "early intent is visible only to its owner");
+                var oldPick = new LobbyNetworking.Action("lock", "shuo", QueueLobby.snapshot(unpicked).pickToken());
+                var roles = List.of("tianxing", "chixiao", "qingluo");
+                for (int i = 0; i < order.size() - 1; i++) {
+                    var picker = server.getPlayerList().getPlayer(order.get(i));
+                    lobby(picker, "lock", roles.get(i));
+                }
+                receive(unpicked, oldPick);
+                check(manager.queuePickedRole(unpicked.getUUID()).isEmpty(), "stale turn token cannot lock even for the new current picker");
+                manager.onPlayerQuit(unpicked);
+                server.getPlayerList().getPlayers().remove(unpicked);
+                server.getPlayerList().getPlayersByUUID().remove(unpicked.getUUID());
+                long deadline = proposed + 300 + 400;
+                clock(deadline - 1); tick();
+                check(manager.queuePickedRole(unpicked.getUUID()).isEmpty(), "offline player has their full selection window");
+                clock(deadline); tick();
+                check("shuo".equals(manager.queuePickedRole(unpicked.getUUID())), "offline timeout locks their private legal intent");
+                lobby(late, "join", "");
+                check(QueueLobby.snapshot(late).position() == 1 && "occupied".equals(QueueLobby.snapshot(late).reason()),
+                        "late player queues for the next match");
+                clock(deadline + 199); tick();
+                check(manager.getPhase() == GameManager.Phase.PICKING && PlayerDataProvider.get(opening).getGold() == 0,
+                        "preparation pays nothing for its full ten seconds");
+                clock(deadline + 200); tick();
+                check(manager.getPhase() == GameManager.Phase.PLAYING && PlayerDataProvider.get(opening).getGold() == 500,
+                        "battle starts with 500 gold despite an offline seat");
+                check(manager.factionOf(late) == null && PlayerDataProvider.get(late).getGold() == 0, "waiting player gets no faction or purse");
+                server.getPlayerList().getPlayers().add(unpicked);
+                server.getPlayerList().getPlayersByUUID().put(unpicked.getUUID(), unpicked);
+                manager.onPlayerJoin(unpicked);
+                check("shuo".equals(PlayerDataProvider.get(unpicked).getCharacterId())
+                        && PlayerDataProvider.get(unpicked).getGold() == 500, "offline seat regains its character and one opening purse");
+                PlayerDataProvider.get(unpicked).setGold(380);
+                manager.onPlayerJoin(unpicked);
+                check(PlayerDataProvider.get(unpicked).getGold() == 380, "a subsequent return never repays the opening purse");
+                manager.resetToLobby(server, true);
+                check(QueueLobby.snapshot(late).position() == 1, "round cleanup preserves the waiting line");
+                lobby(late, "leave", "");
+            }
+            command("myriad mod off");
+            removePlayers();
+        }
+        void checkQueueReset(ServerPlayer first, ServerPlayer second, ServerPlayer late) throws Exception {
+            command("myriad arena 5v5");
+            var inactive = players.get(2);
+            lobby(inactive, "join", "");
+            command("myriad arena 3v3");
+            check(QueueLobby.snapshot(inactive).position() == 1
+                    && "inactive".equals(QueueLobby.snapshot(inactive).reason()), "alternate map retains its waiting line");
+            var staleJoin = new LobbyNetworking.Action("join", "", QueueLobby.snapshot(late).queueToken());
+            lobby(first, "join", "");
+            lobby(second, "join", "");
+            var view = QueueLobby.snapshot(first);
+            check(view.canPropose() && view.proposalToken() != 0, "pre-reset proposal is valid for the waiting pair");
+            var staleProposal = new LobbyNetworking.Action("propose", "", view.proposalToken());
+            var staleLeave = new LobbyNetworking.Action("leave", "", view.queueToken());
+            receive(first, staleProposal);
+            check(QueueLobby.snapshot(second).voteSeconds() == 15, "administrator resets an active countdown");
+            check(command("myriad reset") == 1, "administrator full reset succeeds");
+            check(QueueLobby.snapshot(first).count() == 0 && QueueLobby.snapshot(first).voteSeconds() < 0
+                    && QueueLobby.snapshot(inactive).position() == 0, "reset clears both queues and the live countdown");
+            receive(late, staleJoin);
+            check(QueueLobby.snapshot(late).position() == 0, "pre-reset join cannot re-enrol the player");
+            lobby(first, "join", "");
+            lobby(second, "join", "");
+            receive(first, staleLeave);
+            receive(first, staleProposal);
+            var fresh = QueueLobby.snapshot(first);
+            check(fresh.count() == 2 && fresh.position() == 1 && fresh.canPropose() && fresh.voteSeconds() < 0,
+                    "pre-reset withdrawal and proposal cannot alter a freshly rejoined identical roster");
+            lobby(first, "leave", "");
+            lobby(second, "leave", "");
+        }
+
         void configurationRoundTrip() throws Exception {
             verifyImportedCoordinates();
             var originals=new HashMap<String,byte[]>();
@@ -336,7 +495,7 @@ public final class ArenaFixtureChecks implements ModInitializer {
             check(VisionSystem.brushInfos().size()==1 && VisionSystem.brushAt(new Vec3(ox+80,64,52))!=null && VisionSystem.brushAt(new Vec3((ox==0?256:0)+80,64,52))==null,"brush query uses this mode only");
             check(MonsterManager.spawnPointInfos().size()==3 && MapSystem.neutralCampMarkers().size()==3,"small, medium and random-boss camps route together");
             check(GameManager.get().spiritVeinSpawnSnapshot(false).size()==(ox==0?3:0) && GameManager.get().spiritVeinSpawnSnapshot(true).size()==(ox==0?2:0),"small vein and retained large candidate positions follow the baseline mode rules");
-            var ally=players.getFirst(); var enemy=players.getLast();
+            var ally=players.getFirst(); var enemy=opponent(ally);
             ally.setPos(ox+75,64,52); enemy.setPos(ox+80,64,52);
             check(!VisionSystem.canSee(ally,enemy),"enemy in active brush is concealed outside the brush");
             ally.setPos(ox+79,64,52);check(VisionSystem.canSee(ally,enemy),"entering the same brush reveals the opponent");
@@ -359,7 +518,13 @@ public final class ArenaFixtureChecks implements ModInitializer {
             check(minion.position().distanceTo(before)>.1,"spawned minion moves along its configured route with collision stepping");
             clock(start+9600);tick();check(MonsterManager.snapshot().getAsJsonArray("alive").size()==3,"random large boss spawns at its configured pit at eight minutes");
             if(ox==0) {
-                ally.setPos(Vec3.atBottomCenterOf(GameManager.get().spiritVeinSpawnSnapshot(false).get(1)));
+                // The outer veins lie within the corresponding team's tower range. Use the
+                // central vein so a randomly assigned capturer can survive all 120 ticks.
+                BlockPos vein = GameManager.get().spiritVeinSpawnSnapshot(false).get(2);
+                ally.setPos(Vec3.atBottomCenterOf(vein).add(0, 0, -4));
+                check(ally.isAlive() && !ally.isSpectator()
+                        && players.stream().filter(p -> p.distanceToSqr(Vec3.atCenterOf(vein)) <= 8 * 8).count() == 1,
+                        "one living participant occupies the uncontested central vein");
                 for(int i=1;i<=120;i++){clock(start+9600+i);tick();}
                 check(GameManager.get().ownedVeinStatus(ally,8)==1,"active small resource point captures through normal match ticks");
                 check(GameManager.snapshot().getAsJsonObject().getAsJsonObject("spiritVeins").size()==3,"large resource candidate coordinates do not reactivate the baseline paused large system");
@@ -373,7 +538,7 @@ public final class ArenaFixtureChecks implements ModInitializer {
             if(server.isDedicatedServer() && !Boolean.getBoolean("myriad.combatTests")) {MatchProgress.save(server);check(Files.isRegularFile(world.resolve("myriad_fabric_match.json")),"production checkpoint is written to the new Fabric filename");}
         }
         void winAndRestart() throws Exception {
-            var attacker=players.getFirst();Faction defending=GameManager.get().factionOf(players.getLast());
+            var attacker=players.getFirst();Faction defending=GameManager.get().factionOf(opponent(attacker));
             Mob crystal=units("CRYSTAL",defending).getFirst();float hp=LaneSystem.health(crystal);
             DamageCalc.dealBasicDamage(attacker,crystal,10_000_000,DamageCalc.Kind.TRUE);
             check(LaneSystem.health(crystal)==hp,"crystal is invulnerable while its lane towers stand");
@@ -393,7 +558,11 @@ public final class ArenaFixtureChecks implements ModInitializer {
             check(GameManager.get().getPhase()==GameManager.Phase.ENDED && GameManager.get().getWinner()==GameManager.get().factionOf(attacker),"destroying the unlocked enemy crystal declares the correct winner");
             tick();check(GameManager.get().getPhase()==GameManager.Phase.WAITING && lanes().isEmpty(),"next server tick returns everyone to lobby and clears generated lane entities");
             check(players.stream().allMatch(p -> p.position().distanceTo(new Vec3(-32.5,64,64.5))<.01),"ending the match uses the shared lobby rather than either battlefield");
-            command("myriad restart");check(GameManager.get().getPhase()==GameManager.Phase.PICKING && players.stream().allMatch(p -> PlayerDataProvider.get(p).getCharacterId()==null),"normal restart starts a clean draft without old character progress");
+            lobby(attacker, "requeue", "");
+            check(QueueLobby.snapshot(attacker).position()==1 && players.stream().filter(p -> QueueLobby.snapshot(p).position()>0).count()==1,
+                    "one result action requeues only its owner");
+            lobby(attacker, "leave", "");
+            check(GameManager.get().getPhase()==GameManager.Phase.WAITING, "leaving the next queue keeps the arena free");
         }
         void restored() throws Exception {
             String mode=System.getProperty("myriad.arenaFixtureMode","3v3");

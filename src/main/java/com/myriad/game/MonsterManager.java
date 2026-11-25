@@ -181,6 +181,7 @@ public final class MonsterManager {
 
     /** 生成野怪：记录召唤点与状态 */
     public static void spawn(ServerLevel level, BlockPos pos, MonsterType type) {
+        if (TrainingGround.isTraining(level)) return;
         spawnInternal(level, pos, type, null, false, 0);
     }
 
@@ -699,7 +700,7 @@ public final class MonsterManager {
     /** 击杀奖励：经验/金币（金钱猪为击杀阵营全员金币）/ 掉落 buff */
     public static void onKill(ServerPlayer killer, LivingEntity victim) {
         State s = STATES.get(victim.getUUID());
-        if (s == null) {
+        if (s == null || killer.level() != victim.level() || !eligibleForReward(killer)) {
             return;
         }
         MonsterType type = s.type;
@@ -715,7 +716,8 @@ public final class MonsterManager {
             GameManager manager = GameManager.get();
             Faction killerFaction = manager == null ? null : manager.factionOf(killer);
             long windUntil = victim.level().getGameTime() + 90L * 20L;
-            for (ServerPlayer p : ((ServerLevel) victim.level()).getServer().getPlayerList().getPlayers()) {
+            for (ServerPlayer p : killer.level().players()) {
+                if (!eligibleForReward(p)) continue;
                 if (killerFaction != null && manager.factionOf(p) != killerFaction) continue;
                 if (killerFaction == null && p != killer) continue;
                 PlayerData pd = PlayerDataProvider.get(p);
@@ -764,12 +766,19 @@ public final class MonsterManager {
         PlayerDataProvider.syncToClient(killer);
     }
 
+    private static boolean eligibleForReward(ServerPlayer player) {
+        var match = GameManager.get();
+        return !TrainingGround.isTraining(player.level()) && (match == null || match.getPhase() != GameManager.Phase.PLAYING
+                || match.isParticipant(player.getUUID()));
+    }
+
     /** 大型野怪奖励只发给击杀者所在阵营；未开对局时仅奖励击杀者。 */
     private static void grantTeamBossBuff(ServerPlayer killer, MonsterType type, long until) {
         String buff = type.getBuff();
         GameManager manager = GameManager.get();
         Faction faction = manager == null ? null : manager.factionOf(killer);
-        for (ServerPlayer player : ((ServerLevel) killer.level()).getServer().getPlayerList().getPlayers()) {
+        for (ServerPlayer player : killer.level().players()) {
+            if (!eligibleForReward(player)) continue;
             if (faction != null && manager.factionOf(player) != faction) continue;
             if (faction == null && player != killer) continue;
             PlayerData data = PlayerDataProvider.get(player);

@@ -5,6 +5,11 @@ import com.myriad.Myriad;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.storage.LevelResource;
@@ -40,14 +45,33 @@ public final class MatchArena {
     public static boolean available(MinecraftServer server, Mode mode) {
         return mode == Mode.RIFT || singleLaneReady(server.getWorldPath(LevelResource.ROOT));
     }
+    record ConfigStamp(FileTime modified, long bytes) {}
+
+    /** A queued 3v3 arena can be repaired externally while the server is running. */
+    static List<ConfigStamp> configurationStamp(MinecraftServer server) {
+        if (active != Mode.DUEL) return List.of();
+        var world = server.getWorldPath(LevelResource.ROOT);
+        var result = new ArrayList<ConfigStamp>(CONFIGS.length);
+        for (String file : CONFIGS) {
+            try {
+                var stat = Files.readAttributes(configuration(world, active, file), BasicFileAttributes.class);
+                result.add(new ConfigStamp(stat.lastModifiedTime(), stat.isRegularFile() ? stat.size() : -1));
+            } catch (java.io.IOException error) {
+                result.add(new ConfigStamp(null, -1));
+            }
+        }
+        return List.copyOf(result);
+    }
+
     public static boolean singleLaneReady(Path world) {
         try {
+            var configs = new HashMap<String, com.google.gson.JsonObject>();
             for (String file : CONFIGS) {
                 var path = configuration(world, Mode.DUEL, file);
                 if (!Files.isRegularFile(path)) return false;
-                JsonParser.parseString(Files.readString(path)).getAsJsonObject();
+                configs.put(file, JsonParser.parseString(Files.readString(path)).getAsJsonObject());
             }
-            var lane = JsonParser.parseString(Files.readString(configuration(world, Mode.DUEL, CONFIGS[0]))).getAsJsonObject();
+            var lane = configs.get(CONFIGS[0]);
             var enabled = lane.getAsJsonArray("enabledLanes");
             if (enabled == null || enabled.size() != 1 || !enabled.get(0).getAsString().equals("mid")) return false;
             var tiers = new java.util.HashSet<Integer>();
@@ -79,7 +103,7 @@ public final class MatchArena {
                 }
                 if (!factions.equals(java.util.Set.of("destruction", "guardian"))) return false;
             }
-            var minimap = JsonParser.parseString(Files.readString(configuration(world, Mode.DUEL, CONFIGS[4]))).getAsJsonObject();
+            var minimap = configs.get(CONFIGS[4]);
             return minimap.getAsJsonArray("corners").size() == 4;
         } catch (Exception error) { return false; }
     }
@@ -106,7 +130,10 @@ public final class MatchArena {
         GameManager manager = GameManager.get();
         if (requested == null || manager == null || manager.getPhase() != GameManager.Phase.WAITING) return false;
         if (!available(server, requested)) return false;
-        if (active == requested) return true;
+        if (active == requested) {
+            QueueLobby.arenaSelected(server);
+            return true;
+        }
         Path target = server.getWorldPath(LevelResource.ROOT).resolve(SELECTION);
         try {
             Path temp = Files.createTempFile(target.getParent(), "myriad-arena-", ".tmp");
@@ -130,6 +157,7 @@ public final class MatchArena {
         BaseRules.clear();
         MapSystem.tick(server.overworld());
         MatchProgress.save(server);
+        QueueLobby.arenaSelected(server);
         return true;
     }
 }

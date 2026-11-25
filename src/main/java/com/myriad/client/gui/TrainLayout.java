@@ -4,11 +4,13 @@ import com.myriad.client.gui.SkillChoiceLayout.Box;
 
 /** Scrollable training controls; title and close button never scroll. */
 public record TrainLayout(Box panel,Box viewport,int scroll,int maximum){
-    public static final int ROWS=11,STEP=36;
+    public static final int ROWS=17,STEP=36;
     public static TrainLayout create(int width,int height,int requested){
-        int w=Math.max(1,Math.min(440,width-24)),h=Math.max(1,Math.min(480,height-16));
+        int w=Math.max(1,Math.min(440,width-24)),h=Math.max(1,Math.min(480,height-(height<112?4:16)));
         var p=new Box((width-w)/2,(height-h)/2,w,h);
-        var v=new Box(p.x()+12,p.y()+49,Math.max(1,w-24),Math.max(1,h-81));
+        int header=h>=144?49:h>=107?38:21;
+        int footer=h>=144?32:29;
+        var v=new Box(p.x()+12,p.y()+header,Math.max(1,w-24),Math.max(1,h-header-footer));
         int max=Math.max(0,ROWS*STEP-v.h());
         return new TrainLayout(p,v,Math.clamp(requested,0,max),max);
     }

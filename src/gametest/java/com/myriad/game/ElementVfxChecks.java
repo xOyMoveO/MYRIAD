@@ -19,7 +19,9 @@ final class ElementVfxChecks {
                 String id=textures.get(i).getAsString().split(":",2)[1];
                 try(var png=ElementVfxChecks.class.getResourceAsStream("/assets/myriad/textures/particle/"+id+".png")){
                     h.assertTrue(png!=null,"Every custom sprite is packaged: "+id);
-                    if(i>=AbilityVfxMaterials.INK_HD_PAPER){
+                    if (i == LUOXIA_ARROW_MODEL) {
+                        verifyLuoxiaModelAtlas(h, javax.imageio.ImageIO.read(png));
+                    } else if(i>=AbilityVfxMaterials.INK_HD_PAPER){
                         var atlas=javax.imageio.ImageIO.read(png);
                         h.assertTrue(atlas.getWidth()==512&&atlas.getHeight()==128&&atlas.getColorModel().hasAlpha(),
                                 "Ink and wind sprites pack four native 128px RGBA frames: "+id);
@@ -63,6 +65,30 @@ final class ElementVfxChecks {
         verifyInkAndWind(h);
         exportPreview();
         System.out.println("[MYRIAD-ELEMENT-VFX] PASS: "+count+" solid projectile stages, own material families, warning/active separation, atlas resources");
+    }
+
+    private static void verifyLuoxiaModelAtlas(GameTestHelper h, java.awt.image.BufferedImage atlas) {
+        h.assertTrue(atlas.getWidth() == 128 && atlas.getHeight() == 64 && !atlas.getColorModel().hasAlpha()
+                && atlas.getColorModel().getNumColorComponents() == 3, "Luoxia arrows share a 128×64 opaque RGB model atlas");
+        // Each of the eight 32px material swatches has a 1px border around its face UVs.
+        var swatches = new HashSet<List<Float>>();
+        for (int y = 0; y < 64; y += 32) {
+            for (int x = 0; x < 128; x += 32)
+                swatches.add(List.of((x + 1) / 128f, (y + 1) / 64f, (x + 31) / 128f, (y + 31) / 64f));
+        }
+        var used = new HashSet<List<Float>>();
+        for (int shape = 0; shape < 8; shape++) {
+            var flight = new AbilityVfxPayload(1, -1, 14, 2, FLIGHT, Vec3.ZERO, new Vec3(0,0,1), .2f, shape, 3, 0, false, 1);
+            var faces = AbilityVfxGeometry.build(flight, .5f, false);
+            h.assertTrue(!faces.isEmpty(), "Every arrow shape has textured faces: " + shape);
+            for (var face : faces) {
+                var uv = List.of(face.startU(), face.startV(), face.endU(), face.endV());
+                h.assertTrue(face.material() == LUOXIA_ARROW_MODEL && swatches.contains(uv),
+                        "Arrow faces sample a single material inside its border: " + shape);
+                used.add(uv);
+            }
+        }
+        h.assertTrue(used.equals(swatches), "The arrow models use all eight atlas materials");
     }
 
     private static void verifyLayerAtlas(GameTestHelper h,java.awt.image.BufferedImage atlas,int id,String name){

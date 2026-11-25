@@ -34,6 +34,34 @@ public final class JiarenManager {
     private static final Map<UUID, Float> HP = new HashMap<>();
     private static final Map<UUID, UUID> FRIENDLY_OWNER = new HashMap<>();
 
+    private static final Map<UUID, UUID> PRACTICE_OWNER = new HashMap<>();
+
+    public static boolean ownedBy(ServerPlayer player, LivingEntity target) {
+        return player.getUUID().equals(PRACTICE_OWNER.get(target.getUUID()));
+    }
+
+    public static boolean mayEdit(ServerPlayer player, LivingEntity target) {
+        return isJiaren(target.getUUID()) && (!TrainingGround.isTraining(player.level()) || ownedBy(player, target));
+    }
+
+    public static void clearOwned(ServerPlayer player) {
+        var level = player.level().getServer().getLevel(TrainingGroundMap.KEY);
+        if (level == null) return;
+        for (UUID id : Set.copyOf(PRACTICE_OWNER.keySet())) {
+            if (!player.getUUID().equals(PRACTICE_OWNER.get(id))) continue;
+            var entity = level.getEntity(id);
+            if (entity != null) entity.discard();
+            forget(id);
+        }
+    }
+
+    private static void forget(UUID id) {
+        JIAREN.remove(id);
+        HP.remove(id);
+        FRIENDLY_OWNER.remove(id);
+        PRACTICE_OWNER.remove(id);
+    }
+
     public static boolean isJiaren(UUID uuid) {
         return JIAREN.contains(uuid);
     }
@@ -59,6 +87,16 @@ public final class JiarenManager {
 
     private static void createInternal(ServerPlayer player, boolean friendly) {
         ServerLevel level = (ServerLevel) player.level();
+        if (TrainingGround.isTraining(player)) {
+            // Replace the player's previous dummy of this type so unattended requests cannot fill the arena.
+            for (UUID id : Set.copyOf(PRACTICE_OWNER.keySet())) {
+                if (player.getUUID().equals(PRACTICE_OWNER.get(id)) && FRIENDLY_OWNER.containsKey(id) == friendly) {
+                    var existing = level.getEntity(id);
+                    if (existing != null) existing.discard();
+                    forget(id);
+                }
+            }
+        }
         Villager villager = EntityTypes.VILLAGER.create(level, EntitySpawnReason.MOB_SUMMONED);
         if (villager == null) {
             return;
@@ -79,6 +117,7 @@ public final class JiarenManager {
         villager.setHealth(20.0f);
         level.addFreshEntity(ModEntityTracker.markGenerated(villager));
         JIAREN.add(villager.getUUID());
+        if (TrainingGround.isTraining(player)) PRACTICE_OWNER.put(villager.getUUID(), player.getUUID());
         if (friendly) FRIENDLY_OWNER.put(villager.getUUID(), player.getUUID());
         HP.put(villager.getUUID(), MAX_HP);
         player.sendSystemMessage(Component.translatable("message.myriad.jiaren_created"));
@@ -118,11 +157,9 @@ public final class JiarenManager {
         ServerLevel level = (ServerLevel) player.level();
         int removed = 0;
         for (Villager villager : level.getEntitiesOfClass(Villager.class,
-                player.getBoundingBox().inflate(5.0), v -> isJiaren(v.getUUID()))) {
+                player.getBoundingBox().inflate(5.0), v -> mayEdit(player, v))) {
             villager.discard();
-            JIAREN.remove(villager.getUUID());
-            HP.remove(villager.getUUID());
-            FRIENDLY_OWNER.remove(villager.getUUID());
+            forget(villager.getUUID());
             removed++;
         }
         player.sendSystemMessage(Component.translatable("message.myriad.jiaren_removed", removed));
@@ -130,15 +167,19 @@ public final class JiarenManager {
 
     /** 新一轮模组玩法开启时清除所有训练假人与其血量缓存。 */
     public static void clearGenerated(net.minecraft.server.MinecraftServer server) {
-        for (ServerLevel level : server.getAllLevels()) {
-            for (net.minecraft.world.entity.Entity entity : level.getAllEntities()) {
-                if (entity instanceof Villager villager && JIAREN.contains(villager.getUUID())) {
-                    villager.discard();
-                }
-            }
-        }
+        for (ServerLevel level : server.getAllLevels()) clearGenerated(level);
+        PRACTICE_OWNER.clear();
         JIAREN.clear();
         HP.clear();
         FRIENDLY_OWNER.clear();
     }
+    static void clearGenerated(ServerLevel level) {
+        for (var entity : level.getAllEntities()) {
+            if (entity instanceof Villager && JIAREN.contains(entity.getUUID())) {
+                forget(entity.getUUID());
+                entity.discard();
+            }
+        }
+    }
+
 }

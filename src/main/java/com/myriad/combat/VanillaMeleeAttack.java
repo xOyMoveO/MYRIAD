@@ -32,7 +32,7 @@ public final class VanillaMeleeAttack {
                 ||player.getAttackStrengthScale(.5f)<1
                 ||data.getBuff("g1_stun")>0||!PlayerDataProvider.isInitialWeapon(player.getMainHandItem())
                 ||!(raw instanceof LivingEntity target)||!target.isAlive()||target==player
-                ||player.level()!=target.level()||SkillTargets.ally(player,target)
+                ||!SkillTargets.hostile(player,target)
                 ||target instanceof net.minecraft.world.entity.player.Player victim&&(victim.isCreative()||victim.isSpectator())
                 ||!player.isWithinEntityInteractionRange(target,0)||!player.hasLineOfSight(target)
                 ||!VisionSystem.canSee(player,target)||target.isInvisibleTo(player))return false;

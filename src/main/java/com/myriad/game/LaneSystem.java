@@ -1037,8 +1037,8 @@ public final class LaneSystem {
         if (state.tower()) {
             DESTROYED_TOWERS.add(towerId(state.faction,state.lane,state.towerTier));
             if (server != null) {
-                for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-                    if (factionOf(player) == state.faction) {
+                for (ServerPlayer player : server.overworld().players()) {
+                    if (GameManager.get().isParticipant(player.getUUID()) && factionOf(player) == state.faction) {
                         com.myriad.network.Packets.sendToPlayer(player,
                                 new com.myriad.network.TowerAlertPayload(
                                         state.lane.id, state.towerTier));
@@ -1117,8 +1117,8 @@ public final class LaneSystem {
     private static void grantTeamGold(Faction faction, int amount, LivingEntity victim) {
         if (server == null) return;
         GameManager manager = GameManager.get();
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            if (manager == null || manager.factionOf(player) != faction) continue;
+        for (ServerPlayer player : server.overworld().players()) {
+            if (manager == null || !manager.isParticipant(player.getUUID()) || manager.factionOf(player) != faction) continue;
             PlayerData data = PlayerDataProvider.get(player);
             if (data != null) {
                 data.addGold(amount);
@@ -1360,7 +1360,8 @@ public final class LaneSystem {
             BlockPos base = respawnPoint(manager.factionOf(player));
             if (base == null) continue;
             Vec3 target = Vec3.atBottomCenterOf(base).add(0, 1.0, 0);
-            player.teleportTo(target.x, target.y, target.z);
+            player.teleportTo(level, target.x, target.y, target.z, java.util.Set.of(),
+                    player.getYRot(), player.getXRot(), true);
             player.setDeltaMovement(Vec3.ZERO);
             player.resetFallDistance();
         }
@@ -1486,7 +1487,12 @@ public final class LaneSystem {
     }
 
     private static void broadcast(MatchMessages.Tone tone, Component message) {
-        MatchMessages.broadcast(server, tone, message);
+        if (server == null) return;
+        GameManager manager = GameManager.get();
+        for (ServerPlayer player : server.overworld().players()) {
+            if (manager == null || !manager.isQueuedMatch() || manager.isParticipant(player.getUUID()))
+                MatchMessages.send(player, tone, message);
+        }
     }
 
     private static void saveLayout() {

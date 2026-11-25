@@ -55,14 +55,14 @@ public final class VisionSystem {
     private static final Map<UUID, Long> REVEALED_UNTIL = new HashMap<>();
     private static final Map<UUID, Set<Integer>> LAST_VISIBLE = new HashMap<>();
     private static MinecraftServer server;
-    private static boolean lastEnabled;
+    private static final Set<UUID> HEALTH_VIEWERS = new HashSet<>();
 
     public static void initialize(MinecraftServer minecraftServer) {
         server = minecraftServer;
         loadBrushes();
         REVEALED_UNTIL.clear();
         LAST_VISIBLE.clear();
-        lastEnabled = false;
+        HEALTH_VIEWERS.clear();
     }
 
     public static void shutdown() {
@@ -70,48 +70,27 @@ public final class VisionSystem {
         BRUSHES.clear();
         REVEALED_UNTIL.clear();
         LAST_VISIBLE.clear();
-        lastEnabled = false;
+        HEALTH_VIEWERS.clear();
     }
 
     public static void tick(ServerLevel level) {
         if (level.getGameTime() % SYNC_INTERVAL_TICKS != 0) return;
         GameManager manager = GameManager.get();
-        if (ModState.isEnabled() && (TrainingMode.isEnabled()
-                || manager != null && manager.getPhase() == GameManager.Phase.PLAYING)) {
-            for (ServerPlayer viewer : level.players()) {
-                var team = com.myriad.player.PlayerDataProvider.get(viewer).getFaction();
-                var bars = new ArrayList<com.myriad.network.EnemyHealthPayload.Entry>();
-                boolean waitingSpectator = HeroRespawnSystem.isWaiting(viewer);
-                if (team != null && viewer.isAlive() && (!viewer.isSpectator() || waitingSpectator)) {
-                    for (ServerPlayer target : level.players()) {
-                        var targetData = com.myriad.player.PlayerDataProvider.get(target);
-                        if (target == viewer || targetData.getFaction() == null || !target.isAlive()
-                                || target.isSpectator() 
-                                || target.isInvisibleTo(viewer) || !viewer.hasLineOfSight(target)) continue;
-                        boolean ally = team == targetData.getFaction();
-                        if (!ally && !canSee(viewer, target)) continue;
-                        bars.add(new com.myriad.network.EnemyHealthPayload.Entry(target.getId(),
-                                target.getHealth(), targetData.getModMaxHealth(), ally,
-                                com.myriad.player.ModShieldSystem.displayValue(target)));
-                    }
-                }
-                Packets.sendToPlayer(viewer, new com.myriad.network.EnemyHealthPayload(bars));
-            }
-        }
-        boolean enabled = manager != null && manager.getPhase() == GameManager.Phase.PLAYING
-                && ModState.isEnabled();
-        if (!enabled) {
-            if (lastEnabled) {
-                for (ServerPlayer viewer : level.players()) send(viewer, false, Set.of());
-                LAST_VISIBLE.clear();
-            }
-            lastEnabled = false;
-            return;
-        }
-        lastEnabled = true;
+        boolean match = manager != null && manager.getPhase() == GameManager.Phase.PLAYING && ModState.isEnabled();
         long now = level.getGameTime();
         REVEALED_UNTIL.entrySet().removeIf(entry -> entry.getValue() <= now);
         for (ServerPlayer viewer : level.players()) {
+            boolean participant = match && manager.isParticipant(viewer.getUUID()) && !TrainingMode.isEnabled(viewer);
+            if (ModState.isEnabled() && (participant || TrainingMode.isEnabled(viewer))) {
+                syncHealth(viewer);
+                HEALTH_VIEWERS.add(viewer.getUUID());
+            } else if (HEALTH_VIEWERS.remove(viewer.getUUID())) {
+                Packets.sendToPlayer(viewer, new com.myriad.network.EnemyHealthPayload(List.of()));
+            }
+            if (!participant) {
+                if (LAST_VISIBLE.remove(viewer.getUUID()) != null) send(viewer, false, Set.of());
+                continue;
+            }
             Set<Integer> visible = new HashSet<>();
             visible.add(viewer.getId());
             for (ServerPlayer target : level.players()) {
@@ -123,7 +102,28 @@ public final class VisionSystem {
                 LAST_VISIBLE.put(viewer.getUUID(), Set.copyOf(visible));
             }
         }
-        LAST_VISIBLE.keySet().removeIf(id -> level.getPlayerByUUID(id) == null);
+        var players = level.getServer().getPlayerList();
+        LAST_VISIBLE.keySet().removeIf(id -> players.getPlayer(id) == null);
+        HEALTH_VIEWERS.removeIf(id -> players.getPlayer(id) == null);
+    }
+
+    private static void syncHealth(ServerPlayer viewer) {
+        var team = com.myriad.player.PlayerDataProvider.get(viewer).getFaction();
+        var bars = new ArrayList<com.myriad.network.EnemyHealthPayload.Entry>();
+        if (team != null && viewer.isAlive() && (!viewer.isSpectator() || HeroRespawnSystem.isWaiting(viewer))) {
+            for (ServerPlayer target : viewer.level().players()) {
+                var targetData = com.myriad.player.PlayerDataProvider.get(target);
+                if (target == viewer || targetData.getFaction() == null || !TrainingGround.canFight(target)
+                        || !target.isAlive() || target.isSpectator()
+                        || target.isInvisibleTo(viewer) || !viewer.hasLineOfSight(target)) continue;
+                boolean ally = team == targetData.getFaction();
+                if (!ally && !canSee(viewer, target)) continue;
+                bars.add(new com.myriad.network.EnemyHealthPayload.Entry(target.getId(),
+                        target.getHealth(), targetData.getModMaxHealth(), ally,
+                        com.myriad.player.ModShieldSystem.displayValue(target)));
+            }
+        }
+        Packets.sendToPlayer(viewer, new com.myriad.network.EnemyHealthPayload(bars));
     }
 
     private static void send(ServerPlayer viewer, boolean enabled, Set<Integer> visible) {
@@ -134,8 +134,11 @@ public final class VisionSystem {
     /** 直接目标类攻击的服务端可见性校验。盲放范围技能仍可命中迷雾中的单位。 */
     public static boolean canSee(ServerPlayer viewer, Entity target) {
         if (!(target instanceof ServerPlayer targetPlayer) || viewer == targetPlayer) return true;
+        if (viewer.level() != targetPlayer.level()) return false;
         GameManager manager = GameManager.get();
-        if (manager == null || manager.getPhase() != GameManager.Phase.PLAYING || !ModState.isEnabled()) return true;
+        if (TrainingMode.isEnabled(viewer) || manager == null || manager.getPhase() != GameManager.Phase.PLAYING
+                || !ModState.isEnabled() || !manager.isParticipant(viewer.getUUID())) return true;
+        if (!manager.isParticipant(targetPlayer.getUUID())) return false;
         if (HeroRespawnSystem.isWaiting(viewer)) {
             Faction team = manager.factionOf(viewer);
             if (team != null && team == manager.factionOf(targetPlayer)) return true;
@@ -147,7 +150,6 @@ public final class VisionSystem {
             return false;
         }
         if (viewer.isSpectator()) return true;
-        if (viewer.level() != targetPlayer.level()) return false;
         Faction team = manager.factionOf(viewer);
         if (team != null && team == manager.factionOf(targetPlayer)) return true;
         if (targetPlayer.isCurrentlyGlowing()) return true;
@@ -163,7 +165,7 @@ public final class VisionSystem {
         GameManager manager = GameManager.get();
         boolean personalVision = viewer.distanceToSqr(targetPlayer) <= PLAYER_VISION_RADIUS * PLAYER_VISION_RADIUS;
         Faction faction = manager.factionOf(viewer);
-        List<Vec3> wards = faction == null ? List.of() : TacticalSupplySystem.wardPositions(faction);
+        List<Vec3> wards = faction == null ? List.of() : TacticalSupplySystem.wardPositions(viewer.level(), faction);
         boolean wardVision = wards.stream().anyMatch(pos -> pos.distanceToSqr(targetPlayer.position())
                 <= TacticalSupplySystem.wardVisionRadiusSqr());
         if (!personalVision && !wardVision) return false;
@@ -188,7 +190,8 @@ public final class VisionSystem {
     public static boolean canSeePosition(ServerPlayer viewer, Vec3 position) {
         if (viewer == null || position == null) return false;
         GameManager manager = GameManager.get();
-        if (manager == null || manager.getPhase() != GameManager.Phase.PLAYING || !ModState.isEnabled()) return true;
+        if (TrainingMode.isEnabled(viewer) || manager == null || manager.getPhase() != GameManager.Phase.PLAYING
+                || !ModState.isEnabled() || !manager.isParticipant(viewer.getUUID())) return true;
         if (viewer.isSpectator()) return true;
         Faction team = manager.factionOf(viewer);
         if (viewer.isAlive() && !viewer.isSpectator() && personalCanSeePosition(viewer, position)) return true;
@@ -204,7 +207,7 @@ public final class VisionSystem {
         boolean personalVision = viewer.position().distanceToSqr(position)
                 <= PLAYER_VISION_RADIUS * PLAYER_VISION_RADIUS;
         Faction faction = manager.factionOf(viewer);
-        List<Vec3> wards = faction == null ? List.of() : TacticalSupplySystem.wardPositions(faction);
+        List<Vec3> wards = faction == null ? List.of() : TacticalSupplySystem.wardPositions(viewer.level(), faction);
         boolean wardVision = wards.stream().anyMatch(pos -> pos.distanceToSqr(position)
                 <= TacticalSupplySystem.wardVisionRadiusSqr());
         if (!personalVision && !wardVision) return false;

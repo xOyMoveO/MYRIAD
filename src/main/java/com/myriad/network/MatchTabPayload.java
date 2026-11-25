@@ -24,14 +24,28 @@ public record MatchTabPayload(long elapsedTicks, List<Entry> players) implements
     @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     public static void sync(MinecraftServer server) {
         GameManager gm = GameManager.get();
-        var entries = server.getPlayerList().getPlayers().stream().map(p -> {
-            var d = PlayerDataProvider.get(p);
-            return new Entry(p.getUUID(), p.getName().getString(), d == null || d.getCharacterId() == null ? "" : d.getCharacterId(),
-                    NetworkSetup.factionId(gm == null ? null : gm.factionOf(p)), d == null ? 1 : d.getLevel(),
-                    gm == null ? 0 : gm.killsOf(p), gm == null ? 0 : gm.deathsOf(p),
-                    d == null ? 0 : d.getMatchGoldEarned());
-        }).toList();
+        List<Entry> entries;
+        if (gm != null && gm.isQueuedMatch()) {
+            entries = gm.queuePickOrder().stream().map(id -> {
+                var online = server.getPlayerList().getPlayer(id);
+                if (online != null) return entry(online, gm);
+                return new Entry(id, gm.queueName(id), gm.queuePickedRole(id),
+                        NetworkSetup.factionId(gm.queueFaction(id)), 0, 0, 0, 0);
+            }).toList();
+        } else {
+            entries = server.getPlayerList().getPlayers().stream().map(p -> entry(p, gm)).toList();
+        }
         var packet = new MatchTabPayload(gm == null ? -1 : gm.getMatchElapsedTicks(server.overworld().getGameTime()), entries);
-        for (var player : server.getPlayerList().getPlayers()) Packets.sendToPlayer(player, packet);
+        for (var player : server.getPlayerList().getPlayers()) {
+            if (gm == null || !gm.isQueuedMatch() || gm.isParticipant(player.getUUID())) Packets.sendToPlayer(player, packet);
+        }
     }
+    private static Entry entry(net.minecraft.server.level.ServerPlayer player, GameManager gm) {
+        var d = PlayerDataProvider.get(player);
+        return new Entry(player.getUUID(), player.getName().getString(), d == null || d.getCharacterId() == null ? "" : d.getCharacterId(),
+                NetworkSetup.factionId(gm == null ? null : gm.factionOf(player)), d == null ? 1 : d.getLevel(),
+                gm == null ? 0 : gm.killsOf(player), gm == null ? 0 : gm.deathsOf(player),
+                d == null ? 0 : d.getMatchGoldEarned());
+    }
+
 }

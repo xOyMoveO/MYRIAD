@@ -50,7 +50,7 @@ def main():
     print(f"Created synthetic fixture at {target}; surface y=64; port={args.port}")
     print("Install the current Fabric server and MYRIAD JAR in this new directory; reuse cached dependencies.")
     print("Handle Minecraft EULA explicitly before starting. No EULA acceptance is written by this tool.")
-    print("Console: op <tester>; myriad mod on; myriad arena 3v3 (or 5v5); myriad start")
+    print("Console: op <tester>, then myriad mod on and myriad arena 3v3 (or 5v5). Players join from the H lobby.")
     print("See docs/fabric/arena-fixture.md for complete two-mode, lifecycle and human-map steps.")
 
 

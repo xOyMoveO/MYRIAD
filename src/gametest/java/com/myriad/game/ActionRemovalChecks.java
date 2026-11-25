@@ -41,12 +41,12 @@ final class ActionRemovalChecks {
                     "MyriadHandRendererMixin", "MyriadCameraMixin", "MyriadLivingRendererMixin", "MyriadNameTagMixin")),
                     "Gameplay, local time, attached light and Yike local weapon pose hooks remain; no retired player-action mixin returns");
         } catch (java.io.IOException e) { throw new IllegalStateException(e); }
-        var ranged = Set.of("xuanchen", "hanze", "qingluo", "yunsheng", "yike");
+        var ranged = Set.of("xuanchen", "hanze", "qingluo", "yunsheng", "yike", "luoxia");
         for (var role : CharacterType.values()) {
             h.assertTrue(VanillaMeleeAttack.usesVanilla(role) == !ranged.contains(role.getId()),
                     "Removing actions must not reroute specialized ranged attacks: " + role.getId());
         }
         h.assertTrue(!VanillaMeleeAttack.usesVanilla(null), "Unselected players remain vanilla, without a mod attack route");
-        System.out.println("[MYRIAD-ACTION-REMOVAL] PASS: no retired player-action classes/assets/mixins, all fourteen attack routes preserved; new Night Shadow local first-person view is separate");
+        System.out.println("[MYRIAD-ACTION-REMOVAL] PASS: no retired player-action classes/assets/mixins, current roster attack routes preserved; new Night Shadow local first-person view is separate");
     }
 }

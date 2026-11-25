@@ -35,11 +35,12 @@ public final class MatchBalance {
     public static boolean isUnderdog(int ownLevel,int enemyLevel) { return enemyLevel-ownLevel>=2; }
     public static int farmReward(ServerPlayer p,int base,boolean xp) {
         var m=GameManager.get();
-        if(!ModState.isEnabled()||m==null||m.getPhase()!=GameManager.Phase.PLAYING||TrainingMode.isEnabled())return base;
+        if(!ModState.isEnabled()||m==null||m.getPhase()!=GameManager.Phase.PLAYING||TrainingMode.isEnabled(p))return base;
         Faction faction=m.factionOf(p);
         if(faction==null)return base;
         double enemyLevel=0,ownIncome=0,enemyIncome=0; int own=0,enemy=0;
         for(var other:p.level().getServer().getPlayerList().getPlayers()) {
+            if (!m.isParticipant(other.getUUID())) continue;
             Faction otherFaction=m.factionOf(other);
             if(otherFaction==null)continue;
             var data=PlayerDataProvider.get(other);

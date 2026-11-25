@@ -84,6 +84,9 @@ public class SettingsScreen extends Screen {
                     .bounds(listX + 298, y, 42, 18)
                     .build());
         }
+        addRenderableWidget(Button.builder(Component.translatable("lobby.myriad.arena.title"), btn ->
+                        net.minecraft.client.Minecraft.getInstance().setScreenAndShow(new TeamManageScreen()))
+                .bounds(listX, startY + SETTINGS.length * ROW_H + 82, listW, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("screen.myriad.minimap_position.open"), btn ->
                         net.minecraft.client.Minecraft.getInstance().setScreenAndShow(
                                 new MinimapPositionScreen(this)))

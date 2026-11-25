@@ -82,24 +82,24 @@ public final class ArenaModesCheck {
         var destroyed = (Set<String>)field("DESTROYED_TOWERS");
         var siege = LaneSystem.class.getDeclaredMethod("siegeUnlocked",Faction.class,LaneSystem.Lane.class); siege.setAccessible(true);
         var vulnerable = LaneSystem.class.getDeclaredMethod("crystalVulnerable",Faction.class); vulnerable.setAccessible(true);
-        check(!(boolean)vulnerable.invoke(null,Faction.XUANXIAO), "Crystal protected before towers fall");
-        destroyed.add("xuanxiao/mid/1");
-        check(!(boolean)vulnerable.invoke(null,Faction.XUANXIAO), "One destroyed tower does not unlock crystal");
-        for (int tier : expectedTiers) destroyed.add("xuanxiao/mid/" + tier);
-        check((boolean)vulnerable.invoke(null,Faction.XUANXIAO), "All configured towers destroyed unlock 3v3 crystal");
-        check(!(boolean)siege.invoke(null,Faction.YOUMING,LaneSystem.Lane.TOP), "Disabled lane cannot unlock siege");
+        check(!(boolean)vulnerable.invoke(null,Faction.GUARDIAN), "Crystal protected before towers fall");
+        destroyed.add("guardian/mid/1");
+        check(!(boolean)vulnerable.invoke(null,Faction.GUARDIAN), "One destroyed tower does not unlock crystal");
+        for (int tier : expectedTiers) destroyed.add("guardian/mid/" + tier);
+        check((boolean)vulnerable.invoke(null,Faction.GUARDIAN), "All configured towers destroyed unlock 3v3 crystal");
+        check(!(boolean)siege.invoke(null,Faction.DESTRUCTION,LaneSystem.Lane.TOP), "Disabled lane cannot unlock siege");
         destroyed.clear();
         check(LaneSystem.minimapPaths().stream().allMatch(p -> p.lane() == LaneSystem.Lane.MID.ordinal()), "Minimap has only active route");
         enabled.invoke(null, new JsonObject());
         check(((Set<?>)field("ENABLED_LANES")).size() == 3, "Switch back to legacy map restores three lanes");
         check(!(boolean)ready.invoke(null), "5v5 readiness still requires all eighteen towers");
 
-        for (String arena : List.of("5v5", "3v3")) for (int mode : List.of(0, 1)) {
+        for (String arena : List.of("5v5", "3v3")) {
             var buf = new FriendlyByteBuf(Unpooled.buffer());
             try {
-                var payload = new NetworkSetup.StartMatchPayload(mode, arena);
-                NetworkSetup.StartMatchPayload.STREAM_CODEC.encode(buf, payload);
-                check(NetworkSetup.StartMatchPayload.STREAM_CODEC.decode(buf).equals(payload) && !buf.isReadable(), "Start packet roundtrip");
+                var payload = new NetworkSetup.SelectArenaPayload(arena);
+                NetworkSetup.SelectArenaPayload.CODEC.encode(buf, payload);
+                check(NetworkSetup.SelectArenaPayload.CODEC.decode(buf).equals(payload) && !buf.isReadable(), "Arena choice roundtrip");
             } finally { buf.release(); }
         }
         var buf = new FriendlyByteBuf(Unpooled.buffer());

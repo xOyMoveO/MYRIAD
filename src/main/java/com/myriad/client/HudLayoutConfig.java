@@ -53,6 +53,18 @@ public final class HudLayoutConfig {
     public record State(float x, float y, float scale, boolean visible) { }
     private static final EnumMap<Element, State> STATES = new EnumMap<>(Element.class);
     private static boolean loaded;
+    private static boolean menuAnimations = true;
+
+    public static boolean menuAnimations() {
+        ensureLoaded();
+        return menuAnimations;
+    }
+
+    public static void toggleMenuAnimations() {
+        ensureLoaded();
+        menuAnimations = !menuAnimations;
+        save();
+    }
 
     private HudLayoutConfig() { }
 
@@ -122,6 +134,7 @@ public final class HudLayoutConfig {
         if (!Files.isRegularFile(path)) return;
         try {
             JsonObject root = JsonParser.parseString(Files.readString(path)).getAsJsonObject();
+            menuAnimations = !root.has("menuAnimations") || root.get("menuAnimations").getAsBoolean();
             int skillsVersion = root.has("skillsDockVersion") ? root.get("skillsDockVersion").getAsInt() : 0;
             for (Element element : Element.values()) {
                 if(element==Element.SKILLS && skillsVersion<1)continue;
@@ -146,6 +159,7 @@ public final class HudLayoutConfig {
 
     private static void save() {
         JsonObject root = new JsonObject();
+        root.addProperty("menuAnimations", menuAnimations);
         root.addProperty("skillsDockVersion",SkillBarLayout.DOCK_VERSION);
         for (Element element : Element.values()) {
             State state = STATES.get(element);

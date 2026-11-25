@@ -32,6 +32,8 @@ import com.myriad.character.Skill;
 import com.myriad.game.Faction;
 import com.myriad.game.GameManager;
 import com.myriad.game.GameRules;
+import com.myriad.game.TrainingGround;
+import com.myriad.game.TrainingMode;
 import com.myriad.game.SpiritFlow;
 import com.myriad.network.NetworkSetup;
 import com.myriad.registry.ModAttributes;
@@ -73,7 +75,7 @@ public final class PlayerDataProvider {
         com.myriad.combat.CombatImpactFeedback.confirmed(attacker,target,pending.type(),pending.crit(),
                 pending.skill()&&!pending.direct(),actualDamage,false);
         if(!pending.skill())com.myriad.character.skills.yingxiao.rework.NightBasicVisuals.confirmed(attacker,target);
-        if(target instanceof ServerPlayer victim && attacker!=victim && GameManager.get()!=null
+        if(target instanceof ServerPlayer victim && attacker!=victim && !TrainingGround.isTraining(attacker) && GameManager.get()!=null
                 && GameManager.get().factionOf(attacker)!=null
                 && GameManager.get().factionOf(attacker)!=GameManager.get().factionOf(victim)) {
             com.myriad.player.EntityState.data(victim).putString("myriad_last_hero",attacker.getUUID().toString());
@@ -113,6 +115,8 @@ public final class PlayerDataProvider {
             return;
         }
         GameManager manager = GameManager.get();
+        boolean showMatch = manager != null && !TrainingGround.isTraining(player)
+                && (!manager.isQueuedMatch() || manager.isParticipant(player.getUUID()));
         int xpToNext = LevelSystem.xpToNext(data.getLevel());
         // 属性快照（descriptionId -> 当前值，供客户端属性面板显示；模组属性不在 syncable 列表，需显式收集）
         java.util.Map<String, Double> attrs = new java.util.HashMap<>();
@@ -152,19 +156,19 @@ public final class PlayerDataProvider {
                 (int) data.getMana(),
                 data.getCarrying(),
                 NetworkSetup.factionId(data.getFaction()),
-                manager == null ? 0 : manager.getGuardianScore(),
-                manager == null ? 0 : manager.getDestructionScore(),
-                manager == null ? 0 : NetworkSetup.phaseId(manager.getPhase()),
+                showMatch ? manager.getGuardianScore() : 0,
+                showMatch ? manager.getDestructionScore() : 0,
+                NetworkSetup.phaseId(showMatch ? manager.getPhase() : GameManager.Phase.WAITING),
                 data.getCharacterId() == null ? "" : data.getCharacterId(),
                 NetworkSetup.cooldownOf(data, CharacterType.SLOT_Q),
                 NetworkSetup.cooldownOf(data, CharacterType.SLOT_W),
                 NetworkSetup.cooldownOf(data, CharacterType.SLOT_E),
                 NetworkSetup.cooldownOf(data, CharacterType.SLOT_R),
                 NetworkSetup.cooldownOf(data, CharacterType.SLOT_F),
-                com.myriad.game.TrainingMode.isEnabled(),
-                com.myriad.game.TrainingMode.isNoCooldown(),
-                com.myriad.game.TrainingMode.isNoGoldCost(),
-                com.myriad.game.TrainingMode.isNoMana(),
+                TrainingMode.isEnabled(player),
+                TrainingMode.isNoCooldown(player),
+                TrainingMode.isNoGoldCost(player),
+                TrainingMode.isNoMana(player),
                 data.getBuffs(),
                 takenByOthers(player),
                 data.getSkillPoints(),
@@ -173,8 +177,7 @@ public final class PlayerDataProvider {
                 data.isChanneling(),
                 data.getChannelTicks(),
                 com.myriad.game.ModState.isEnabled(),
-                manager == null ? -1
-                        : (int) manager.getRemainingTicks(player.level().getGameTime()),
+                showMatch ? (int) manager.getRemainingTicks(player.level().getGameTime()) : -1,
                 java.util.Arrays.asList(data.getEquipmentSlots()),
                 attrs,
                 data.getSwordQi(),
@@ -196,11 +199,13 @@ public final class PlayerDataProvider {
             taken.put(type.getId(), false);
         }
         net.minecraft.server.level.ServerLevel level = (net.minecraft.server.level.ServerLevel) self.level();
-        if (level.getServer() == null) {
+        if (level.getServer() == null || TrainingGround.isTraining(self)) {
             return taken;
         }
         for (ServerPlayer p : level.getServer().getPlayerList().getPlayers()) {
-            if (p == self) {
+            if (p == self || TrainingGround.isTraining(p)
+                    || GameManager.get() != null && GameManager.get().isQueuedMatch()
+                            && !GameManager.get().isParticipant(p.getUUID())) {
                 continue;
             }
             PlayerData d = get(p);
@@ -225,12 +230,17 @@ public final class PlayerDataProvider {
         if (data == null) {
             return;
         }
+        var match = GameManager.get();
+        if (match != null && match.isQueuedMatch() && match.isParticipant(player.getUUID())) {
+            player.sendSystemMessage(Component.translatable("message.myriad.training_character_locked"));
+            return;
+        }
         if (takenByOthers(player).getOrDefault(type.getId(), false)) {
             player.sendSystemMessage(Component.translatable("message.myriad.character_taken",
                     Component.translatable(type.nameKey())));
             return;
         }
-        if (GameManager.get() != null && GameManager.get().getPhase() == GameManager.Phase.PICKING) {
+        if (!TrainingGround.isTraining(player) && GameManager.get() != null && GameManager.get().getPhase() == GameManager.Phase.PICKING) {
             // 开局选人阶段：必须轮到该玩家且角色未被选（服务端统一轮次/唯一性校验）
             if (!GameManager.get().onPick(player, type)) {
                 player.sendSystemMessage(Component.translatable("message.myriad.pick_not_your_turn"));
@@ -239,7 +249,7 @@ public final class PlayerDataProvider {
         }
 
         ModShieldSystem.clearFor(player);
-        if (com.myriad.game.TrainingMode.isEnabled()
+        if (TrainingMode.isEnabled(player)
                 && !type.getId().equalsIgnoreCase(data.getCharacterId() == null ? "" : data.getCharacterId())) {
             data.refundAllSkillPointsForTraining();
         }
@@ -285,9 +295,8 @@ public final class PlayerDataProvider {
             return;
         }
         if (com.myriad.character.rework.FirstGroupSkills.active(data.getCharacterId())) {
-            if (!com.myriad.game.TrainingMode.isEnabled()
-                    && (GameManager.get() == null || GameManager.get().getPhase() != GameManager.Phase.PLAYING
-                        && !GameManager.get().preparationFor(player))) return;
+            if (!TrainingGround.canFight(player) && (GameManager.get() == null
+                    || !GameManager.get().preparationFor(player))) return;
             String error = com.myriad.character.rework.FirstGroupSkills.learnError(
                     data.getCharacterId(), data.getSkillLevels(), data.getSkillPoints(), data.getLevel(), skillId);
             if (error != null) { player.sendSystemMessage(Component.translatable(error)); return; }
@@ -474,6 +483,7 @@ public final class PlayerDataProvider {
     }
 
     public static void onServerStopping(MinecraftServer server) {
+        TrainingGround.closeAll(server);
         com.myriad.game.MatchProgress.onServerStopping(server);
     }
 
@@ -508,6 +518,7 @@ public final class PlayerDataProvider {
             if (distances.getViewDistance() != 10) distances.setViewDistance(10);
             if (distances.getSimulationDistance() != 8) distances.setSimulationDistance(8);
         }
+        if (com.myriad.game.ModState.isEnabled()) TrainingGround.tick(server);
         for(ServerPlayer player:server.getPlayerList().getPlayers())com.myriad.game.BaseRules.tick(player);
         GameManager manager = GameManager.get();
         if (manager != null && com.myriad.game.ModState.isEnabled()) {
@@ -554,8 +565,8 @@ public final class PlayerDataProvider {
         display.append(Component.literal(player.getName().getString()).withStyle(
                 net.minecraft.ChatFormatting.WHITE));
         GameManager manager = GameManager.get();
-        if (manager != null && (manager.getPhase() == GameManager.Phase.PLAYING
-                || manager.getPhase() == GameManager.Phase.ENDED)) {
+        if (manager != null && manager.isParticipant(player.getUUID()) && !TrainingGround.isTraining(player)
+                && (manager.getPhase() == GameManager.Phase.PLAYING || manager.getPhase() == GameManager.Phase.ENDED)) {
             display.append(Component.literal("  " + manager.killsOf(player) + "/" + manager.deathsOf(player))
                     .withStyle(net.minecraft.ChatFormatting.GRAY));
         }
@@ -599,6 +610,7 @@ public final class PlayerDataProvider {
                 subject.getName().getString());
         if (subject instanceof ServerPlayer player) {
             LAST_PLAYER_DEATH_EVENT.remove(player.getUUID());
+            TrainingGround.onLogin(player);
             RetiredRuneCleanup.clean(player);
             if (!com.myriad.game.ModState.isEnabled()) {
                 com.myriad.game.VanillaSession.restore(player);
@@ -694,6 +706,7 @@ public final class PlayerDataProvider {
 
     public static void onPlayerLoggedOut(Player subject) {
         if (subject instanceof ServerPlayer player) {
+            TrainingGround.onLogout(player);
             com.myriad.character.ability.AbilityRuntime.clear(player);
             LAST_PLAYER_DEATH_EVENT.remove(player.getUUID());
             com.myriad.game.BaseRules.logout(player);
@@ -738,39 +751,47 @@ public final class PlayerDataProvider {
 
         PENDING_DAMAGE_FLOATS.clear();
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            UUID id = player.getUUID();
-            com.myriad.character.skills.yingxiao.YingShaSkill.clearFor(id);
-            com.myriad.character.skills.tianxing.LeiJieZhanSkill.clearFor(id);
-            com.myriad.character.skills.xuanchen.LingFuSkill.clearFor(id);
-            com.myriad.character.skills.xuanchen.ChuanSongZhenSkill.clearFor(id);
-            com.myriad.combat.MagicBullet.clearFor(id);
-            com.myriad.combat.BasicAttackSystem.clearFor(id);
-            com.myriad.character.skills.xuanchen.MoYangHuZhenSkill.clearFor(player);
-            com.myriad.character.skills.xuanchen.ZhouTianFuZhenSkill.clearFor(player);
-            com.myriad.character.skills.fenjue.LieYanZhanSkill.clearFor(id);
-            com.myriad.character.skills.fenjue.RongYanLaoLongSkill.clearFor(player);
-            com.myriad.character.skills.fenjue.FenTianHuoHaiSkill.clearFor(id);
-            com.myriad.character.skills.fenjue.FenJueBaoFaSkill.clearFor(id);
-            com.myriad.character.skills.fenjue.FenJuePassiveSkill.clearFor(id);
-            com.myriad.character.skills.sulan.SuLanPassiveSkill.clearFor(id);
-            com.myriad.character.skills.sulan.JiFengTuCiSkill.clearFor(id);
-            com.myriad.character.skills.sulan.LingFengBiaoJiSkill.clearFor(id);
-            com.myriad.combat.WindWallSystem.clearFor(id);
-            com.myriad.combat.SilenceSystem.clearFor(id);
-            com.myriad.combat.FrozenControlSystem.clearFor(id);
-            com.myriad.character.skills.sulan.YuFengQianLiSkill.clearFor(id);
-            com.myriad.character.skills.hanze.HanzeSkills.clearFor(id);
-            com.myriad.character.skills.lingyuan.LingYuanSkills.clearFor(id);
-            com.myriad.character.skills.qingluo.QingLuoSkills.clearFor(id);
-            com.myriad.character.skills.chixiao.ChiXiaoSkills.clearFor(id);
-            com.myriad.character.skills.yunsheng.YunShengSkills.clearFor(player);
-
-            ModShieldSystem.clearFor(player);
+            clearMatchPlayerState(player);
         }
         ModShieldSystem.clearAll();
         com.myriad.game.MonsterManager.clearGenerated(server);
         com.myriad.game.JiarenManager.clearGenerated(server);
         com.myriad.game.TacticalSupplySystem.clear();
+    }
+
+    /** Clear one participant without touching other matches or training players. */
+    public static void clearMatchPlayerState(ServerPlayer player) {
+        com.myriad.character.ability.AbilityRuntime.clear(player);
+        com.myriad.game.RecallSystem.cancel(player);
+        PENDING_DAMAGE_FLOATS.remove(player.getUUID());
+        UUID id = player.getUUID();
+        com.myriad.character.skills.yingxiao.YingShaSkill.clearFor(id);
+        com.myriad.character.skills.tianxing.LeiJieZhanSkill.clearFor(id);
+        com.myriad.character.skills.xuanchen.LingFuSkill.clearFor(id);
+        com.myriad.character.skills.xuanchen.ChuanSongZhenSkill.clearFor(id);
+        com.myriad.combat.MagicBullet.clearFor(id);
+        com.myriad.combat.BasicAttackSystem.clearFor(id);
+        com.myriad.character.skills.xuanchen.MoYangHuZhenSkill.clearFor(player);
+        com.myriad.character.skills.xuanchen.ZhouTianFuZhenSkill.clearFor(player);
+        com.myriad.character.skills.fenjue.LieYanZhanSkill.clearFor(id);
+        com.myriad.character.skills.fenjue.RongYanLaoLongSkill.clearFor(player);
+        com.myriad.character.skills.fenjue.FenTianHuoHaiSkill.clearFor(id);
+        com.myriad.character.skills.fenjue.FenJueBaoFaSkill.clearFor(id);
+        com.myriad.character.skills.fenjue.FenJuePassiveSkill.clearFor(id);
+        com.myriad.character.skills.sulan.SuLanPassiveSkill.clearFor(id);
+        com.myriad.character.skills.sulan.JiFengTuCiSkill.clearFor(id);
+        com.myriad.character.skills.sulan.LingFengBiaoJiSkill.clearFor(id);
+        com.myriad.combat.WindWallSystem.clearFor(id);
+        com.myriad.combat.SilenceSystem.clearFor(id);
+        com.myriad.combat.FrozenControlSystem.clearFor(id);
+        com.myriad.character.skills.sulan.YuFengQianLiSkill.clearFor(id);
+        com.myriad.character.skills.hanze.HanzeSkills.clearFor(id);
+        com.myriad.character.skills.lingyuan.LingYuanSkills.clearFor(id);
+        com.myriad.character.skills.qingluo.QingLuoSkills.clearFor(id);
+        com.myriad.character.skills.chixiao.ChiXiaoSkills.clearFor(id);
+        com.myriad.character.skills.yunsheng.YunShengSkills.clearFor(player);
+
+        ModShieldSystem.clearFor(player);
     }
 
     /** 玩家重生（实体克隆）时复制全部数据（装备/技能等级/冷却等），并重建属性加成 */
@@ -1214,6 +1235,7 @@ public final class PlayerDataProvider {
         }
         if (target instanceof LivingEntity living
                 && com.myriad.game.JiarenManager.isJiaren(living.getUUID())) {
+            if (!com.myriad.game.JiarenManager.mayEdit(player, living)) return true;
             com.myriad.network.Packets.sendToPlayer(player,
                     new NetworkSetup.OpenJiarenSettingsPayload(living.getId(),
                             (float) com.myriad.game.JiarenManager.physicalDefense(living),
@@ -1275,8 +1297,8 @@ public final class PlayerDataProvider {
         if (!com.myriad.game.ModState.isEnabled()) {
             return cancelled;
         }
-        if (subject instanceof ServerPlayer player
-                &&!com.myriad.combat.VanillaMeleeAttack.prepare(player,target))cancelled=true;
+        if (subject instanceof ServerPlayer player && (target instanceof LivingEntity living
+                && !TrainingGround.mayInteract(player, living) || !com.myriad.combat.VanillaMeleeAttack.prepare(player, target))) cancelled = true;
 
         return cancelled;
     }
@@ -1289,6 +1311,12 @@ public final class PlayerDataProvider {
             return;
         }
         LivingEntity entity = event.getEntity();
+        if (event.getSource().getEntity() instanceof ServerPlayer source
+                && !TrainingGround.mayInteract(source, entity)) {
+            event.setAmount(0.0F);
+            event.setCanceled(true);
+            return;
+        }
         float amountBeforeTargetMitigation = event.getAmount();
         PendingDamageFloat damageFloat = null;
         if (entity.level().isClientSide()) {
@@ -1683,7 +1711,7 @@ public final class PlayerDataProvider {
                     .addLast(damageFloat);
         }
         SpiritFlow.onDamage(entity);
-        if (event.getAmount() > 0 && entity instanceof ServerPlayer defendedPlayer
+        if (event.getAmount() > 0 && entity instanceof ServerPlayer defendedPlayer && !TrainingGround.isTraining(defendedPlayer)
                 && event.getSource().getEntity() instanceof ServerPlayer attacker) {
             com.myriad.game.LaneSystem.defendPlayer(defendedPlayer, attacker);
         }
@@ -1727,6 +1755,8 @@ public final class PlayerDataProvider {
 
     /** 阵营判定：玩家、兵线单位和防御塔均遵守阵营友军规则。 */
     private static boolean isAlly(ServerPlayer caster, LivingEntity other) {
+        if (TrainingGround.isTraining(caster))
+            return com.myriad.combat.SkillTargets.ally(caster, other);
         GameManager manager = GameManager.get();
         if (manager == null) {
             return false;
@@ -1815,8 +1845,9 @@ public final class PlayerDataProvider {
             com.myriad.game.TacticalSupplySystem.clearRegeneration(player.getUUID());
             ModShieldSystem.clearFor(player);
             GameManager manager = GameManager.get();
-            if (com.myriad.game.TrainingMode.isEnabled()) {
+            if (TrainingMode.isEnabled(player)) {
                 cancelled=true;
+                if (TrainingGround.isTraining(player)) TrainingGround.teleportToSpawn(player, player.level());
                 player.setCamera(player);
                 player.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
                 player.fallDistance = 0;
@@ -1850,8 +1881,7 @@ public final class PlayerDataProvider {
                     Math.min(20,com.myriad.player.EntityState.data(player).getIntOr("myriad_deaths_without_kill",0)+1));
             com.myriad.player.EntityState.data(player).remove("myriad_last_hero");
             com.myriad.player.EntityState.data(player).remove("myriad_last_hero_at");
-            if (com.myriad.game.TrainingMode.isEnabled()
-                    || manager != null && manager.getPhase() == GameManager.Phase.PLAYING) {
+            if (TrainingGround.canFight(player)) {
                 cancelled=true;
                 com.myriad.game.HeroRespawnSystem.begin(player);
             }
@@ -1899,6 +1929,7 @@ public final class PlayerDataProvider {
     public static void onRegisterCommands(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("myriad")
                 .then(Commands.literal("jiaren")
+                        .requires(src -> src.getEntity() instanceof ServerPlayer p && TrainingMode.isEnabled(p))
                         .then(Commands.literal("create").executes(ctx -> {
                             ServerPlayer player = ctx.getSource().getPlayerOrException();
                             com.myriad.game.JiarenManager.create(player);
@@ -1996,20 +2027,6 @@ public final class PlayerDataProvider {
                                     broadcastArenaTeams(ctx.getSource().getServer());
                                     return 1;
                                 })))
-                .then(Commands.literal("start").requires(src -> src.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)).executes(ctx -> {
-                    GameManager manager = GameManager.get();
-                    if (manager != null) {
-                        manager.startMatch(ctx.getSource().getServer());
-                    }
-                    return 1;
-                }))
-                .then(Commands.literal("restart").requires(src -> src.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)).executes(ctx -> {
-                    GameManager manager = GameManager.get();
-                    if (manager != null) {
-                        manager.restart(ctx.getSource().getServer());
-                    }
-                    return 1;
-                }))
                 .then(Commands.literal("reset").requires(src -> src.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)).executes(ctx -> {
                     if (!com.myriad.game.ModState.isEnabled() || GameManager.get() == null) {
                         ctx.getSource().sendFailure(Component.translatable("message.myriad.reset_requires_mod"));
@@ -2035,13 +2052,17 @@ public final class PlayerDataProvider {
                             ctx.getSource().getServer().getPlayerList().setViewDistance(10);
                             ctx.getSource().getServer().getPlayerList().setSimulationDistance(8);
                             for (ServerPlayer participant : ctx.getSource().getServer().getPlayerList().getPlayers())
-                                com.myriad.game.LobbySystem.teleportToLobby(participant);
+                                if (!TrainingGround.isTraining(participant) && (GameManager.get() == null
+                                        || !GameManager.get().isParticipant(participant.getUUID())))
+                                    com.myriad.game.LobbySystem.teleportToLobby(participant);
                             broadcastModState(ctx.getSource().getServer());
                             return 1;
                         }))
                         .then(Commands.literal("off").executes(ctx -> {
+                            TrainingGround.closeAll(ctx.getSource().getServer());
                             com.myriad.game.ModState.setEnabled(false);
                             if (GameManager.get() != null) GameManager.get().resetToLobby(ctx.getSource().getServer(), false);
+                            com.myriad.game.QueueLobby.reset(ctx.getSource().getServer());
                             com.myriad.game.TrainingMode.setEnabled(false);
                             com.myriad.game.TrainingMode.setNoCooldown(false);
                             com.myriad.game.TrainingMode.setNoGoldCost(false);
@@ -2103,20 +2124,16 @@ public final class PlayerDataProvider {
                                     return 1;
                                 })))
                 .then(Commands.literal("train")
-                        .requires(src -> src.permissions().hasPermission(Permissions.COMMANDS_MODERATOR))
-                        .then(Commands.literal("on").executes(ctx -> {
-                            com.myriad.game.TrainingMode.setEnabled(true);
-                            ctx.getSource().sendSuccess(() -> Component.translatable("message.myriad.train_on"), false);
-                            return 1;
-                        }))
-                        .then(Commands.literal("off").executes(ctx -> {
-                            com.myriad.game.TrainingMode.setEnabled(false);
-                            ctx.getSource().sendSuccess(() -> Component.translatable("message.myriad.train_off"), false);
-                            return 1;
-                        }))
+                        .then(Commands.literal("enter").executes(ctx -> TrainingGround.enter(ctx.getSource().getPlayerOrException()) ? 1 : 0))
+                        .then(Commands.literal("leave").executes(ctx -> TrainingGround.leave(ctx.getSource().getPlayerOrException()) ? 1 : 0))
+                        .then(Commands.literal("on").requires(src -> src.permissions().hasPermission(Permissions.COMMANDS_MODERATOR))
+                                .executes(ctx -> toggleLegacyTraining(ctx.getSource(), true)))
+                        .then(Commands.literal("off").requires(src -> src.permissions().hasPermission(Permissions.COMMANDS_MODERATOR))
+                                .executes(ctx -> toggleLegacyTraining(ctx.getSource(), false)))
                         .executes(ctx -> {
-                            ctx.getSource().sendSuccess(() -> Component.translatable("message.myriad.train_status",
-                                    com.myriad.game.TrainingMode.isEnabled()), false);
+                            var source = ctx.getSource();
+                            boolean training = source.getEntity() instanceof ServerPlayer p ? TrainingMode.isEnabled(p) : TrainingMode.isEnabled();
+                            source.sendSuccess(() -> Component.translatable("message.myriad.train_status", training), false);
                             return 1;
                         }))
                 .then(Commands.literal("supply")
@@ -2146,6 +2163,21 @@ public final class PlayerDataProvider {
                                     syncToClient(player);
                                     return 1;
                                 }))));
+    }
+
+    private static int toggleLegacyTraining(CommandSourceStack source, boolean enabled) {
+        var manager = GameManager.get();
+        if (!com.myriad.game.ModState.isEnabled() || manager != null && manager.getPhase() != GameManager.Phase.WAITING
+                || source.getEntity() instanceof ServerPlayer p && TrainingGround.isTraining(p)) {
+            source.sendFailure(Component.translatable("screen.myriad.train.match_running"));
+            return 0;
+        }
+        TrainingMode.setEnabled(enabled);
+        for (var player : source.getServer().getPlayerList().getPlayers()) {
+            if (!TrainingGround.isTraining(player)) syncToClient(player);
+        }
+        source.sendSuccess(() -> Component.translatable(enabled ? "message.myriad.train_on" : "message.myriad.train_off"), false);
+        return 1;
     }
 
     private static int configureMonsterSpawnPoint(CommandSourceStack source, String name, String typeId,
@@ -2622,32 +2654,4 @@ public final class PlayerDataProvider {
         sendTeamList(admin);
     }
 
-    /** UI 开始游戏：mode 0=均衡随机分配后开始，1=按当前手动分配开始 */
-    public static void startMatchFromUi(ServerPlayer admin, int mode, String arenaId) {
-        Myriad.LOGGER.info("[ui-start] mode={} by {} perm={}",
-                mode, admin.getName().getString(),
-                admin.permissions().hasPermission(Permissions.COMMANDS_MODERATOR));
-        if (!admin.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)) {
-            admin.sendSystemMessage(Component.translatable("message.myriad.no_permission"));
-            return;
-        }
-        GameManager manager = GameManager.get();
-        if (manager == null) {
-            Myriad.LOGGER.info("[ui-start] no manager");
-            return;
-        }
-        MinecraftServer server = ((net.minecraft.server.level.ServerLevel) admin.level()).getServer();
-        if (mode < 0 || mode > 1 || !com.myriad.game.MatchArena.select(server, arenaId)) {
-            admin.sendSystemMessage(Component.translatable("message.myriad.arena_unavailable"));
-            sendTeamList(admin);
-            return;
-        }
-        if (mode == 0) {
-            manager.startMatch(server);
-        } else {
-            // 手动模式：未分配玩家自动补毁灭，双方必须均有玩家。
-            manager.startMatchWithCurrent(server);
-        }
-        sendTeamList(admin);
-    }
 }

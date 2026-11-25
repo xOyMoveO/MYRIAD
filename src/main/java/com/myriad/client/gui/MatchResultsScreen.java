@@ -6,7 +6,6 @@ import java.util.Comparator;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -22,8 +21,14 @@ public final class MatchResultsScreen extends Screen {
     }
 
     @Override protected void init() {
-        addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose())
-                .bounds(width / 2 - 55, height - 27, 110, 20).build());
+        int w = Math.min(112, (width - 18) / 2);
+        addRenderableWidget(LobbyTheme.button(width / 2 - w - 2, height - 27, w, 20,
+                Component.translatable("lobby.myriad.results.lobby"), b -> com.myriad.client.LobbyClient.openLobby()));
+        addRenderableWidget(LobbyTheme.button(width / 2 + 2, height - 27, w, 20,
+                Component.translatable("lobby.myriad.results.requeue"), b -> {
+                    com.myriad.client.LobbyClient.send("requeue", "");
+                    com.myriad.client.LobbyClient.openLobby();
+                }));
     }
 
     @Override public boolean isPauseScreen() { return false; }

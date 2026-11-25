@@ -15,7 +15,7 @@ public final class LevelUpPresentation {
     public static final double RANGE=64;
     private LevelUpPresentation(){}
     private static Faction faction(ServerPlayer p){
-        if(TrainingMode.isEnabled())return PlayerDataProvider.get(p).getFaction();
+        if(TrainingMode.isEnabled(p))return PlayerDataProvider.get(p).getFaction();
         var manager=GameManager.get();return manager==null?null:manager.factionOf(p);
     }
     public static boolean teammate(boolean self,Faction own,Faction other){return self||own!=null&&own==other;}

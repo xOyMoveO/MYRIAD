@@ -22,16 +22,16 @@ public final class ModEntityTracker {
     /** 清除所有维度中由仙凡劫生成的实体；玩家及未标记的原版实体不会受影响。 */
     public static int clearGenerated(MinecraftServer server) {
         int removed = 0;
-        for (net.minecraft.server.level.ServerLevel level : server.getAllLevels()) {
-            java.util.List<Entity> stale = new java.util.ArrayList<>();
-            for (Entity entity : level.getAllEntities()) {
-                if (entity != null && !entity.isRemoved() && entity.entityTags().contains(GENERATED_TAG)) {
-                    stale.add(entity);
-                }
-            }
-            stale.forEach(Entity::discard);
-            removed += stale.size();
-        }
+        for (net.minecraft.server.level.ServerLevel level : server.getAllLevels()) removed += clearGenerated(level);
         return removed;
+    }
+
+    public static int clearGenerated(net.minecraft.server.level.ServerLevel level) {
+        java.util.List<Entity> stale = new java.util.ArrayList<>();
+        for (Entity entity : level.getAllEntities()) {
+            if (!entity.isRemoved() && entity.entityTags().contains(GENERATED_TAG)) stale.add(entity);
+        }
+        stale.forEach(Entity::discard);
+        return stale.size();
     }
 }

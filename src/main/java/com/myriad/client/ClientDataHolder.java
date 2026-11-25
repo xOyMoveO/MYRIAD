@@ -45,7 +45,8 @@ public final class ClientDataHolder {
             DashController.start(0, 0, 0, 0);
             com.myriad.client.FogOfWarClient.update(false, java.util.List.of());
             var mc = Minecraft.getInstance();
-            if (mc.gui.screen() != null && !(mc.gui.screen() instanceof com.myriad.client.gui.TrainScreen)
+            if (mc.gui.screen() != null && !(mc.gui.screen() instanceof com.myriad.client.gui.LobbyScreen)
+                    && !(mc.gui.screen() instanceof com.myriad.client.gui.TrainScreen)
                     && !(mc.gui.screen() instanceof com.myriad.client.gui.CharacterSelectScreen)
                     && !(mc.gui.screen() instanceof com.myriad.client.gui.CharacterGuideScreen guide && guide.isChoosePreview())
                     && mc.gui.screen().getClass().getPackageName().equals("com.myriad.client.gui"))

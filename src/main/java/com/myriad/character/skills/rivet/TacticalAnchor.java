@@ -2,8 +2,7 @@ package com.myriad.character.skills.rivet;
 
 import com.myriad.character.ability.AbilityRuntime;
 import com.myriad.character.rework.FirstGroupSkills;
-import com.myriad.game.GameManager;
-import com.myriad.game.TrainingMode;
+import com.myriad.game.TrainingGround;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -99,8 +98,7 @@ public final class TacticalAnchor extends RivetSkill {
         return (int) Math.max(0, RECOVERY.getOrDefault(player.getUUID(), 0L) - player.level().getGameTime());
     }
     public static boolean anchorReady(ServerPlayer player) {
-        return anchor(player) != null && recovery(player) == 0 && (TrainingMode.isEnabled()
-                || GameManager.get() != null && GameManager.get().getPhase() == GameManager.Phase.PLAYING);
+        return anchor(player) != null && recovery(player) == 0 && TrainingGround.canFight(player);
     }
     public static boolean consumeStrike(ServerPlayer player, Vec3 wallContact) {
         var anchor = anchor(player);

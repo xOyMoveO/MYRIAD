@@ -14,7 +14,7 @@ public final class CombatImpactFeedback {
     public static void confirmed(ServerPlayer attacker,LivingEntity target,int damageType,boolean critical,
                                  boolean periodic,float effective,boolean shield){
         if(!ModState.isEnabled()||!Float.isFinite(effective)||effective<=0||target==attacker
-                ||attacker.level()!=target.level()||SkillTargets.ally(attacker,target))return;
+                ||!SkillTargets.hostile(attacker,target))return;
         var role=CharacterType.byId(PlayerDataProvider.get(attacker).getCharacterId());
         if(role==null)return;
         // Role-owned visuals have their own per-target budget, independent of the shared audio cap.

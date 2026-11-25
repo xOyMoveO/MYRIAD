@@ -11,7 +11,10 @@ public final class MatchResultsStore {
 
     private MatchResultsStore() { }
 
-    public static void receive(NetworkSetup.MatchResultsPayload payload) { latest = payload; }
+    public static void receive(NetworkSetup.MatchResultsPayload payload) {
+        latest = payload;
+        if (Minecraft.getInstance().player != null) open();
+    }
     public static void clear() { latest = null; }
     public static NetworkSetup.MatchResultsPayload latest() { return latest; }
 

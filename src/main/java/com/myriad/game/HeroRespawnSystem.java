@@ -27,7 +27,15 @@ public final class HeroRespawnSystem {
                 new com.google.gson.reflect.TypeToken<Map<UUID,Waiting>>(){}.getType()));
     }
     public static void reset(net.minecraft.server.MinecraftServer server) {
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+        reset(server, java.util.List.copyOf(WAITING.keySet()));
+    }
+    public static void reset(net.minecraft.server.MinecraftServer server, java.util.Collection<UUID> participants) {
+        for (UUID id : participants) {
+            ServerPlayer player = server.getPlayerList().getPlayer(id);
+            if (player == null) {
+                WAITING.remove(id);
+                continue;
+            }
             Waiting waiting = WAITING.remove(player.getUUID());
             if (waiting != null) {
                 player.setCamera(player);
@@ -37,7 +45,6 @@ public final class HeroRespawnSystem {
                 PlayerDataProvider.get(player).setBuff("hero_respawn", 0);
             }
         }
-        WAITING.clear();
     }
     public static void begin(ServerPlayer player) {
         var data = PlayerDataProvider.get(player);
@@ -83,7 +90,7 @@ public final class HeroRespawnSystem {
         if (waiting == null) return false;
         var data = PlayerDataProvider.get(player);
         long remaining = waiting.until - player.level().getGameTime();
-        boolean active = ModState.isEnabled() && (TrainingMode.isEnabled()
+        boolean active = ModState.isEnabled() && (TrainingMode.isEnabled(player)
                 || GameManager.get() != null && GameManager.get().getPhase() == GameManager.Phase.PLAYING);
         ServerPlayer ally = waiting.target == null ? null : player.level().getServer().getPlayerList().getPlayer(waiting.target);
         if (!isEligibleAlly(player, ally)) ally = null;

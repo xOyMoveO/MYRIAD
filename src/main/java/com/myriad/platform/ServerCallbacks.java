@@ -34,6 +34,10 @@ public final class ServerCallbacks {
         ServerPlayerEvents.COPY_FROM.register((original,player,alive) -> PlayerDataProvider.onPlayerClone(original,player));
         ServerEntityEvents.ALLOW_LOAD.register(com.myriad.game.ModEntityTracker::allowLoad);
         ServerEntityEvents.ENTITY_LOAD.register(com.myriad.player.RetiredRuneCleanup::onJoin);
+        // Disallow an unconsented impact before vanilla applies hurt feedback, fire or immunity frames.
+        ServerLivingEntityEvents.ALLOW_DAMAGE.register((target, source, amount) ->
+                !com.myriad.game.ModState.isEnabled() || !(source.getEntity() instanceof net.minecraft.server.level.ServerPlayer attacker)
+                        || com.myriad.game.TrainingGround.mayInteract(attacker, target));
         ServerLivingEntityEvents.ALLOW_DEATH.register((entity,source,amount) -> !PlayerDataProvider.onLivingDeath(entity,source));
         CommandRegistrationCallback.EVENT.register((dispatcher,context,selection) -> PlayerDataProvider.onRegisterCommands(dispatcher));
         AttackEntityCallback.EVENT.register((player,level,hand,target,hit) -> PlayerDataProvider.onPlayerAttack(player,target)?InteractionResult.FAIL:InteractionResult.PASS);
