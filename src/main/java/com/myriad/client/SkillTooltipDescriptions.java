@@ -21,7 +21,7 @@ public final class SkillTooltipDescriptions {
                 form="当前招式："+com.myriad.character.skills.shuo.ShuoForms.name(ability.getId(),ClientDataHolder.syncedCounter("g1_shuo_drawn")>0,recast)+"。";
             }
             return (ability.baseAvailable()?"基础可用 · 强化 "+Math.max(0,rawLevel):"Lv."+Math.max(1,rawLevel))+" / "+ability.maxRank()+" · "+form
-                    +com.myriad.character.ability.AbilityFormulaText.evaluate(ability.description(),rawLevel,strength);
+                    +ability.evaluatedDescription(rawLevel,strength,ClientDataHolder.syncedCounter("g1_attribute_strength"));
         }
         int lv = Math.max(1, rawLevel);
         return switch (skill.getId()) {

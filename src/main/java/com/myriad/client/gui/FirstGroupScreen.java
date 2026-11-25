@@ -67,14 +67,8 @@ public final class FirstGroupScreen extends Screen {
             String key = id.substring(13);
             if (!FirstGroupGrowth.ATTRIBUTES.contains(key)) return "message.myriad.g1.invalid_skill";
             int rank = data.buffs().getOrDefault(id, 0);
-            if (rank >= FirstGroupGrowth.ATTRIBUTE_CAP || attributeTotal() >= FirstGroupGrowth.TOTAL_POINTS) {
-                return "message.myriad.g1.attribute_max";
-            }
             if (!UiFeedback.shopAllowed) return "message.myriad.shop_base_only";
-            if (!(data.training() && data.noGoldCost()) && data.gold() < FirstGroupGrowth.price(rank)) {
-                return "message.myriad.equip_no_gold";
-            }
-            return null;
+            return FirstGroupGrowth.purchaseError(rank, data.gold(), data.training() && data.noGoldCost());
         }
         if (TacticalSupplySystem.isSupply(id)) {
             if (!UiFeedback.shopAllowed) return "message.myriad.shop_base_only";
@@ -324,7 +318,8 @@ public final class FirstGroupScreen extends Screen {
         lines.add(text("screen.myriad.g1.strength",Math.round(ClientDataHolder.attrValue(ModAttributes.SPELL_POWER.value().getDescriptionId()))));
         if(skill.isPassive())lines.add(text("screen.myriad.g1.passive_cost"));
         else{
-            double reduction=Math.clamp(ClientDataHolder.attrValue(ModAttributes.COOLDOWN_REDUCTION.value().getDescriptionId()),0,60);
+            double reduction=Math.clamp(ClientDataHolder.attrValue(ModAttributes.COOLDOWN_REDUCTION.value().getDescriptionId()),
+                    0,ModAttributes.MAX_COOLDOWN_REDUCTION);
             double cooldown=d.training()&&d.noCooldown()?0:skill.getCooldownTicks(level)*(1-reduction/100)/20;
             lines.add(text("screen.myriad.g1.current_cost",Math.round(skill.getManaCost()),String.format(Locale.ROOT,"%.1f",cooldown),String.format(Locale.ROOT,"%.1f",rank>0||skill.baseAvailable()?ClientDataHolder.cooldownTicks(skill.slot())/20.0:0)));
         }
@@ -332,33 +327,58 @@ public final class FirstGroupScreen extends Screen {
         if(reason!=null)lines.add(text(reason));
         return lines;
     }
-    private int attributeTotal(){var d=ClientDataHolder.get();return FirstGroupGrowth.ATTRIBUTES.stream().mapToInt(k->d.buffs().getOrDefault("g1_attribute_"+k,0)).sum();}
-    private int cost(String id){var d=ClientDataHolder.get();return d.training()&&d.noGoldCost()?0:id.startsWith("g1_attribute_")?FirstGroupGrowth.price(d.buffs().getOrDefault(id,0)):TacticalSupplySystem.supplyPrice(id);}
-    private List<String> attributeLines(String key){
-        var d=ClientDataHolder.get();String id="g1_attribute_"+key;int rank=d.buffs().getOrDefault(id,0);var lines=new ArrayList<String>();
-        lines.add(text("screen.myriad.g1.attribute."+key));lines.add(text("screen.myriad.g1.attribute_rank",rank));
-        lines.add(text("screen.myriad.g1.attribute_effect."+key));lines.add(text("screen.myriad.g1.attribute_budget",attributeTotal()));
-        lines.add(text("screen.myriad.g1.buy",cost(id)));lines.add(text("screen.myriad.g1.tuning"));
-        String reason=error(id);if(reason!=null)lines.add(text(reason));lines.add(text("screen.myriad.g1.attribute_click_hint"));return lines;
+    private long attributeTotal() {
+        return FirstGroupGrowth.ATTRIBUTES.stream()
+                .mapToLong(key -> ClientDataHolder.syncedCounter("g1_attribute_" + key)).sum();
+    }
+    private int supplyCost(String id) {
+        var data = ClientDataHolder.get();
+        return data.training() && data.noGoldCost() ? 0 : TacticalSupplySystem.supplyPrice(id);
+    }
+    private static String nextAttributePrice(int rank) {
+        long price = FirstGroupGrowth.price(rank);
+        return price == FirstGroupGrowth.PRICE_OVERFLOW ? text("message.myriad.g1.attribute_price_overflow")
+                : text("screen.myriad.g1.attribute_next_price", price);
+    }
+    private static boolean hasteCapped(String key) {
+        return key.equals("cooldown")
+                && ClientDataHolder.attrValue(ModAttributes.COOLDOWN_REDUCTION.value().getDescriptionId()) >= ModAttributes.MAX_COOLDOWN_REDUCTION;
+    }
+    private List<String> attributeLines(String key) {
+        var data = ClientDataHolder.get();
+        String id = "g1_attribute_" + key;
+        int rank = ClientDataHolder.syncedCounter(id);
+        var lines = new ArrayList<String>();
+        lines.add(text("screen.myriad.g1.attribute." + key));
+        lines.add(text("screen.myriad.g1.attribute_rank", rank));
+        lines.add(text("screen.myriad.g1.attribute_effect." + key));
+        if (hasteCapped(key)) lines.add(text("screen.myriad.g1.attribute_haste_capped", ModAttributes.MAX_COOLDOWN_REDUCTION));
+        lines.add(nextAttributePrice(rank));
+        if (data.training() && data.noGoldCost()) lines.add(text("screen.myriad.g1.attribute_free"));
+        String reason = error(id);
+        if (reason != null && !reason.equals("message.myriad.g1.attribute_price_overflow")) lines.add(text(reason));
+        lines.add(text("screen.myriad.g1.attribute_click_hint"));
+        return lines;
     }
     private void drawAttributes(GuiGraphicsExtractor g,SkillChoiceLayout l,int mx,int my){
-        var d=ClientDataHolder.get();var f=Minecraft.getInstance().font;var v=l.viewport();
+        var f=Minecraft.getInstance().font;var v=l.viewport();
         var budget=f.split(Component.literal(text("screen.myriad.g1.attribute_budget_compact",attributeTotal())),v.w()-4);
         for(int i=0;i<budget.size();i++)g.text(f,budget.get(i),v.x()+2,v.y()+i*10-scroll,GOLD);
-        for(int i=0;i<5;i++){
+        for(int i=0;i<FirstGroupGrowth.ATTRIBUTES.size();i++){
             String key=FirstGroupGrowth.ATTRIBUTES.get(i),id="g1_attribute_"+key;
-            int rank=d.buffs().getOrDefault(id,0);var b=l.attribute(i,scroll);var row=l.attributeRow(i,scroll);
+            int rank=ClientDataHolder.syncedCounter(id);var b=l.attribute(i,scroll);var row=l.attributeRow(i,scroll);
             actions.add(new Action(b,id,true,true,true));
             if(!row.overlaps(v))continue;
             boolean selected=selection.selected().equals(id),hover=l.canHit(b,mx,my);
             plate(g,new Box(b.x()-2,b.y()-2,b.w()+4,b.h()+4),selected?GOLD:hover||focused.equals(id)?JADE:0xFF315955,0xB0071C22);
             CultivationIcons.attribute(g,key,b);
             centeredScaled(g,text("screen.myriad.g1.attribute."+key),new Box(b.x()-4,b.y(),b.w()+8,b.h()),b.bottom()+3,selected?GOLD:JADE,l.attributeRowHeight()<40?.6f:.7f);
-            for(int cell=0;cell<SkillChoiceLayout.ATTRIBUTE_LEVELS;cell++){
-                var box=l.attributeCell(i,cell,scroll);boolean lit=SkillChoiceLayout.attributeCellLit(rank,cell);
-                plate(g,box,lit?0xFFB8F2D9:0xFF365A5C,lit?0xFF4BB7AA:0xCC0B2028);
-                if(lit&&box.w()>=6)g.fill(box.x()+2,box.y()+2,box.right()-2,box.y()+3,0xFFE2FFF4);
-            }
+            var details = l.attributeDetails(i,scroll);
+            String quote = nextAttributePrice(rank);
+            scaledFit(g,text("screen.myriad.g1.attribute_rank",rank),details.x(),b.y()+2,details.w(),JADE,.8f);
+            scaledFit(g,quote,details.x(),b.y()+12,details.w(),GOLD,Math.min(.8f,details.w()/(float)Math.max(1,f.width(quote))));
+            if (hasteCapped(key)) scaledFit(g,text("screen.myriad.g1.attribute_haste_limit",ModAttributes.MAX_COOLDOWN_REDUCTION),
+                    details.x(),b.y()+22,details.w(),GOLD,.8f);
             offer(id+":tile",b,()->attributeLines(key),mx,my,true);
         }
     }
@@ -367,12 +387,12 @@ public final class FirstGroupScreen extends Screen {
             var b=l.supply(i,scroll);var buy=l.supplyAction(i++,scroll);if(!b.overlaps(l.viewport()))continue;
             plate(g,b,0xFF3C716F,INK);CultivationIcons.supply(g,id,new Box(b.x()+4,b.y()+5,20,20));
             fit(g,text("item.myriad."+id),b.x()+29,b.y()+10,Math.max(1,b.w()-108),GOLD);
-            button(g,buy,text("screen.myriad.g1.buy",cost(id)),id,error(id)==null,true,false,mx,my);
+            button(g,buy,text("screen.myriad.g1.buy",supplyCost(id)),id,error(id)==null,true,false,mx,my);
             offer(id+":supply",b,()->{
                 var lines=new ArrayList<String>();
                 lines.add(text("item.myriad."+id));
                 lines.add(text("item.myriad."+id+".desc"));
-                lines.add(text("screen.myriad.g1.buy",cost(id)));
+                lines.add(text("screen.myriad.g1.buy",supplyCost(id)));
                 String reason=error(id);
                 if(reason!=null)lines.add(text(reason));
                 return lines;
@@ -397,7 +417,11 @@ public final class FirstGroupScreen extends Screen {
         } else if (page == 1 && id.startsWith("g1_attribute_")) {
             String key = id.substring(13);
             name = text("screen.myriad.g1.selected", text("screen.myriad.g1.attribute." + key));
-            label = text("screen.myriad.g1.buy", cost(id));
+            var data = ClientDataHolder.get();
+            long price = FirstGroupGrowth.price(ClientDataHolder.syncedCounter(id));
+            if (data.training() && data.noGoldCost()) label = text("screen.myriad.g1.buy", 0);
+            else if (price == FirstGroupGrowth.PRICE_OVERFLOW) label = text("screen.myriad.g1.attribute_price_limit");
+            else label = text("screen.myriad.g1.buy", price);
             details = () -> attributeLines(key);
             valid = true;
         }

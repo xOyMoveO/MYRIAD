@@ -161,20 +161,21 @@ final class TrainingUiChecks {
         TrainingMode.setNoGoldCost(false);data.setGold(20000);
         h.assertTrue(!interaction.select(id,false,true),"Attribute single-click only selects");
         if(interaction.select(id,true,true))PlayerDataProvider.buyEquipment(player,id);
-        h.assertTrue(data.firstGroupAttribute("strength")==1&&data.getGold()==19820&&data.getBuff(id)==1,"One double-click buys exactly one rank, charges the server price and synchronizes its lit-cell buff");
+        h.assertTrue(data.firstGroupAttribute("strength")==1&&data.getGold()==19640&&data.getBuff(id)==1,
+                "One double-click buys one point, charges 360 and synchronizes the count");
         if(interaction.select(id,true,true))PlayerDataProvider.buyEquipment(player,id);
         h.assertTrue(data.firstGroupAttribute("strength")==1,"Repeated double-click event cannot buy a duplicate rank");
         data.setGold(0);PlayerDataProvider.buyEquipment(player,id);
-        h.assertTrue(data.firstGroupAttribute("strength")==1&&data.getBuff(id)==1,"Rejected purchase neither advances rank nor lights another cell");
+        h.assertTrue(data.firstGroupAttribute("strength")==1&&data.getBuff(id)==1,"Rejected purchase leaves both server and synced counts unchanged");
         data.setGold(20000);
         for(int rank=1;rank<10;rank++)PlayerDataProvider.buyEquipment(player,id);
         PlayerDataProvider.buyEquipment(player,id);
-        h.assertTrue(data.firstGroupAttribute("strength")==10,"Server rejects an eleventh rank");
+        h.assertTrue(data.firstGroupAttribute("strength")==11&&data.getBuff(id)==11,"Server and client count an eleventh point");
         for(int rank=0;rank<5;rank++)PlayerDataProvider.buyEquipment(player,"g1_attribute_wisdom");
         PlayerDataProvider.buyEquipment(player,"g1_attribute_defense");
-        h.assertTrue(data.firstGroupAttribute("wisdom")==5&&data.firstGroupAttribute("defense")==0,"Server rejects a sixteenth total purchase");
+        h.assertTrue(data.firstGroupAttribute("wisdom")==5&&data.firstGroupAttribute("defense")==1,"Purchases continue above fifteen total points");
         for(String key:com.myriad.character.rework.FirstGroupGrowth.ATTRIBUTES)data.setFirstGroupAttribute(key,0);
         com.myriad.character.rework.FirstGroupGrowth.apply(player,data);data.setGold(originalGold);TrainingMode.setNoGoldCost(free);
-        System.out.println("[MYRIAD-ATTRIBUTE-ROWS] PASS: double-click purchase, exact payment/synced rank, insufficient gold, per-stat and total caps");
+        System.out.println("[MYRIAD-ATTRIBUTE-ROWS] PASS: double-click purchase, exact payment/synced rank, insufficient gold, and counts above the old limits");
     }
 }

@@ -317,7 +317,7 @@ public final class AbilityRuntime {
                     ||!skill.canRelease(this)){cancelCast();return false;}
             committed=true;phase=Phase.COMMITTED;owner.preparing=null;
             if(!noMana)data.spendMana(skill.manaCost(this));
-            if(!noCd&&skill.cooldownTicks(this)>0){double reduction=Math.clamp(player.getAttributeValue(ModAttributes.COOLDOWN_REDUCTION),0,60);
+            if(!noCd&&skill.cooldownTicks(this)>0){double reduction=Math.clamp(player.getAttributeValue(ModAttributes.COOLDOWN_REDUCTION),0,ModAttributes.MAX_COOLDOWN_REDUCTION);
                 data.setCooldown(skill.getId(),Math.max(1,(int)(skill.cooldownTicks(this)*(1-reduction/100))));}
             player.removeEffect(MobEffects.INVISIBILITY);data.setStealthBonus(false);
             skill.release(this);skill.present(this);SkillPresentation.cast(player,skill);

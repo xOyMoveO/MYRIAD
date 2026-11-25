@@ -94,9 +94,10 @@ public final class ModAttributes {
     public static final net.minecraft.core.Holder.Reference<Attribute> MANA_REGEN =
             register("mana_regen", () -> ranged("attribute.myriad.mana_regen", 1.0, 0.0, 1000.0));
 
-    /** 冷却缩减（百分比数值，逻辑上限 60）：按百分比缩短技能冷却 */
+    public static final int MAX_COOLDOWN_REDUCTION = 60;
+    /** 冷却缩减按百分比缩短技能冷却。 */
     public static final net.minecraft.core.Holder.Reference<Attribute> COOLDOWN_REDUCTION =
-            register("cooldown_reduction", () -> ranged("attribute.myriad.cooldown_reduction", 0.0, 0.0, 60.0));
+            register("cooldown_reduction", () -> ranged("attribute.myriad.cooldown_reduction", 0.0, 0.0, MAX_COOLDOWN_REDUCTION));
 
     /** 生命回复内部速率（HP/s）；实际按整数5秒脉冲或不足1点时的换算间隔结算。 */
     public static final net.minecraft.core.Holder.Reference<Attribute> HEALTH_REGEN =

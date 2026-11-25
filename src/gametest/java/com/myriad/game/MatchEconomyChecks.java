@@ -46,7 +46,8 @@ final class MatchEconomyChecks {
             GameManager.create();
             var manager = GameManager.get();
             manager.setServer(server);
-            field(GameManager.class, "phase").set(manager, GameManager.Phase.PLAYING);
+            var phase = field(GameManager.class, "phase");
+            phase.set(manager, GameManager.Phase.PLAYING);
             field(GameManager.class, "matchStartTime").setLong(manager, level.getGameTime());
             var factions = (Map<UUID, Faction>)field(GameManager.class, "factions").get(manager);
             online = (List<ServerPlayer>)field(PlayerList.class, "players").get(server.getPlayerList());
@@ -65,6 +66,9 @@ final class MatchEconomyChecks {
                 own.setFaction(Faction.GUARDIAN);
                 enemy.setFaction(Faction.DESTRUCTION);
                 helper.assertTrue(FirstGroupGrowth.buy(buyer, own, "strength"), "Formal base purchase succeeds");
+                helper.assertTrue(own.getGold() == 140 && !FirstGroupGrowth.buy(buyer, own, "strength")
+                        && !FirstGroupGrowth.buy(buyer, own, "wisdom") && own.getGold() == 140,
+                        "500 opening gold buys one point for 360 and cannot buy another in any attribute");
                 helper.assertTrue(TacticalSupplySystem.buy(buyer, "blood_pill"), "Formal supply purchase succeeds");
                 helper.assertTrue(own.getGold() < enemy.getGold() && own.getMatchGoldEarned() == enemy.getMatchGoldEarned()
                         && MatchBalance.farmReward(buyer, 100, false) == 100, "Spending wallet gold does not create false catch-up");
@@ -75,12 +79,22 @@ final class MatchEconomyChecks {
                 enemy.setLevel(2);
                 helper.assertTrue(MatchBalance.farmReward(buyer, 100, true) == 115, "Personal level gap still boosts XP");
                 own.addWalletGold(200);
+                helper.assertTrue(own.getMatchGoldEarned() == 500 && MatchBalance.farmReward(buyer, 100, false) == 145,
+                        "Wallet-only credits preserve formal catch-up");
+                // The administrator sandbox is available while the server is waiting for a match.
+                phase.set(manager, GameManager.Phase.WAITING);
                 TrainingMode.setEnabled(true);
+                int beforeTraining = own.getGold();
+                helper.assertTrue(TrainingMode.isEnabled(buyer), "Buyer is in the waiting-world training sandbox");
                 TrainingActions.apply(buyer, "gold", true);
                 own.addGold(100);
-                helper.assertTrue(own.getMatchGoldEarned() == 500 && MatchBalance.farmReward(buyer, 100, false) == 100,
+                helper.assertTrue(own.getGold() == beforeTraining + 10100 && own.getMatchGoldEarned() == 500
+                        && MatchBalance.farmReward(buyer, 100, false) == 100,
                         "Wallet credits, training grants and training farm rewards cannot alter formal income");
                 TrainingMode.setEnabled(false);
+                phase.set(manager, GameManager.Phase.PLAYING);
+                helper.assertTrue(MatchBalance.farmReward(buyer, 100, false) == 145,
+                        "Leaving the training sandbox preserves formal catch-up");
                 var copied = new PlayerData();
                 copied.copyStateFrom(own);
                 helper.assertTrue(copied.getMatchGoldEarned() == 500 && copied.getGold() == own.getGold(), "Player clone preserves both values");

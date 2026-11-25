@@ -17,6 +17,9 @@ public abstract class AbilitySkill extends Skill {
     public String role(){return definition.role();} public int index(){return definition.index();}
     public int maxRank(){return definition.maxRank();} public String displayName(){return definition.name();}
     public String description(){return definition.description();} public String iconAlias(){return definition.iconAlias();}
+    public String evaluatedDescription(int rank, double skillPower, int purchasedStrength){
+        return AbilityFormulaText.evaluate(description(), rank, skillPower);
+    }
     public int slot(){return index()<2?-1:index()<4?index()-2:index()<6?2:3;}
     @Override public boolean isPassive(){return index()<2;}
     @Override public boolean isUltimate(){return index()>=6;}

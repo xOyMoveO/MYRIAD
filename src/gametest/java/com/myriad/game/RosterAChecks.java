@@ -52,6 +52,7 @@ final class RosterAChecks {
             TrainingMode.setEnabled(training);ModState.setEnabled(enabled);
         };
         try {
+            GameManager.get().setServer(h.getLevel().getServer());
             for(String role:ROLES)for(int index=2;index<8;index++){
                 var f=fixture(h,fixtures.size(),FirstGroupSkills.node(role,index));fixtures.add(f);
                 var p=f.actor.player;receive(h,p,new NetworkSetup.ChooseCharacterPayload(role));
