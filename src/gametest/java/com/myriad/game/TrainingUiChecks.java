@@ -17,6 +17,7 @@ final class TrainingUiChecks {
         SkillChoiceUiChecks.verify(h);
         CharacterChoiceUiChecks.verify(h);
         CombatHudStateChecks.run(h);
+        CombatChatChecks.verify(h::assertTrue);
         verifyHudMigration(h);
         int states=0;
         for(var size:new int[][]{{320,180},{320,240},{427,240},{576,344},{854,480},{960,540}}){
@@ -31,7 +32,7 @@ final class TrainingUiChecks {
                 h.assertTrue(label.right()<actions.x()&&actions.right()<box.right()&&actions.y()>=box.y()&&actions.bottom()<=box.bottom(),"Left labels never overlap right-hand switches/actions");
             }
             for (float scale : new float[]{.5F, 1F, 2F}) {
-                var layout = CombatHudLayout.at(size[0], size[1], 0, 1, scale, 3, 2, true, null);
+                var layout = CombatHudLayout.at(size[0], size[1], 0, 1, scale, 3, 2, true);
                 var panel = layout.bounds();
                 h.assertTrue(panel.x() == 6 && panel.y() >= 6 && panel.right() <= size[0] - 6,
                         "The default panel stays within the left edge and viewport");
@@ -42,35 +43,15 @@ final class TrainingUiChecks {
                 states++;
             }
         }
-        var focused = CombatHudLayout.at(427, 240, 0, 1, 1, 2, 1, false,
-                new CombatHudLayout.Bounds(0, 120, 280, 120));
-        h.assertTrue(focused.compact() && focused.bounds().x() == 6
-                && focused.bounds().bottom() <= 114 && !focused.attackRow(),
-                "The focused chat layout retains critical combat rows above chat");
-        var twoChatLines = CombatHudLayout.focusedChat(332, 240, 2, 9, 1F);
-        var smallChat = CombatHudLayout.at(427, 240, 0, 1, 1F, 0, 0, false, twoChatLines);
-        h.assertTrue(twoChatLines.y() == 173 && smallChat.bounds().bottom() <= 167,
-                "A focused two-line chat remains clear of the panel at 854x480 with GUI scale 2");
-        var chatHotbar = CombatHudLayout.hotbar(427, 240, 0, 0);
-        int densePage = CombatHudLayout.chatLineLimit(427, 240, 0, 1, 1F, 3, 2, true,
-                chatHotbar, 332, 9, 1F, 20, 70);
-        var denseChat = CombatHudLayout.focusedChat(332, 240, densePage, 9, 1F);
-        var densePanel = CombatHudLayout.at(427, 240, 0, 1, 1F, 3, 2, true, chatHotbar, denseChat);
-        h.assertTrue(densePage > 1 && densePage < 20 && densePanel != null && densePanel.scale() >= .8F
-                        && densePanel.bounds().x() == 6 && densePanel.bounds().bottom() <= denseChat.y() - 6,
-                "A long focused history yields scrollable lines and a readable panel with all combat rows");
-        h.assertTrue(CombatHudLayout.chatLineLimit(427, 240, 0, 1, .5F, 0, 0, false,
-                        chatHotbar, 332, 9, 1F, 20, 2) == 20,
-                "Short focused history retains vanilla page size even with a smaller custom panel");
-        var moved = CombatHudLayout.at(960, 540, .5F, .6F, 1.25F, 0, 0, false, null);
+        var moved = CombatHudLayout.at(960, 540, .5F, .6F, 1.25F, 0, 0, false);
         h.assertTrue(moved.bounds().x() == 480 && moved.bounds().bottom() == 324 && moved.scale() == 1.25F,
                 "A dragged panel uses one scale and retains its normalized bottom-left anchor");
-        var regular = CombatHudLayout.at(960, 540, 0, 1, 1.5F, 0, 0, false, null);
-        var larger = CombatHudLayout.at(960, 540, 0, 1, 1.55F, 0, 0, false, null);
+        var regular = CombatHudLayout.at(960, 540, 0, 1, 1.5F, 0, 0, false);
+        var larger = CombatHudLayout.at(960, 540, 0, 1, 1.55F, 0, 0, false);
         h.assertTrue(!regular.compact() && !larger.compact() && larger.bounds().width() > regular.bounds().width(),
                 "Increasing the editor scale does not switch to smaller compact contents");
         var offhand = CombatHudLayout.hotbar(576, 344, 29, 0);
-        var armed = CombatHudLayout.at(576, 344, 0, 1, 1F, 0, 0, false, offhand, null);
+        var armed = CombatHudLayout.at(576, 344, 0, 1, 1F, 0, 0, false, offhand);
         h.assertTrue(armed.bounds().bottom() <= offhand.y() - CombatHudLayout.GAP,
                 "The equipped offhand extender is treated as part of the vanilla hotbar");
         boolean mod=ModState.isEnabled(),training=TrainingMode.isEnabled(),cd=TrainingMode.isNoCooldown(),mana=TrainingMode.isNoMana(),gold=TrainingMode.isNoGoldCost();

@@ -131,6 +131,8 @@
   "screen.myriad.g1.maxed": "已满",
   "screen.myriad.g1.choose": "选择",
   "screen.myriad.g1.upgrade": "+1",
+  "chat.myriad.time.sent": "发送时间：%s",
+  "chat.myriad.time.received": "接收时间：%s",
   "screen.myriad.g1.tab_skills": "技能",
   "screen.myriad.g1.tab_attributes": "属性",
   "skill.myriad.damage.segment.primary": "主伤害",

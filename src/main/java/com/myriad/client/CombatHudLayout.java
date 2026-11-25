@@ -9,7 +9,6 @@ public final class CombatHudLayout {
     public static final int FULL_WIDTH = 252;
     private static final int HOTBAR_HALF = 91;
     private static final int HOTBAR_HEIGHT = 23;
-    private static final int CHAT_BOTTOM_INSET = 40;
     private static final int SKILL_Y = 44;
     private static final int AFTER_KEYS = 82;
 
@@ -27,9 +26,9 @@ public final class CombatHudLayout {
     }
 
     public static Layout at(int width, int height, float xAnchor, float yAnchor, float scale,
-                            int roleRows, int controlRows, boolean charges, Bounds chat) {
+                            int roleRows, int controlRows, boolean charges) {
         return at(width, height, xAnchor, yAnchor, scale, roleRows, controlRows, charges,
-                hotbar(width, height, 0, 0), chat);
+                hotbar(width, height, 0, 0));
     }
 
     public static Bounds hotbar(int width, int height, int leftExtra, int rightExtra) {
@@ -38,38 +37,13 @@ public final class CombatHudLayout {
         return new Bounds(left, height - HOTBAR_HEIGHT, right - left, HOTBAR_HEIGHT);
     }
 
-    public static Bounds focusedChat(int width, int height, int lines, int lineHeight, double scale) {
-        // Vanilla measures the chat baseline from the viewport bottom before applying chat scale.
-        int chatHeight = CHAT_BOTTOM_INSET + (int)Math.ceil((lines + 1) * lineHeight * scale);
-        return new Bounds(0, height - chatHeight, width, chatHeight);
-    }
-
-    /** Page-size limit shared by chat rendering, links and the scroll position. */
-    public static int chatLineLimit(int width, int height, float xAnchor, float yAnchor, float scale,
-                                    int roleRows, int controlRows, boolean charges, Bounds hotbar,
-                                    int chatWidth, int lineHeight, double chatScale, int vanillaLines, int historyLines) {
-        int normalLines = Math.min(vanillaLines, historyLines);
-        if (normalLines <= 1) return vanillaLines;
-        float minimum = Math.min(scale, .8F);
-        var normal = at(width, height, xAnchor, yAnchor, scale, roleRows, controlRows, charges,
-                hotbar, focusedChat(chatWidth, height, normalLines, lineHeight, chatScale));
-        if (normal != null && normal.scale() >= minimum) return vanillaLines;
-
-        for (int lines = normalLines - 1; lines > 1; lines--) {
-            var candidate = at(width, height, xAnchor, yAnchor, scale, roleRows, controlRows, charges,
-                    hotbar, focusedChat(chatWidth, height, lines, lineHeight, chatScale));
-            if (candidate != null && candidate.scale() >= minimum) return lines;
-        }
-        return 1;
-    }
-
     public static Layout at(int width, int height, float xAnchor, float yAnchor, float scale,
-                            int roleRows, int controlRows, boolean charges, Bounds hotbar, Bounds chat) {
+                            int roleRows, int controlRows, boolean charges, Bounds hotbar) {
         int wantedX = Math.max(GAP, Math.round(width * xAnchor));
         int wantedBottom = Math.min(height - GAP, Math.round(height * yAnchor));
-        boolean compact = chat != null || width / 2 - HOTBAR_HALF - 1 - 2 * GAP < FULL_WIDTH;
+        boolean compact = width / 2 - HOTBAR_HALF - 1 - 2 * GAP < FULL_WIDTH;
         int rawWidth = compact ? COMPACT_WIDTH : FULL_WIDTH;
-        boolean attackRow = compact && chat == null;
+        boolean attackRow = compact;
         int roleTop = AFTER_KEYS + (charges ? 15 : 0);
         int controlTop = roleTop + 11 * roleRows;
         int attackTop = controlTop + 11 * controlRows;
@@ -81,20 +55,6 @@ public final class CombatHudLayout {
         int right = x + ceiling(rawWidth * fittedScale);
         int maxBottom = height - GAP;
         if (x < hotbar.right() + GAP && right > hotbar.x() - GAP) maxBottom = hotbar.y() - GAP;
-        if (chat != null) {
-            maxBottom = Math.min(maxBottom, height - 24); // The chat input spans the bottom of the viewport.
-            if (x < chat.right() + GAP && right > chat.x() - GAP && maxBottom > chat.y() - GAP) {
-                int availableAbove = chat.y() - 2 * GAP;
-                int rightOfChat = chat.right() + GAP;
-                if (availableAbove < rawHeight * Math.min(fittedScale, .78F)
-                        && width - GAP - rightOfChat >= ceiling(rawWidth * fittedScale)) {
-                    x = rightOfChat;
-                    maxBottom = Math.min(height - 24, x < hotbar.right() + GAP ? hotbar.y() - GAP : height - GAP);
-                } else {
-                    maxBottom = Math.min(maxBottom, chat.y() - GAP);
-                }
-            }
-        }
 
         // The default compact panel can cross the reticle only on the narrowest GUI viewport.
         int reticleLeft = width / 2 - 10;

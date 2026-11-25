@@ -37,8 +37,8 @@ final class ActionRemovalChecks {
             // the old ClientEntitySpawnMixin redirect no longer has a target.
             var clients = json.getAsJsonArray("client").asList().stream().map(v -> v.getAsString()).toList();
             h.assertTrue(clients.equals(List.of("ClientInputAccessor", "PlayerTabOverlayMixin", "ShuoHeldLightMixin", "ClientAttackTimeMixin", "YikeArmPoseMixin",
-                    "MyriadKeyboardMixin", "MyriadMouseMixin", "MyriadMinecraftClientMixin", "ChatComponentAccessor",
-                    "ChatComponentMixin", "MyriadLocalPlayerMixin",
+                    "MyriadKeyboardMixin", "MyriadMouseMixin", "MyriadMinecraftClientMixin", "ChatComponentMixin",
+                    "ChatListenerMixin", "ChatScreenMixin", "CommandSuggestionsMixin", "GuiMessageMixin", "MyriadLocalPlayerMixin",
                     "MyriadHandRendererMixin", "MyriadCameraMixin", "MyriadLivingRendererMixin", "MyriadNameTagMixin")),
                     "Gameplay, local time, attached light and Yike local weapon pose hooks remain; no retired player-action mixin returns");
         } catch (java.io.IOException e) { throw new IllegalStateException(e); }

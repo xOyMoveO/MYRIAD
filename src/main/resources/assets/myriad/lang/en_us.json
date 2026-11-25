@@ -131,6 +131,8 @@
   "screen.myriad.g1.maxed": "Max",
   "screen.myriad.g1.choose": "Learn",
   "screen.myriad.g1.upgrade": "+1",
+  "chat.myriad.time.sent": "Sent: %s",
+  "chat.myriad.time.received": "Received: %s",
   "screen.myriad.g1.tab_skills": "Skills",
   "screen.myriad.g1.tab_attributes": "Attributes",
   "skill.myriad.damage.segment.primary": "Primary hit",
