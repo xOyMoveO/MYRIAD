@@ -7,6 +7,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.myriad.Myriad;
 import com.myriad.network.NetworkSetup;
+import com.myriad.network.RiftCrabMarker;
+import java.util.EnumMap;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -87,6 +89,7 @@ public final class MapSystem {
                 .map(point -> new NetworkSetup.MinimapPathPoint(point.lane(), point.order(),
                         (float) point.x(), (float) point.z()))
                 .toList();
+        var crabsByTeam = new EnumMap<Faction, List<RiftCrabMarker>>(Faction.class);
         for (ServerPlayer viewer : level.players()) {
             if (manager.isQueuedMatch() && !manager.isParticipant(viewer.getUUID())) {
                 Packets.sendToPlayer(viewer, emptySnapshot());
@@ -109,7 +112,10 @@ public final class MapSystem {
                 markers.add(new NetworkSetup.MinimapMarker(unit.kind(), NetworkSetup.factionId(unit.faction()),
                         (float) unit.x(), (float) unit.z(), new java.util.UUID(0L, 0L)));
             }
-            Packets.sendToPlayer(viewer, snapshot(paths, markers));
+            List<RiftCrabMarker> crabs = viewerFaction == null || !manager.isParticipant(viewer.getUUID())
+                    || TrainingMode.isEnabled(viewer) ? List.of()
+                    : crabsByTeam.computeIfAbsent(viewerFaction, team -> MonsterManager.crabMapMarkers(level, team));
+            Packets.sendToPlayer(viewer, snapshot(paths, markers, crabs));
         }
     }
 
@@ -130,7 +136,7 @@ public final class MapSystem {
     }
 
     private static NetworkSetup.MinimapSnapshotPayload snapshot(List<NetworkSetup.MinimapPathPoint> paths,
-            List<NetworkSetup.MinimapMarker> markers) {
+            List<NetworkSetup.MinimapMarker> markers, List<RiftCrabMarker> crabs) {
         BlockPos p1 = CORNERS.get(1);
         BlockPos p2 = CORNERS.get(2);
         BlockPos p3 = CORNERS.get(3);
@@ -141,12 +147,12 @@ public final class MapSystem {
                 p3.getX() + 0.5F, p3.getZ() + 0.5F,
                 p4.getX() + 0.5F, p4.getZ() + 0.5F,
                 paths,
-                List.copyOf(markers));
+                List.copyOf(markers), crabs);
     }
 
     private static NetworkSetup.MinimapSnapshotPayload emptySnapshot() {
         return new NetworkSetup.MinimapSnapshotPayload(false,
-                0, 0, 0, 0, 0, 0, 0, 0, List.of(), List.of());
+                0, 0, 0, 0, 0, 0, 0, 0, List.of(), List.of(), List.of());
     }
 
     private static Geometry geometry() {

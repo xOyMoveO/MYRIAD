@@ -877,9 +877,9 @@ public final class NetworkSetup {
     public record MinimapSnapshotPayload(boolean configured,
             float x1, float z1, float x2, float z2, float x3, float z3, float x4, float z4,
             java.util.List<MinimapPathPoint> paths,
-            java.util.List<MinimapMarker> markers) implements CustomPacketPayload {
+            java.util.List<MinimapMarker> markers, java.util.List<RiftCrabMarker> crabs) implements CustomPacketPayload {
         public static final Type<MinimapSnapshotPayload> TYPE =
-                new Type<>(Identifier.fromNamespaceAndPath(Myriad.MODID, "minimap_snapshot"));
+                new Type<>(Identifier.fromNamespaceAndPath(Myriad.MODID, "minimap_snapshot_v2"));
         public static final StreamCodec<FriendlyByteBuf, MinimapSnapshotPayload> STREAM_CODEC =
                 StreamCodec.ofMember(MinimapSnapshotPayload::write, MinimapSnapshotPayload::decode);
 
@@ -895,6 +895,7 @@ public final class NetworkSetup {
             buf.writeFloat(payload.z4());
             PayloadBuffers.writeCollection(buf, payload.paths(), MinimapPathPoint::write);
             PayloadBuffers.writeCollection(buf, payload.markers(), MinimapMarker::write);
+            PayloadBuffers.writeCollection(buf, payload.crabs(), RiftCrabMarker::write);
         }
 
         private static MinimapSnapshotPayload decode(FriendlyByteBuf buf) {
@@ -902,7 +903,7 @@ public final class NetworkSetup {
                     buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readFloat(),
                     buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readFloat(),
                     PayloadBuffers.readList(buf, MinimapPathPoint::read),
-                    PayloadBuffers.readList(buf, MinimapMarker::read));
+                    PayloadBuffers.readList(buf, MinimapMarker::read), PayloadBuffers.readList(buf, RiftCrabMarker::read));
         }
 
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
@@ -997,7 +998,7 @@ public final class NetworkSetup {
 
     /** 单名玩家的整局结算数据。 */
     public record MatchResultEntry(String name, String faction, String character, int level,
-            int kills, int deaths, int gold, int heroDamage, int damageTaken, int healingReceived) {
+            int kills, int deaths, int assists, int gold, int heroDamage, int damageTaken, int healingReceived) {
         private static void write(FriendlyByteBuf buf, MatchResultEntry entry) {
             buf.writeUtf(entry.name(), 64);
             buf.writeUtf(entry.faction(), 16);
@@ -1005,6 +1006,7 @@ public final class NetworkSetup {
             buf.writeVarInt(entry.level());
             buf.writeVarInt(entry.kills());
             buf.writeVarInt(entry.deaths());
+            buf.writeVarInt(entry.assists());
             buf.writeVarInt(entry.gold());
             buf.writeVarInt(entry.heroDamage());
             buf.writeVarInt(entry.damageTaken());
@@ -1014,7 +1016,7 @@ public final class NetworkSetup {
         private static MatchResultEntry read(FriendlyByteBuf buf) {
             return new MatchResultEntry(buf.readUtf(64), buf.readUtf(16), buf.readUtf(32),
                     buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
-                    buf.readVarInt(), buf.readVarInt(), buf.readVarInt());
+                    buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt());
         }
     }
 
@@ -1250,6 +1252,7 @@ public final class NetworkSetup {
         PayloadTypeRegistry.clientboundPlay().register(FlameSkillViewPayload.TYPE, FlameSkillViewPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(ThunderSkillViewPayload.TYPE, ThunderSkillViewPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(NightSkillViewPayload.TYPE, NightSkillViewPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(LuoxiaBowPosePayload.TYPE, LuoxiaBowPosePayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(SkillChargePayload.TYPE, SkillChargePayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(RecallPayload.TYPE, RecallPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(CycleSpectatorPayload.TYPE, CycleSpectatorPayload.CODEC);
@@ -1266,6 +1269,7 @@ public final class NetworkSetup {
                 com.myriad.game.TeamSignals.rejected(context.player());
         });
         PayloadTypeRegistry.clientboundPlay().register(RewardFloatPayload.TYPE, RewardFloatPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(TowerLockPayload.TYPE, TowerLockPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(TowerAlertPayload.TYPE, TowerAlertPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(PlayerDataPayload.TYPE, PlayerDataPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(VeinStatusPayload.TYPE, VeinStatusPayload.STREAM_CODEC);
@@ -1297,6 +1301,7 @@ public final class NetworkSetup {
         PayloadTypeRegistry.serverboundPlay().register(ConfirmPlacementPayload.TYPE, ConfirmPlacementPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(CancelPlacementPayload.TYPE, CancelPlacementPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(MagicBulletFirePayload.TYPE, MagicBulletFirePayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(LuoxiaBowInputPayload.TYPE, LuoxiaBowInputPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(BasicAttackPayload.TYPE, BasicAttackPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(MeleeAssistPayload.TYPE, MeleeAssistPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(TrainActionPayload.TYPE, TrainActionPayload.STREAM_CODEC);
@@ -1373,10 +1378,13 @@ public final class NetworkSetup {
             ServerPlayer player = context.player();
             com.myriad.combat.MagicBullet.tryFire(player, player.getMainHandItem());
         });
+        ServerPlayNetworking.registerGlobalReceiver(LuoxiaBowInputPayload.TYPE,
+                (payload,ctx) -> com.myriad.character.skills.luoxia.LuoxiaBow.input(ctx.player(), payload.action(), payload.gesture()));
         ServerPlayNetworking.registerGlobalReceiver(BasicAttackPayload.TYPE,
                 (payload, context) -> {
             ServerPlayer player = context.player();
-            com.myriad.combat.BasicAttackSystem.tryAttack(player, payload.targetId());
+            if (!"luoxia".equals(PlayerDataProvider.get(player).getCharacterId()))
+                com.myriad.combat.BasicAttackSystem.tryAttack(player, payload.targetId());
         });
         // The advertised receive channel also disables client preselection for the 0% test server.
         if (com.myriad.combat.BasicAttackAssist.enabled()) {

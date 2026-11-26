@@ -219,6 +219,36 @@ public final class VisionSystem {
                 && ward.distanceToSqr(position) <= TacticalSupplySystem.wardVisionRadiusSqr());
     }
 
+    /** Only a living teammate or a ward that can actually see the objective may establish team knowledge. */
+    static boolean seesObjective(ServerLevel level, Faction team, Vec3 position) {
+        var manager = GameManager.get();
+        if (manager == null || manager.getPhase() != GameManager.Phase.PLAYING || team == null) return false;
+        String brush = brushAt(position);
+        for (ServerPlayer source : level.players()) {
+            if (!source.isAlive() || source.isSpectator() || TrainingMode.isEnabled(source)
+                    || !manager.isParticipant(source.getUUID()) || manager.factionOf(source) != team) continue;
+            double distance = source.distanceToSqr(position);
+            if (distance > PLAYER_VISION_RADIUS * PLAYER_VISION_RADIUS) continue;
+            if (brush != null && !brush.equals(brushAt(source.position()))
+                    && !(TacticalSupplySystem.hasActiveTrueSight(source)
+                    && distance <= TacticalSupplySystem.trueSightRadiusSqr())) continue;
+            if (clearSight(level, source.getEyePosition(), position)) return true;
+        }
+        for (Vec3 ward : TacticalSupplySystem.wardPositions(level, team)) {
+            if (ward.distanceToSqr(position) <= TacticalSupplySystem.wardVisionRadiusSqr()
+                    && (brush == null || brush.equals(brushAt(ward)))
+                    && clearSight(level, ward.add(0, 0.5, 0), position)) return true;
+        }
+        return false;
+    }
+
+    private static boolean clearSight(ServerLevel level, Vec3 from, Vec3 to) {
+        return level.clip(new net.minecraft.world.level.ClipContext(from, to,
+                net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE,
+                net.minecraft.world.phys.shapes.CollisionContext.empty())).getType()
+                == net.minecraft.world.phys.HitResult.Type.MISS;
+    }
+
     /** 造成或受到有效伤害后，草丛隐蔽暂时失效。 */
     public static void revealCombatant(Entity entity) {
         if (!(entity instanceof ServerPlayer player) || player.level().isClientSide()) return;
@@ -231,6 +261,15 @@ public final class VisionSystem {
         if (target.isInvisible()) return true;
         String brush = brushAt(target.position());
         return brush != null && !brush.equals(brushAt(observer.position()));
+    }
+
+    static boolean visibleToTower(Entity tower, Faction defenders, ServerPlayer target) {
+        if (!concealedFromNpc(tower, target)) return true;
+        if (target.isInvisible()) return false;
+        var manager = GameManager.get();
+        return target.level().players().stream().anyMatch(ally -> manager.isParticipant(ally.getUUID())
+                && manager.factionOf(ally) == defenders && ally.isAlive() && !ally.isSpectator()
+                && !TrainingMode.isEnabled(ally) && personalCanSee(ally, target));
     }
 
     public static String brushAt(Vec3 position) {

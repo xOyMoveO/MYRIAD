@@ -70,6 +70,10 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
                 com.myriad.registry.ModEntities.DEFENSE_TOWER.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
         net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(
                 com.myriad.registry.ModEntities.CHERRY_RIFT_MONSTER.get(), com.myriad.client.CherryRiftMonsterRenderer::new);
+        net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents.ALLOW_GAME.register(
+                com.myriad.client.InputFeedback::allowMessage);
+        net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.START_CLIENT_TICK.register(
+                com.myriad.client.MeleeAttackBuffer::validate);
         net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents.ALLOW_COMMAND.register(
                 MyriadClient::allowCommand);
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(client->{
@@ -88,7 +92,7 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
     /** Called at Minecraft.startAttack, including keyboard or mouse rebound attacks. */
     public static AttackInput attack(boolean allowMeleeAssist) {
         AttackInput event = new AttackInput();
-        onInteractionKeyMapping(event);
+        onInteractionKeyMapping(event, allowMeleeAssist, com.myriad.client.MeleeAttackBuffer.consumePress());
         Minecraft mc = Minecraft.getInstance();
         event.setMeleeAssist(allowMeleeAssist && !event.isCanceled()
                 && com.myriad.client.MeleeAssistInput.shouldAssist(mc));
@@ -105,7 +109,7 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
     /**
      * Preserve native attack input for exact melee selections and route dedicated ranged attacks.
      */
-    private static void onInteractionKeyMapping(AttackInput event) {
+    private static void onInteractionKeyMapping(AttackInput event, boolean nativeReady, boolean physicalPress) {
         if (!com.myriad.client.ClientDataHolder.modEnabled()) return;
         if (!event.isAttack()) return;
         Minecraft mc = Minecraft.getInstance();
@@ -118,10 +122,7 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
                 || com.myriad.client.ClientDataHolder.characterId().isEmpty()) return;
         if(com.myriad.combat.VanillaMeleeAttack.usesVanilla(com.myriad.character.CharacterType.byId(
                 com.myriad.client.ClientDataHolder.characterId()))){
-            if(com.myriad.client.ClientDataHolder.placementType()!=0
-                    ||com.myriad.client.ClientDataHolder.isChanneling()
-                    ||mc.player.getAttackStrengthScale(.5f)<1
-                    ||com.myriad.client.ClientDataHolder.buffTicks("g1_stun")>0){
+            if(com.myriad.client.MeleeAttackBuffer.intercept(mc, nativeReady, physicalPress)){
                 event.setSwingHand(false);event.setCanceled(true);
             }
             return;
@@ -307,6 +308,7 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
 
     /** 远程恢复期间隐藏第一人称专属武器；原版近战不隐藏。 */
     public static void onRenderHand(com.myriad.client.platform.HandRenderContext event) {
+        if (com.myriad.client.firstperson.LuoxiaBowView.first(event)) return;
         if (com.myriad.client.firstperson.RivetWeaponView.render(event)) return;
         if (com.myriad.client.firstperson.YikeWeaponView.render(event)) return;
         if (com.myriad.client.firstperson.ShuoView.render(event)) return;
@@ -583,6 +585,7 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
     }
 
     public static void onKeyInput(com.myriad.client.platform.KeyInput event) {
+        com.myriad.client.MeleeAttackBuffer.binding(Minecraft.getInstance(), event);
         if (event.getAction() != InputConstants.PRESS) {
             return;
         }

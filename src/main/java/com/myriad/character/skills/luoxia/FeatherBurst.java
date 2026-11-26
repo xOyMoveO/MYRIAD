@@ -23,6 +23,7 @@ final class FeatherBurst extends LuoxiaSkill {
     @Override public void release(Cast c) {
         var contacts = new HashMap<UUID, Integer>();
         LuoxiaBow.volley(c, 3, 5, 0, shot -> {
+            LuoxiaBowPose.skill(c, com.myriad.network.LuoxiaBowPosePayload.Phase.RELEASE, shot + 1, c.player.getLookAngle());
             LuoxiaVfx.shot(c, false, 1.20f + .09f * shot);
             LuoxiaArrow.launch(c, c.player.getLookAngle(), 19, 1.65, LuoxiaArrow.Shape.BURST, false, target -> {
                 int count = contacts.merge(target.getUUID(), 1, Integer::sum);

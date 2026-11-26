@@ -16,6 +16,14 @@ public final class LuoxiaGeometry {
     private static final RosterProjectileModels ARROWS = RosterProjectileModels.load("luoxia_arrows.json");
     private LuoxiaGeometry() {}
 
+    /** Bow-local mesh, nock at zero and tip along -X. Uses the same authored mesh as flight. */
+    public static List<Quad> nockedArrow(String model) {
+        var out = new ArrayList<Quad>(ARROWS.faces(model));
+        Vec3 forward = new Vec3(-1, 0, 0);
+        ARROWS.append(out, model, forward, forward, 1, LUOXIA_ARROW_MODEL, 1);
+        return List.copyOf(out);
+    }
+
     public static List<Quad> build(AbilityVfxPayload p, float age, boolean reduced) {
         Vec3 at = p.from(), to = p.to(), forward = direction(at, to);
         if (p.kind() == FLIGHT) {

@@ -1,5 +1,7 @@
 package com.myriad.character.skills.yike;
 
+import com.myriad.combat.InputFailure;
+
 import com.myriad.character.ability.*;
 import com.myriad.combat.*;
 import com.myriad.player.PlayerDataProvider;
@@ -23,8 +25,11 @@ public final class YikeBasicAttack {
     public static void tryFire(ServerPlayer p){
         var data=PlayerDataProvider.get(p);tick(p);
         if(!AbilityRuntime.valid(p)||!"yike".equals(data.getCharacterId())||!p.getMainHandItem().is(ModItems.HONG_LIE.get())
-                ||YikeStance.active(p)||PrismaticBeam.active(p)||AbilityRuntime.channeling(p)||SkillChargeSystem.active(p)
-                ||data.getBuff("g1_stun")>0||!BasicAttackSystem.canAttackNow(p,data)||remaining(p)>0)return;
+                ||!BasicAttackSystem.canAttackNow(p,data))return;
+        if(data.getBuff("g1_stun")>0){InputFailure.STUN.send(p);return;}
+        if(AbilityRuntime.channeling(p)||SkillChargeSystem.active(p)||PrismaticBeam.active(p)){InputFailure.CHANNEL.send(p);return;}
+        if(YikeStance.active(p)){InputFailure.LINK.send(p);return;}
+        if(remaining(p)>0){InputFailure.RECOVERING.send(p);return;}
         var s=new Recovery();s.total=total(p);s.progress=new ActionTime.Progress(p.level().getGameTime());RECOVERY.put(p.getUUID(),s);
         var c=AbilityRuntime.context(p,YikeRework.q(p));Vec3 direction=p.getLookAngle().normalize();
         Vec3 origin=p.getEyePosition();

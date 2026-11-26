@@ -83,6 +83,7 @@ public final class RivetPush {
             if (completed) { finish.run(); return false; }
             Vec3 velocity = step.velocity();
             if (Math.abs(velocity.y) < .00001) velocity = new Vec3(velocity.x, target.getDeltaMovement().y, velocity.z);
+            if (velocity.horizontalDistanceSqr() > 0) com.myriad.game.MatchAssists.controlled(c.player, target);
             send(target, velocity, target.position().add(velocity));
             return true;
         };
@@ -123,6 +124,7 @@ public final class RivetPush {
                 Step step = sweep(target, movement);
                 Vec3 v = step.velocity();
                 if (Math.abs(v.y) < .00001) v = new Vec3(v.x, target.getDeltaMovement().y, v.z);
+                if (v.horizontalDistanceSqr() > 0) com.myriad.game.MatchAssists.controlled(c.player, target);
                 send(target, v, target.position().add(v));
             }
             @Override public void finish(boolean contactAllowed) {
@@ -219,6 +221,7 @@ public final class RivetPush {
         c.slow(target, 1, ticks);
         if (target instanceof ServerPlayer player) {
             com.myriad.player.PlayerDataProvider.get(player).setBuff(key, duration);
+            com.myriad.game.MatchAssists.controlled(c.player, player);
             com.myriad.combat.DeathRecaps.control(c.player,player,c.skill.getId(),4,c.now(),duration);
             com.myriad.player.PlayerDataProvider.syncToClient(player);
         }

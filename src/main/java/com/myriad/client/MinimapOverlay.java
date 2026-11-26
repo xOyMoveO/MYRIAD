@@ -1,6 +1,7 @@
 package com.myriad.client;
 
 import com.myriad.network.NetworkSetup;
+import com.myriad.network.RiftCrabMarker;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -60,7 +61,7 @@ public final class MinimapOverlay {
                     List.of(new NetworkSetup.MinimapMarker(1, 1, 45, 54, new java.util.UUID(0, 1)),
                             new NetworkSetup.MinimapMarker(0, 1, 68, 32, new java.util.UUID(0, 2)),
                             new NetworkSetup.MinimapMarker(4, 1, 30, 66, new java.util.UUID(0, 0)),
-                            new NetworkSetup.MinimapMarker(5, 2, 88, 50, new java.util.UUID(0, 0))));
+                            new NetworkSetup.MinimapMarker(5, 2, 88, 50, new java.util.UUID(0, 0))), List.of());
         }
         renderAt(gui, font, x, y, data);
     }
@@ -98,6 +99,9 @@ public final class MinimapOverlay {
             int py = top + (int)Math.round(uv[1] * (height - 1));
             TeamSignalClient.glyph(gui, px, py, com.myriad.game.TeamSignalKind.values()[signal.kind()].color, 4, signal.kind());
         }
+        for (RiftCrabMarker crab : data.crabs()) {
+            renderCrabStatus(gui, font, crab, projection, left, top, width, height);
+        }
         renderLegend(gui, font, left, y + SIZE - 12);
     }
 
@@ -122,6 +126,37 @@ public final class MinimapOverlay {
                 case NetworkSetup.MinimapMarker.FOUNTAIN -> renderFountain(gui, px, py, color);
                 default -> { }
             }
+    }
+
+    private static void renderCrabStatus(GuiGraphicsExtractor gui, Font font, RiftCrabMarker crab,
+            Projection projection, int left, int top, int width, int height) {
+        double[] uv = projection.project(crab.x(), crab.z());
+        int x = left + (int) Math.round(uv[0] * (width - 1));
+        int y = top + (int) Math.round(uv[1] * (height - 1));
+        if (crab.status() == RiftCrabMarker.Status.ALIVE) {
+            // Raised claws beside the boss marker distinguish a sighted crab from a static camp.
+            int clawX = Math.clamp(x + 5, left + 2, left + width - 9);
+            int clawY = Math.clamp(y - 2, top + 3, top + height - 5);
+            gui.fill(clawX - 1, clawY - 3, clawX + 8, clawY + 4, 0xEE101811);
+            gui.fill(clawX, clawY - 2, clawX + 2, clawY + 1, 0xFFADF09A);
+            gui.fill(clawX + 5, clawY - 2, clawX + 7, clawY + 1, 0xFFADF09A);
+            gui.fill(clawX + 1, clawY, clawX + 6, clawY + 3, 0xFFADF09A);
+            return;
+        }
+        String label = "?";
+        if (crab.status() == RiftCrabMarker.Status.WAITING) {
+            var level = Minecraft.getInstance().level;
+            if (level == null) return;
+            long seconds = crab.secondsLeft(level.getGameTime());
+            long minutes = seconds / 60, tail = seconds % 60;
+            label = (minutes < 10 ? "0" : "") + minutes + ":" + (tail < 10 ? "0" : "") + tail;
+        }
+        int textWidth = font.width(label);
+        int tx = x + 6 + textWidth < left + width ? x + 6 : x - 6 - textWidth;
+        tx = Math.clamp(tx, left + 1, left + width - textWidth - 1);
+        int ty = Math.clamp(y - 4, top + 1, top + height - font.lineHeight - 1);
+        gui.fill(tx - 1, ty - 1, tx + textWidth + 1, ty + font.lineHeight, 0xEF141A1E);
+        gui.text(font, label, tx, ty, crab.status() == RiftCrabMarker.Status.WAITING ? 0xFFFFE59D : 0xFFD5DADD);
     }
 
     /** Small code-drawn pixel symbols: no world scans, textures or extra render passes. */

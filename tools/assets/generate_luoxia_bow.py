@@ -141,6 +141,9 @@ class Bow:
             offset = math.sqrt(max(0,SPINE[7][1]**2-anchor[1]**2))
             rest = (anchor[0]+offset,0)
             self.strip(f"{side}_string","string",anchor,rest,.115,.115)
+        # The arrow runs from the serving to the shallow shelf on the riser.
+        for side, z in (("left", -.95), ("right", .95)):
+            self.box("arrow_shelf_"+side,"gold",(-.1,-.10,z),(.92,.22,.58))
         self.box("serving","silk",(rest[0],0,0),(.22,.47,.24))
         return {"meta":{"name":self.name},"target":"item","parts":self.parts,
                 "atlas":{"width":256,"height":256},"face_details":[]}
@@ -197,6 +200,9 @@ def main():
         validate(model,runtime,png)
         (SOURCE/(name+".bbmodel")).write_text(json.dumps(model,separators=(",",":"))+"\n")
         (ASSETS/"models/item"/(name+".json")).write_text(json.dumps(runtime,separators=(",",":"))+"\n")
+        # Render-only item definitions select the authored pose without starting a vanilla use action.
+        path = ASSETS/"items"/(name+"_held.json")
+        path.write_text(json.dumps({"model":{"type":"minecraft:model","model":"myriad:item/"+name}}, indent=2)+"\n")
         print(name,len(spec["parts"]),"elements")
 
 

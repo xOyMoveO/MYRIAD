@@ -5,6 +5,8 @@ import com.myriad.character.ability.AbilityRuntime;
 import com.myriad.character.rework.FirstGroupGrowth;
 import com.myriad.combat.BasicAttackAssist;
 import com.myriad.combat.BasicAttackSystem;
+import com.myriad.combat.InputFailure;
+import com.myriad.combat.MeleeInputWindow;
 import com.myriad.combat.VanillaMeleeAttack;
 import com.myriad.player.PlayerDataProvider;
 import com.myriad.registry.ModAttributes;
@@ -35,13 +37,23 @@ final class MeleeAssistChecks {
 
     static void run(GameTestHelper helper) {
         geometry(helper);
+        inputWindows(helper);
         boolean wasEnabled = ModState.isEnabled();
         boolean wasTraining = TrainingMode.isEnabled();
         var player = (ServerPlayer) helper.makeMockServerPlayer(GameType.SURVIVAL);
+        var hints = new java.util.ArrayList<InputFailure>();
         player.connection = new ServerGamePacketListenerImpl(helper.getLevel().getServer(),
                 new Connection(PacketFlow.SERVERBOUND), player,
                 CommonListenerCookie.createInitial(player.getGameProfile(), false)) {
             @Override public void send(Packet<?> packet) {}
+            @Override public void send(Packet<?> packet, io.netty.channel.ChannelFutureListener listener) {
+                if (packet instanceof net.minecraft.network.protocol.game.ClientboundSystemChatPacket message
+                        && message.overlay() && message.content().getContents() instanceof
+                        net.minecraft.network.chat.contents.TranslatableContents key) {
+                    var reason = InputFailure.forKey(key.getKey());
+                    if (reason != null) hints.add(reason);
+                }
+            }
         };
         player.connection.handleAcceptPlayerLoad(new ServerboundPlayerLoadedPacket());
         BlockPos base = helper.absolutePos(new BlockPos(3, 6, 3));
@@ -101,11 +113,17 @@ final class MeleeAssistChecks {
             target.setInvisible(true);
             VanillaMeleeAttack.tryAssist(player);
             target.setInvisible(false);
+            hints.clear();
+            player.tickCount += 12;
             data.setBuff("g1_stun", 20);
             VanillaMeleeAttack.tryAssist(player);
             data.setBuff("g1_stun", 0);
+            player.tickCount += 12;
             strength.setInt(player, 0);
             VanillaMeleeAttack.tryAssist(player);
+            VanillaMeleeAttack.tryAssist(player);
+            helper.assertTrue(hints.equals(java.util.List.of(InputFailure.STUN, InputFailure.RECOVERING)),
+                    "Real authority sends one private action-bar reason per rejected state");
             helper.assertTrue(JiarenManager.hp(target.getUUID()) == fullHealth && strength.getInt(player) == 0,
                     "Invisible targets, stun and incomplete recovery cannot produce an assisted hit");
 
@@ -148,6 +166,24 @@ final class MeleeAssistChecks {
             TrainingMode.setEnabled(wasTraining);
         }
         helper.succeed();
+    }
+
+    private static void inputWindows(GameTestHelper helper) {
+        var buffer = new MeleeInputWindow();
+        helper.assertTrue(!buffer.offer(10, 1, 0) && !buffer.offer(10, 3, 2), "Disabled or >2t never queues");
+        helper.assertTrue(buffer.offer(10, 2, 2) && !buffer.consume(11, false)
+                && !buffer.offer(11, 2, 2) && buffer.consume(12, true) && !buffer.consume(12, true),
+                "A two-tick press cannot renew or fire twice");
+        helper.assertTrue(buffer.offer(20, 1, 2) && buffer.consume(21, true), "One-tick press fires when ready");
+        helper.assertTrue(buffer.offer(30, 1, 2) && !buffer.consume(31, false) && !buffer.consume(32, true),
+                "A slowed recovery cannot extend its original deadline");
+        buffer.offer(40, 2, 2);
+        buffer.clear();
+        helper.assertTrue(!buffer.consume(42, true), "A cancelled press cannot produce damage");
+        var hints = new InputFailure.Window();
+        helper.assertTrue(hints.allow(InputFailure.RECOVERING, 0) && !hints.allow(InputFailure.RECOVERING, 1)
+                && hints.allow(InputFailure.STUN, 1) && !hints.allow(InputFailure.MANA, 12)
+                && hints.allow(InputFailure.MANA, 13), "Duplicate hints are quiet and controls take precedence");
     }
 
     private static void geometry(GameTestHelper helper) {

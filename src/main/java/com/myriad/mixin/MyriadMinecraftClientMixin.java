@@ -13,6 +13,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(Minecraft.class)
 public abstract class MyriadMinecraftClientMixin {
     @Shadow private int missTime;
+    @Shadow private void pick(float partialTick) { throw new AssertionError(); }
+    @Shadow private boolean startAttack() { throw new AssertionError(); }
+
+    @Inject(method="handleKeybinds", at=@At("TAIL"))
+    private void myriad$consumeMeleePress(CallbackInfo ci) {
+        var mc = (Minecraft)(Object)this;
+        if (!com.myriad.client.MeleeAttackBuffer.ready(mc) || missTime > 0) return;
+        pick(1.0f);
+        if (com.myriad.client.MeleeAssistInput.hasAttackTarget(mc)) startAttack();
+        else com.myriad.client.InputFeedback.show(com.myriad.combat.InputFailure.ATTACK_TARGET);
+    }
+
 
     @Inject(method="startAttack",at=@At("HEAD"),cancellable=true)
     private void myriad$authoritativeAttack(CallbackInfoReturnable<Boolean> cir) {
@@ -24,7 +36,8 @@ public abstract class MyriadMinecraftClientMixin {
     private void myriad$noCustomAttackMining(boolean held,CallbackInfo ci) {
         if(!com.myriad.client.ClientDataHolder.modEnabled()
                 || com.myriad.client.ClientDataHolder.characterId().isEmpty())return;
-        if(com.myriad.client.RespawnSpectatorView.isActive()
+        if(com.myriad.client.MeleeAttackBuffer.suppressMining() && held
+                || com.myriad.client.RespawnSpectatorView.isActive()
                 || com.myriad.client.ClientDataHolder.placementType()!=0
                 || com.myriad.client.ClientDataHolder.isChanneling()
                 || com.myriad.client.ClientDataHolder.buffTicks("g1_stun")>0

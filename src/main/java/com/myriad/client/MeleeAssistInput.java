@@ -44,6 +44,24 @@ public final class MeleeAssistInput {
                 && MeleeAssistTargeting.find(player, target -> visibleOpponent(player, target)) != null;
     }
 
+    /** Exact vanilla selections can include structures; the assist keeps its narrower target list. */
+    public static boolean hasAttackTarget(Minecraft mc) {
+        if (!(mc.hitResult instanceof net.minecraft.world.phys.EntityHitResult hit)) return shouldAssist(mc);
+        var player = mc.player;
+        if (!(hit.getEntity() instanceof LivingEntity target) || !target.isAlive() || target.isSpectator()
+                || target.isInvisibleTo(player) || !player.hasLineOfSight(target)
+                || !player.isWithinEntityInteractionRange(target, 0)
+                || target instanceof Player hero && hero.isCreative()) return false;
+        if (target instanceof com.myriad.game.DefenseTowerEntity) {
+            var name = target.getCustomName();
+            var team = ClientDataHolder.faction();
+            return team != null && name != null && name.getContents() instanceof TranslatableContents text
+                    && text.getArgs().length > 0 && text.getArgs()[0] instanceof net.minecraft.network.chat.Component faction
+                    && !faction.equals(team.displayName());
+        }
+        return visibleOpponent(player, target);
+    }
+
     private static boolean visibleOpponent(LocalPlayer player, LivingEntity target) {
         if (target.isInvisible() || target.isInvisibleTo(player)) return false;
         boolean practice = player.level().dimension().equals(TrainingGroundMap.KEY);

@@ -8,16 +8,20 @@ public final class MinimapClientState {
 
     private static volatile NetworkSetup.MinimapSnapshotPayload snapshot;
 
+    private static net.minecraft.client.multiplayer.ClientLevel level;
+
     public static void update(NetworkSetup.MinimapSnapshotPayload payload) {
+        level = payload == null ? null : net.minecraft.client.Minecraft.getInstance().level;
         snapshot = payload;
     }
 
     public static NetworkSetup.MinimapSnapshotPayload snapshot() {
-        return snapshot;
+        return level == net.minecraft.client.Minecraft.getInstance().level ? snapshot : null;
     }
 
     public static boolean configured() {
-        return snapshot != null && snapshot.configured();
+        var current = snapshot();
+        return current != null && current.configured();
     }
 
 }

@@ -46,7 +46,11 @@ public final class CombatHudOverlay {
 
     static Layout draw(GuiGraphicsExtractor gui, Font font) {
         Panel panel = activePanel(gui.guiWidth(), gui.guiHeight());
-        if (panel == null) return null;
+        if (panel == null) {
+            if (LuoxiaPoseClient.early() && !Minecraft.getInstance().gui.hud.isHidden())
+                gui.centeredText(font, label("bow_early"), gui.guiWidth() / 2, gui.guiHeight() / 2 + 20, AMBER);
+            return null;
+        }
         Layout layout = panel.layout();
         boolean skin = SkillIcon.hasResource(CombatHudSkin.PATH);
         gui.pose().pushMatrix();
@@ -242,6 +246,18 @@ public final class CombatHudOverlay {
         var title = label("attack");
         String reported = value.ready() ? label("ready").getString()
                 : value.cooldownTicks() > 0 ? secondsWithUnit(value.cooldownTicks()).getString() : "—";
+        if (state.character() == com.myriad.character.CharacterType.LUOXIA) {
+            var player = net.minecraft.client.Minecraft.getInstance().player;
+            var pose = player == null ? null : LuoxiaPoseClient.pose(player);
+            boolean drawing = pose != null && pose.phase() == com.myriad.network.LuoxiaBowPosePayload.Phase.DRAW;
+            boolean releasable = drawing && pose.work() >= pose.minimum();
+            boolean full = drawing && pose.skill() == 1 && pose.work() >= pose.maximum();
+            boolean canDraw = value.ready() && (pose == null || pose.phase() == com.myriad.network.LuoxiaBowPosePayload.Phase.CANCEL
+                    || pose.phase() == com.myriad.network.LuoxiaBowPosePayload.Phase.RELEASE);
+            reported = label(LuoxiaPoseClient.early() ? "bow_early" : full ? "bow_full" : releasable ? "bow_loose"
+                    : drawing ? "bow_drawing" : canDraw ? "bow_ready" : "bow_busy").getString();
+            value = new CombatHudState.Attack(drawing ? pose.work()/pose.maximum() : 0, canDraw || releasable, 0);
+        }
         gui.text(font, title, x + 2, y, WHITE);
         int valueY = wide ? y : y + 10;
         int color = value.ready() ? READY : value.cooldownTicks() > 0 ? WHITE : TEXT_DIM;

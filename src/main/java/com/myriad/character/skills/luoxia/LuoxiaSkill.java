@@ -14,6 +14,8 @@ abstract class LuoxiaSkill extends AbilitySkill {
 
     @Override public void preparing(Cast c) {
         if (slot() != 1) LuoxiaBow.cancelDraw(c.player);
+        if (index() == 2 || index() == 4)
+            LuoxiaBowPose.skill(c, com.myriad.network.LuoxiaBowPosePayload.Phase.RELOAD, 1, c.player.getLookAngle());
     }
 
     static boolean interrupted(Cast c) {

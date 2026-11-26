@@ -14,6 +14,8 @@ import net.minecraft.resources.Identifier;
 
 /** Lobby and queue share navigation so closing a screen never withdraws a player. */
 public final class LobbyScreen extends Screen {
+    private final boolean afterRemake;
+    private String shownOffer = "";
     private final List<Button> actions = new ArrayList<>();
     private boolean queued, training, showProposal;
     private Button main, propose, train;
@@ -24,7 +26,11 @@ public final class LobbyScreen extends Screen {
     private int left, top, panelWidth, bodyHeight, actionWidth;
     private boolean wide;
 
-    public LobbyScreen() { super(label("title")); }
+    public LobbyScreen() { this(false); }
+    public LobbyScreen(boolean afterRemake) {
+        super(label(afterRemake ? "remake.result" : "title"));
+        this.afterRemake = afterRemake;
+    }
     private static Component label(String key, Object... args) { return Component.translatable("lobby.myriad."+key, args); }
     @Override public boolean isPauseScreen() { return false; }
 
@@ -44,7 +50,13 @@ public final class LobbyScreen extends Screen {
         int footer = top + panelHeight - 26;
         int motionW = Math.min(137, (panelWidth-28)/2);
         actions.clear();
-        main = action(queued ? "leave" : "join", () -> LobbyClient.send(queued ? "leave" : "join",""));
+        String joinLabel = afterRemake ? "results.requeue" : "join";
+        main = action(queued ? "leave" : joinLabel, () -> LobbyClient.send(queued ? "leave" : "join",""));
+        shownOffer = s == null ? "" : s.remakeOfferId();
+        if (!shownOffer.isEmpty()) {
+            String offer = shownOffer;
+            action("remake.action", () -> LobbyClient.send("remake", offer));
+        }
         propose = showProposal ? action("propose", () -> LobbyClient.send("propose","")) : null;
         train = action(training ? "training_controls" : "train", () -> {
             if (training) Minecraft.getInstance().setScreenAndShow(new TrainScreen(this));
@@ -56,7 +68,7 @@ public final class LobbyScreen extends Screen {
             b.setMessage(motionLabel());
         }));
         int doneWidth = Math.min(74,(panelWidth-32)/2);
-        addRenderableWidget(LobbyTheme.button(left+panelWidth-12-doneWidth,footer,doneWidth,19,Component.translatable("gui.done"),b -> onClose()));
+        addRenderableWidget(LobbyTheme.button(left+panelWidth-12-doneWidth,footer,doneWidth,19,afterRemake ? label("results.lobby") : Component.translatable("gui.done"),b -> onClose()));
         update();
     }
 
@@ -80,6 +92,7 @@ public final class LobbyScreen extends Screen {
             previewTexture = Minecraft.getInstance().getResourceManager().getResource(resource).isPresent() ? resource : null;
         }
         if (((s != null && s.position() > 0) != queued) || ((s != null && s.training()) != training)
+                || !shownOffer.equals(s == null ? "" : s.remakeOfferId())
                 || (queued && (s.capacity()==6) != showProposal)) {
             boolean enteredTraining = s != null && s.training() && !training;
             if (enteredTraining) {
@@ -135,6 +148,8 @@ public final class LobbyScreen extends Screen {
         if (s == null) {
             result.add(label("sync"));
         } else {
+            var remake = LobbyClient.remakeNotice(s);
+            if (remake != null) result.add(remake);
             result.add(label("count", s.count(), s.capacity()));
             if (queued) result.add(label("position", s.position(), s.waitedSeconds()/60, String.format(java.util.Locale.ROOT,"%02d",s.waitedSeconds()%60)));
             if (s.voteSeconds() >= 0) result.add(label("proposal",s.count()/2,s.count()/2,s.voteSeconds()));

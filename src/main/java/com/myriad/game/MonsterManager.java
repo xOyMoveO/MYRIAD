@@ -27,6 +27,7 @@ import net.minecraft.world.phys.Vec3;
 import com.myriad.character.ability.ActionTime;
 import com.myriad.character.skills.keheng.KehengTimeFields;
 import com.myriad.combat.NpcCombat;
+import com.myriad.network.RiftCrabMarker;
 import com.myriad.player.PlayerData;
 import com.myriad.player.PlayerDataProvider;
 
@@ -101,7 +102,16 @@ public final class MonsterManager {
         }
     }
 
-    private record PendingRespawn(MonsterType type, long at, String pointId) {}
+    private record PendingRespawn(MonsterType type, long at, String pointId, Set<Faction> seenBy) {
+        private PendingRespawn {
+            // Saves written before team knowledge existed may only reveal this timer upon observation.
+            seenBy = seenBy == null ? new HashSet<>() : new HashSet<>(seenBy);
+        }
+
+        boolean isFixedCrab() {
+            return pointId != null && type == MonsterType.CHERRY_RIFT_CRAB;
+        }
+    }
 
     private record CherryStrike(UUID target, CherryRiftAttackTiming timing, ActionTime.Progress progress) {}
 
@@ -273,7 +283,8 @@ public final class MonsterManager {
                 if (now >= pending.at()) {
                     SpawnPoint point = pending.pointId() == null ? null : SPAWN_POINTS.get(pending.pointId());
                     if (point != null) {
-                        spawnConfigured(level, point, pending.type(), false);
+                        boolean spawned = spawnConfigured(level, point, pending.type(), false);
+                        if (!spawned && pending.isFixedCrab()) continue;
                     } else {
                         spawn(level, entry.getKey(), pending.type());
                     }
@@ -284,11 +295,17 @@ public final class MonsterManager {
         // 倒计时显示刷新（每秒）
         if (now % 20 == 0) {
             for (Map.Entry<BlockPos, PendingRespawn> entry : RESPAWN.entrySet()) {
-                long at = entry.getValue().at();
+                var pending = entry.getValue();
+                if (isMatchCrab(pending)) {
+                    // Reaching the visible camp timer also reveals the respawn to that team.
+                    observeCrab(level, pending, Vec3.atBottomCenterOf(entry.getKey()).add(0, 1.5, 0));
+                }
+                long at = pending.at();
                 int remain = (int) Math.max(0, (at - now) / 20);
                 ArmorStand stand = RESPAWN_DISPLAY.get(entry.getKey());
                 if (stand == null || !stand.isAlive()) {
-                    stand = createRespawnStand(level, entry.getKey());
+                    stand = createRespawnStand(level, entry.getKey(), pending);
+                    if (stand == null) continue;
                     RESPAWN_DISPLAY.put(entry.getKey(), stand);
                 }
                 stand.setCustomName(Component.literal("刷新: " + remain + "s"));
@@ -325,11 +342,49 @@ public final class MonsterManager {
         for (SpawnPoint point : SPAWN_POINTS.values()) {
             MonsterType type = point.type();
             if (point.largeRandom() || type == null || INITIAL_SPAWNED_POINTS.contains(point.id())) continue;
-            long firstSpawnAt = type.isSmallMonster() ? SMALL_MONSTER_FIRST_SPAWN_TICKS
-                    : type.isMediumMonster() ? MEDIUM_MONSTER_FIRST_SPAWN_TICKS : FIXED_BOSS_FIRST_SPAWN_TICKS;
+            long firstSpawnAt = firstSpawnDelay(type);
             if (elapsed < firstSpawnAt || !isPointFree(point.id())) continue;
             if (spawnConfigured(level, point, type, false)) INITIAL_SPAWNED_POINTS.add(point.id());
         }
+    }
+
+    private static long firstSpawnDelay(MonsterType type) {
+        return type.isSmallMonster() ? SMALL_MONSTER_FIRST_SPAWN_TICKS
+                : type.isMediumMonster() ? MEDIUM_MONSTER_FIRST_SPAWN_TICKS : FIXED_BOSS_FIRST_SPAWN_TICKS;
+    }
+
+    static List<RiftCrabMarker> crabMapMarkers(ServerLevel level, Faction team) {
+        GameManager manager = GameManager.get();
+        if (team == null || manager == null || manager.getPhase() != GameManager.Phase.PLAYING
+                || activeMatchStart != manager.getMatchStartTime()) return List.of();
+        List<RiftCrabMarker> markers = new ArrayList<>();
+        for (SpawnPoint point : SPAWN_POINTS.values()) {
+            if (point.type != MonsterType.CHERRY_RIFT_CRAB) continue;
+            float x = point.pos.getX() + 0.5F, z = point.pos.getZ() + 0.5F;
+            if (!MapSystem.contains(x, z)) continue;
+            long spawnAt = 0;
+            RiftCrabMarker.Status status = RiftCrabMarker.Status.UNKNOWN;
+            if (!INITIAL_SPAWNED_POINTS.contains(point.id)) {
+                status = RiftCrabMarker.Status.WAITING;
+                spawnAt = activeMatchStart + firstSpawnDelay(point.type);
+            } else {
+                PendingRespawn pending = RESPAWN.get(point.pos);
+                if (pending != null && point.id.equals(pending.pointId) && pending.seenBy.contains(team)) {
+                    status = RiftCrabMarker.Status.WAITING;
+                    spawnAt = pending.at;
+                } else if (pending == null) {
+                    for (State state : STATES.values()) {
+                        if (point.id.equals(state.spawnPointId) && state.entity != null && state.entity.isAlive()
+                                && VisionSystem.seesObjective(level, team, state.entity.getEyePosition())) {
+                            status = RiftCrabMarker.Status.ALIVE;
+                            break;
+                        }
+                    }
+                }
+            }
+            markers.add(new RiftCrabMarker(point.id, x, z, status, spawnAt));
+        }
+        return List.copyOf(markers);
     }
 
     /** Preview follows normal camp ownership and respawn rules; a real match resets it. */
@@ -529,8 +584,30 @@ public final class MonsterManager {
     }
 
     /** 创建隐形倒计时 ArmorStand */
-    private static ArmorStand createRespawnStand(ServerLevel level, BlockPos pos) {
-        ArmorStand stand = EntityTypes.ARMOR_STAND.create(level, EntitySpawnReason.MOB_SUMMONED);
+    private static boolean isMatchCrab(PendingRespawn pending) {
+        var manager = GameManager.get();
+        return pending.isFixedCrab() && manager != null && manager.getPhase() == GameManager.Phase.PLAYING;
+    }
+
+    private static void observeCrab(ServerLevel level, PendingRespawn pending, Vec3 position) {
+        for (Faction team : Faction.values()) {
+            if (!pending.seenBy.contains(team) && VisionSystem.seesObjective(level, team, position)) {
+                pending.seenBy.add(team);
+            }
+        }
+    }
+
+    private static ArmorStand createRespawnStand(ServerLevel level, BlockPos pos, PendingRespawn pending) {
+        ArmorStand stand = isMatchCrab(pending)
+                ? new ArmorStand(EntityTypes.ARMOR_STAND, level) {
+                    @Override public boolean broadcastToPlayer(ServerPlayer player) {
+                        var manager = GameManager.get();
+                        return manager != null && manager.getPhase() == GameManager.Phase.PLAYING
+                                && manager.isParticipant(player.getUUID()) && !TrainingMode.isEnabled(player)
+                                && pending.seenBy.contains(manager.factionOf(player)) && super.broadcastToPlayer(player);
+                    }
+                }
+                : EntityTypes.ARMOR_STAND.create(level, EntitySpawnReason.MOB_SUMMONED);
         if (stand == null) {
             return null;
         }
@@ -545,7 +622,7 @@ public final class MonsterManager {
     }
 
     /** 野怪死亡：清理状态 + 安排重生 + 倒计时显示 */
-    public static void onDeath(LivingEntity entity) {
+    public static void onDeath(LivingEntity entity, ServerPlayer killer) {
         State s = STATES.remove(entity.getUUID());
         if (s == null) {
             return;
@@ -554,9 +631,19 @@ public final class MonsterManager {
         // 大型随机首领不在原地点直接复活，由全局 5 分钟轮次重新抽取位置和类型。
         if (!s.randomBoss && s.type.getRespawnSeconds() > 0 && entity.level() instanceof ServerLevel level) {
             long at = level.getGameTime() + s.type.getRespawnSeconds() * 20L;
-            RESPAWN.put(s.spawnPos, new PendingRespawn(s.type, at, s.spawnPointId));
+            PendingRespawn pending = new PendingRespawn(s.type, at, s.spawnPointId, Set.of());
+            if (isMatchCrab(pending)) {
+                var manager = GameManager.get();
+                if (killer != null && killer.level() == level && manager.isParticipant(killer.getUUID())
+                        && !TrainingMode.isEnabled(killer)) {
+                    Faction team = manager.factionOf(killer);
+                    if (team != null) pending.seenBy.add(team);
+                }
+                observeCrab(level, pending, entity.getEyePosition());
+            }
+            RESPAWN.put(s.spawnPos, pending);
             // 立即创建倒计时显示
-            ArmorStand stand = createRespawnStand(level, s.spawnPos);
+            ArmorStand stand = createRespawnStand(level, s.spawnPos, pending);
             if (stand != null) {
                 stand.setCustomName(Component.literal("刷新: " + s.type.getRespawnSeconds() + "s"));
                 RESPAWN_DISPLAY.put(s.spawnPos, stand);

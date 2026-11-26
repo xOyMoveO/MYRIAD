@@ -16,6 +16,10 @@ final class CastProgressBar {
     private CastProgressBar() { }
 
     static void draw(GuiGraphicsExtractor gui, Font font, String label, float progress) {
+        draw(gui, font, label, progress, null);
+    }
+
+    static void draw(GuiGraphicsExtractor gui, Font font, String label, float progress, CombatHudLayout.Bounds panel) {
         var window = Minecraft.getInstance().getWindow();
         int centerX = window.getGuiScaledWidth() / 2;
         int y = window.getGuiScaledHeight() / 2 + 42;
@@ -23,6 +27,24 @@ final class CastProgressBar {
         int textWidth = font.width(label);
         int width = Math.min(available, Math.max(MIN_WIDTH, textWidth + 12));
         int x = centerX - width / 2;
+        if (panel != null) {
+            var prompts = HudLayoutConfig.state(HudLayoutConfig.Element.PROMPTS);
+            // A player who has moved or scaled the prompt group owns its placement.
+            boolean automatic = prompts.x() == HudLayoutConfig.Element.PROMPTS.defaultX()
+                    && prompts.y() == HudLayoutConfig.Element.PROMPTS.defaultY() && prompts.scale() == 1;
+            if (automatic && y + 18 > panel.y() && y - 3 < panel.bottom()
+                    && x - 4 < panel.right() && x + width + 4 > panel.x()) {
+                int screenWidth = window.getGuiScaledWidth();
+                boolean useRight = screenWidth - panel.right() >= panel.x();
+                int left = useRight ? panel.right() + 8 : 8;
+                int right = useRight ? screenWidth - 8 : panel.x() - 8;
+                if (right - left >= 40) {
+                    width = Math.min(width, right - left);
+                    x = Math.clamp(x, left, right - width);
+                    centerX = x + width / 2;
+                }
+            }
+        }
 
         gui.fill(x - 4, y - 3, x + width + 4, y + 18, SURFACE);
         float textScale = Math.min(1.0F, Math.max(1, width - 8) / (float)Math.max(1, textWidth));

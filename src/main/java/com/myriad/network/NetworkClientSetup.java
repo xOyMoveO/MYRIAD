@@ -35,6 +35,8 @@ final class NetworkClientSetup {
 
         ClientPlayNetworking.registerGlobalReceiver(YikeStatePayload.TYPE,
                 (payload,context)->com.myriad.client.YikeClientState.receive(payload));
+        ClientPlayNetworking.registerGlobalReceiver(LuoxiaBowPosePayload.TYPE,
+                (payload,context) -> com.myriad.client.LuoxiaPoseClient.receive(payload));
         ClientPlayNetworking.registerGlobalReceiver(ShuoViewPayload.TYPE,
                 (payload,context)->com.myriad.client.firstperson.ShuoView.receive(payload));
         ClientPlayNetworking.registerGlobalReceiver(FlameSkillViewPayload.TYPE,
@@ -64,6 +66,8 @@ final class NetworkClientSetup {
                 (payload, context) -> com.myriad.client.EnemyHealthBars.update(payload));
         ClientPlayNetworking.registerGlobalReceiver(RewardFloatPayload.TYPE,
                 (payload, context) -> com.myriad.client.RewardFloater.add(payload));
+        ClientPlayNetworking.registerGlobalReceiver(TowerLockPayload.TYPE,
+                (payload, context) -> com.myriad.client.ControlStatusOverlay.towerLock(payload));
         ClientPlayNetworking.registerGlobalReceiver(TowerAlertPayload.TYPE,
                 (payload, context) -> com.myriad.client.TowerAlertOverlay.show(
                 payload.laneId(), payload.tier()));

@@ -56,6 +56,8 @@ public final class ArenaFixtureChecks implements ModInitializer {
     private static boolean trainingForcedChunk;
     @Override public void onInitialize() {
         Registry.register(BuiltInRegistries.TEST_FUNCTION, Identifier.parse("myriad:arena_fixture"), ArenaFixtureChecks::run);
+        Registry.register(BuiltInRegistries.TEST_FUNCTION, Identifier.parse("myriad:early_remake"), EarlyRemakeChecks::run);
+        Registry.register(BuiltInRegistries.TEST_FUNCTION, Identifier.parse("myriad:lane_rewards"), ArenaFixtureChecks::laneRewards);
         for(String mode:List.of("3v3","5v5")) Registry.register(BuiltInRegistries.TEST_FUNCTION,
                 Identifier.parse("myriad:arena_tower_"+mode), helper -> towerProbe(helper,mode));
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
@@ -133,6 +135,123 @@ public final class ArenaFixtureChecks implements ModInitializer {
         } catch (Throwable error) { suite.report("gametest", error); throw new IllegalStateException(error); }
         finally { suite.removePlayers(); }
     }
+    private static void laneRewards(GameTestHelper helper) {
+        var suite = new Suite(helper.getLevel().getServer());
+        try {
+            suite.install();
+            suite.begin("3v3");
+            var match = GameManager.get();
+            var finisher = suite.players.getFirst();
+            var ally = suite.players.stream().filter(p -> p != finisher && match.factionOf(p) == match.factionOf(finisher)).findFirst().orElseThrow();
+            var solo = suite.opponent(finisher);
+            var waiting = suite.player(6);
+            var own = PlayerDataProvider.get(finisher);
+            var shared = PlayerDataProvider.get(ally);
+            var alone = PlayerDataProvider.get(solo);
+            var center = new Vec3(345, 76, 80);
+            for (var player : suite.players) player.setPos(center.add(32, 0, 0));
+            waiting.setPos(center);
+            var excluded = PlayerDataProvider.get(waiting);
+            var excludedXp = excluded.getXp();
+            var enemyTeam = match.factionOf(solo);
+            long start = match.getMatchStartTime();
+            for (int wave = 1; wave <= 2; wave++) {
+                suite.clock(start + 1400 + (wave - 1) * 800);
+                suite.tick();
+                int startingGold = shared.getGold();
+                for (String kind : List.of("MELEE", "RANGED")) {
+                    for (var minion : suite.units(kind, enemyTeam)) {
+                        minion.setPos(center);
+                        ally.setPos(center.add(12, 0, 0));
+                        int goldBefore = own.getGold();
+                        int expectedGold = GlobalBalance.goldIncome(MatchBalance.farmReward(finisher,
+                                LaneSystem.minionReward(kind.equals("MELEE") ? 12 : 18, true), false));
+                        DamageCalc.dealBasicDamage(finisher, minion, 10_000_000, DamageCalc.Kind.TRUE);
+                        suite.check(!minion.isAlive() && own.getGold() == goldBefore + expectedGold,
+                                "distant finisher collected full gold from the real player last hit");
+                    }
+                    ally.setPos(center.add(13, 0, 0));
+                    for (var minion : suite.units(kind, match.factionOf(finisher))) {
+                        minion.setPos(center);
+                        DamageCalc.dealBasicDamage(solo, minion, 10_000_000, DamageCalc.Kind.TRUE);
+                    }
+                }
+                suite.check(own.getLevel() == wave && alone.getLevel() == wave && shared.getLevel() == wave,
+                        "solo last hitter, duo last hitter and nearby teammate reach level 2 on wave two");
+                if (wave == 1) {
+                    suite.check(own.getXp() == 84 && alone.getXp() == 84 && shared.getXp() == 66,
+                            "first wave gives 84 last-hit XP and 66 shared XP");
+                    suite.check(shared.getGold() == startingGold, "teammate gains no gold from shared player kills");
+                }
+            }
+            suite.check(excluded.getXp() == excludedXp, "unrostered bystander receives no experience");
+            suite.clock(start + 3000);
+            suite.tick();
+            var minions = suite.units("MELEE", enemyTeam);
+            var tower = suite.units("TOWER", match.factionOf(finisher)).getFirst();
+            var corpse = minions.getFirst();
+            corpse.setPos(center);
+            ally.setPos(center.add(12, 0, 0));
+            int nearXp = shared.getXp(), nearGold = shared.getGold(), farXp = own.getXp();
+            com.myriad.combat.NpcCombat.towerHit(corpse, tower, 10_000_000, 0, DamageCalc.Kind.TRUE);
+            int share = MatchBalance.farmReward(ally, LaneSystem.minionReward(18, false, true), true);
+            suite.check(!corpse.isAlive() && shared.getXp() == nearXp + share && shared.getGold() > nearGold
+                    && own.getXp() == farXp, "tower last hit rewards only the nearby participant with gold and XP");
+            var second = minions.get(1);
+            second.setPos(center);
+            ally.setPos(center.add(12.01, 0, 0));
+            int outside = shared.getXp();
+            DamageCalc.dealBasicDamage(finisher, second, 10_000_000, DamageCalc.Kind.TRUE);
+            suite.check(shared.getXp() == outside, "12.01 blocks is outside shared experience");
+            suite.clock(start + 3800);
+            suite.tick();
+            var edgeCases = new ArrayList<>(suite.units("RANGED", enemyTeam));
+            edgeCases.addAll(suite.units("MAGIC", enemyTeam));
+            edgeCases.addAll(suite.units("MELEE", enemyTeam));
+            ally.setPos(center);
+            int excludedStart = shared.getXp();
+            ally.setGameMode(GameType.SPECTATOR);
+            var spectating = edgeCases.removeFirst();
+            spectating.setPos(center);
+            DamageCalc.dealBasicDamage(finisher, spectating, 100000, DamageCalc.Kind.TRUE);
+            ally.setGameMode(GameType.SURVIVAL);
+            suite.server.getPlayerList().getPlayersByUUID().remove(ally.getUUID());
+            var offline = edgeCases.removeFirst();
+            offline.setPos(center);
+            DamageCalc.dealBasicDamage(finisher, offline, 100000, DamageCalc.Kind.TRUE);
+            suite.server.getPlayerList().getPlayersByUUID().put(ally.getUUID(), ally);
+            var nether = suite.server.getLevel(net.minecraft.world.level.Level.NETHER);
+            suite.check(ally.teleportTo(nether, center.x, center.y, center.z, java.util.Set.of(), 0, 0, true),
+                    "move locked participant to another dimension for the eligibility check");
+            var abroad = edgeCases.removeFirst();
+            abroad.setPos(center);
+            DamageCalc.dealBasicDamage(finisher, abroad, 100000, DamageCalc.Kind.TRUE);
+            suite.check(ally.teleportTo(suite.server.overworld(), center.x, center.y, center.z,
+                    java.util.Set.of(), 0, 0, true), "return participant to battlefield");
+            var removed = edgeCases.removeFirst();
+            removed.setPos(center);
+            LaneSystem.onDeath(removed, null, true);
+            removed.discard();
+            var friendlyFire = edgeCases.removeFirst();
+            friendlyFire.setPos(center);
+            LaneSystem.onDeath(friendlyFire, solo);
+            friendlyFire.discard();
+            ally.setHealth(0);
+            var afterDeath = edgeCases.removeFirst();
+            afterDeath.setPos(center);
+            DamageCalc.dealBasicDamage(finisher, afterDeath, 100000, DamageCalc.Kind.TRUE);
+            suite.check(shared.getXp() == excludedStart,
+                    "spectating, offline, other dimension, administrator removal, friendly fire and death give no shared XP");
+            suite.report("lane-rewards", null);
+            helper.succeed();
+        } catch (Exception error) {
+            throw new IllegalStateException(error);
+        } finally {
+            GameManager.get().resetToLobby(suite.server, false);
+            suite.removePlayers();
+        }
+    }
+
     private static void towerProbe(GameTestHelper helper,String mode) {
         Suite suite=new Suite(helper.getLevel().getServer());
         try {
@@ -153,7 +272,7 @@ public final class ArenaFixtureChecks implements ModInitializer {
             });
         }catch(Throwable error){suite.removePlayers();throw new IllegalStateException(error);}
     }
-    private static final class Suite {
+    static final class Suite {
         final MinecraftServer server;
         final Path world;
         final List<String> passed = new ArrayList<>();

@@ -78,7 +78,7 @@ public final class MatchResultsScreen extends Screen {
                     : Component.translatable("character.myriad." + entry.character());
             Component identity = Component.literal(entry.name()).append(" · ").append(role)
                     .append(Component.translatable("screen.myriad.match_results.identity",
-                            entry.level(), entry.kills(), entry.deaths(), entry.gold()));
+                            entry.level(), entry.kills(), entry.deaths(), entry.assists(), entry.gold()));
             gui.text(font, identity, left + 7, y + 4, 0xFFF2F4F7);
             Component combat = Component.translatable("screen.myriad.match_results.combat",
                     entry.heroDamage(), entry.damageTaken(), entry.healingReceived());

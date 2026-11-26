@@ -6,6 +6,10 @@ import net.minecraft.sounds.SoundEvents;
 final class SlantStep extends LuoxiaSkill {
     SlantStep(Definition definition) { super(definition); }
     @Override public boolean canRelease(Cast c) { return super.canRelease(c) && c.data.getBuff("g1_root") <= 0; }
+    @Override public void dashPose(Cast c, DashPose event, net.minecraft.world.phys.Vec3 direction) {
+        boolean ended = event == DashPose.CANCEL || event == DashPose.FINISH;
+        LuoxiaBowPose.skill(c, com.myriad.network.LuoxiaBowPosePayload.Phase.STEP, ended ? 1 : 0, direction.normalize());
+    }
     @Override public void release(Cast c) {
         var movement = c.player.getLastClientMoveIntent().multiply(1, 0, 1);
         var forward = c.forward(1);

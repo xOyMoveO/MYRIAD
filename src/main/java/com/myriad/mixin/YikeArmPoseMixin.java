@@ -7,5 +7,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(HumanoidModel.class)
 public abstract class YikeArmPoseMixin {
     @Inject(method="setupAnim(Lnet/minecraft/client/renderer/entity/state/HumanoidRenderState;)V",at=@At("TAIL"))
-    private void myriad$yikeGrip(HumanoidRenderState state,CallbackInfo ci){com.myriad.client.firstperson.YikeWeaponView.pose((HumanoidModel<?>)(Object)this,state);}
+    private void myriad$yikeGrip(HumanoidRenderState state,CallbackInfo ci){
+        var model = (HumanoidModel<?>)(Object)this;
+        com.myriad.client.firstperson.YikeWeaponView.pose(model,state);
+        com.myriad.client.firstperson.LuoxiaBowView.pose(model,state);
+    }
 }

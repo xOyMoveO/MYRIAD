@@ -48,7 +48,7 @@ public final class KehengTimeFields {
         boolean interrupted(){var d=cast.data;return d.getBuff("g1_stun")>0||SilenceSystem.isSilenced(cast.player)||KnockbackBuffer.impulseToken(cast.player)!=impulse;}
     }
     private record Needle(AbilityRuntime.Cast cast,LivingEntity target,double rate,long until,String key){}
-    private record Published(UUID owner,String key){}
+    private record Published(UUID owner,String key,double rate){}
     private static final List<Field> FIELDS=new ArrayList<>();
     private static final List<Needle> NEEDLES=new ArrayList<>();
     private static final Map<UUID,List<Published>> PUBLISHED=new HashMap<>();
@@ -122,14 +122,21 @@ public final class KehengTimeFields {
         long now=p.level().getGameTime();var sources=new ArrayList<Published>();
         if(susceptible(p,now)){
             for(var n:NEEDLES)if(n.target==p&&now<n.until&&SkillTargets.enemy(n.cast.player,p)){
-                ActionTime.apply(p.getUUID(),n.cast.player.getUUID(),n.key,n.rate,n.until);sources.add(new Published(n.cast.player.getUUID(),n.key));
+                ActionTime.apply(p.getUUID(),n.cast.player.getUUID(),n.key,n.rate,n.until);sources.add(new Published(n.cast.player.getUUID(),n.key,n.rate));
                 com.myriad.combat.DeathRecaps.control(n.cast.player,p,n.cast.skill.getId(),2,now);}
             for(var f:FIELDS)if(f.cast.player.level()==p.level()&&f.active(now)&&SkillTargets.enemy(f.cast.player,p)&&f.contains(f.corridor?p.getBoundingBox().getCenter():p.position())){
-                ActionTime.apply(p.getUUID(),f.cast.player.getUUID(),f.key,f.actorRate,now+2);sources.add(new Published(f.cast.player.getUUID(),f.key));
+                ActionTime.apply(p.getUUID(),f.cast.player.getUUID(),f.key,f.actorRate,now+2);sources.add(new Published(f.cast.player.getUUID(),f.key,f.actorRate));
                 com.myriad.combat.DeathRecaps.control(f.cast.player,p,f.cast.skill.getId(),2,now);}
         }
         if(!sources.isEmpty())PUBLISHED.put(p.getUUID(),sources);
         double rate=ActionTime.multiplier(p.getUUID(),now);updateMovement(p,rate);
+        if (rate < 1) {
+            for (Published source : sources) {
+                if (Double.compare(source.rate(), rate) != 0) continue;
+                ServerPlayer owner = p.level().getServer().getPlayerList().getPlayer(source.owner());
+                if (owner != null) MatchAssists.controlled(owner, p);
+            }
+        }
         var data=PlayerDataProvider.get(p);int display=rate<1?(int)Math.round(rate*100):0;boolean changed=data.getBuff("g1_keheng_rate")!=display;
         data.setBuff("g1_keheng_rate",display);if(changed&&p.connection!=null)PlayerDataProvider.syncToClient(p);
     }

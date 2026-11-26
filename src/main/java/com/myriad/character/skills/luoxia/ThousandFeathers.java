@@ -18,13 +18,17 @@ final class ThousandFeathers extends LuoxiaSkill {
     ThousandFeathers(Definition definition) { super(definition); }
     @Override public int commitWindupTicks() { return 7; }
     @Override public float windupWalkFactor(Cast c) { return .8f; }
-    @Override public void windupPose(Cast c, boolean winding) { if (winding) LuoxiaVfx.charge(c, false); }
+    @Override public void windupPose(Cast c, boolean winding) {
+        LuoxiaBowPose.windup(c, winding, null);
+        if (winding) LuoxiaVfx.charge(c, false);
+    }
 
     @Override public void release(Cast c) {
         var initial = c.player.getLookAngle().normalize();
         LuoxiaBow.volley(c, 3, 12, 0, round -> {
             var center = LuoxiaArrow.limitTurn(initial, c.player.getLookAngle(), Math.toRadians(12));
             var roundHits = new HashSet<UUID>();
+            LuoxiaBowPose.skill(c, com.myriad.network.LuoxiaBowPosePayload.Phase.RELEASE, round + 1, center);
             LuoxiaVfx.shot(c, false, 1f + .09f * round);
             for (int lane = -1; lane <= 1; lane++) {
                 LuoxiaArrow.launch(c, center.yRot((float)Math.toRadians(lane * 8)), 22, 2,

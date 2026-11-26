@@ -73,6 +73,9 @@ public final class ModShieldSystem {
             }
             if (earliest == null) break;
             float used = Math.min(left, earliest.remaining);
+            // Only the effective layer can earn protection, including highest-only shield families.
+            if (used > 0 && hit != null)
+                com.myriad.game.MatchAssists.absorbed(earliest.owner, hit.getEntity(), player);
             String group = earliest.group;
             if (group.isEmpty()) {
                 earliest.remaining -= used;
@@ -112,23 +115,32 @@ public final class ModShieldSystem {
 
     public static void grantMaxSource(LivingEntity player, String source, float amount, int durationTicks,
                                       Consumer<DamageSource> onAbsorb) {
+        grantMaxSource(player, source, amount, durationTicks, onAbsorb, null);
+    }
+
+    public static void grantMaxSource(LivingEntity player, String source, float amount, int durationTicks,
+                                      Consumer<DamageSource> onAbsorb, UUID owner) {
         if (amount <= 0 || durationTicks <= 0) return;
         var layers = LAYERS.computeIfAbsent(player.getUUID(), id -> new HashMap<>());
         pruneExpired(player, layers);
         var existing = layers.get(source);
         layers.put(source, new ShieldLayer(existing == null ? amount : Math.max(amount, existing.remaining),
-                player.level().getGameTime() + durationTicks, "", onAbsorb));
+                player.level().getGameTime() + durationTicks, "", onAbsorb, owner));
         updateValue(player, layers, true);
     }
 
     /** Source-isolated family whose simultaneous contributions use the highest remaining amount. */
     public static void grantMaxGroup(LivingEntity entity, String source, String group, float amount, int durationTicks) {
+        grantMaxGroup(entity, source, group, amount, durationTicks, null);
+    }
+
+    public static void grantMaxGroup(LivingEntity entity, String source, String group, float amount, int durationTicks, UUID owner) {
         if (amount <= 0 || durationTicks <= 0 || group == null || group.isBlank()) return;
         var layers = LAYERS.computeIfAbsent(entity.getUUID(), ignored -> new HashMap<>());
         pruneExpired(entity, layers);
         var existing = layers.get(source);
         layers.put(source, new ShieldLayer(existing == null ? amount : Math.max(amount, existing.remaining),
-                entity.level().getGameTime() + durationTicks, group));
+                entity.level().getGameTime() + durationTicks, group, null, owner));
         updateValue(entity, layers, true);
     }
 
@@ -262,12 +274,14 @@ public final class ModShieldSystem {
         private final long expiresAt;
         private final String group;
         private final Consumer<DamageSource> onAbsorb;
+        private final UUID owner;
 
         private ShieldLayer(float remaining, long expiresAt) { this(remaining, expiresAt, ""); }
         private ShieldLayer(float remaining, long expiresAt, String group) {
-            this(remaining, expiresAt, group, null);
+            this(remaining, expiresAt, group, null, null);
         }
-        private ShieldLayer(float remaining, long expiresAt, String group, Consumer<DamageSource> onAbsorb) {
+        private ShieldLayer(float remaining, long expiresAt, String group, Consumer<DamageSource> onAbsorb, UUID owner) {
+            this.owner = owner;
             this.remaining = remaining;
             this.expiresAt = expiresAt;
             this.group = group;

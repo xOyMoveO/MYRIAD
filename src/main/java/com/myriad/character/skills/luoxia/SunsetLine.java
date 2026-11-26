@@ -26,12 +26,13 @@ final class SunsetLine extends LuoxiaSkill {
     @Override public int commitWindupTicks() { return WINDUP; }
     @Override public void windupPose(Cast c, boolean winding) {
         var aim = c.memory("aim");
-        if (!winding) { aim.point = null; return; }
+        if (!winding) { LuoxiaBowPose.windup(c, false, null); aim.point = null; return; }
         if (c.windupProgress() == 0) aim.point = null;
         if (c.windupProgress() * WINDUP + 1E-5 >= LOCK_AT) {
             if (aim.point == null) aim.point = c.player.getLookAngle().normalize();
             LuoxiaVfx.warning(c, aim.point, RANGE);
         } else LuoxiaVfx.charge(c, true);
+        LuoxiaBowPose.windup(c, true, aim.point);
     }
 
     private static AbilityDamageFormula heroDamage(int hero) {
@@ -42,6 +43,7 @@ final class SunsetLine extends LuoxiaSkill {
         var aim = c.memory("aim");
         Vec3 direction = aim.point == null ? c.player.getLookAngle() : aim.point;
         aim.point = null;
+        LuoxiaBowPose.skill(c, com.myriad.network.LuoxiaBowPosePayload.Phase.RELEASE, 1, direction);
         LuoxiaVfx.shot(c, true, .72f);
         int[] heroes = {0};
         LuoxiaArrow.launch(c, direction, RANGE, 3.25, LuoxiaArrow.Shape.LANCE, false, target -> {
