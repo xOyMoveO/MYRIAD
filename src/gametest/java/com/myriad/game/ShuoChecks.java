@@ -66,7 +66,7 @@ final class ShuoChecks {
             if(action==ShuoViewPayload.CANCEL&&!drawn){
                 var throat=blade.transformPosition(new Vector3f(0,ShuoRig.MODEL_GRIP_TO_MOUTH,0));
                 h.assertTrue(throat.distance(scabbard.transformPosition(new Vector3f()))<1E-6,"Closed blade root exactly meets sheath throat");
-                h.assertTrue(f.palm().y<-.10&&f.mouth().y<-.45&&f.palm().x<-.8&&!ShuoRig.showMainHand(f,false),"Longer sheathed hilt stays left/below the crosshair, with no hand; throat position unchanged");
+                h.assertTrue(f.palm().y<0&&f.mouth().y<-.30&&f.palm().x<-.55&&!ShuoRig.showMainHand(f,false),"Longer sheathed hilt stays left/below the crosshair, with the throat visible");
             }poses++;
         }
         h.assertTrue(!ShuoRig.SHOW_OFF_HAND,"No scabbard-supporting off hand is rendered");
@@ -74,7 +74,7 @@ final class ShuoChecks {
         var mouth=sheathTransform.transformPosition(new Vector3f());var tail=sheathTransform.transformPosition(new Vector3f(0,ShuoRig.MODEL_SHEATH_LENGTH,0));
         float slope=(float)Math.tan(Math.toRadians(35));float m=mouth.y-mouth.z*slope,t=tail.y-tail.z*slope;
         float visible=m/(m-t);
-        h.assertTrue(sheathed.sheathAxis().y<-.95&&sheathed.sheathAxis().x<-.1&&sheathed.mouth().x<-.9,"Scabbard is near-vertical, gently tilted and low-left");
+        h.assertTrue(sheathed.sheathAxis().y<-.95&&sheathed.sheathAxis().x<-.1&&sheathed.mouth().x<-.55,"Scabbard is near-vertical, gently tilted and low-left");
         h.assertTrue(visible>.27&&visible<.38,"At the default 70-degree view only about one third of the real sheath is visible: "+visible);
         var idle=ShuoRig.frame(ShuoViewPayload.CANCEL,0,true);var held=ShuoRig.blade(idle,false);
         var grip=held.transformPosition(new Vector3f());var tip=held.transformPosition(new Vector3f(0,ShuoRig.MODEL_GRIP_TO_TIP,0));

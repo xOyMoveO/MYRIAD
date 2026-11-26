@@ -326,6 +326,19 @@ public final class CombatHudOverlay {
                     SLOT - 2 * borderInset, SLOT - 2 * borderInset, READY);
         }
 
+        if (slot != null && "shuo_canyue".equals(slot.skill().getId())) {
+            for (int stage = 0; stage <= 3; stage++) {
+                if (ClientDataHolder.buffTicks("g1_shuo_moon_" + stage) <= 0) continue;
+                for (int i = 0; i < 3; i++) {
+                    int left = x + 4 + i * 7, top = y + SLOT - 7;
+                    int color = i < stage ? 0xFFFFE8A2 : 0xFF66646A;
+                    gui.fill(left, top+1, left+1, top+4, color);
+                    gui.fill(left+1, top+3, left+3, top+5, color);
+                    gui.fill(left+3, top+3, left+5, top+4, color);
+                }
+                break;
+            }
+        }
         if (slot != null && slot.recastTicks() > 0) {
             String time = seconds(slot.recastTicks());
             int labelWidth = font.width(time);

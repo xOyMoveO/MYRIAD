@@ -30,6 +30,10 @@ public final class ShuoMotion {
     public boolean fromDrawn(){return fromDrawn;}
     public double progress(double now){return duration<=0?1:Math.clamp((now-start)/duration,0,1);}
     public ShuoRig.Frame frame(double now,boolean drawn){
+        if (drawn && !active(now) && (action==MOON_FIRST || action==MOON_SECOND) && now<start+40)
+            return ShuoRig.frame(action,1,true);
+        if (action==CHARGE && active(now) && entry!=null && (entry.action()==MOON_FIRST||entry.action()==MOON_SECOND))
+            return entry;
         var f=ShuoRig.frame(action(now),progress(now),active(now)?fromDrawn:drawn);
         if(entry==null||!active(now))return f;
         float blend=ShuoRig.ease((now-start)/Math.min(1.4,duration*.2));if(blend>=1)return f;

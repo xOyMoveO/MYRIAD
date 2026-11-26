@@ -1,6 +1,7 @@
 package com.myriad.game;
 
 import com.myriad.character.SkillSystem;
+import com.myriad.network.CrescentInputPayload.Edge;
 import com.myriad.character.ability.*;
 import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.character.skills.shuo.*;
@@ -51,11 +52,13 @@ final class ShuoMiniReworkChecks {
                     if(i==1&&age==12)p.setYRot(90); // Second lane must not turn after the first cut.
                     if(i==8&&(age==12||age==13))PlayerDataProvider.get(p).setBuff("g1_stun",age==12?1:0);
                     if(i==2&&(age==9||age==21)){
-                        p.setShiftKeyDown(age==9);h.assertTrue(skill.recastAvailable(AbilityRuntime.context(p,skill)),"Manual chase reuses the original paid combo");SkillSystem.cast(p,3);
+                        h.assertTrue(skill.recastAvailable(AbilityRuntime.context(p,skill)),"Manual chase reuses the original paid combo");CrescentGesture.input(p,age,Edge.PRESS);
+                        if(age==21)CrescentGesture.input(p,age,Edge.TAP);
                     }
+                    if(i==2&&age==12)CrescentGesture.input(p,9,Edge.HOLD);
                     if(i==4&&age==18)AbilityRuntime.clear(p); // Remove an already scheduled wound burst.
                     if(AbilityRuntime.moving(p)){
-                        var end=i==0?f.origin.add(.4358899*3,0,-.9*3):f.origin.add(0,0,i==2?2:i==3?12:7);
+                        var end=i==0?f.origin.add(.4358899*3,0,-.9*3):f.origin.add(0,0,i==2?4:i==3?12:7);
                         p.move(MoverType.SELF,AbilityTargeting.clampPrediction(p.position(),end,p.getDeltaMovement()));
                     }
                     AbilityRuntime.tick(p);
@@ -64,7 +67,7 @@ final class ShuoMiniReworkChecks {
                         if(i==0)h.assertTrue(Math.abs(f.t.getHealth()-959.8)<.01,"Leaving the original retreat-cut position avoids its delayed 40%");
                         if(i==1)h.assertTrue(Math.abs(f.t.getHealth()-864.5)<.01&&f.miss.getHealth()==1000,"Second lane preserves locked direction and total damage budget");
                         if(i==2){
-                            h.assertTrue(p.position().distanceTo(f.origin.add(0,0,2))<.001&&Math.abs(f.t.getHealth()-577)<.01,"Optional chase is bounded two-block motion, and each of three cuts hits once");
+                            h.assertTrue(Math.abs(f.t.getBoundingBox().minZ-p.getBoundingBox().maxZ-1)<.06&&Math.abs(f.t.getHealth()-577)<.01,"Long press stops one block before the target, and each of three cuts hits once");
                             h.assertTrue(PlayerDataProvider.get(p).getMana()==550,"Manual chase never pays a second ultimate cost");
                         }
                         if(i==3)h.assertTrue(Math.abs(f.t.getHealth()-413.6)<.05,"Real marked finisher uses 20% missing health = 5% bonus: 800-386.4");

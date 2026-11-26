@@ -27,7 +27,7 @@ public final class ShuoView {
         &&"shuo".equals(ClientDataHolder.characterId())&&mc.player.isAlive()&&!mc.player.isSpectator()
         &&!RespawnSpectatorView.isActive()&&ClientDataHolder.syncedCounter("hero_respawn")<=0
         &&mc.getCameraEntity()==mc.player&&mc.options.getCameraType().isFirstPerson()
-        &&mc.player.getMainHandItem().is(ModItems.SHUO_SWORD.get())&&mc.player.getOffhandItem().isEmpty();}
+        &&mc.player.getMainHandItem().is(ModItems.SHUO_SWORD.get());}
     private static boolean menu(Minecraft mc){return mc.gui.screen()!=null||mc.player.isUsingItem()||mc.gameMode!=null&&mc.gameMode.isDestroying();}
     private static boolean drawn(){return ClientDataHolder.syncedCounter("g1_shuo_drawn")>0;}
     public static void reset(){MOTION.reset();owner=world=null;predictedDrawn=false;}
@@ -35,7 +35,7 @@ public final class ShuoView {
     public static void receive(ShuoViewPayload p){var mc=Minecraft.getInstance();if(!enabled(mc)||menu(mc))return;check(mc);
         double now=mc.player.tickCount;boolean old=drawn()||predictedDrawn;
         if(MOTION.accept(p,now,Math.max(0,mc.level.getGameTime()-p.started()),old)){
-            if(ShuoViewPayload.basicAction(p.action())||p.action()==ShuoViewPayload.FLASH||p.action()>=ShuoViewPayload.CUT_LEFT&&p.action()<=ShuoViewPayload.CUT_DOWN)predictedDrawn=true;
+            if(ShuoViewPayload.moonCut(p.action())||ShuoViewPayload.basicAction(p.action())||p.action()==ShuoViewPayload.FLASH||p.action()>=ShuoViewPayload.CUT_LEFT&&p.action()<=ShuoViewPayload.CUT_DOWN)predictedDrawn=true;
             if(p.action()==ShuoViewPayload.CANCEL)predictedDrawn=drawn();
         }
     }
@@ -50,15 +50,25 @@ public final class ShuoView {
     }
     public static boolean render(HandRenderContext e){var mc=Minecraft.getInstance();if(!enabled(mc)){reset();return false;}
         if(e.isCanceled()||menu(mc))return false;check(mc);
-        if(e.getHand()==InteractionHand.OFF_HAND){e.setCanceled(true);return true;}
+        boolean free=mc.player.getOffhandItem().isEmpty();
+        if(e.getHand()==InteractionHand.OFF_HAND){if(free)e.setCanceled(true);return free;}
         double now=mc.player.tickCount+e.getPartialTick();boolean held=drawn()||predictedDrawn;var f=MOTION.frame(now,held);
         boolean mirror=mc.player.getMainArm()==HumanoidArm.LEFT,slim=mc.player.getSkin().model()==PlayerModelType.SLIM;
-        if(ShuoRig.SHOW_OFF_HAND)arm(e,ShuoRig.hand(f,true,mirror),slim,!mirror);
-        if(ShuoRig.showMainHand(f,held))arm(e,ShuoRig.hand(f,false,mirror),slim,mirror);
-        item(e,ShuoRig.sheath(f,mirror),ModItems.SHUO_SCABBARD.get().getDefaultInstance());
+        var stack=e.getPoseStack();stack.pushPose();
+        try {
+        if(!free){
+            // Keep the closed pair on the weapon side when the other hand carries a real item.
+            float closed=Math.clamp((-f.palm().x-.15f)/.54f,0,1);
+            stack.translate((mirror?-1:1)*1.12f*closed,0,0);
+        }
+        if(free && ShuoRig.SHOW_OFF_HAND)arm(e,ShuoRig.hand(f,true,mirror),slim,!mirror);
+        if(!free || ShuoRig.showMainHand(f,held))arm(e,ShuoRig.hand(f,false,mirror),slim,mirror);
+        if(free || !held) item(e,ShuoRig.sheath(f,mirror),ModItems.SHUO_SCABBARD.get().getDefaultInstance());
         item(e,ShuoRig.blade(f,mirror),e.getItemStack());
         AttackTrailRenderer.submit(e,ShuoTrail.build(f,mirror));
-        AttackTrailRenderer.submit(e,ShuoSkillTrail.build(MOTION,now,mirror));e.setCanceled(true);return true;
+        AttackTrailRenderer.submit(e,ShuoSkillTrail.build(MOTION,now,mirror));
+        } finally {stack.popPose();}
+        e.setCanceled(true);return true;
     }
     private static void arm(HandRenderContext e,Matrix4f hand,boolean slim,boolean left){var mc=Minecraft.getInstance();int i=(slim?2:0)+(left?1:0);
         if(ARMS[i]==null)ARMS[i]=ShuoArmModel.bake(slim,left);var model=ARMS[i];

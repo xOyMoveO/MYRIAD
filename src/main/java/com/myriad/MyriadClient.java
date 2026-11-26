@@ -79,6 +79,7 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(client->{
             com.myriad.client.TowerRangeRings.tick(client);
             com.myriad.client.LuoxiaInput.tick(client);
+            com.myriad.client.CrescentInput.tick(client);
             com.myriad.client.firstperson.WeaponBodyPose.tick();
             com.myriad.client.LobbyClient.tick(client);
             var screen=client.gui.screen();
@@ -600,6 +601,8 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
     public static void onKeyInput(com.myriad.client.platform.KeyInput event) {
         com.myriad.client.MeleeAttackBuffer.binding(Minecraft.getInstance(), event);
         com.myriad.client.LuoxiaInput.binding(Minecraft.getInstance(), event);
+        if (event.getAction() == InputConstants.RELEASE && event.matches(KEY_SKILL_R))
+            com.myriad.client.CrescentInput.release();
         if (event.getAction() != InputConstants.PRESS) {
             return;
         }
@@ -673,6 +676,7 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
         }
         if (slot >= 0) {
             Minecraft mc = Minecraft.getInstance();
+            if (com.myriad.client.CrescentInput.press(mc, slot)) return;
             // 回风步默认也绑定 W；若技能键与前进键相同，不能把这次施法按键误当成移动输入。
             boolean castKeyIsForward = slot == CharacterType.SLOT_W
                     && net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper.getBoundKeyOf(KEY_SKILL_W)

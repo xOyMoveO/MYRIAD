@@ -1292,6 +1292,7 @@ public final class NetworkSetup {
         PayloadTypeRegistry.clientboundPlay().register(VeinStatusPayload.TYPE, VeinStatusPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(FogVisibilityPayload.TYPE, FogVisibilityPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(RequestSyncPayload.TYPE, RequestSyncPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(CrescentInputPayload.TYPE, CrescentInputPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(CastSkillPayload.TYPE, CastSkillPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(ChooseCharacterPayload.TYPE, ChooseCharacterPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(DamageFloatPayload.TYPE, DamageFloatPayload.STREAM_CODEC);
@@ -1354,6 +1355,8 @@ public final class NetworkSetup {
             ServerPlayer player = context.player();
             PlayerDataProvider.syncToClient(player);
         });
+        ServerPlayNetworking.registerGlobalReceiver(CrescentInputPayload.TYPE, (input, context) ->
+                com.myriad.character.skills.shuo.CrescentGesture.input(context.player(), input.gesture(), input.edge()));
         ServerPlayNetworking.registerGlobalReceiver(CastSkillPayload.TYPE,
                 (payload, context) -> {
             ServerPlayer player = context.player();

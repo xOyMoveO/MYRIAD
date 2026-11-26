@@ -1,4 +1,5 @@
 package com.myriad.game;
+import com.myriad.network.CrescentInputPayload.Edge;
 
 import com.myriad.character.*;
 import com.myriad.character.ability.*;
@@ -97,7 +98,6 @@ final class HeroActionTimeChecks {
                                 // missing-health finishers before comparing only this actor's damage.
                                 f.target.setHealth(10000);f.lastHealth=f.target.getHealth();
                                 if(f.scenario.drawn)ShuoCombat.draw(f.actor,com.myriad.network.ShuoViewPayload.CUT_LEFT,1);
-                                if(f.scenario.kind.equals("chase"))f.actor.setShiftKeyDown(true);
                                 if(f.scenario.kind.equals("sheath")){h.assertTrue(ShuoCombat.requestSheathe(f.actor),"Actual manual sheathe accepted");f.wasDrawn=true;}
                                 else if(f.scenario.kind.equals("basic")){attackTicker(f.actor,1000);basic(f);}
                                 else cast(f,h);
@@ -123,7 +123,8 @@ final class HeroActionTimeChecks {
                                 if(f.scenario.kind.equals("dot")&&action==20)h.assertTrue(PlayerDataProvider.get(f.actor).getCooldown(FirstGroupSkills.node("fenjue",2).getId())==f.initialCd-20,"Actual cooldown consumes real ticks while the slash is slowed; "+label(f)+" initial="+f.initialCd+" now="+PlayerDataProvider.get(f.actor).getCooldown(FirstGroupSkills.node("fenjue",2).getId())+" playerTicks="+f.actor.tickCount);
                                 if(f.scenario.kind.equals("ally")&&f.slow&&action==3)h.assertTrue(AbilityRuntime.projectileRate(f.clock,UUID.randomUUID(),f.origin.add(0,1,0),h.getLevel().getGameTime())==1&&AbilityRuntime.projectileRate(f.actor,UUID.randomUUID(),f.origin.add(0,1,0),h.getLevel().getGameTime())==1,"Actual field exempts owner and allied independent flights");
                                 if(f.scenario.role.equals("shuo")&&f.scenario.skill==7&&f.recasts<2&&!ShuoCombat.blocked(f.actor)){
-                                    var skill=FirstGroupSkills.node("shuo",7);if(skill.recastAvailable(AbilityRuntime.context(f.actor,skill))){SkillSystem.cast(f.actor,3);f.recasts++;}}
+                                    var skill=FirstGroupSkills.node("shuo",7);if(skill.recastAvailable(AbilityRuntime.context(f.actor,skill))){com.myriad.character.skills.shuo.CrescentGesture.input(f.actor, ++f.recasts, Edge.PRESS);
+                                        com.myriad.character.skills.shuo.CrescentGesture.input(f.actor, f.recasts, Edge.HOLD);}}
                                 if(AbilityRuntime.moving(f.actor))f.hadMotion=true;
                                 else if(f.hadMotion&&f.motionEnd<0)f.motionEnd=action;
                                 if(f.wasDrawn&&!ShuoCombat.drawn(f.actor)&&f.sheathEnd<0)f.sheathEnd=action;

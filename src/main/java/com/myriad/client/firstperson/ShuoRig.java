@@ -28,7 +28,7 @@ public final class ShuoRig {
     private static Vector3f mix(Vector3f a,Vector3f b,double t){return new Vector3f(a).lerp(b,ease(t));}
     public static Frame frame(int action,double p,boolean drawn){
         // Mouth at lower-left; the long +Y sheath axis points down, so its lower 2/3 leaves the view.
-        var mouth=v(-1.05f,-.49f,-1.26f);var sheath=v(-.22f,-.974f,-.045f).normalize();
+        var mouth=v(-.69f,-.39f,-1.29f);var sheath=v(-.22f,-.974f,-.045f).normalize();
         var closed=new Vector3f(mouth).fma(-GRIP_TO_MOUTH,sheath);
         var ready=new Vector3f(READY);var readyAxis=new Vector3f(READY_AXIS);
         Vector3f palm=drawn?new Vector3f(ready):new Vector3f(closed),axis=drawn?new Vector3f(readyAxis):new Vector3f(sheath),edge=drawn?new Vector3f(READY_EDGE):v(0,0,-1);
@@ -62,6 +62,20 @@ public final class ShuoRig {
             else if(p<.60){double t=(p-.18)/.42;palm=mix(begin,end,t);axis=mix(beginAxis,endAxis,t).normalize();edge=new Vector3f(cutEdge);}
             else {double t=(p-.60)/.40;palm=mix(end,ready,t);axis=mix(endAxis,readyAxis,t).normalize();edge=mix(cutEdge,READY_EDGE,t);}
             slashProgress=(float)((p-.18)/.52);flash=slashProgress>0&&slashProgress<1?(float)Math.sin(Math.PI*slashProgress):0;
+        }else if(moonCut(action)){
+            var left=v(-.34f,-.38f,-1.44f);var right=v(.58f,-.37f,-1.40f);
+            var leftAxis=v(-.75f,.38f,-.42f).normalize();var rightAxis=v(.75f,.50f,-.45f).normalize();
+            boolean finish=action==MOON_THIRD, wide=action==RETURNING_MOON;
+            var from=action==MOON_FIRST&&!drawn?closed:action==MOON_SECOND?left:finish?right:ready;
+            var to=finish?v(.17f,-.66f,-1.4f):action==MOON_SECOND?right:wide?v(-.55f,-.55f,-1.5f):left;
+            var startAxis=action==MOON_FIRST&&!drawn?sheath:action==MOON_SECOND?leftAxis:finish?rightAxis:readyAxis;
+            var endAxis=finish?v(-.22f,-.62f,-.75f).normalize():action==MOON_SECOND?rightAxis:leftAxis;
+            double sweep=ease(p/.60);
+            palm=mix(from,to,sweep);axis=mix(startAxis,endAxis,sweep).normalize();
+            edge=new Vector3f(from).sub(to).normalize();
+            flash=p<.65?(float)Math.sin(Math.PI*p/.65):0;
+        }else if(action==PURSUIT){
+            palm=mix(ready,v(.48f,-.67f,-1.22f),.8);axis=v(.36f,.78f,-.50f).normalize();
         }else if(action==DRAW||action==FLASH||action==CUT_LEFT||action==CUT_RIGHT||action==CUT_DOWN){
             double extract=drawn?0:.32;
             if(p<extract){palm=new Vector3f(closed).fma(-EXTRACT*ease(p/extract),sheath);axis=new Vector3f(sheath);}
