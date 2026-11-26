@@ -162,14 +162,14 @@ public enum MonsterType {
         return !isLargeBoss() || this == CHERRY_RIFT_CRAB;
     }
 
-    /** 会在开局 30 秒后首次生成的小型野怪。 */
+    /** 使用小型营地首刷时间的野怪。 */
     public boolean isSmallMonster() {
         return this == FROST_HARE || this == EMBER_IMP || this == SHADOW_FOX
                 || this == THUNDER_BADGER || this == MIASMA_TOAD || this == STONE_SHELL_CRAB
                 || this == CHERRY_FROST_HARE || this == CHERRY_DUSK_FOX || this == CHERRY_SCOUT_BOT;
     }
 
-    /** 会在开局 60 秒后首次生成的中型野怪。 */
+    /** 使用中型营地首刷时间的野怪。 */
     public boolean isMediumMonster() {
         return this == GOLD_PIG || this == SPRING_REEF_GUARDIAN || this == FROST_WEB_MATRIARCH
                 || this == CHERRY_JADE_BEAST || this == CHERRY_HEAVY_WALKER;

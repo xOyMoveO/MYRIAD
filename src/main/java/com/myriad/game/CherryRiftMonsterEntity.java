@@ -5,7 +5,9 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityDimensions;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.Pose;
@@ -73,6 +75,18 @@ public final class CherryRiftMonsterEntity extends PathfinderMob {
     public MonsterType variant() {
         MonsterType type = MonsterType.byId(entityData.get(VARIANT));
         return type != null && type.cherryModel() != null ? type : MonsterType.CHERRY_FROST_HARE;
+    }
+
+    // Vanilla calls the other entity's push(Entity) from the ticking entity's doPush.
+    // Filter both dispatch directions, leaving explicit knockback and combat hitboxes intact.
+    @Override
+    public void push(Entity other) {
+        if (!(other instanceof Player && variant() == MonsterType.CHERRY_RIFT_CRAB)) super.push(other);
+    }
+
+    @Override
+    protected void doPush(Entity other) {
+        if (!(other instanceof Player && variant() == MonsterType.CHERRY_RIFT_CRAB)) super.doPush(other);
     }
 
     @Override

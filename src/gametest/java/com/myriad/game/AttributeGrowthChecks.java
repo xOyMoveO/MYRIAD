@@ -133,7 +133,7 @@ final class AttributeGrowthChecks {
         try {
             helper.assertTrue(player.hasLineOfSight(target), "The isolated Cleave target is visible in the fixture lane");
             int[][] builds = {{1, 0, 0, 0}, {1, 1, 0, 0}, {1, 0, 1, 0}, {1, 3, 0, 20}, {3, 5, 9, 21}};
-            float[] damage = {93f, 100.5f, 93f, 115.5f, 174.5f};
+            float[] damage = {98f, 105.5f, 98f, 120.5f, 177f};
             for (int index = 0; index < builds.length; index++) {
                 int[] build = builds[index];
                 AbilityRuntime.clear(player);
@@ -163,7 +163,7 @@ final class AttributeGrowthChecks {
                 helper.assertTrue(!target.hasEffect(net.minecraft.world.effect.MobEffects.SLOWNESS),
                         "The cleave applies damage without adding control");
             }
-            helper.assertTrue(cleave.evaluatedDescription(1, 10_000, 1).contains("100.5"),
+            helper.assertTrue(cleave.evaluatedDescription(1, 10_000, 1).contains("105.5"),
                     "Presented damage uses the same purchased Strength formula");
         } finally {
             target.discard();

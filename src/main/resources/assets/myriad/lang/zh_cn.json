@@ -201,6 +201,8 @@
   "skill.myriad.damage.reference": "零购参考 %s %s（减伤前）",
   "skill.myriad.damage.strength_per_point": "每点力量 +%s",
   "skill.myriad.damage.wisdom_per_point": "每点智慧 +%s",
+  "skill.myriad.damage.full_total": "同目标理论全中 %s（减伤前）",
+  "skill.myriad.damage.stable_total": "同目标两段稳定命中 %s（减伤前）",
   "skill.myriad.damage.hit_count": "单目标最多 %s 次",
   "skill.myriad.current_form": "当前招式：%s",
   "hero.guide.reworked_controls": "20 级共有 20 个技能点。被动、主要和终极技能各选一个分支，两个常规技能均可学习。力量提升物理普攻和指定技能伤害，智慧提升法术普攻及按法强成长的技能、治疗和护盾。金币可购买属性和补给。",
