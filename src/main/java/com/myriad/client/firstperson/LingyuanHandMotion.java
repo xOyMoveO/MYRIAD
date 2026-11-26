@@ -16,19 +16,19 @@ final class LingyuanHandMotion {
     private record Clip(int skill, int phase, double start, double until, Pose from,
                         double sampledAt, double previous, double progress, Move move) {}
     private static final Vec3 HIDDEN = new Vec3(-.69, -1.34, -.91);
-    static final Pose IDLE = sword(.57,-.39,-1.22,.40,.79,-.46);
+    static final Pose IDLE = sword(.51,-.42,-1.00,.35,.85,-.39);
     private static final Pose THRUST = p(.40,-.56,-1.66,.06,.19,-.98, -.78,-.80,-.99,-.3,0);
     private static final Pose DASH_READY = sword(.68,-.65,-1.04,.16,.25,-.95);
     private static final Pose DASH_DOWN = sword(.54,-.70,-1.43,.21,.07,-.97);
     private static final Pose MANTLE_IN = p(.62,-.68,-1.25,-.59,.16,-.79, -.53,-.65,-1.26,.21,.85);
     private static final Pose MANTLE_OUT = p(.54,-.60,-1.35,-.53,.26,-.81, -.18,-.46,-1.51,1.0,1);
     private static final Pose MANTLE_HOOK = p(.65,-.57,-1.33,-.36,.43,-.83, -.54,-.49,-1.32,1.4,.8);
-    private static final Pose ARRAY_AIM = p(.67,-.70,-1.24,.31,.33,-.89, -.42,-.49,-1.49,.40,1);
+    private static final Pose ARRAY_AIM = p(.61,-.66,-1.09,.31,.33,-.89, -.39,-.48,-1.36,.40,1);
     private static final Pose ARRAY_PRESS = p(.60,-.77,-1.34,.20,.20,-.95, -.28,-.72,-1.63,-.43,1);
-    private static final Pose RAIN_AIM = p(.70,-.64,-1.23,.42,.53,-.73, -.52,-.55,-1.37,1.6,0);
+    private static final Pose RAIN_AIM = p(.63,-.61,-1.08,.42,.53,-.73, -.48,-.53,-1.25,1.6,0);
     private static final Pose RAIN_RISE = p(.71,-.55,-1.26,.44,.68,-.58, -.37,-.36,-1.48,1.88,.6);
     private static final Pose RAIN_PRESS = p(.70,-.66,-1.31,.43,.48,-.77, -.34,-.60,-1.60,-.68,1);
-    private static final Pose HEAVEN_UP = p(.74,-.32,-1.29,.26,.93,-.25, -.60,-.37,-1.49,.58,1);
+    private static final Pose HEAVEN_UP = p(.65,-.36,-1.10,.26,.93,-.25, -.54,-.38,-1.34,.58,1);
     private static final Pose HEAVEN_DOWN = p(.40,-.70,-1.51,.15,-.50,-.86, -.49,-.71,-1.42,-.64,.45);
     private static final Pose HEAVEN_SETTLE = sword(.52,-.75,-1.40,.19,-.35,-.92);
 
