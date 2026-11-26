@@ -6,6 +6,8 @@ import org.joml.Quaternionf;
 
 /** The zhenqi model is centered on the wrapped grip. The arm and item share that pivot. */
 final class InkHandRig {
+    static final float FLAG_SCALE = .81f * 1.07f;
+
     private InkHandRig() {}
 
     static Vec3 lowered(Vec3 center, float equip) {
@@ -13,7 +15,7 @@ final class InkHandRig {
     }
 
     static Matrix4f flag(InkHandMotion.Pose pose, float equip) {
-        return pivot(lowered(pose.grip(), equip), pose.axis(), pose.twist()).scale(.81f);
+        return pivot(lowered(pose.grip(), equip), pose.axis(), pose.twist()).scale(FLAG_SCALE);
     }
 
     static Matrix4f arm(InkHandMotion.Pose pose, boolean left, boolean slim, float equip) {

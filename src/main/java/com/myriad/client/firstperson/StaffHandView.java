@@ -113,7 +113,7 @@ public final class StaffHandView {
         var stack = event.getPoseStack();
         stack.pushPose();
         try {
-            stack.mulPose(StaffHandRig.item(pose, mirrored, equip));
+            stack.mulPose(StaffHandRig.item(pose, theme == FROST, mirrored, equip));
             ClientItemRenderer.submit(mc.player, event.getItemStack(), ItemDisplayContext.NONE,
                     stack, event.getSubmitNodeCollector(), event.getPackedLight());
         } finally {

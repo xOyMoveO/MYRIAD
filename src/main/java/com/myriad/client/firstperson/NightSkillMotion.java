@@ -9,7 +9,7 @@ public final class NightSkillMotion {
     public record Frame(Pose main,Pose off,boolean showOff,boolean showBlade,int action,double progress){}
     private record Key(double time,Pose pose){}
     public static final Pose OFF_REST=new Pose(.9,-.7,-1.06,0,0,-25,0,0);
-    public static final Pose FORWARD=new Pose(.46,-.27,-1.06,24,110,0,0,180);
+    public static final Pose FORWARD=new Pose(.46,-.27,-.96,24,110,0,0,180);
     private static Pose p(double x,double y,double z,double pitch,double yaw,double roll,double grip){return new Pose(x,y,z,pitch,yaw,roll,0,grip);}
     private static Key k(double t,Pose p){return new Key(t,p);}
     private static final Key[][] MAIN={
@@ -17,14 +17,14 @@ public final class NightSkillMotion {
             k(.38,p(.27,-.12,-1.28,28,75,-15,0)),k(.58,p(.22,-.20,-1.25,15,70,-8,0)),k(1,NightDaggerMotion.IDLE)},
         {k(0,NightDaggerMotion.IDLE),k(.26,p(.095,-.28,-1.06,0,0,25,0)),
             k(.65,p(.095,-.28,-1.06,0,0,25,0)),k(1,NightDaggerMotion.IDLE)},
-        {k(0,NightDaggerMotion.IDLE),k(.18,FORWARD),k(.62,p(.42,-.28,-1.13,24,110,0,180)),k(1,NightDaggerMotion.IDLE)},
-        {k(0,NightDaggerMotion.IDLE),k(.16,FORWARD),k(.55,p(.39,-.29,-1.15,24,110,0,180)),k(1,NightDaggerMotion.IDLE)},
+        {k(0,NightDaggerMotion.IDLE),k(.18,FORWARD),k(.62,p(.42,-.28,-1.03,24,110,0,180)),k(1,NightDaggerMotion.IDLE)},
+        {k(0,NightDaggerMotion.IDLE),k(.16,FORWARD),k(.55,p(.39,-.29,-1.05,24,110,0,180)),k(1,NightDaggerMotion.IDLE)},
         {k(0,NightDaggerMotion.IDLE),k(.22,p(.46,-.24,-1.05,0,180,0,180)),
             k(.40,p(.29,-.26,-1.05,0,180,0,180)),k(.51,p(.29,-.26,-1.05,0,180,0,180)),
             k(.70,p(.49,-.27,-1.04,0,150,20,160)),k(1,NightDaggerMotion.IDLE)},
         {k(0,NightDaggerMotion.IDLE),k(.35,FORWARD),k(1,FORWARD)},
         {k(0,FORWARD),k(.28,p(.22,-.18,-1.43,24,110,0,180)),
-            k(.48,p(.20,-.18,-1.44,24,110,0,180)),k(.70,p(.38,-.26,-1.15,24,110,0,180)),k(1,NightDaggerMotion.IDLE)}
+            k(.48,p(.20,-.18,-1.44,24,110,0,180)),k(.70,p(.38,-.26,-1.05,24,110,0,180)),k(1,NightDaggerMotion.IDLE)}
     };
     private static final Key[] MERGE_OFF={k(0,OFF_REST),k(.26,p(.095,-.28,-1.06,0,0,25,0)),
             k(.65,p(.095,-.28,-1.06,0,0,25,0)),k(1,OFF_REST)};

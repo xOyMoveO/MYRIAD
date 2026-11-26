@@ -17,7 +17,7 @@ final class LingyuanHandRig {
         var p=m.pose(now);
         Vec3 axis=p.axis().normalize();
         Vec3 across=perpendicular(RIGHT,axis), face=across.cross(axis);
-        double roll=-.93;
+        double roll=-.65;
         double weight=m.edgeWeight(now), t=m.edgeSample(now);
         if (weight>0) {
             Vec3 motion=tip(m.pose(t+.055)).subtract(tip(m.pose(t-.055)));

@@ -10,7 +10,7 @@ public final class FlameSkillRig {
     public static Matrix4f main(FlameSkillMotion.Frame f,boolean left){return FlameDaoRig.wrist(f.main(),0,left);}
     public static Matrix4f blade(FlameSkillMotion.Frame f,boolean left){
         return new Matrix4f().rotateZ((float)Math.toRadians((left?-1:1)*-65))
-                .rotateY((float)Math.toRadians(left?-90:90)).scale(1.16f);
+                .rotateY((float)Math.toRadians(left?-90:90)).scale(FlameDaoRig.BLADE_SCALE);
     }
     public static Matrix4f off(FlameSkillMotion.Frame f,boolean left){
         var matrix=FlameDaoRig.hand(f.off(),0,!left);

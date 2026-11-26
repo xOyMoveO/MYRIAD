@@ -7,6 +7,8 @@ import org.joml.Vector3f;
 public final class ThunderSwordRig {
     private static final float DEG=(float)(Math.PI/180);
     public static final float VIEW_SCALE=.74f;
+    public static final float BLADE_SCALE=1.35f;
+    private static final double IDLE_FACE_TURN=10.5*DEG;
     private ThunderSwordRig(){}
     public static boolean allowed(boolean mod,String role,boolean ownLivingFirstPerson,boolean mainSword){
         return mod&&"tianxing".equals(role)&&ownLivingFirstPerson&&mainSword;
@@ -23,7 +25,7 @@ public final class ThunderSwordRig {
         var p=ThunderSwordMotion.IDLE;
         return blade(new ThunderSwordMotion.Frame(p,p,p,0,-1),left);
     }
-    private static Matrix4f unturned(boolean left){return new Matrix4f().rotateZ((left?65:-65)*DEG).scale(1.25f);}
+    private static Matrix4f unturned(boolean left){return new Matrix4f().rotateZ((left?65:-65)*DEG).scale(BLADE_SCALE);}
     public static Vector3f travel(ThunderSwordMotion.Frame f,boolean left){
         var tip=new Vector3f(0,1.40625f,0);
         var before=wrist(f.before(),0,left).mul(unturned(left)).transformPosition(new Vector3f(tip));
@@ -36,7 +38,7 @@ public final class ThunderSwordRig {
         var x=base.transformDirection(new Vector3f(1,0,0)).normalize();
         var z=base.transformDirection(new Vector3f(0,0,1)).normalize();
         var forward=new Vector3f(0,0,-1);
-        double idle=Math.atan2(-forward.dot(z),forward.dot(x));
+        double idle=Math.atan2(-forward.dot(z),forward.dot(x))+(left?-IDLE_FACE_TURN:IDLE_FACE_TURN);
         var velocity=travel(f,left);
         double angle=idle;
         if(Math.pow(velocity.dot(x),2)+Math.pow(velocity.dot(z),2)>1E-10){
@@ -46,6 +48,6 @@ public final class ThunderSwordRig {
             target=reference+Math.IEEEremainder(target-reference,Math.PI*2);
             angle+=(target-idle)*f.cuttingWeight();
         }
-        return new Matrix4f().rotateZ((left?65:-65)*DEG).rotateY((float)angle).scale(1.25f);
+        return new Matrix4f().rotateZ((left?65:-65)*DEG).rotateY((float)angle).scale(BLADE_SCALE);
     }
 }
