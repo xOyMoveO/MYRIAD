@@ -21,6 +21,11 @@ final class ElementVfxChecks {
                     h.assertTrue(png!=null,"Every custom sprite is packaged: "+id);
                     if (i == LUOXIA_ARROW_MODEL) {
                         verifyLuoxiaModelAtlas(h, javax.imageio.ImageIO.read(png));
+                    } else if (i >= VOLLEY_CHARGE) {
+                        var strip = javax.imageio.ImageIO.read(png);
+                        boolean narrow = i == VOLLEY_TRAIL || i == LANCE_TRAIL || i == LANCE_WARNING;
+                        h.assertTrue(strip.getWidth() == 1024 && strip.getHeight() == (narrow ? 64 : 256)
+                                && strip.getColorModel().hasAlpha(), "Luoxia ultimate RGBA strip: " + id);
                     } else if(i>=AbilityVfxMaterials.INK_HD_PAPER){
                         var atlas=javax.imageio.ImageIO.read(png);
                         h.assertTrue(atlas.getWidth()==512&&atlas.getHeight()==128&&atlas.getColorModel().hasAlpha(),

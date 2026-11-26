@@ -141,19 +141,27 @@ public final class CombatHudOverlay {
             }
             if (skin) CombatHudSkin.PORTRAIT.draw(gui, GAP, GAP, 34, 34);
             else border(gui, GAP, GAP, 34, 34, 0xFFA99B7C);
+            drawSkillPoints(gui, font, state.skillPoints(), 39, GAP + 1);
             centered(gui, font, level.getString(), GAP, 43, 34, WHITE);
         }
 
         drawHealth(gui, font, state, x, right, skin);
-        int manaEnd = layout.compact() ? right - font.width(level) - 6 : right;
-        track(gui, skin, CombatHudSkin.MANA, x, 21, manaEnd - x, 12,
-                state.unlimitedMana() ? 1F : state.mana() / (float)state.maxMana(), MANA);
         var mana = state.unlimitedMana() ? label("mana_infinite")
                 : label("mana", state.mana(), Math.round(state.maxMana()));
+        int levelX = right - font.width(level) - 2;
+        int badgeRight = levelX - 3;
+        int badgeWidth = state.skillPoints() > 0 ? font.width("+" + state.skillPoints()) + 4 : 0;
+        int manaEnd = layout.compact() ? levelX - 4 - badgeWidth : right;
+        boolean secondLine = layout.compact() && badgeWidth > 0 && font.width(mana) + 6 > manaEnd - x;
+        if (secondLine) manaEnd = right;
+        track(gui, skin, CombatHudSkin.MANA, x, 21, manaEnd - x, 12,
+                state.unlimitedMana() ? 1F : state.mana() / (float)state.maxMana(), MANA);
         gui.text(font, mana, x + 3, 23, WHITE);
         if (layout.compact()) {
-            gui.fill(manaEnd + 2, 21, right, 33, 0xC51B3036);
-            gui.text(font, level, right - font.width(level) - 2, 23, WHITE);
+            int y = secondLine ? 33 : 21;
+            gui.fill(levelX - 2, y, right, y + 11, 0xC51B3036);
+            gui.text(font, level, levelX, y + 1, WHITE);
+            drawSkillPoints(gui, font, state.skillPoints(), badgeRight, y);
         }
 
         for (int i = 0; i < 4; i++) {
@@ -190,6 +198,15 @@ public final class CombatHudOverlay {
         }
         if (layout.attackRow()) drawAttack(gui, font, state, GAP, layout.attackTop(), right - GAP, true, skin);
         drawXp(gui, font, state, layout, skin);
+    }
+
+    private static void drawSkillPoints(GuiGraphicsExtractor gui, Font font, int points, int right, int y) {
+        if (points <= 0) return;
+        String text = "+" + points;
+        int left = right - font.width(text) - 4;
+        gui.fill(left, y, right, y + 11, 0xFF183238);
+        border(gui, left, y, right - left, 11, 0xFFD1B579);
+        gui.text(font, text, left + 2, y + 1, 0xFFFFF2CB, false);
     }
 
     private static void drawHealth(GuiGraphicsExtractor gui, Font font, Snapshot state, int x, int right,

@@ -56,6 +56,9 @@ public final class AbilityVfxMaterials {
             SPIRIT_HD_RIM=152,SPIRIT_HD_FLAKES=153,WAR_HD_WAVE_MODEL=154,SPIRIT_HD_CRANE_MODEL=155,
             SPIRIT_HD_BEACON_MODEL=156;
     public static final int LUOXIA_WAKE=157,LUOXIA_IMPACT=158,LUOXIA_ARROW_MODEL=159;
-    public static final int MAX=LUOXIA_ARROW_MODEL;
+    public static final int VOLLEY_CHARGE=160, VOLLEY_CROWN=161, VOLLEY_TRAIL=162, VOLLEY_HIT=163;
+    public static final int LANCE_CHARGE=164, LANCE_RELEASE=165, LANCE_TRAIL=166, LANCE_HIT=167, LANCE_GRAZE=168,
+            LANCE_WARNING=169;
+    public static final int MAX=LANCE_WARNING;
     public static boolean flameGround(int material){return material==FENJUE_GROUND||material==FENJUE_FLOW_RING||material==FENJUE_FLOW_FIELD;}
 }

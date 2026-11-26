@@ -29,13 +29,13 @@ final class ThousandFeathers extends LuoxiaSkill {
             var center = LuoxiaArrow.limitTurn(initial, c.player.getLookAngle(), Math.toRadians(12));
             var roundHits = new HashSet<UUID>();
             LuoxiaBowPose.skill(c, com.myriad.network.LuoxiaBowPosePayload.Phase.RELEASE, round + 1, center);
-            LuoxiaVfx.shot(c, false, 1f + .09f * round);
+            LuoxiaVfx.shot(c, false, 1f + .09f * round, center, round + 1);
             for (int lane = -1; lane <= 1; lane++) {
-                LuoxiaArrow.launch(c, center.yRot((float)Math.toRadians(lane * 8)), 22, 2,
-                        LuoxiaArrow.Shape.VOLLEY, false, target -> {
-                            if (roundHits.add(target.getUUID()))
-                                c.damageRapid(target, DAMAGE.value(c), DamageCalc.Kind.PHYSICAL);
-                            return true;
+                LuoxiaArrow.launchResolved(c, center.yRot((float)Math.toRadians(lane * 8)), 22, 2,
+                        LuoxiaArrow.Shape.VOLLEY, false, lane, target -> {
+                            if (!roundHits.add(target.getUUID())) return new LuoxiaArrow.Impact(true, LuoxiaArrow.Feedback.NONE);
+                            boolean hit = c.damageRapid(target, DAMAGE.value(c), DamageCalc.Kind.PHYSICAL);
+                            return new LuoxiaArrow.Impact(true, hit ? LuoxiaArrow.Feedback.HIT : LuoxiaArrow.Feedback.GRAZE);
                         });
             }
         });

@@ -59,7 +59,7 @@ public final class LaneSystem {
     private static final int RANGED_PER_WAVE = 2;
     /** 防御塔从锁定到结算一次攻击的间隔：1.4 秒。 */
     private static final long TOWER_LOCK_TICKS = 28L;
-    private static final double TOWER_ATTACK_RANGE = 16.0;
+    private static final double TOWER_ATTACK_RANGE = DefenseTowerEntity.ATTACK_RANGE;
 
     public enum Lane {
         TOP("top"), MID("mid"), BOTTOM("bottom");
@@ -388,7 +388,8 @@ public final class LaneSystem {
         CombatChunks.prepare(level, pos);
         Entity raw = com.myriad.registry.ModEntities.DEFENSE_TOWER.get()
                 .create(level, EntitySpawnReason.MOB_SUMMONED);
-        if (!(raw instanceof Mob tower)) return;
+        if (!(raw instanceof DefenseTowerEntity tower)) return;
+        tower.setTowerFaction(key.faction);
         tower.setPos(pos.getX() + .5, pos.getY(), pos.getZ() + .5);
         tower.setNoAi(true);
         tower.setNoGravity(true);

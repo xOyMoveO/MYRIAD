@@ -1,6 +1,9 @@
 package com.myriad.game;
 
 import com.myriad.registry.ModAttributes;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
@@ -10,6 +13,36 @@ import net.minecraft.world.level.Level;
 
 /** Stationary, full-height combat target; its building is drawn by an ItemDisplay. */
 public final class DefenseTowerEntity extends PathfinderMob {
+    public static final double ATTACK_RANGE = 16.0;
+    private static final EntityDataAccessor<Integer> FACTION =
+            SynchedEntityData.defineId(DefenseTowerEntity.class, EntityDataSerializers.INT);
+
+    @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(FACTION, 0);
+    }
+
+    void setTowerFaction(Faction faction) {
+        entityData.set(FACTION, com.myriad.network.NetworkSetup.factionId(faction));
+    }
+
+    @Override
+    protected void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput output) {
+        super.addAdditionalSaveData(output);
+        output.putInt("myriad_tower_faction", towerFaction());
+    }
+
+    @Override
+    protected void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput input) {
+        super.readAdditionalSaveData(input);
+        entityData.set(FACTION, input.getIntOr("myriad_tower_faction", 0));
+    }
+
+    public int towerFaction() {
+        return entityData.get(FACTION);
+    }
+
     public DefenseTowerEntity(EntityType<? extends DefenseTowerEntity> type, Level level) {
         super(type, level);
         setNoAi(true);

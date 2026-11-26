@@ -77,6 +77,7 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
         net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents.ALLOW_COMMAND.register(
                 MyriadClient::allowCommand);
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(client->{
+            com.myriad.client.TowerRangeRings.tick(client);
             com.myriad.client.LuoxiaInput.tick(client);
             com.myriad.client.LobbyClient.tick(client);
             var screen=client.gui.screen();
