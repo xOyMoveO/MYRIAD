@@ -13,7 +13,7 @@ final class WindHandRig {
     static final Vec3 EDGE_ROOT = new Vec3(.057, .196, 0);
     private static final Vec3 RIGHT = new Vec3(1, 0, 0);
     private static final Vec3 UP = new Vec3(0, 1, 0);
-    private static final double BLADE_SCALE = .82;
+    private static final double BLADE_SCALE = .88;
 
     private WindHandRig() {}
 
@@ -22,7 +22,7 @@ final class WindHandRig {
         Vec3 shaft = pose.shaft().normalize();
         Vec3 reference = across(RIGHT, shaft);
         Vec3 face = reference.cross(shaft);
-        double idleRoll = -.84;
+        double idleRoll = -.15;
         double roll = idleRoll;
         double weight = 0;
         double travelTick = now;
