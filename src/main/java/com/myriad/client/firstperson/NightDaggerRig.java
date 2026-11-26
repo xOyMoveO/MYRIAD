@@ -22,6 +22,6 @@ public final class NightDaggerRig {
     public static Matrix4f blade(boolean left,double grip) {
         float side=left ? -1 : 1;
         // Proper rotations instead of a negative scale: item face winding/culling stays correct.
-        return new Matrix4f().rotateZ(side*(90-(float)grip)*DEG).rotateY(side*55*DEG).scale(.78f*1.15f);
+        return new Matrix4f().rotateZ(side*(90-(float)grip)*DEG).rotateY(side*22*DEG).scale(.78f*1.15f);
     }
 }

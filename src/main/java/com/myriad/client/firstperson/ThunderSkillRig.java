@@ -14,7 +14,7 @@ public final class ThunderSkillRig {
             return ThunderSwordRig.blade(new ThunderSwordMotion.Frame(f.main(),f.before(),f.after(),1,0),left);
         }
         return new Matrix4f().rotateZ((float)((left?-1:1)*(-65+f.bladeFlip()))*DEG)
-                .rotateY((left?-90:90)*DEG).scale(1.25f);
+                .rotateY((left?-90:90)*DEG).scale(ThunderSwordRig.BLADE_SCALE);
     }
     public static Matrix4f sword(ThunderSkillMotion.Frame f,boolean left){return main(f,left).mul(blade(f,left));}
     public static double wipeHeight(double progress){return .10+.94*Math.clamp((progress-.18)/.75,0,1);}

@@ -7,7 +7,7 @@ import static com.myriad.network.ThunderSkillViewPayload.*;
 /** Six skill-specific own-camera gestures. No combat, input prediction or shared player-model pose. */
 public final class ThunderSkillMotion {
     public static final int AIM=10;
-    public static final Pose OFF_REST=p(.9,-.7,-1.2,0,0,35),LOW=p(.65,-.60,-1.32,-8,-8,55),
+    public static final Pose OFF_REST=p(.9,-.7,-1.2,0,0,35),LOW=p(.58,-.56,-1.14,-10,-10,48),
             LEFT_GUARD=p(-.34,.01,-1.48,-10,-8,110),WIPE_GUARD=p(.40,-.42,-1.50,-6,-4,65),
             LEFT_PALM=p(.34,-.18,-1.20,-8,5,38),AIM_PALM=p(.26,-.23,-1.35,-8,5,32);
     public record Frame(Pose main,Pose off,Pose before,Pose after,boolean showOff,boolean showBlade,int action,double progress,double bladeFlip){}
