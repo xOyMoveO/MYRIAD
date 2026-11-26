@@ -1,8 +1,8 @@
 package com.myriad.client.gui;
 
 /** GUI-pixel geometry shared by drawing, clipping, hit testing and focus scrolling. */
-public record SkillChoiceLayout(Box panel, Box body, Box viewport, Box details,
-        boolean topTabs, boolean wideDetails, int navigationWidth, int labelWidth, int tileWidth, int cardGap,
+public record SkillChoiceLayout(Box panel, Box body, Box viewport,
+        boolean topTabs, int navigationWidth, int labelWidth, int tileWidth, int cardGap,
         int rowHeight, int scrollY, int maxY) {
     private static final int[] DISPLAY_GROUPS = {0, 2, 1, 3};
     private static final int SUPPLY_ROW_HEIGHT = 34;
@@ -13,6 +13,11 @@ public record SkillChoiceLayout(Box panel, Box body, Box viewport, Box details,
         public int bottom() { return y + h; }
         public boolean contains(double px, double py) { return px >= x && px < right() && py >= y && py < bottom(); }
         public boolean overlaps(Box other) { return x < other.right() && right() > other.x && y < other.bottom() && bottom() > other.y; }
+        public Box intersect(Box other) {
+            int left = Math.max(x, other.x), top = Math.max(y, other.y);
+            return new Box(left, top, Math.max(0, Math.min(right(), other.right()) - left),
+                    Math.max(0, Math.min(bottom(), other.bottom()) - top));
+        }
         public Box inset(int n) {
             int ix = Math.min(n, (w - 1) / 2);
             int iy = Math.min(n, (h - 1) / 2);
@@ -21,14 +26,10 @@ public record SkillChoiceLayout(Box panel, Box body, Box viewport, Box details,
     }
 
     public static SkillChoiceLayout create(int width, int height, int requestedY) {
-        return create(width, height, requestedY, 52, true);
+        return create(width, height, requestedY, 52);
     }
 
     public static SkillChoiceLayout create(int width, int height, int requestedY, int measuredLabelWidth) {
-        return create(width, height, requestedY, measuredLabelWidth, true);
-    }
-
-    public static SkillChoiceLayout create(int width, int height, int requestedY, int measuredLabelWidth, boolean skills) {
         int horizontalMargin = Math.min(12, width / 12);
         int verticalMargin = Math.min(6, height / 16);
         int w = Math.max(1, Math.min(640, Math.min(width - 2 * horizontalMargin, Math.max(360, Math.round(width * .86f)))));
@@ -42,19 +43,13 @@ public record SkillChoiceLayout(Box panel, Box body, Box viewport, Box details,
         int footer = footerOffset(h);
         var body = new Box(panel.x + inset + nav, panel.y + top,
                 Math.max(1, w - 2 * inset - nav), Math.max(1, h - footer - top));
-        int detailWidth = Math.clamp(w * 3 / 10, 160, 192);
-        boolean wideDetails = h >= 150 && !topTabs && w >= 500 && body.w - detailWidth - 12 >= 240;
-        Box details = skills && wideDetails
-                ? new Box(body.right() - detailWidth, body.y, detailWidth, body.h) : null;
-        int contentRight = details == null ? body.right() : details.x - 10;
-        var view = new Box(body.x, body.y, Math.max(1, contentRight - body.x - 8), body.h);
-
+        var view = new Box(body.x, body.y, Math.max(1, body.w - 8), body.h);
         int gap = Math.clamp(view.w / 20, 4, 12);
-        int label = Math.min(Math.clamp(measuredLabelWidth + 10, 48, 94), Math.max(12, view.w / 3));
+        int label = Math.min(Math.clamp(measuredLabelWidth + 8, 32, 94), Math.max(12, view.w / 3));
         int tile = Math.max(1, (view.w - label - 2 * gap) / 2);
         int row = Math.clamp(view.h / 4, 34, 64);
         int maximum = Math.max(0, 4 * row - view.h);
-        return new SkillChoiceLayout(panel, body, view, details, topTabs, wideDetails, nav, label, tile, gap,
+        return new SkillChoiceLayout(panel, body, view, topTabs, nav, label, tile, gap,
                 row, Math.clamp(requestedY, 0, maximum), maximum);
     }
 
@@ -101,8 +96,16 @@ public record SkillChoiceLayout(Box panel, Box body, Box viewport, Box details,
         return new Box(body.right() - width, footerDividerY() + 4, width, Math.min(20, Math.max(1, footerOffset(panel.h) - 6)));
     }
 
-    public Box selectedLabel() {
-        return new Box(body.x, footerDividerY() + 4, Math.max(1, primary().x - body.x - 8), primary().h);
+    public Box skillConfirm() {
+        var target = primary();
+        int width = Math.min(target.w, Math.max(50, body.w * 2 / 5));
+        return new Box(target.right() - width, target.y, width, target.h);
+    }
+
+    public Box selectedLabel() { return selectedLabel(primary()); }
+
+    public Box selectedLabel(Box target) {
+        return new Box(body.x, footerDividerY() + 4, Math.max(1, target.x - body.x - 8), target.h);
     }
 
     public Box tab(int index) {
@@ -151,16 +154,13 @@ public record SkillChoiceLayout(Box panel, Box body, Box viewport, Box details,
         return new Box(row.right() - w - 4, row.y + 6, w, 18);
     }
 
-    public Box detailsViewport() {
-        return new Box(details.x + 8, details.y + 7, details.w - 22, details.h - 14);
+    public Box skillIcon(int index) {
+        var card = card(index);
+        int size = Math.max(1, Math.min(32, Math.min(card.h - 8, card.w / 3)));
+        return new Box(card.x + 5, card.y + (card.h - size) / 2, size, size);
     }
 
     public Box verticalTrack() { return new Box(viewport.right() + 3, viewport.y, 5, viewport.h); }
-
-    public Box detailsTrack() {
-        var view = detailsViewport();
-        return new Box(view.right() + 3, view.y, 5, view.h);
-    }
 
     public Box verticalThumb() { return verticalThumb(maxY, scrollY); }
 

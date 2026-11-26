@@ -49,6 +49,18 @@ public record SkillChoiceTooltipLayout(Box box, int visibleLines, int scroll, in
         return new SkillChoiceTooltipLayout(new Box(x, y, w, h), visible, Math.clamp(requested, 0, maximum), maximum);
     }
 
+    /** Safe areas in preference order. None includes the visible source icon or the footer. */
+    public static java.util.List<Box> skillRegions(int screenWidth, int footerY, Box icon) {
+        int x = MARGIN, y = MARGIN;
+        int right = Math.max(x + 1, screenWidth - MARGIN), bottom = Math.max(y + 1, footerY - MARGIN);
+        int w = right - x, h = bottom - y;
+        return java.util.List.of(
+                new Box(icon.right() + GAP, y, Math.max(0, right - icon.right() - GAP), h),
+                new Box(x, y, Math.max(0, icon.x() - GAP - x), h),
+                new Box(x, y, w, Math.max(0, icon.y() - GAP - y)),
+                new Box(x, icon.bottom() + GAP, w, Math.max(0, bottom - icon.bottom() - GAP)));
+    }
+
     public boolean keepsOpen(Box anchor, double x, double y) {
         if (box.contains(x, y)) return true;
         if (y < Math.max(anchor.y(), box.y()) || y >= Math.min(anchor.bottom(), box.bottom())) return false;

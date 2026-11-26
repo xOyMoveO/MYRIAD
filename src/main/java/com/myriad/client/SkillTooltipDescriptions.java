@@ -200,6 +200,20 @@ public final class SkillTooltipDescriptions {
         return lines;
     }
 
+    static String hoverDamage(AbilitySkill skill, int index, int rank, com.myriad.network.NetworkSetup.PlayerDataPayload data) {
+        var formulas = skill.damageFormulas();
+        if (index < 0 || index >= formulas.size()) return "";
+        var formula = formulas.get(index);
+        double value = formula.value(rank,
+                ClientDataHolder.attrValue(ModAttributes.PHYSICAL_ATTACK.value().getDescriptionId()),
+                ClientDataHolder.attrValue(ModAttributes.SPELL_POWER.value().getDescriptionId()),
+                data.buffs().getOrDefault("g1_attribute_strength", 0), data.buffs().getOrDefault("g1_attribute_wisdom", 0));
+        if (!Double.isFinite(value)) return "";
+        String kind = text("skill.myriad.damage." + formula.kind().name().toLowerCase(Locale.ROOT));
+        String line = text("screen.myriad.hover.damage", AbilityFormulaText.amount(value), kind);
+        return formula.labelKey().isEmpty() ? line : text(formula.labelKey()) + " · " + line;
+    }
+
     private static String damageLine(AbilityDamageFormula formula, int rank, double value, boolean current) {
         String kind = text(switch (formula.kind()) {
             case PHYSICAL -> "skill.myriad.damage.physical";

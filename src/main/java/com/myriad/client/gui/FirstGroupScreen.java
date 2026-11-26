@@ -7,6 +7,7 @@ import com.myriad.character.rework.FirstGroupGrowth;
 import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.client.ClientDataHolder;
 import com.myriad.client.SkillIcon;
+import com.myriad.client.SkillHoverDetails;
 import com.myriad.client.SkillTooltipDescriptions;
 import com.myriad.client.UiFeedback;
 import com.myriad.client.gui.SkillChoiceLayout.Box;
@@ -16,7 +17,6 @@ import com.myriad.network.Packets;
 import com.myriad.registry.ModAttributes;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.function.Supplier;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -24,7 +24,6 @@ import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
-import net.minecraft.util.Util;
 
 import static com.myriad.client.gui.SkillChoiceTheme.*;
 
@@ -32,17 +31,14 @@ import static com.myriad.client.gui.SkillChoiceTheme.*;
 public final class FirstGroupScreen extends Screen {
     private static final int SKILLS = 0, ATTRIBUTES = 1, SUPPLIES = 2;
     private static final int LINE_HEIGHT = 11;
-    // MouseHandler recognizes a second click within 250 ms. Keep the original card positions until then.
-    private static final long DOUBLE_CLICK_MILLIS = 250;
     private static final String ATTRIBUTE_PREFIX = "g1_attribute_";
     private static final String[] GROUPS = {"passive", "regular", "main", "ultimate"};
     private static final String[] TABS = {"skills", "attributes", "supplies"};
     private static final String[] TAB_LABELS = {"screen.myriad.g1.tab_skills",
             "screen.myriad.g1.tab_attributes", "screen.myriad.shop.tab_supply"};
 
-    private int page, scroll, detailScroll, detailMaximum, tooltipScroll, labelWidth;
-    private boolean draggingContent, draggingDetails, activationHeld, detailsOpen;
-    private long detailsOpenAt;
+    private int page, scroll, tooltipScroll, labelWidth;
+    private boolean draggingContent, activationHeld;
     private double dragOffset;
     private String role = "", focused = "", keyboardTooltip = "", lastClicked = "";
     private final SkillChoiceInteraction selection = new SkillChoiceInteraction();
@@ -52,7 +48,7 @@ public final class FirstGroupScreen extends Screen {
     private Object submittedSnapshot;
     private long submittedAt;
 
-    private enum ActionKind { CLOSE, PAGE, ITEM, CONFIRM, SUPPLY, DETAILS }
+    private enum ActionKind { CLOSE, PAGE, ITEM, CONFIRM, SUPPLY }
     private record Action(Box box, String id, ActionKind kind, boolean content) {}
     private record TooltipTarget(String id, Box anchor, List<String> lines) {}
     private record TextLine(FormattedCharSequence text, int color) {}
@@ -67,10 +63,11 @@ public final class FirstGroupScreen extends Screen {
 
     @Override protected void init() {
         actions.clear();
-        draggingContent = draggingDetails = activationHeld = false;
+        draggingContent = activationHeld = false;
         lastClicked = "";
         clearTooltip();
-        labelWidth = 0;
+        labelWidth = Math.max(font.width(text("screen.myriad.g1.one_short")),
+                font.width(text("screen.myriad.g1.both_short")));
         for (String group : GROUPS) labelWidth = Math.max(labelWidth, font.width(groupName(group)));
         clampScroll();
     }
@@ -78,7 +75,7 @@ public final class FirstGroupScreen extends Screen {
     private static String text(String key, Object... args) { return Component.translatable(key, args).getString(); }
     private static String groupName(String group) { return text("screen.myriad.g1." + group); }
 
-    private SkillChoiceLayout layout() { return SkillChoiceLayout.create(width, height, scroll, labelWidth, page == SKILLS && detailsOpen); }
+    private SkillChoiceLayout layout() { return SkillChoiceLayout.create(width, height, scroll, labelWidth); }
 
     private int maximum(SkillChoiceLayout layout) {
         return switch (page) {
@@ -140,9 +137,7 @@ public final class FirstGroupScreen extends Screen {
                 int next = Integer.parseInt(action.id.substring(5));
                 if (next != page) {
                     page = next;
-                    scroll = detailScroll = detailMaximum = 0;
-                    detailsOpen = false;
-                    detailsOpenAt = 0;
+                    scroll = 0;
                     selection.reset();
                     clearTooltip();
                     actions.clear();
@@ -151,14 +146,8 @@ public final class FirstGroupScreen extends Screen {
             case ITEM -> {
                 String previous = selection.selected();
                 boolean buy = selection.select(action.id, twice, error(action.id) == null);
-                if (!action.id.equals(previous)) {
-                    detailScroll = 0;
-                    clearTooltip();
-                    if (page == SKILLS && previous.isEmpty()) {
-                        detailsOpenAt = keyboard ? Util.getMillis() : Util.getMillis() + DOUBLE_CLICK_MILLIS;
-                    }
-                }
-                if (keyboard) keyboardTooltip = action.id + ":tile";
+                if (!action.id.equals(previous)) clearTooltip();
+                if (keyboard && page == ATTRIBUTES) keyboardTooltip = action.id + ":tile";
                 if (buy) submit(action.id);
             }
             case CONFIRM -> {
@@ -168,7 +157,6 @@ public final class FirstGroupScreen extends Screen {
             case SUPPLY -> {
                 if (!twice && error(action.id) == null) submit(action.id);
             }
-            case DETAILS -> { }
         }
         return true;
     }
@@ -190,12 +178,6 @@ public final class FirstGroupScreen extends Screen {
             lastClicked = "";
             draggingContent = true;
             return startDrag(layout.verticalThumb(maximum, scroll), y);
-        }
-        if (layout.details() != null && detailMaximum > 0 && layout.detailsTrack().contains(x, y)) {
-            lastClicked = "";
-            draggingDetails = true;
-            focused = "details";
-            return startDrag(SkillChoiceLayout.thumb(layout.detailsTrack(), detailMaximum, detailScroll), y);
         }
         for (var action : actions) {
             if (!action.box.contains(x, y) || action.content && !layout.canHit(action.box, x, y)) continue;
@@ -219,22 +201,20 @@ public final class FirstGroupScreen extends Screen {
 
     private boolean drag(double y) {
         var layout = layout();
-        if (draggingDetails && layout.details() != null) {
-            detailScroll = SkillChoiceLayout.scrollTo(layout.detailsTrack(), y, detailMaximum, dragOffset);
-        } else if (draggingContent) {
+        if (draggingContent) {
             setScroll(SkillChoiceLayout.scrollTo(layout.verticalTrack(), y, maximum(layout), dragOffset));
         }
         return true;
     }
 
     @Override public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
-        return (draggingContent || draggingDetails) && event.buttonInfo().button() == InputConstants.MOUSE_BUTTON_LEFT
+        return draggingContent && event.buttonInfo().button() == InputConstants.MOUSE_BUTTON_LEFT
                 ? drag(event.y()) : super.mouseDragged(event, dx, dy);
     }
 
     @Override public boolean mouseReleased(MouseButtonEvent event) {
-        if ((draggingContent || draggingDetails) && event.buttonInfo().button() == InputConstants.MOUSE_BUTTON_LEFT) {
-            draggingContent = draggingDetails = false;
+        if (draggingContent && event.buttonInfo().button() == InputConstants.MOUSE_BUTTON_LEFT) {
+            draggingContent = false;
             return true;
         }
         return super.mouseReleased(event);
@@ -248,10 +228,6 @@ public final class FirstGroupScreen extends Screen {
         }
         var layout = layout();
         int delta = (int) Math.round(dy * 24);
-        if (layout.details() != null && layout.details().contains(x, y)) {
-            detailScroll = Math.clamp(detailScroll - delta, 0, detailMaximum);
-            return true;
-        }
         if (!layout.viewport().contains(x, y) && !layout.verticalTrack().contains(x, y)) return super.mouseScrolled(x, y, dx, dy);
         setScroll(scroll - delta);
         return true;
@@ -298,8 +274,6 @@ public final class FirstGroupScreen extends Screen {
             int delta = event.key() == InputConstants.KEY_PAGEDOWN ? 1 : -1;
             if (tooltipLayout != null && tooltipLayout.maximum() > 0) {
                 tooltipScroll = Math.clamp(tooltipScroll + delta * Math.max(1, tooltipLayout.visibleLines() - 1), 0, tooltipLayout.maximum());
-            } else if (layout().details() != null && ("details".equals(focused) || !keyboardTooltip.isEmpty())) {
-                detailScroll = Math.clamp(detailScroll + delta * layout().detailsViewport().h(), 0, detailMaximum);
             } else {
                 setScroll(scroll + delta * layout().viewport().h());
             }
@@ -358,7 +332,7 @@ public final class FirstGroupScreen extends Screen {
         super.extractRenderState(g, mx, my, partial);
         actions.clear();
         nextTooltip = null;
-        var data = ClientDataHolder.get();
+        var data = page == SKILLS ? ClientDataHolder.currentPlayerSnapshot(minecraft) : ClientDataHolder.get();
         if (data != null && !FirstGroupSkills.active(data.characterId())) {
             onClose();
             return;
@@ -366,15 +340,10 @@ public final class FirstGroupScreen extends Screen {
         if (data != null && !role.equals(data.characterId())) {
             role = data.characterId();
             selection.reset();
-            scroll = detailScroll = 0;
-            detailsOpen = false;
-            detailsOpenAt = 0;
+            scroll = 0;
             clearTooltip();
         }
-        if (detailsOpenAt != 0 && Util.getMillis() >= detailsOpenAt) {
-            detailsOpen = true;
-            detailsOpenAt = 0;
-        }
+        if (data == null) clearTooltip();
         clampScroll();
         var layout = layout();
         var panel = layout.panel();
@@ -394,12 +363,12 @@ public final class FirstGroupScreen extends Screen {
         SkillChoiceTheme.divider(g, header.x(), panel.right() - (header.x() - panel.x()), layout.headerDividerY(), 0xFF52837B);
         drawTabs(g, layout, mx, my);
         g.enableScissor(view.x(), view.y(), view.right(), view.bottom());
+        AbilitySkill hoveredSkill = null;
         if (data == null) textIn(g, text("screen.myriad.g1.loading"), view.x() + 6, view.y() + 6, view.w() - 12, JADE);
-        else if (page == SKILLS) drawSkills(g, layout, mx, my);
+        else if (page == SKILLS) hoveredSkill = drawSkills(g, layout, mx, my);
         else if (page == ATTRIBUTES) drawAttributes(g, layout, mx, my);
         else drawSupplies(g, layout, mx, my);
         g.disableScissor();
-        if (data != null && layout.details() != null) drawDetails(g, layout, mx, my);
         int maximum = maximum(layout);
         if (data != null && maximum > 0) scrollbar(g, layout.verticalTrack(), layout.verticalThumb(maximum, scroll));
         SkillChoiceTheme.divider(g, layout.body().x(), layout.body().right(), layout.footerDividerY(), 0xFF52837B);
@@ -408,7 +377,13 @@ public final class FirstGroupScreen extends Screen {
             else drawSelected(g, layout, mx, my);
         }
         button(g, new Action(layout.close(), "close", ActionKind.CLOSE, false), "×", true, false, layout, mx, my);
-        drawTooltip(g);
+        if (hoveredSkill == null) {
+            drawTooltip(g);
+        } else {
+            clearTooltip();
+            var info = SkillHoverDetails.describe(hoveredSkill, data);
+            SkillHoverCard.draw(g, font, layout, width, hoveredSkill, info);
+        }
     }
 
     private void drawTabs(GuiGraphicsExtractor g, SkillChoiceLayout layout, int mx, int my) {
@@ -433,10 +408,11 @@ public final class FirstGroupScreen extends Screen {
         }
     }
 
-    private void drawSkills(GuiGraphicsExtractor g, SkillChoiceLayout layout, int mx, int my) {
+    private AbilitySkill drawSkills(GuiGraphicsExtractor g, SkillChoiceLayout layout, int mx, int my) {
         var data = ClientDataHolder.get();
         var candidates = FirstGroupSkills.candidates(data.characterId());
         var view = layout.viewport();
+        AbilitySkill hoveredSkill = null;
         for (int row = 0; row < 4; row++) {
             int first = SkillChoiceLayout.firstIndex(row);
             int group = first / 2;
@@ -447,7 +423,6 @@ public final class FirstGroupScreen extends Screen {
                 int y = category.y() + (category.h() - 2 * LINE_HEIGHT) / 2;
                 textIn(g, name, category.x() + 4, y, category.w() - 6, GOLD);
                 textIn(g, rule, category.x() + 4, y + LINE_HEIGHT, category.w() - 6, MUTED);
-                offer("group:" + group, category, () -> List.of(name, text(group == 1 ? "screen.myriad.g1.both" : "screen.myriad.g1.one")), mx, my, view);
             }
             for (int index = first; index <= first + 1; index++) {
                 var skill = candidates.get(index);
@@ -459,9 +434,8 @@ public final class FirstGroupScreen extends Screen {
                 boolean locked = other >= 0 && data.skillLevels().getOrDefault(candidates.get(other).getId(), 0) > 0;
                 boolean hovered = layout.canHit(b, mx, my);
                 card(g, b, selection.selected().equals(skill.getId()), rank > 0, locked, hovered || focused.equals(skill.getId()));
-                int size = Math.max(1, Math.min(32, Math.min(b.h() - 8, b.w() / 3)));
-                int iconX = b.x() + 5;
-                int iconY = b.y() + (b.h() - size) / 2;
+                Box icon = layout.skillIcon(index);
+                int size = icon.w(), iconX = icon.x(), iconY = icon.y();
                 SkillIcon.drawArtwork(g, font, iconX, iconY, size, skill);
                 if (other >= 0 && size >= 14) {
                     String branch = (index & 1) == 0 ? "A" : "B";
@@ -476,66 +450,10 @@ public final class FirstGroupScreen extends Screen {
                     textIn(g, locked ? text("screen.myriad.g1.locked") : rank + "/" + skill.maxRank(),
                             start, b.bottom() - 11, textWidth, locked ? MUTED : JADE);
                 }
-                if (!layout.wideDetails()) {
-                    offer(skill.getId() + ":tile", b, () -> skillLines(skill, rank, error(skill.getId())), mx, my, view);
-                }
+                if (layout.canHit(icon, mx, my)) hoveredSkill = skill;
             }
         }
-    }
-
-    private List<String> skillLines(AbilitySkill skill, int rank, String reason) {
-        var data = ClientDataHolder.get();
-        var lines = new ArrayList<String>();
-        lines.add(SkillTooltipDescriptions.abilityName(skill));
-        int level = skill.baseAvailable() ? rank : Math.max(1, rank);
-        String rankText = skill.baseAvailable() ? text("screen.myriad.rivet.anchor_rank", rank, skill.maxRank())
-                : text(rank > 0 ? "screen.myriad.g1.learned_rank" : "screen.myriad.g1.unlearned_rank", rank, skill.maxRank());
-        if (rank == 0 && !skill.baseAvailable()) rankText += " · " + text("hud.myriad.combat.level", level);
-        lines.add(rankText);
-        if (skill.isPassive()) lines.add(text("screen.myriad.g1.passive_cost"));
-        else {
-            double reduction = ClientDataHolder.attrValue(ModAttributes.COOLDOWN_REDUCTION.value().getDescriptionId());
-            boolean noCooldown = data.training() && data.noCooldown();
-            double base = skill.getCooldownTicks(level) / 20.0;
-            if (noCooldown || Double.isFinite(reduction)) {
-                double cooldown = noCooldown ? 0 : base * (1 - Math.clamp(reduction, 0, ModAttributes.MAX_COOLDOWN_REDUCTION) / 100);
-                double remaining = rank > 0 || skill.baseAvailable() ? ClientDataHolder.cooldownTicks(skill.slot()) / 20.0 : 0;
-                lines.add(text("screen.myriad.g1.current_cost", Math.round(skill.getManaCost()),
-                        String.format(Locale.ROOT, "%.1f", cooldown), String.format(Locale.ROOT, "%.1f", remaining)));
-            } else {
-                lines.add(text("screen.myriad.g1.resource", Math.round(skill.getManaCost()), String.format(Locale.ROOT, "%.1f", base)));
-            }
-        }
-        lines.addAll(SkillTooltipDescriptions.describeLines(skill, level));
-        lines.add(text(FirstGroupSkills.opposite(skill.index()) < 0 ? "screen.myriad.g1.both" : "screen.myriad.g1.one"));
-        if (reason != null) lines.add(text(reason));
-        return lines;
-    }
-
-    private void drawDetails(GuiGraphicsExtractor g, SkillChoiceLayout layout, int mx, int my) {
-        Box box = layout.details();
-        actions.add(new Action(box, "details", ActionKind.DETAILS, false));
-        plate(g, box, focused.equals("details") ? JADE : 0xFF315854, 0xFF112830);
-        var data = ClientDataHolder.get();
-        var skill = FirstGroupSkills.byId(selection.selected());
-        if (skill == null) return;
-        List<String> description = skillLines(skill, data.skillLevels().getOrDefault(skill.getId(), 0), error(skill.getId()));
-        Box view = layout.detailsViewport();
-        var lines = wrapLines(description, view.w());
-        detailMaximum = Math.max(0, lines.size() * LINE_HEIGHT - view.h());
-        detailScroll = Math.clamp(detailScroll, 0, detailMaximum);
-        g.enableScissor(view.x(), view.y(), view.right(), view.bottom());
-        for (int index = 0; index < lines.size(); index++) {
-            int y = view.y() + index * LINE_HEIGHT - detailScroll;
-            if (y + LINE_HEIGHT <= view.y() || y >= view.bottom()) continue;
-            var line = lines.get(index);
-            g.text(font, line.text, view.x(), y, line.color);
-        }
-        g.disableScissor();
-        if (detailMaximum > 0) {
-            var track = layout.detailsTrack();
-            scrollbar(g, track, SkillChoiceLayout.thumb(track, detailMaximum, detailScroll));
-        }
+        return hoveredSkill;
     }
 
     private long attributeTotal() {
@@ -653,14 +571,23 @@ public final class FirstGroupScreen extends Screen {
         }
         String name;
         String label;
-        Supplier<List<String>> details;
+        String reason = error(id);
+        String hint = "";
         if (page == SKILLS) {
             var skill = FirstGroupSkills.byId(id);
             if (skill == null || !skill.role().equals(role)) return;
             int rank = ClientDataHolder.get().skillLevels().getOrDefault(id, 0);
             name = SkillTooltipDescriptions.abilityName(skill);
-            label = text(rank >= skill.maxRank() ? "screen.myriad.g1.maxed" : rank == 0 ? "screen.myriad.g1.learn" : "screen.myriad.g1.rank_up");
-            details = () -> skillLines(skill, rank, error(id));
+            if (rank >= skill.maxRank()) label = text("screen.myriad.g1.maxed");
+            else if (skill.baseAvailable()) label = text("screen.myriad.hover.reinforce");
+            else label = text(rank == 0 ? "screen.myriad.g1.learn" : "screen.myriad.g1.rank_up");
+            if (reason != null) hint = switch (reason) {
+                case "message.myriad.g1.branch_locked" -> text("screen.myriad.hover.other_branch");
+                case "message.myriad.no_skill_points" -> text("screen.myriad.hover.no_points");
+                case "message.myriad.g1.level_gate" -> text("screen.myriad.hover.level_gate");
+                default -> "";
+            };
+
         } else {
             String key = id.substring(ATTRIBUTE_PREFIX.length());
             name = text("screen.myriad.g1.attribute." + key);
@@ -669,12 +596,19 @@ public final class FirstGroupScreen extends Screen {
             if (data.training() && data.noGoldCost()) label = text("screen.myriad.g1.buy", 0);
             else if (price == FirstGroupGrowth.PRICE_OVERFLOW) label = text("screen.myriad.g1.attribute_price_limit");
             else label = text("screen.myriad.g1.buy", price);
-            details = () -> attributeLines(key);
+            offer(id + ":selected", layout.selectedLabel(), () -> attributeLines(key), mx, my, null);
         }
-        wrapped(g, text("screen.myriad.g1.selected", name), layout.selectedLabel(), 2, GOLD);
-        button(g, new Action(layout.primary(), "confirm", ActionKind.CONFIRM, false),
-                pending() ? text("screen.myriad.g1.processing") : label, error(id) == null, true, layout, mx, my);
-        offer(id + ":selected", layout.selectedLabel(), details, mx, my, null);
+        var confirm = page == SKILLS ? layout.skillConfirm() : layout.primary();
+        var nameBox = layout.selectedLabel(confirm);
+        String selected = text("screen.myriad.g1.selected", name);
+        if (!hint.isEmpty() && font.width(selected) <= nameBox.w() && font.width(hint) <= nameBox.w()) {
+            g.text(font, selected, nameBox.x(), nameBox.y(), GOLD);
+            g.text(font, hint, nameBox.x(), nameBox.y() + font.lineHeight + 1, MUTED);
+        } else {
+            wrapped(g, selected, nameBox, 2, GOLD);
+        }
+        button(g, new Action(confirm, "confirm", ActionKind.CONFIRM, false),
+                pending() ? text("screen.myriad.g1.processing") : label, reason == null, true, layout, mx, my);
     }
 
     private List<TextLine> wrapLines(List<String> description, int width) {
