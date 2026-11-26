@@ -58,8 +58,8 @@ public final class ShuoView {
         try {
         if(!free){
             // Keep the closed pair on the weapon side when the other hand carries a real item.
-            float closed=Math.clamp((-f.palm().x-.15f)/.54f,0,1);
-            stack.translate((mirror?-1:1)*1.12f*closed,0,0);
+            float closed=Math.clamp((-f.palm().x-.15f)/.415f,0,1);
+            stack.translate((mirror?-1:1)*1.18f*closed,0,0);
         }
         if(free && ShuoRig.SHOW_OFF_HAND)arm(e,ShuoRig.hand(f,true,mirror),slim,!mirror);
         if(!free || ShuoRig.showMainHand(f,held))arm(e,ShuoRig.hand(f,false,mirror),slim,mirror);
