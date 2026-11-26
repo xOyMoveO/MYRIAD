@@ -20,11 +20,14 @@ import org.joml.Matrix4f;
 
 /** Transient hand and shoulder keyframes for the cannon, rapier and three crescent cuts. */
 public final class WeaponBodyPose {
-    public record Pose(float lift,float sweep,float roll,float reach,float support,float step) {
+    public record Pose(float lift,float sweep,float roll,float reach,float support,float step,float thrust) {
+        public Pose(float lift,float sweep,float roll,float reach,float support,float step) {
+            this(lift,sweep,roll,reach,support,step,0);
+        }
         Pose times(double t){return new Pose((float)(lift*t),(float)(sweep*t),(float)(roll*t),
-                (float)(reach*t),(float)(support*t),(float)(step*t));}
+                (float)(reach*t),(float)(support*t),(float)(step*t),(float)(thrust*t));}
         Pose plus(Pose b){return new Pose(lift+b.lift,sweep+b.sweep,roll+b.roll,reach+b.reach,
-                Math.max(support,b.support),step+b.step);}
+                Math.max(support,b.support),step+b.step,thrust+b.thrust);}
         public Matrix4f wrist(boolean left){
             int side=left?-1:1;
             return new Matrix4f().translate(side*sweep*.045f,lift*.045f,-reach*.19f)
@@ -80,7 +83,7 @@ public final class WeaponBodyPose {
             case MOBILE_SHOT -> new Pose(.28f,.10f,.12f,-.42f,.48f,0).times(beat);
             case HEAVY_FIRE -> new Pose(.70f,0,.20f,-1,.85f,.16f).times(beat);
             case DENIAL,BOUNDARY -> new Pose(-.24f,-.3f,.30f,.27f,.86f,0).times(beat);
-            case RAPIER,NEEDLE -> new Pose(.26f,-.16f,.26f,1,.22f,0).times(beat);
+            case RAPIER,NEEDLE -> new Pose(.26f,-.16f,.26f,1,.22f,0,1).times(beat);
             case NEEDLE_READY -> new Pose(.24f,.17f,-.44f,-.25f,.34f,0).times(wind);
             case STEP,PURSUE -> new Pose(-.31f,.41f,-.24f,-.25f,.08f,.8f).times(beat);
             case FOLLOW_READY -> new Pose(.18f,.44f,.38f,.12f,.62f,0).times(wind);
@@ -88,7 +91,7 @@ public final class WeaponBodyPose {
             case CLOSE_FIELD -> new Pose(.35f,-.49f,-.4f,.22f,.6f,0).times(beat);
             case DOME -> new Pose(.75f,.55f,.29f,.2f,1,.16f).times(beat);
             case LINE_READY -> new Pose(.60f,-.28f,-.32f,-.15f,.85f,.16f).times(wind);
-            case LINE -> new Pose(.8f,-.08f,.12f,1,.95f,.24f).times(beat);
+            case LINE -> new Pose(.8f,-.08f,.12f,1,.95f,.24f,1).times(beat);
             case MOON_READY -> new Pose(.13f,-.35f,.24f,-.12f,.4f,.10f).times(wind);
             case FIRST,SECOND -> {
                 float side=p.move()==Move.FIRST?-1:1;
