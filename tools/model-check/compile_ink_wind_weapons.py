@@ -44,7 +44,7 @@ def element_corners(part):
                for axis in range(3)]
 
 
-def compile_item(name, item, scale, sword, *, source=SOURCE, stored_y_scale=None):
+def compile_item(name, item, scale, sword, *, source=SOURCE, stored_y_scale=None, thirdperson_ring=False):
     data = json.loads((source / f"{name}.bbmodel").read_text(encoding="utf-8"))
     width, height = data["resolution"]["width"], data["resolution"]["height"]
     grip = next(part for part in data["elements"] if part["name"] == "wrapped_grip")
@@ -85,6 +85,18 @@ def compile_item(name, item, scale, sword, *, source=SOURCE, stored_y_scale=None
         poses[f"firstperson_{side}"] = display(left, [0, -20 if sword else 7, 15],
                                               [0, -.65, .75], .77 if sword else .82)
         poses[f"thirdperson_{side}"] = display(left, [-8, 0, 0], [0, 0, 1.4], .94)
+    if thirdperson_ring:
+        joints = [p for p in parts if p["name"].startswith("jade_loop_joint_")]
+        if len(joints) != 4:
+            raise ValueError("Expected the four corners of the jade carrying ring")
+        x, y, z = [sum((p["from"][i] + p["to"][i]) / 2 - 8 for p in joints) / 4
+                   for i in range(3)]
+        # Vanilla's hand layer rotates -90 X / 180 Y before applying the item pose.
+        # A +90 X item rotation leaves the bell mouth below the fist. The extra
+        # -2 Y cancels the layer's forward offset to put the ring inside the palm.
+        for side, left in (("righthand", False), ("lefthand", True)):
+            poses[f"thirdperson_{side}"] = display(left, [90, 0, 0],
+                                                  [round(-x*.94, 6), round(-2+z*.94, 6), round(-y*.94, 6)], .94)
     if sword:
         poses = blade_edge_forward(poses)
     corners = [point for part in parts for point in element_corners(part)]
