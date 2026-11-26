@@ -7,7 +7,7 @@ import static com.myriad.network.FlameSkillViewPayload.*;
 /** Four independent gestures, sampled every render frame. No cast prediction or full-body animation. */
 public final class FlameSkillMotion {
     public static final int AIM=7;
-    private static final Pose IDLE=FlameDaoMotion.IDLE,OFF=p(.9,-.8,-1.15,0,0,36),LOW=p(.65,-.65,-1.30,-8,-8,55),
+    private static final Pose IDLE=FlameDaoMotion.IDLE,OFF=p(.9,-.8,-1.15,0,0,36),LOW=p(.65,-.65,-1.14,-8,-8,55),
             PALM=p(.28,.08,-1.32,-10,5,30),PUSH=p(.14,.02,-1.68,-6,0,30),
             CROSS=p(-.82,-.06,-1.38,-8,5,80),CROSS_OFF=p(-.82,.08,-1.28,-8,-5,80),
             OPEN=p(1.18,-.12,-1.42,-10,12,12),JOIN=p(-.35,-.10,-1.30,0,0,26),

@@ -22,10 +22,11 @@ final class WindHandRig {
         Vec3 shaft = pose.shaft().normalize();
         Vec3 reference = across(RIGHT, shaft);
         Vec3 face = reference.cross(shaft);
-        double idleRoll = -.84;
+        double idleRoll = -.35;
         double roll = idleRoll;
         double weight = 0;
         double travelTick = now;
+        double anchorTick = now;
         if (motion.hasSkill(now)) {
             int ability = motion.ability(now);
             int phase = motion.signal(now);
@@ -33,26 +34,39 @@ final class WindHandRig {
                 double age = now - motion.skillStart();
                 double cutEnd = phase == DASH_STOP ? 1.2 : ability == 4 ? 1.25 : 1.15;
                 travelTick = motion.skillStart() + Math.clamp(age, .14, cutEnd - .14);
+                anchorTick = motion.skillStart() + cutEnd * .5;
                 weight = Math.clamp(1 - (age - cutEnd) / 3.4, 0, 1) * Math.clamp(age / .38, 0, 1);
             }
         } else if (motion.combo() >= 0) {
             double age = now - motion.attackStart();
             travelTick = motion.attackStart() + Math.clamp(age, WindHandMotion.CUT_FROM + .14, WindHandMotion.CUT_TO - .14);
+            anchorTick = motion.attackStart() + WindHandMotion.HIT;
             weight = Math.clamp(age / WindHandMotion.CUT_FROM, 0, 1)
                     * Math.clamp((motion.recovery() - age) / (motion.recovery() - WindHandMotion.CUT_TO), 0, 1);
         }
         if (weight > 0) {
-            Vec3 travel = tipCenter(motion.poseAt(travelTick + .055)).subtract(tipCenter(motion.poseAt(travelTick - .055)));
-            Vec3 lead = travel.subtract(shaft.scale(travel.dot(shaft)));
-            if (lead.lengthSqr() > 1e-7) {
-                lead = lead.normalize();
-                double angle = Math.atan2(-lead.dot(face), lead.dot(reference));
-                double turn = Math.IEEEremainder(angle - idleRoll, Math.PI * 2);
+            double angle = cutAngle(motion, shaft, reference, face, travelTick);
+            if (Double.isFinite(angle)) {
+                var anchorPose = motion.poseAt(anchorTick);
+                Vec3 anchorShaft = anchorPose.shaft().normalize();
+                Vec3 anchorRef = across(RIGHT, anchorShaft);
+                double anchor = cutAngle(motion, anchorShaft, anchorRef, anchorRef.cross(anchorShaft), anchorTick);
+                double turn = Double.isFinite(anchor)
+                        ? Math.IEEEremainder(anchor - idleRoll, Math.PI * 2) + Math.IEEEremainder(angle - anchor, Math.PI * 2)
+                        : Math.IEEEremainder(angle - idleRoll, Math.PI * 2);
                 roll += turn * weight;
             }
         }
         Vec3 edge = reference.scale(Math.cos(roll)).subtract(face.scale(Math.sin(roll)));
         return basis(palm(pose.grip(), equip), edge, shaft).scale((float)BLADE_SCALE);
+    }
+
+    private static double cutAngle(WindHandMotion motion, Vec3 shaft, Vec3 reference, Vec3 face, double travelTick) {
+        Vec3 travel = tipCenter(motion.poseAt(travelTick + .055)).subtract(tipCenter(motion.poseAt(travelTick - .055)));
+        Vec3 lead = travel.subtract(shaft.scale(travel.dot(shaft)));
+        if (lead.lengthSqr() <= 1e-7) return Double.NaN;
+        lead = lead.normalize();
+        return Math.atan2(-lead.dot(face), lead.dot(reference));
     }
 
     static Matrix4f arm(WindHandMotion.Pose pose, boolean off, boolean slim, float equip, Matrix4f weapon) {

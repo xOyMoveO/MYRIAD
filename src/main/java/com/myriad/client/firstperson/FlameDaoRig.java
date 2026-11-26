@@ -7,6 +7,7 @@ import org.joml.Vector3f;
 public final class FlameDaoRig {
     private static final float DEG=(float)(Math.PI/180);
     public static final float VIEW_SCALE=.74f;
+    public static final float BLADE_SCALE=1.28f;
     private FlameDaoRig(){}
     public static boolean allowed(boolean mod,String role,boolean ownLivingFirstPerson,boolean mainDao){
         return mod&&"fenjue".equals(role)&&ownLivingFirstPerson&&mainDao;
@@ -29,7 +30,7 @@ public final class FlameDaoRig {
         // A view-model continuation, not an anatomical elbow exposed in the camera.
         return new Vector3f(left?-.85f:.85f,-1.55f,-.86f);
     }
-    private static Matrix4f shaft(boolean left){return new Matrix4f().rotateZ((left?65:-65)*DEG).scale(1.16f);}
+    private static Matrix4f shaft(boolean left){return new Matrix4f().rotateZ((left?65:-65)*DEG).scale(BLADE_SCALE);}
     public static Vector3f travel(FlameDaoMotion.Frame f,boolean left){
         var tip=new Vector3f(0,1.390625f,0);
         var before=wrist(f.before(),0,left).mul(shaft(left)).transformPosition(new Vector3f(tip));
@@ -46,7 +47,7 @@ public final class FlameDaoRig {
         return angle(f,left,velocity.lengthSquared()>1E-12?velocity:new Vector3f(0,0,-1));
     }
     public static double turn(FlameDaoMotion.Frame f,boolean left){
-        double idle=angle(f,left,new Vector3f(left?-.65f:.65f,0,-.76f));
+        double idle=angle(f,left,new Vector3f(left?-.67f:.67f,0,-.74f));
         if(f.cut()<0)return idle;
         double anchor=left?f.anchorLeft():f.anchorRight();
         double target=anchor+Math.IEEEremainder(target(f,left)-anchor,2*Math.PI);
@@ -61,7 +62,7 @@ public final class FlameDaoRig {
     }
     public static Matrix4f blade(FlameDaoMotion.Frame f,boolean left){
         // Twist about the shaft only: palm stays fixed while the cutting edge follows its actual travel.
-        return new Matrix4f().rotateZ((left?65:-65)*DEG).rotateY((float)turn(f,left)).scale(1.16f);
+        return new Matrix4f().rotateZ((left?65:-65)*DEG).rotateY((float)turn(f,left)).scale(BLADE_SCALE);
     }
     private static double smooth(double t){t=Math.clamp(t,0,1);return t*t*(3-2*t);}
     private static double mix(double a,double b,double t){return a+(b-a)*t;}
