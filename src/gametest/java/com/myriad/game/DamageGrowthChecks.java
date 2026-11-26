@@ -47,7 +47,7 @@ final class DamageGrowthChecks {
     private static final List<Build> BUILDS = List.of(ZERO, new Build(1, 0), new Build(0, 1), new Build(17, 23));
 
     private record Build(int strength, int wisdom) {}
-    private enum Attack { MAGE, MELEE, YIKE, FULL_DRAW, ARC, CRANE, FEATHER_BURST, RESONANCE, PERCENT, SWORD_HEART }
+    private enum Attack { MAGE, MELEE, YIKE, FULL_DRAW, ARC, CRANE, FEATHER_BURST, RESONANCE, PERCENT, SWORD_HEART, FLAME_SLASH, MOUNTAIN_CLEAVE }
     private record Trial(Attack attack, ServerPlayer actor, Pig target, double expected, boolean respecAfterLaunch) {}
 
     private DamageGrowthChecks() {}
@@ -91,9 +91,15 @@ final class DamageGrowthChecks {
                         (100 + 15.0 * build.strength()) * 1.21 * PHYSICAL_FACTOR, true);
                 add(helper, trials, CharacterType.TIANXING, Attack.ARC, build, (79.5 + 7.5 * build.strength()) * PHYSICAL_FACTOR, false);
                 add(helper, trials, CharacterType.YUNSHENG, Attack.CRANE, build, (68.5 + 9 * build.wisdom()) * MAGIC_FACTOR, true);
-                add(helper, trials, CharacterType.LUOXIA, Attack.FEATHER_BURST, build, (80 + 7.5 * build.strength()) * PHYSICAL_FACTOR, true);
+                add(helper, trials, CharacterType.LUOXIA, Attack.FEATHER_BURST, build, (125 + 7.5 * build.strength()) * PHYSICAL_FACTOR, true);
                 add(helper, trials, CharacterType.TIANXING, Attack.RESONANCE, build, (44 + 6 * build.wisdom()) * MAGIC_FACTOR, false);
                 add(helper, trials, CharacterType.TIANXING, Attack.PERCENT, build, 40 * MAGIC_FACTOR, false);
+            }
+            for (Build build : BUILDS) {
+                add(helper, trials, CharacterType.FENJUE, Attack.FLAME_SLASH, build,
+                        (104 + 7.5 * build.strength()) * PHYSICAL_FACTOR, true);
+                add(helper, trials, CharacterType.CHIXIAO, Attack.MOUNTAIN_CLEAVE, build,
+                        (98 + 7.5 * build.strength()) * PHYSICAL_FACTOR, false);
             }
             add(helper, trials, CharacterType.LINGYUAN, Attack.SWORD_HEART, ZERO, 21.76, false);
             add(helper, trials, CharacterType.LINGYUAN, Attack.SWORD_HEART, new Build(0, 1), 25.60, false);
@@ -166,6 +172,7 @@ final class DamageGrowthChecks {
                     BasicAttackSystem.tryAttack(actor, LuoxiaBow.PRESS);
                 }
                 case ARC -> cast(actor, 3);
+                case FLAME_SLASH, MOUNTAIN_CLEAVE -> cast(actor, 2);
                 case CRANE -> cast(actor, 2);
                 case FEATHER_BURST -> cast(actor, 4);
                 case RESONANCE -> verifyResonance(h, trial);
@@ -186,6 +193,12 @@ final class DamageGrowthChecks {
             if (tick == 2) h.assertTrue(amount(trial.target()) == 0, "Repeated callbacks in one tick cannot advance the same flight twice");
         }
         AbilityRuntime.tick(actor);
+        if (trial.attack() == Attack.FLAME_SLASH && tick >= 3 && tick <= 9) {
+            // Slash work begins on the cast tick. The half-damage plateau proves the separate strokes.
+            int age = tick - 1;
+            double expected = age < 3 ? 0 : age < 7 ? trial.expected() / 2 : trial.expected();
+            near(h, amount(trial.target()), expected, .04, "Flame Slash elapsed " + age);
+        }
         if (trial.attack() == Attack.SWORD_HEART) {
             if (tick == 1) {
                 near(h, amount(trial.target()), 0, .02, "Passive schedules swords before either strike lands");
@@ -239,7 +252,7 @@ final class DamageGrowthChecks {
         h.assertTrue(PlayerDataProvider.get(actor).getBuff(passive.getId()) == 0, "The empowered basic consumes its proc");
     }
 
-    private static void swing(ServerPlayer player, Pig target) {
+    static void swing(ServerPlayer player, LivingEntity target) {
         try {
             Field ticker = LivingEntity.class.getDeclaredField("attackStrengthTicker");
             ticker.setAccessible(true);
