@@ -1,4 +1,6 @@
 package com.myriad.character.skills.yike;
+import com.myriad.network.WeaponPosePayload;
+import com.myriad.network.WeaponPosePayload.Move;
 
 import com.myriad.character.ability.*;
 import com.myriad.character.rework.FirstGroupSkills;
@@ -28,8 +30,12 @@ public final class RainbowCalibration extends AbilitySkill {
         if(c.now()>=m.until)m.count=0;m.until=c.now()+120;
         if(++m.count>=3){m.count=0;
             c.damage(hit.target(),DAMAGE.value(c),DamageCalc.Kind.MAGIC,false);
-            YikeVfx.target(c,"mark_burst",hit.target(),.7f,8);YikeAudio.play(c.player,"mark",hit.target().position(),.45f,1.25f);
-        }else YikeVfx.target(c,"mark_"+m.count,hit.target(),.7f,12);
+            WeaponPosePayload.play(c.player, Move.CALIBRATE, 6);
+        YikeVfx.target(c,"mark_burst",hit.target(),.7f,8);YikeAudio.play(c.player,"mark",hit.target().position(),.45f,1.25f);
+        }else {
+            WeaponPosePayload.play(c.player,Move.MARK_TICK,4);
+            YikeVfx.target(c,"mark_"+m.count,hit.target(),.7f,12);
+        }
     }
     @Override public void tickPassive(AbilityRuntime.Cast c){
         var targets=MARKS.get(c.player.getUUID());if(targets==null)return;

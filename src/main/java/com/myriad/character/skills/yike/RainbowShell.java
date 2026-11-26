@@ -1,4 +1,6 @@
 package com.myriad.character.skills.yike;
+import com.myriad.network.WeaponPosePayload;
+import com.myriad.network.WeaponPosePayload.Move;
 
 import com.myriad.character.ability.*;
 import com.myriad.combat.DamageCalc;
@@ -24,9 +26,11 @@ public final class RainbowShell extends AbilitySkill {
         var p=c.player;var direction=YikeStance.active(p)?YikeStance.aim(p):p.getLookAngle();
         double range=YikeStance.shotRange(p),speed=YikeStance.shotSpeed(p),radius=YikeStance.shotRadius(p);
         float damage=DAMAGE.value(c)*YikeStance.multiplier(p);
-        boolean artillery=YikeStance.active(p);int remaining=YikeStance.shots(p);
+        boolean artillery=YikeStance.active(p), mobile=YikeStance.mobile(p);int remaining=YikeStance.shots(p);
         if(artillery)YikeStance.shotCommitted(c);
         YikeProjectiles.shell(c,direction,range,speed,radius,damage);
+        var recoil = !artillery ? Move.CANNON_SHOT : mobile ? Move.MOBILE_SHOT : Move.FIXED_SHOT;
+        WeaponPosePayload.play(p, recoil, mobile ? 4 : 6);
         YikeVfx.event(c,remaining==1&&artillery?"last_muzzle":"muzzle",p.getEyePosition(),p.getEyePosition().add(direction),.5f,5);
         YikeAudio.play(p,"shot_"+Math.floorMod(c.castId(),3),p.position(),.65f,1);
     }

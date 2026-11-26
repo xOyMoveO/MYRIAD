@@ -1,4 +1,6 @@
 package com.myriad.character.skills.keheng;
+import com.myriad.network.WeaponPosePayload;
+import com.myriad.network.WeaponPosePayload.Move;
 import com.myriad.character.ability.*;
 import com.myriad.combat.DamageCalc;
 import net.minecraft.server.level.ServerPlayer;
@@ -21,7 +23,8 @@ public final class EngravedEchoSkill extends KehengSkill {
         if(!m.seen.add(AbilityRuntime.sourceCast()))return;
         if(c.now()>=m.until){m.stacks=0;m.until=c.now()+80;}
         c.memory().target=hit.target().getUUID();m.stacks++;KehengVisuals.mark(c,hit.target(),m.stacks,m.until-c.now());
-        if(m.stacks==3){m.stacks=0;m.until=0;c.damage(hit.target(),DAMAGE.value(c),DamageCalc.Kind.MAGIC,false);KehengAudio.play(c.player,"echo");}
+        if(m.stacks==3){WeaponPosePayload.play(c.player, Move.ECHO, 5);
+        m.stacks=0;m.until=0;c.damage(hit.target(),DAMAGE.value(c),DamageCalc.Kind.MAGIC,false);KehengAudio.play(c.player,"echo");}
         c.buff("g1_keheng_marks",m.stacks);c.buff("g1_keheng_mark_window",(int)Math.max(0,m.until-c.now()));
     }
     @Override public void tickPassive(AbilityRuntime.Cast c){

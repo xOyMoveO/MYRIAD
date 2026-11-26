@@ -1262,6 +1262,7 @@ public final class NetworkSetup {
     public static void register() {
         BattleSnapshots.initialize();
         NetworkProtocol.register();
+        PayloadTypeRegistry.clientboundPlay().register(WeaponPosePayload.TYPE, WeaponPosePayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(YikeStatePayload.TYPE, YikeStatePayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(ShuoViewPayload.TYPE, ShuoViewPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(FlameSkillViewPayload.TYPE, FlameSkillViewPayload.CODEC);

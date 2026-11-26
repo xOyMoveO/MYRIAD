@@ -1,4 +1,6 @@
 package com.myriad.character.skills.yike;
+import com.myriad.network.WeaponPosePayload;
+import com.myriad.network.WeaponPosePayload.Move;
 
 import com.myriad.character.ability.*;
 import com.myriad.combat.DamageCalc;
@@ -24,6 +26,7 @@ public final class RefractionDenial extends AbilitySkill {
         var at=c.point.add(0,.06,0);YikeStance.pauseForW(c.player);
         // Recovery owns movement only, not the independently placed warning.
         c.later(11,true,.5f,()->YikeStance.refreshMovement(c.player));YikeStance.refreshMovement(c.player);
+        WeaponPosePayload.play(c.player, Move.DENIAL, 7);
         YikeVfx.event(c,"denial_warning",at,at,2.5f,11);YikeAudio.play(c.player,"warning",at,.4f,1.2f);
         c.later(11,false,()->{
             for(var target:YikeGeometry.sphere(c,at,2.5)){c.damage(target,DAMAGE.value(c),DamageCalc.Kind.MAGIC);c.slow(target,.30f,25);}

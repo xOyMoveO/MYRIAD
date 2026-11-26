@@ -1,4 +1,6 @@
 package com.myriad.character.skills.yike;
+import com.myriad.network.WeaponPosePayload;
+import com.myriad.network.WeaponPosePayload.Move;
 
 import com.myriad.character.ability.*;
 import com.myriad.character.ability.AbilityRuntime.Cast;
@@ -34,10 +36,19 @@ public final class YikeProjectiles {
             if(distance[0]+1E-7>=range){explode(c,next,radius,damage,false);finish(c,visual,flight);return false;}return true;
         },()->finish(c,visual,flight));
     }
+    private static double arcHeight(Vec3 begin, Vec3 end) {
+        return Math.max(2,begin.subtract(end).horizontalDistance()*.18);
+    }
+    static Vec3 launchAim(Cast c) {
+        Vec3 begin=c.player.getEyePosition().add(c.player.getLookAngle().scale(.4));
+        Vec3 end=c.point.add(0,.10,0);
+        return end.subtract(begin).add(0,4*arcHeight(begin,end),0).normalize();
+    }
     public static void heavy(Cast c,Vec3 ground,float damage){
         Vec3 begin=c.player.getEyePosition().add(c.player.getLookAngle().scale(.4)),end=ground.add(0,.10,0);
-        double duration=Math.max(8,begin.subtract(end).horizontalDistance()/32*20),height=Math.max(2,begin.subtract(end).horizontalDistance()*.18);
+        double duration=Math.max(8,begin.subtract(end).horizontalDistance()/32*20),height=arcHeight(begin,end);
         UUID flight=UUID.randomUUID();int visual=c.newVisualInstance();double[] progress={0};Vec3[] pos={begin};long[] last={c.now()};
+        WeaponPosePayload.play(c.player, Move.HEAVY_FIRE, 9);
         YikeAudio.play(c.player,"heavy_flight",begin,.55f,.95f);
         // Local slowing can extend flight, so the actual landing warning is refreshed along the real flight.
         c.whileActive((int)Math.ceil(2*duration)+1,age->{

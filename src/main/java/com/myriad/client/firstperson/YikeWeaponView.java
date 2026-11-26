@@ -24,7 +24,6 @@ import org.joml.Vector4f;
 
 /** Weapon-local hinges. The hand stays on the exposed grip in both views, never on a barrel. */
 public final class YikeWeaponView {
-    private static final net.minecraft.client.model.geom.ModelPart[] ARMS=new net.minecraft.client.model.geom.ModelPart[4];
     private YikeWeaponView(){}
     public static boolean render(HandRenderContext e){
         var mc=Minecraft.getInstance();
@@ -33,33 +32,37 @@ public final class YikeWeaponView {
         if(e.getHand()==InteractionHand.OFF_HAND){if(mc.player.getOffhandItem().isEmpty()){e.setCanceled(true);return true;}return false;}
         var state=YikeClientState.get(mc.player.getId());var pose=YikeClientState.weaponPose(mc.player.getId(),e.getPartialTick());
         boolean left=mc.player.getMainArm()==HumanoidArm.LEFT;float mirror=left?-1:1;
-        Vector3f palm=new Vector3f(.66f*mirror,-.62f,-.85f),axis=new Vector3f(.10f*mirror,.96f,-.26f).normalize();
+        Vector3f palm=new Vector3f(.52f*mirror,-.39f,-1.05f),axis=new Vector3f(-.14f*mirror,.40f,-.90f).normalize();
         var aim=state==null?mc.player.getLookAngle():YikeClientState.weaponAim(mc.player.getId(),e.getPartialTick());
         Vec3 camera=mc.player.getLookAngle();var rightParts=YikeWeaponAnimation.screenRight(camera.x,camera.z,mc.player.getYRot());
         Vec3 right=new Vec3(rightParts[0],rightParts[1],rightParts[2]),up=right.cross(camera).normalize();
         var targetAxis=new Vector3f((float)aim.dot(right),(float)aim.dot(up),(float)-aim.dot(camera)).normalize();
         // Rotate the weapon and hand together; the camera remains fully responsive.
         var turn=new Quaternionf().rotationTo(axis,targetAxis);
-        new Quaternionf().slerp(turn,(float)pose.aimBlend()).transform(axis);
-        palm.lerp(new Vector3f(.62f*mirror,-.55f,-.78f),(float)pose.aimBlend());
-        Matrix4f base=basis(palm,axis);
-        boolean slim=mc.player.getSkin().model()==PlayerModelType.SLIM;int index=(slim?2:0)+(left?1:0);
-        if(ARMS[index]==null)ARMS[index]=ShuoArmModel.bake(slim,left);var hand=ARMS[index];hand.resetPose();
-        hand.getChild(left?"left_sleeve":"right_sleeve").visible=mc.player.isModelPartShown(left?PlayerModelPart.LEFT_SLEEVE:PlayerModelPart.RIGHT_SLEEVE);
-        var stack=e.getPoseStack();stack.pushPose();try{
-            stack.mulPose(new Matrix4f(base).translate(0,.05f,0).rotateZ(-(float)Math.PI/2).rotateY(-(float)Math.PI/2).rotateX(.22f).scale(.74f).mul(NightDaggerRig.arm(slim,left)));
-            e.getSubmitNodeCollector().submitModelPart(hand,stack,RenderTypes.entityTranslucent(mc.player.getSkin().body().texturePath()),e.getPackedLight(),OverlayTexture.NO_OVERLAY,null);
-        }finally{stack.popPose();}
+        float tracking=tracking(state, pose);
+        new Quaternionf().slerp(turn,tracking).transform(axis);
+        palm.lerp(new Vector3f(.49f*mirror,-.34f,-1.03f),(float)pose.aimBlend());
+        var body=WeaponBodyPose.sample(mc.player,e.getPartialTick());
+        var local=body.wrist(left);
+        local.transformDirection(axis).normalize();
+        local.transformPosition(palm);
+        Matrix4f base=basis(palm,axis).translate(0,(float)pose.recoil()/16,0);
+        WeaponHands.draw(e,left,base.transformPosition(new Vector3f()));
+        WeaponHands.support(e,left,base.transformPosition(new Vector3f(-mirror*.08f,.42f,.02f)),body.support());
+        var stack=e.getPoseStack();
         stack.pushPose();try{stack.mulPose(base);parts(mc.player,stack,e.getSubmitNodeCollector(),e.getPackedLight(),pose,mc.level.getGameTime()+e.getPartialTick());}finally{stack.popPose();}
         e.setCanceled(true);return true;
+    }
+    private static float tracking(com.myriad.network.YikeStatePayload state,YikeWeaponAnimation.Pose pose) {
+        return Math.max((float)pose.aimBlend(), state!=null && (state.windup()==2 || state.windup()==6)?state.progress():0);
     }
     /** Applied before the avatar is submitted; arm and item share the same server-approved sight. */
     public static void pose(HumanoidModel<?> model,HumanoidRenderState state){
         if(!(state instanceof AvatarRenderState avatar)||!state.getMainHandItemStack().is(ModItems.HONG_LIE.get())||!ClientDataHolder.modEnabled())return;
-        float partial=partial(state.ageInTicks);var pose=YikeClientState.weaponPose(avatar.id,partial);if(pose.aimBlend()<=0)return;
+        float partial=partial(state.ageInTicks);var pose=YikeClientState.weaponPose(avatar.id,partial);float blend=tracking(YikeClientState.get(avatar.id),pose);if(blend<=0)return;
         Vec3 aim=YikeClientState.weaponAim(avatar.id,partial);float yaw=(float)Math.toDegrees(Math.atan2(-aim.x,aim.z)),pitch=(float)Math.toDegrees(-Math.asin(Math.clamp(aim.y,-1,1)));
         var arm=state.mainArm==HumanoidArm.RIGHT?model.rightArm:model.leftArm;
-        float blend=(float)pose.aimBlend();arm.xRot+=((float)Math.toRadians(-90+pitch)-arm.xRot)*blend;
+        arm.xRot+=((float)Math.toRadians(-90+pitch)-arm.xRot)*blend;
         arm.yRot+=(float)Math.toRadians(net.minecraft.util.Mth.wrapDegrees(yaw-state.bodyRot))*blend-arm.yRot*blend;arm.zRot*=1-blend;
     }
     public static boolean held(ArmedModel<ArmedEntityRenderState> model,ArmedEntityRenderState state,ItemStack item,HumanoidArm arm,PoseStack stack,SubmitNodeCollector collector,int light){
@@ -73,7 +76,8 @@ public final class YikeWeaponView {
             model.translateToHand(state,arm,stack);
             // Model origin is the palm at y=10/16 along the actual arm; mesh grip is (8,8,8).
             stack.translate(arm==HumanoidArm.RIGHT?-1f/16:1f/16,10f/16,0);
-            stack.rotate(Axis.XP.rotationDegrees((float)(180*(1-pose.aimBlend()))));
+            stack.rotate(Axis.XP.rotationDegrees((float)(180*(1-tracking(YikeClientState.get(avatar.id),pose)))));
+            stack.translate(0,pose.recoil()/16,0);
             parts(entity,stack,collector,light,pose,mc.level.getGameTime()+partial);
         }finally{stack.popPose();}
         return true;
@@ -87,7 +91,6 @@ public final class YikeWeaponView {
     private static float partial(float age){return age-(float)Math.floor(age);}
     private static void parts(LivingEntity owner,PoseStack stack,SubmitNodeCollector collector,int light,YikeWeaponAnimation.Pose pose,double time){
         stack.pushPose();try{
-        stack.translate(0,pose.recoil()/16,0);
         item(owner,stack,collector,light,ModItems.HONG_LIE_FRAME.get());
         for(int i=0;i<3;i++){
             stack.pushPose();try{

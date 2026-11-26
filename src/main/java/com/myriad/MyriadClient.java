@@ -79,6 +79,7 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(client->{
             com.myriad.client.TowerRangeRings.tick(client);
             com.myriad.client.LuoxiaInput.tick(client);
+            com.myriad.client.firstperson.WeaponBodyPose.tick();
             com.myriad.client.LobbyClient.tick(client);
             var screen=client.gui.screen();
             boolean chat=screen instanceof net.minecraft.client.gui.screens.ChatScreen;
@@ -111,7 +112,6 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
     }
 
     private static void predictAttack(AttackInput event) {
-        com.myriad.client.firstperson.KehengView.attack(event);
         com.myriad.client.firstperson.NightDaggerView.onAttack(event);
         com.myriad.client.firstperson.ThunderSwordView.onAttack(event);
         com.myriad.client.firstperson.FlameDaoView.onAttack(event);

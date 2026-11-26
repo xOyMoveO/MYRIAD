@@ -1,4 +1,6 @@
 package com.myriad.character.skills.keheng;
+import com.myriad.network.WeaponPosePayload;
+import com.myriad.network.WeaponPosePayload.Move;
 import com.myriad.character.ability.*;
 import com.myriad.combat.DamageCalc;
 import java.util.List;
@@ -10,6 +12,9 @@ public final class FollowingSecondSkill extends KehengSkill {
     }
 
     public FollowingSecondSkill(Definition d){super(d);}
+    @Override public void windupPose(AbilityRuntime.Cast c, boolean active) {
+        WeaponPosePayload.windup(c, Move.FOLLOW_READY, 5, active);
+    }
     @Override public void release(AbilityRuntime.Cast c){c.windup(5,1,()->KehengTimeFields.follow(c,50+3*(c.rank-1),.75-.025*(c.rank-1),DAMAGE.value(c)));}
     @Override public boolean recastAvailable(AbilityRuntime.Cast c){return KehengTimeFields.following(c.player);}
     @Override public void recast(AbilityRuntime.Cast c){KehengTimeFields.cancelFollowing(c.player);}

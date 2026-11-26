@@ -1,4 +1,6 @@
 package com.myriad.character.skills.yike;
+import com.myriad.network.WeaponPosePayload;
+import com.myriad.network.WeaponPosePayload.Move;
 
 import com.myriad.character.ability.*;
 import net.minecraft.server.level.ServerPlayer;
@@ -23,7 +25,8 @@ public final class SteadyBarrier extends AbilitySkill {
     @Override public void onCast(AbilityRuntime.Cast cast){
         if(!cast.committed()||cast.skill.isPassive()||!ready(cast.player))return;
         var c=AbilityRuntime.context(cast.player,this);var s=sample(c.player);s.ready=c.now()+240;
-        c.shield(c.player,c.value(65,15,.25f),50);YikeVfx.target(c,"barrier",c.player,.7f,50);YikeAudio.play(c.player,"barrier",c.player.position(),.4f,1);
+        c.shield(c.player,c.value(65,15,.25f),50);WeaponPosePayload.play(c.player, Move.BARRIER, 6);
+        YikeVfx.target(c,"barrier",c.player,.7f,50);YikeAudio.play(c.player,"barrier",c.player.position(),.4f,1);
     }
     public static void clear(ServerPlayer p){STATES.remove(p.getUUID());com.myriad.player.ModShieldSystem.removeSource(p,"yike_steady_barrier/"+p.getUUID());}
 }
