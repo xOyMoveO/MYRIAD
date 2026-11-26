@@ -44,9 +44,21 @@ final class FactionIdentityChecks {
             var legacy=before.deepCopy().getAsJsonObject();
             legacy.remove("guardianScore");legacy.remove("destructionScore");
             legacy.addProperty("xuanxiaoScore",123);legacy.addProperty("youmingScore",456);
+            var visitor = new java.util.UUID(1, 1).toString();
+            var offlineSeat = new java.util.UUID(1, 2).toString();
+            var oldOrder = new com.google.gson.JsonArray();
+            oldOrder.add(visitor);
+            oldOrder.add(offlineSeat);
+            legacy.add("joinOrder", oldOrder);
+            legacy.getAsJsonArray("pickOrder").add(offlineSeat);
+            legacy.getAsJsonArray("pendingRoundReset").add(visitor);
             legacy.addProperty("winner","YOUMING");GameManager.restore(legacy,server);
             h.assertTrue(GameManager.get().getGuardianScore()==123&&GameManager.get().getDestructionScore()==456&&GameManager.get().getWinner()==Faction.DESTRUCTION,"Checkpoint score and winner aliases preserve values");
             var current=GameManager.snapshot().getAsJsonObject();
+            h.assertTrue(!current.has("joinOrder")
+                    && current.getAsJsonArray("pickOrder").equals(legacy.getAsJsonArray("pickOrder"))
+                    && current.getAsJsonArray("pendingRoundReset").asList().contains(new com.google.gson.JsonPrimitive(visitor)),
+                    "Old visitor history drops out of checkpoints while locked seats and outstanding resets survive");
             h.assertTrue(current.has("guardianScore")&&!current.has("xuanxiaoScore")&&current.get("winner").getAsString().equals("destruction"),"Re-saved checkpoint writes only canonical names");
             var layout=JsonParser.parseString("{\"start\":-1,\"nextWave\":0,\"wave\":0,\"active\":false,\"destroyedTowers\":[\"xuanxiao/mid/1\",\"youming/mid/2\"],\"units\":[]}").getAsJsonObject();
             LaneSystem.restore(h.getLevel(),layout);
@@ -58,7 +70,10 @@ final class FactionIdentityChecks {
         var root=Files.createTempDirectory(h.getLevel().getServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT),"faction-fixture-");
         var arena=Files.createDirectories(root.resolve("myriad_arenas/3v3"));
         for(String name:new String[]{"myriad_brush_zones.json","myriad_monster_spawns.json","myriad_vein_spawns.json"})Files.writeString(arena.resolve(name),"{}");
-        Files.writeString(arena.resolve("myriad_minimap.json"),"{\"corners\":[0,0,0,0]}");
+        Files.writeString(arena.resolve("myriad_minimap.json"), """
+                {"corners":[{"slot":1,"x":0,"y":65,"z":0},{"slot":2,"x":16,"y":65,"z":0},
+                            {"slot":3,"x":16,"y":65,"z":16},{"slot":4,"x":0,"y":65,"z":16}]}
+                """);
         for(String[] ids:new String[][]{{"guardian","destruction"},{"xuanxiao","youming"},{"guardian","youming"}}){
             String pos="\"x\":1,\"y\":65,\"z\":1",towers="",bases="";
             for(String id:ids){

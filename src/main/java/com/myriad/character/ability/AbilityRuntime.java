@@ -65,6 +65,7 @@ public final class AbilityRuntime {
         else if(o.player!=p||o.level!=p.level()||!Objects.equals(o.role,role)){clear(p);o=new Owner(p);OWNERS.put(p.getUUID(),o);}return o;
     }
     public static void clear(ServerPlayer p){AbilityVisuals.cancel(p);
+        com.myriad.combat.VanillaMeleeAttack.cancelBuffered(p);
         com.myriad.combat.MagicBullet.clearFor(p.getUUID());
         if(p.connection!=null)Packets.sendToPlayer(p,new NetworkSetup.MagicBulletCooldownPayload(0,1));
         com.myriad.character.skills.shuo.ShuoCombat.clear(p);
@@ -184,7 +185,7 @@ public final class AbilityRuntime {
         var selected=FirstGroupSkills.byId(o.pending);if(selected!=null)selected.selectionPose(context(p,selected),false);
         o.pending="";PlayerDataProvider.get(p).setPlacementType(0);PlayerDataProvider.syncToClient(p);}
     private static void begin(Cast c,int windupTicks){
-        if(!c.skill.canRelease(c)){InputFailure.TARGET.send(c.player);c.phase=Phase.CANCELLED;return;}
+        if(!c.skill.canRelease(c)){c.skill.releaseRejection(c).send(c.player);c.phase=Phase.CANCELLED;return;}
         c.owner.pending="";c.owner.lastCast=c.now();c.castToken=++c.owner.castToken;c.data.setPlacementType(0);
         c.accepted=true;c.owner.preparing=c;
         c.skill.preparing(c);
@@ -333,7 +334,7 @@ public final class AbilityRuntime {
             if(failure == null) failure = resourceFailure(this);
             if(failure == null && skill.needsPoint() && !AbilityTargeting.legalGround(player,point,skill.pointRange(this),
                     skill.requiresStandingPoint())) failure = InputFailure.POINT;
-            if(failure == null && !skill.canRelease(this)) failure = InputFailure.TARGET;
+            if(failure == null && !skill.canRelease(this)) failure = skill.releaseRejection(this);
             if(failure != null){failure.send(player);cancelCast();return false;}
             committed=true;phase=Phase.COMMITTED;owner.preparing=null;
             if(!noMana)data.spendMana(skill.manaCost(this));

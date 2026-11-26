@@ -18,7 +18,7 @@ import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
 
 /** Preserves the mandatory protocol match formerly provided by the NeoForge payload registrar. */
 final class NetworkProtocol {
-    static final int VERSION = 26;
+    static final int VERSION = 27;
     private static final ConfigurationTask.Type TASK = new ConfigurationTask.Type("myriad:protocol");
     private static final Set<ServerConfigurationPacketListenerImpl> PENDING = ConcurrentHashMap.newKeySet();
 

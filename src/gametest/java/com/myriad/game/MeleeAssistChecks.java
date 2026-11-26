@@ -154,6 +154,7 @@ final class MeleeAssistChecks {
             VanillaMeleeAttack.tryAssist(player);
             helper.assertTrue(JiarenManager.hp(target.getUUID()) < after,
                     "A graze whose original contact is still inside native reach remains available");
+            bufferedAuthority(helper, player, target, origin, strength);
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException(e);
         } finally {
@@ -166,6 +167,92 @@ final class MeleeAssistChecks {
             TrainingMode.setEnabled(wasTraining);
         }
         helper.succeed();
+    }
+
+    private static void bufferedAuthority(GameTestHelper helper, ServerPlayer player, LivingEntity target,
+                                          Vec3 origin, java.lang.reflect.Field strength) throws IllegalAccessException {
+        var data = PlayerDataProvider.get(player);
+        var weapon = player.getMainHandItem();
+        int oneEarly = (int) Math.ceil(player.getCurrentItemAttackStrengthDelay() - .5) - 1;
+        strength.setInt(player, oneEarly);
+        helper.assertTrue(player.getAttackStrengthScale(.5f) < 1 && player.getAttackStrengthScale(1.5f) >= 1,
+                "Fixture is exactly one vanilla recovery step early");
+
+        target.setPos(origin.add(0, 0, 1.2));
+        target.damageCooldownTime = 0;
+        float hp = JiarenManager.hp(target.getUUID());
+        helper.assertTrue(!VanillaMeleeAttack.prepare(player, target), "Immediate native input stays strict");
+        place(target, origin, .08, 1.2);
+        VanillaMeleeAttack.tryAssist(player);
+        player.tickCount++;
+        strength.setInt(player, oneEarly + 1);
+        VanillaMeleeAttack.tickBuffered(player);
+        helper.assertTrue(JiarenManager.hp(target.getUUID()) == hp, "Immediate grazes never enter the server buffer");
+
+        strength.setInt(player, oneEarly);
+        target.setPos(origin.add(0, 0, 1.2));
+        data.setBuff("g1_root", 20);
+        VanillaMeleeAttack.tryBuffered(player);
+        VanillaMeleeAttack.tryBuffered(player);
+        VanillaMeleeAttack.tickBuffered(player);
+        helper.assertTrue(JiarenManager.hp(target.getUUID()) == hp, "Rooted buffered input never hits early");
+        // A different, grazing opponent is under the new aim when the next server tick arrives.
+        JiarenManager.create(player);
+        var other = helper.getLevel().getEntitiesOfClass(LivingEntity.class, new AABB(origin, origin).inflate(5),
+                e -> e != target && JiarenManager.isJiaren(e.getUUID()) && !JiarenManager.isFriendlyDummy(player, e))
+                .getFirst();
+        target.setPos(origin.add(3, 0, 0));
+        place(other, origin, .08, 1.2);
+        float otherHp = JiarenManager.hp(other.getUUID());
+        data.setBuff("zhongshengguizong", 20);
+        player.tickCount++;
+        strength.setInt(player, oneEarly + 1);
+        VanillaMeleeAttack.tickBuffered(player);
+        float struck = JiarenManager.hp(other.getUUID());
+        helper.assertTrue(JiarenManager.hp(target.getUUID()) == hp && struck < otherHp && strength.getInt(player) == 0,
+                "Root and silence preserve the press; the current grazing target alone takes a full attack");
+        player.tickCount++;
+        other.damageCooldownTime = 0;
+        strength.setInt(player, 200);
+        VanillaMeleeAttack.tickBuffered(player);
+        helper.assertTrue(JiarenManager.hp(other.getUUID()) == struck, "Duplicate requests cannot yield a second hit");
+        data.setBuff("g1_root", 0);
+        data.setBuff("zhongshengguizong", 0);
+
+        strength.setInt(player, oneEarly);
+        VanillaMeleeAttack.tryBuffered(player);
+        other.setPos(origin.add(0, 0, 4));
+        strength.setInt(player, oneEarly + 1);
+        player.tickCount++;
+        VanillaMeleeAttack.tickBuffered(player);
+        helper.assertTrue(JiarenManager.hp(other.getUUID()) == struck, "Leaving reach before the next tick cancels");
+        other.setPos(origin.add(0, 0, 1.2));
+        strength.setInt(player, oneEarly);
+        VanillaMeleeAttack.tryBuffered(player);
+        data.setBuff("g1_stun", 20);
+        strength.setInt(player, oneEarly + 1);
+        player.tickCount++;
+        VanillaMeleeAttack.tickBuffered(player);
+        data.setBuff("g1_stun", 0);
+        helper.assertTrue(JiarenManager.hp(other.getUUID()) == struck, "New stun cancels the reserved attack");
+        strength.setInt(player, oneEarly);
+        VanillaMeleeAttack.tryBuffered(player);
+        player.setItemSlot(EquipmentSlot.MAINHAND, weapon.copy());
+        strength.setInt(player, oneEarly + 1);
+        player.tickCount++;
+        VanillaMeleeAttack.tickBuffered(player);
+        helper.assertTrue(JiarenManager.hp(other.getUUID()) == struck, "Replacing the reserved weapon cancels");
+        strength.setInt(player, oneEarly);
+        VanillaMeleeAttack.tryBuffered(player);
+        player.tickCount++;
+        VanillaMeleeAttack.tickBuffered(player);
+        strength.setInt(player, 200);
+        player.tickCount++;
+        VanillaMeleeAttack.tickBuffered(player);
+        helper.assertTrue(JiarenManager.hp(other.getUUID()) == struck, "Slow recovery cannot extend the one-tick grace");
+        VanillaMeleeAttack.tryBuffered(player);
+        helper.assertTrue(JiarenManager.hp(other.getUUID()) < struck && strength.getInt(player) == 0,
+                "Already recovered buffered input uses the exact native target immediately");
     }
 
     private static void inputWindows(GameTestHelper helper) {

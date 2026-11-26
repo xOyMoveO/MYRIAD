@@ -14,14 +14,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class MyriadMinecraftClientMixin {
     @Shadow private int missTime;
     @Shadow private void pick(float partialTick) { throw new AssertionError(); }
-    @Shadow private boolean startAttack() { throw new AssertionError(); }
 
     @Inject(method="handleKeybinds", at=@At("TAIL"))
     private void myriad$consumeMeleePress(CallbackInfo ci) {
         var mc = (Minecraft)(Object)this;
         if (!com.myriad.client.MeleeAttackBuffer.ready(mc) || missTime > 0) return;
         pick(1.0f);
-        if (com.myriad.client.MeleeAssistInput.hasAttackTarget(mc)) startAttack();
+        if (com.myriad.client.MeleeAssistInput.hasAttackTarget(mc)) MyriadClient.submitBufferedMelee(mc);
         else com.myriad.client.InputFeedback.show(com.myriad.combat.InputFailure.ATTACK_TARGET);
     }
 

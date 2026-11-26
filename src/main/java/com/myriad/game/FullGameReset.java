@@ -34,7 +34,8 @@ public final class FullGameReset {
         TrainingMode.setNoCooldown(false);
         TrainingMode.setNoGoldCost(false);
         TrainingMode.setNoMana(false);
-        GameManager.get().resetToLobby(server, true);
+        TacticalSupplySystem.clear();
+        GameManager.get().resetAllToLobby(server);
         QueueLobby.reset(server);
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             com.myriad.player.EntityState.data(player).putString(KEY, generation);

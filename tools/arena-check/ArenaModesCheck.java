@@ -31,10 +31,10 @@ public final class ArenaModesCheck {
     private static Object field(String name) throws Exception {
         var f = LaneSystem.class.getDeclaredField(name); f.setAccessible(true); return f.get(null);
     }
-    private static BlockPos position(JsonObject p) { return new BlockPos(p.get("x").getAsInt(), p.get("y").getAsInt(), p.get("z").getAsInt()); }
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
         SharedConstants.tryDetectVersion(); Bootstrap.bootStrap();
+        com.myriad.game.ArenaFileRecoveryCheck.run();
         Path world = Path.of(args[0]);
         check(MatchArena.active() == MatchArena.Mode.RIFT, "Legacy default must be 5v5");
         check(MatchArena.Mode.byId("../3v3") == null && MatchArena.Mode.byId("typo") == null, "Unknown modes/path traversal rejected");
@@ -44,26 +44,18 @@ public final class ArenaModesCheck {
         check(MatchArena.singleLaneReady(world), "Selected combined configuration is usable");
         check(!MatchArena.singleLaneReady(world.resolve("not-a-world")), "Missing profile rejected");
         var layout = JsonParser.parseString(Files.readString(MatchArena.configuration(world, MatchArena.Mode.DUEL, "myriad_lane_layout.json"))).getAsJsonObject();
-        var enabled = LaneSystem.class.getDeclaredMethod("readEnabledLanes", JsonObject.class); enabled.setAccessible(true);
-        enabled.invoke(null, layout);
-        check(((Set<?>)field("ENABLED_LANES")).equals(Set.of(LaneSystem.Lane.MID)), "Single active lane");
-        Map<Faction, BlockPos> fountains = (Map<Faction, BlockPos>)field("FOUNTAIN_POINTS");
-        Map<Faction, BlockPos> crystals = (Map<Faction, BlockPos>)field("CRYSTAL_POINTS");
-        for (var p : layout.getAsJsonArray("fountains")) fountains.put(Faction.byId(p.getAsJsonObject().get("faction").getAsString()), position(p.getAsJsonObject()));
-        for (var p : layout.getAsJsonArray("crystals")) crystals.put(Faction.byId(p.getAsJsonObject().get("faction").getAsString()), position(p.getAsJsonObject()));
-        var keyClass = Class.forName("com.myriad.game.LaneSystem$TowerKey");
-        var constructor = keyClass.getDeclaredConstructor(Faction.class, LaneSystem.Lane.class, int.class); constructor.setAccessible(true);
-        Map<Object, BlockPos> towers = (Map<Object, BlockPos>)field("TOWER_POINTS");
-        for (var value : layout.getAsJsonArray("towers")) {
-            var p = value.getAsJsonObject();
-            towers.put(constructor.newInstance(Faction.byId(p.get("faction").getAsString()), LaneSystem.Lane.MID, p.get("tier").getAsInt()), position(p));
-        }
+        var decode = LaneSystem.class.getDeclaredMethod("decodeLayout", JsonObject.class, boolean.class);
+        decode.setAccessible(true);
+        var activate = LaneSystem.class.getDeclaredMethod("activateLayout", decode.getReturnType());
+        activate.setAccessible(true);
+        activate.invoke(null, decode.invoke(null, layout, true));
+        check(LaneSystem.enabledLanes().equals(List.of(LaneSystem.Lane.MID)), "Single active lane");
         var routeMethod = LaneSystem.class.getDeclaredMethod("orderedPath", LaneSystem.Lane.class, Faction.class); routeMethod.setAccessible(true);
         for (Faction faction : Faction.values()) {
             check(((List<?>)routeMethod.invoke(null, LaneSystem.Lane.TOP, faction)).isEmpty(), "No fallback top lane in 3v3");
             check(((List<?>)routeMethod.invoke(null, LaneSystem.Lane.BOTTOM, faction)).isEmpty(), "No fallback bottom lane in 3v3");
             var route = (List<BlockPos>)routeMethod.invoke(null, LaneSystem.Lane.MID, faction);
-            check(route.size() == layout.getAsJsonArray("towers").size()+2 && route.getFirst().equals(fountains.get(faction)), "Own-base-to-enemy-crystal route");
+            check(route.size() == layout.getAsJsonArray("towers").size()+2 && route.getFirst().equals(LaneSystem.fountainPoint(faction)), "Own-base-to-enemy-crystal route");
             // Synthetic and historical maps can place the factions on opposite X sides.
             // Check forward progress toward the actual enemy endpoint instead of a faction sign.
             BlockPos start = route.getFirst(), end = route.getLast();
@@ -91,8 +83,8 @@ public final class ArenaModesCheck {
         check(!(boolean)siege.invoke(null,Faction.DESTRUCTION,LaneSystem.Lane.TOP), "Disabled lane cannot unlock siege");
         destroyed.clear();
         check(LaneSystem.minimapPaths().stream().allMatch(p -> p.lane() == LaneSystem.Lane.MID.ordinal()), "Minimap has only active route");
-        enabled.invoke(null, new JsonObject());
-        check(((Set<?>)field("ENABLED_LANES")).size() == 3, "Switch back to legacy map restores three lanes");
+        activate.invoke(null, decode.invoke(null, new JsonObject(), false));
+        check(LaneSystem.enabledLanes().size() == 3, "Switch back to legacy map restores three lanes");
         check(!(boolean)ready.invoke(null), "5v5 readiness still requires all eighteen towers");
 
         for (String arena : List.of("5v5", "3v3")) {

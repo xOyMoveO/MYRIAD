@@ -141,7 +141,7 @@ public final class QueueLobby {
     }
 
     private static boolean validateArena(MinecraftServer server) {
-        boolean available = MatchArena.available(server, selected);
+        boolean available = MatchArena.refreshReadiness(server);
         recordReadiness(server, available);
         return available;
     }

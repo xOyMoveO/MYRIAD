@@ -8,6 +8,7 @@ import com.myriad.character.rework.FirstGroupGrowth;
 import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.character.skills.luoxia.LuoxiaBow;
 import com.myriad.combat.BasicAttackSystem;
+import com.myriad.combat.InputFailure;
 import com.myriad.network.AbilityVfxPayload;
 import com.myriad.network.LuoxiaBowPosePayload;
 import com.myriad.network.LuoxiaBowPosePayload.Phase;
@@ -64,11 +65,16 @@ final class LuoxiaChecks {
         var level = h.getLevel();
         var p = (ServerPlayer)h.makeMockServerPlayer(GameType.SURVIVAL);
         var poses = new java.util.ArrayList<LuoxiaBowPosePayload>();
+        var hints = new java.util.ArrayList<net.minecraft.network.chat.Component>();
         p.connection = new ServerGamePacketListenerImpl(level.getServer(), new Connection(PacketFlow.SERVERBOUND), p,
                 CommonListenerCookie.createInitial(p.getGameProfile(),false)) {
             @Override public void send(net.minecraft.network.protocol.Packet<?> packet) {
                 if (packet instanceof net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket cp
                         && cp.payload() instanceof LuoxiaBowPosePayload pose) poses.add(pose);
+            }
+            @Override public void send(net.minecraft.network.protocol.Packet<?> packet, io.netty.channel.ChannelFutureListener listener) {
+                if (packet instanceof net.minecraft.network.protocol.game.ClientboundSystemChatPacket message && message.overlay())
+                    hints.add(message.content());
             }
         };
         p.connection.handleAcceptPlayerLoad(new net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket());
@@ -101,9 +107,11 @@ final class LuoxiaChecks {
                         h.assertTrue(target.getHealth()==initialHealth, "Solid wall stops arrows before a target");
                         level.setBlockAndUpdate(wall, previous);
                     }
-                    if (i==35) {
+                    if (i==34) {
                         LuoxiaBow.input(p, LuoxiaBow.PRESS, 10);
-                        h.assertTrue(LuoxiaBow.drawing(p), "Can draw on the tick after a release");
+                        h.assertTrue(LuoxiaBow.drawing(p) && poses.stream().anyMatch(
+                                pose -> pose.skill() < 2 && pose.phase() == Phase.RELEASE),
+                                "A fully charged release and the following press are both accepted on the same server tick");
                         LuoxiaBow.input(p, LuoxiaBow.RELEASE, 9);
                         LuoxiaBow.input(p, LuoxiaBow.PRESS, 10);
                         h.assertTrue(LuoxiaBow.drawing(p), "Stale release and duplicate press preserve the active draw");
@@ -113,6 +121,15 @@ final class LuoxiaChecks {
                     }
                     if (i==39) {
                         h.assertTrue(target.getHealth()<initialHealth && data.getMana()==700, "A charged basic attack is free and hits along its flight");
+                        var step = graph.get(3);
+                        data.setSkillLevel(step.getId(), 1);
+                        data.setBuff("g1_root", 5);
+                        hints.clear();
+                        SkillSystem.cast(p, CharacterType.SLOT_W);
+                        h.assertTrue(hints.equals(java.util.List.of(InputFailure.ROOT.text()))
+                                && data.getMana()==700 && data.getCooldown(step.getId())==0,
+                                "Rooted Slant Step reports the control reason without charging mana or starting cooldown");
+                        data.setBuff("g1_root", 0);
                         before[0] = target.getHealth();
                     }
                     if (i==42) SkillSystem.cast(p,CharacterType.SLOT_E);

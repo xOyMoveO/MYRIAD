@@ -91,7 +91,7 @@ public final class MonsterManager {
     };
 
     /** 写入存档配置文件的刷新点。type=null 表示大型随机刷新点。 */
-    private record SpawnPoint(String id, BlockPos pos, MonsterType type) {
+    record SpawnPoint(String id, BlockPos pos, MonsterType type) {
         boolean largeRandom() { return type == null; }
     }
 
@@ -687,16 +687,21 @@ public final class MonsterManager {
     /** 服务端启动时读取世界存档中的野怪刷新点。 */
     public static void initialize(net.minecraft.server.MinecraftServer minecraftServer) {
         server = minecraftServer;
-        loadSpawnPoints();
+        ArenaConfigFile.readOptional(spawnPointConfigPath(), MonsterManager::decodeSpawns).ifPresent(MonsterManager::activateSpawns);
         activeMatchStart = Long.MIN_VALUE;
     }
 
     public static void reloadArena(net.minecraft.server.MinecraftServer minecraftServer) {
+        resetArenaRuntime(minecraftServer);
+        initialize(minecraftServer);
+    }
+
+    static void resetArenaRuntime(net.minecraft.server.MinecraftServer minecraftServer) {
         clearRuntime(minecraftServer.overworld());
         SPAWN_GENERATIONS.clear();
         INITIAL_SPAWNED_POINTS.clear();
         nextBossSpawnAt = Long.MAX_VALUE;
-        initialize(minecraftServer);
+        activeMatchStart = Long.MIN_VALUE;
     }
 
     public static void shutdown() {
@@ -713,15 +718,22 @@ public final class MonsterManager {
     public static boolean setSpawnPoint(String id, BlockPos pos, MonsterType type, boolean largeRandom) {
         if (server == null || id == null || !id.matches("[A-Za-z0-9_-]{1,32}") || pos == null) return false;
         if (!largeRandom && (type == null || !type.canUseFixedSpawn())) return false;
-        SPAWN_POINTS.put(id, new SpawnPoint(id, pos.immutable(), largeRandom ? null : type));
-        saveSpawnPoints();
-        return true;
+        var next = spawnEditBase();
+        if (next == null) return false;
+        next.put(id, new SpawnPoint(id, pos.immutable(), largeRandom ? null : type));
+        return saveSpawnPoints(next);
     }
 
     public static boolean removeSpawnPoint(String id) {
-        if (SPAWN_POINTS.remove(id) == null) return false;
-        saveSpawnPoints();
-        return true;
+        if (server == null) return false;
+        var next = spawnEditBase();
+        if (next == null) return false;
+        return next.remove(id) != null && saveSpawnPoints(next);
+    }
+
+    private static Map<String, SpawnPoint> spawnEditBase() {
+        return ArenaConfigFile.readForEdit(spawnPointConfigPath(), MonsterManager::decodeSpawns,
+                () -> new LinkedHashMap<>(SPAWN_POINTS)).orElse(null);
     }
 
     public static List<SpawnPointInfo> spawnPointInfos() {
@@ -733,10 +745,9 @@ public final class MonsterManager {
         return List.copyOf(result);
     }
 
-    private static void saveSpawnPoints() {
-        if (server == null) return;
+    private static boolean saveSpawnPoints(Map<String, SpawnPoint> next) {
         com.google.gson.JsonArray points = new com.google.gson.JsonArray();
-        for (SpawnPoint point : SPAWN_POINTS.values()) {
+        for (SpawnPoint point : next.values()) {
             com.google.gson.JsonObject value = new com.google.gson.JsonObject();
             value.addProperty("id", point.id());
             value.addProperty("type", point.largeRandom() ? "large_random" : point.type().getId());
@@ -747,37 +758,31 @@ public final class MonsterManager {
         }
         com.google.gson.JsonObject root = new com.google.gson.JsonObject();
         root.add("points", points);
-        try {
-            java.nio.file.Files.writeString(spawnPointConfigPath(),
-                    new com.google.gson.GsonBuilder().setPrettyPrinting().create().toJson(root));
-        } catch (java.io.IOException e) {
-            com.myriad.Myriad.LOGGER.error("[monster] failed to save spawn points", e);
-        }
+        if (!ArenaConfigFile.save(spawnPointConfigPath(), root)) return false;
+        activateSpawns(next);
+        return true;
     }
 
-    private static void loadSpawnPoints() {
+    static void activateSpawns(Map<String, SpawnPoint> next) {
         SPAWN_POINTS.clear();
-        java.nio.file.Path path = spawnPointConfigPath();
-        if (!java.nio.file.Files.isRegularFile(path)) return;
-        try {
-            com.google.gson.JsonObject root = com.google.gson.JsonParser.parseString(
-                    java.nio.file.Files.readString(path)).getAsJsonObject();
-            com.google.gson.JsonArray points = root.getAsJsonArray("points");
-            if (points == null) return;
-            for (com.google.gson.JsonElement element : points) {
-                com.google.gson.JsonObject value = element.getAsJsonObject();
-                String id = value.get("id").getAsString();
-                String typeId = value.get("type").getAsString();
-                MonsterType type = "large_random".equals(typeId) ? null : MonsterType.byId(typeId);
-                if (!id.matches("[A-Za-z0-9_-]{1,32}") || (type == null && !"large_random".equals(typeId))
-                        || (type != null && !type.canUseFixedSpawn())) continue;
-                BlockPos pos = new BlockPos(value.get("x").getAsInt(), value.get("y").getAsInt(),
-                        value.get("z").getAsInt());
-                SPAWN_POINTS.put(id, new SpawnPoint(id, pos, type));
-            }
-        } catch (Exception e) {
-            com.myriad.Myriad.LOGGER.error("[monster] failed to load spawn points", e);
+        SPAWN_POINTS.putAll(next);
+    }
+
+    static Map<String, SpawnPoint> decodeSpawns(com.google.gson.JsonObject root) {
+        var next = new LinkedHashMap<String, SpawnPoint>();
+        var points = ArenaConfigFile.array(root, "points");
+        for (com.google.gson.JsonElement element : points) {
+            com.google.gson.JsonObject value = element.getAsJsonObject();
+            String id = value.get("id").getAsString();
+            String typeId = value.get("type").getAsString();
+            MonsterType type = "large_random".equals(typeId) ? null : MonsterType.byId(typeId);
+            if (!id.matches("[A-Za-z0-9_-]{1,32}") || (type == null && !"large_random".equals(typeId))
+                    || (type != null && !type.canUseFixedSpawn())) continue;
+            BlockPos pos = new BlockPos(value.get("x").getAsInt(), value.get("y").getAsInt(),
+                    value.get("z").getAsInt());
+            next.put(id, new SpawnPoint(id, pos, type));
         }
+        return next;
     }
 
     private static java.nio.file.Path spawnPointConfigPath() {

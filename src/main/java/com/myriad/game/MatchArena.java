@@ -4,11 +4,12 @@ import com.google.gson.JsonParser;
 import com.myriad.Myriad;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Map;
+import java.io.IOException;
+import net.minecraft.core.BlockPos;
 import java.util.List;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -63,54 +64,47 @@ public final class MatchArena {
         return List.copyOf(result);
     }
 
+    private record Profile(LaneSystem.Layout lanes, Map<String, VisionSystem.BrushDraft> brushes,
+            Map<String, MonsterManager.SpawnPoint> monsters, GameManager.VeinLayout veins, Map<Integer, BlockPos> corners) {
+        static Profile read(Path world, Mode mode) throws IOException {
+            boolean required = mode == Mode.DUEL;
+            return new Profile(
+                    ArenaConfigFile.read(configuration(world, mode, CONFIGS[0]), required, root -> LaneSystem.decodeLayout(root, required)),
+                    ArenaConfigFile.read(configuration(world, mode, CONFIGS[1]), required, VisionSystem::decodeBrushes),
+                    ArenaConfigFile.read(configuration(world, mode, CONFIGS[2]), required, MonsterManager::decodeSpawns),
+                    ArenaConfigFile.read(configuration(world, mode, CONFIGS[3]), required, GameManager::decodeVeins),
+                    ArenaConfigFile.read(configuration(world, mode, CONFIGS[4]), required, root -> MapSystem.decodeCorners(root, required)));
+        }
+
+        void activate(GameManager manager) {
+            LaneSystem.activateLayout(lanes);
+            VisionSystem.activateBrushes(brushes);
+            MonsterManager.activateSpawns(monsters);
+            manager.activateVeins(veins);
+            MapSystem.activateCorners(corners);
+        }
+    }
+
     public static boolean singleLaneReady(Path world) {
         try {
-            var configs = new HashMap<String, com.google.gson.JsonObject>();
-            for (String file : CONFIGS) {
-                var path = configuration(world, Mode.DUEL, file);
-                if (!Files.isRegularFile(path)) return false;
-                configs.put(file, JsonParser.parseString(Files.readString(path)).getAsJsonObject());
-            }
-            var lane = configs.get(CONFIGS[0]);
-            var enabled = lane.getAsJsonArray("enabledLanes");
-            if (enabled == null || enabled.size() != 1 || !enabled.get(0).getAsString().equals("mid")) return false;
-            var tiers = new java.util.HashSet<Integer>();
-            if (lane.has("towerTiers")) for (var value : lane.getAsJsonArray("towerTiers")) {
-                int tier = value.getAsInt();
-                if (tier < 1 || tier > 3) return false;
-                tiers.add(tier);
-            }
-            else tiers.addAll(java.util.List.of(1,2,3));
-            if (tiers.size() < 2) return false;
-            var keys = new java.util.HashSet<String>();
-            for (var row : lane.getAsJsonArray("towers")) {
-                var tower = row.getAsJsonObject();
-                Faction faction = Faction.byId(tower.get("faction").getAsString());
-                int tier = tower.get("tier").getAsInt();
-                if (faction==null
-                        || !tower.get("lane").getAsString().equals("mid") || !tiers.contains(tier)) return false;
-                validPosition(tower);
-                keys.add(faction.getName() + tier);
-            }
-            if (keys.size() != tiers.size()*2 || lane.getAsJsonArray("towers").size() != tiers.size()*2) return false;
-            for (String category : new String[]{"fountains", "crystals"}) {
-                var factions = new java.util.HashSet<String>();
-                for (var row : lane.getAsJsonArray(category)) {
-                    validPosition(row.getAsJsonObject());
-                    Faction faction=Faction.byId(row.getAsJsonObject().get("faction").getAsString());
-                    if(faction==null)return false;
-                    factions.add(faction.getName());
-                }
-                if (!factions.equals(java.util.Set.of("destruction", "guardian"))) return false;
-            }
-            var minimap = configs.get(CONFIGS[4]);
-            return minimap.getAsJsonArray("corners").size() == 4;
-        } catch (Exception error) { return false; }
+            Profile.read(world, Mode.DUEL);
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
     }
-    private static void validPosition(com.google.gson.JsonObject row) {
-        int x = row.get("x").getAsInt(), y = row.get("y").getAsInt(), z = row.get("z").getAsInt();
-        if (Math.abs((long)x) > 29_000_000 || Math.abs((long)z) > 29_000_000 || y < -63 || y > 318)
-            throw new IllegalArgumentException("Arena position outside world");
+
+    /** Repaired configurations become live as a whole before allocating any player seat. */
+    static boolean refreshReadiness(MinecraftServer server) {
+        if (active != Mode.DUEL) return true;
+        GameManager manager = GameManager.get();
+        try {
+            Profile profile = Profile.read(server.getWorldPath(LevelResource.ROOT), active);
+            if (manager != null && manager.getPhase() == GameManager.Phase.WAITING) profile.activate(manager);
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
     }
 
     public static void initialize(MinecraftServer server) {
@@ -124,40 +118,43 @@ public final class MatchArena {
         } catch (Exception error) { Myriad.LOGGER.warn("Cannot load arena selection", error); }
     }
 
-    /** Called on the server thread, after command/payload permission validation. */
-    public static boolean select(MinecraftServer server, String id) {
+    /** A failed administrative selection can report the file and field without changing the active map. */
+    public static Component selectError(MinecraftServer server, String id) {
         Mode requested = Mode.byId(id);
         GameManager manager = GameManager.get();
-        if (requested == null || manager == null || manager.getPhase() != GameManager.Phase.WAITING) return false;
-        if (!available(server, requested)) return false;
-        if (active == requested) {
-            QueueLobby.arenaSelected(server);
-            return true;
-        }
-        Path target = server.getWorldPath(LevelResource.ROOT).resolve(SELECTION);
+        if (requested == null || manager == null || manager.getPhase() != GameManager.Phase.WAITING)
+            return Component.translatable("message.myriad.arena_unavailable");
+        Profile profile;
         try {
-            Path temp = Files.createTempFile(target.getParent(), "myriad-arena-", ".tmp");
-            try {
-                Files.writeString(temp, "{\"mode\":\"" + requested.id + "\"}");
-                try { Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING); }
-                catch (java.nio.file.AtomicMoveNotSupportedException error) {
-                    Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
-                }
-            } finally { Files.deleteIfExists(temp); }
-        } catch (Exception error) {
-            Myriad.LOGGER.error("Unable to persist arena selection", error);
-            return false;
+            profile = Profile.read(server.getWorldPath(LevelResource.ROOT), requested);
+            if (active != requested) {
+                Path target = server.getWorldPath(LevelResource.ROOT).resolve(SELECTION);
+                var selection = new com.google.gson.JsonObject();
+                selection.addProperty("mode", requested.id);
+                if (!ArenaConfigFile.save(target, selection))
+                    return Component.translatable("message.myriad.arena_unavailable").append(" · " + SELECTION);
+            }
+        } catch (IOException e) {
+            Myriad.LOGGER.warn("Arena selection rejected: {}", e.getMessage());
+            return Component.translatable("message.myriad.arena_unavailable").append(" · " + e.getMessage());
         }
+        boolean switching = active != requested;
         active = requested;
-        LaneSystem.reloadArena(server);
-        MonsterManager.reloadArena(server);
-        VisionSystem.initialize(server);
-        MapSystem.initialize(server);
-        manager.reloadArenaObjectives();
-        BaseRules.clear();
+        if (switching) {
+            LaneSystem.resetArenaRuntime(server);
+            MonsterManager.resetArenaRuntime(server);
+            VisionSystem.clearTracking();
+            manager.resetMatchObjectives();
+            BaseRules.clear();
+        }
+        profile.activate(manager);
         MapSystem.tick(server.overworld());
         MatchProgress.save(server);
         QueueLobby.arenaSelected(server);
-        return true;
+        return null;
+    }
+
+    public static boolean select(MinecraftServer server, String id) {
+        return selectError(server, id) == null;
     }
 }

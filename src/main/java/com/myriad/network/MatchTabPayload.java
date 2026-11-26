@@ -37,7 +37,8 @@ public record MatchTabPayload(long elapsedTicks, List<Entry> players) implements
         }
         var packet = new MatchTabPayload(gm == null ? -1 : gm.getMatchElapsedTicks(server.overworld().getGameTime()), entries);
         for (var player : server.getPlayerList().getPlayers()) {
-            if (gm == null || !gm.isQueuedMatch() || gm.isParticipant(player.getUUID())) Packets.sendToPlayer(player, packet);
+            if (gm != null && gm.isQueuedMatch() && !gm.isParticipant(player.getUUID())) continue;
+            if (BattleSnapshots.of(player).sendTab(packet)) Packets.sendToPlayer(player, packet);
         }
     }
     private static Entry entry(net.minecraft.server.level.ServerPlayer player, GameManager gm) {

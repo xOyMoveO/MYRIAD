@@ -52,7 +52,7 @@ final class MatchEconomyChecks {
             var factions = (Map<UUID, Faction>)field(GameManager.class, "factions").get(manager);
             online = (List<ServerPlayer>)field(PlayerList.class, "players").get(server.getPlayerList());
             var base = helper.absolutePos(new BlockPos(3, 2, 3));
-            var fountains = (Map<Faction, BlockPos>)field(LaneSystem.class, "FOUNTAIN_POINTS").get(null);
+            var fountains = CombatRegressionTests.laneFixtureLayout().fountains;
             var previous = fountains.put(Faction.GUARDIAN, base);
             try {
                 var buyer = player(helper, base, "shuo");

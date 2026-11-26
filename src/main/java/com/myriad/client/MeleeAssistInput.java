@@ -78,12 +78,13 @@ public final class MeleeAssistInput {
                 && (text.getKey().equals("entity.myriad.jiaren") || text.getKey().startsWith("monster.myriad."));
     }
 
-    public static void send(LocalPlayer player) {
+    public static void send(LocalPlayer player, boolean buffered) {
         // Keep the normal movement and hotbar state ahead of the fieldless intent.
         player.connection.send(new ServerboundSetCarriedItemPacket(player.getInventory().getSelectedSlot()));
         player.connection.send(new ServerboundMovePlayerPacket.Rot(player.getYRot(), player.getXRot(),
                 player.onGround(), player.horizontalCollision));
-        Packets.sendToServer(new MeleeAssistPayload());
+        if (buffered) Packets.sendToServer(new com.myriad.network.NetworkSetup.BufferedMeleePayload());
+        else Packets.sendToServer(new MeleeAssistPayload());
         player.resetAttackStrengthTicker();
         player.swing(InteractionHand.MAIN_HAND, player.getMainHandItem().getAttackAnimation(), false);
     }

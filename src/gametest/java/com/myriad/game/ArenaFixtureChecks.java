@@ -90,7 +90,14 @@ public final class ArenaFixtureChecks implements ModInitializer {
                         suite.check(MatchArena.select(server, mode), "Configured synthetic arena available for concurrent training");
                         TrainingGroundCombatChecks.run(server, suite::check);
                     }
-                    case "write" -> { suite.scenarios(); suite.begin(System.getProperty("myriad.arenaFixtureMode","3v3")); suite.facilities(); MatchProgress.save(server); }
+                    case "write" -> {
+                        suite.scenarios();
+                        suite.begin(System.getProperty("myriad.arenaFixtureMode","3v3"));
+                        suite.facilities();
+                        server.getPlayerList().saveAll();
+                        MatchProgress.save(server);
+                        suite.verifyFailedLoadPreservesCheckpoint();
+                    }
                     case "read" -> suite.restored();
                     case "read-off" -> {
                         String mode=System.getProperty("myriad.arenaFixtureMode","3v3");
@@ -301,6 +308,10 @@ public final class ArenaFixtureChecks implements ModInitializer {
                     server.overworld().setBlockAndUpdate(new BlockPos(ox+x,63,z), Blocks.STONE.defaultBlockState());
         }
         ServerPlayer player(int index) {
+            return player(index, false);
+        }
+
+        ServerPlayer player(int index, boolean loadSaved) {
             var profile = new GameProfile(UUID.nameUUIDFromBytes(("myriad-arena-fixture-"+index).getBytes(java.nio.charset.StandardCharsets.UTF_8)), "ArenaFixture"+index);
             ServerPlayer player = new ServerPlayer(server, server.overworld(), profile, ClientInformation.createDefault());
             Connection connection = new Connection(PacketFlow.SERVERBOUND);
@@ -311,11 +322,19 @@ public final class ArenaFixtureChecks implements ModInitializer {
             };
             player.connection.handleAcceptPlayerLoad(new ServerboundPlayerLoadedPacket());
             player.setGameMode(GameType.SURVIVAL); player.setNoGravity(true);
+            if (loadSaved) {
+                var id = new net.minecraft.server.players.NameAndId(profile);
+                var saved = server.getPlayerList().loadPlayerData(id).orElseThrow();
+                player.load(net.minecraft.world.level.storage.TagValueInput.create(
+                        net.minecraft.util.ProblemReporter.DISCARDING, player.registryAccess(), saved));
+            }
             server.getPlayerList().deop(new net.minecraft.server.players.NameAndId(profile));
             server.getPlayerList().getPlayers().add(player);
             server.getPlayerList().getPlayersByUUID().put(player.getUUID(), player);
             server.overworld().addNewPlayer(player);
-            players.add(player); GameManager.get().onPlayerJoin(player);
+            players.add(player);
+            if (loadSaved) PlayerDataProvider.onPlayerLoggedIn(player);
+            else GameManager.get().onPlayerJoin(player);
             return player;
         }
         void removePlayers() {
@@ -358,6 +377,11 @@ public final class ArenaFixtureChecks implements ModInitializer {
             for (String mode : List.of("5v5","3v3")) {
                 begin(mode); facilities(); checkpointRoundTrip(); winAndRestart();
                 command("myriad mod off");
+                checkVanillaInventory();
+                check(players.getFirst().getInventory().countItem(net.minecraft.world.item.Items.LAPIS_LAZULI) == 7,
+                        "Vanilla session returns ingredients from the personal crafting grid");
+                command("myriad mod off");
+                checkVanillaInventory();
                 check(!ModState.isEnabled() && GameManager.get().getPhase() == GameManager.Phase.WAITING, "normal off command disables gameplay and ends the new round");
                 check(lanes().isEmpty() && MonsterManager.snapshot().getAsJsonArray("alive").isEmpty(), "off removes generated lane and monster runtime");
                 check(players.stream().allMatch(p -> PlayerDataProvider.get(p).getCharacterId() == null), "off clears selected character and match progress");
@@ -378,9 +402,23 @@ public final class ArenaFixtureChecks implements ModInitializer {
             var before = MapFacilityEditor.snapshotEntries(server);
             receive(players.getFirst(),new NetworkSetup.MapFacilityActionPayload("crystal","destruction","","clear"));
             check(before.equals(MapFacilityEditor.snapshotEntries(server)), "non-admin facility payload cannot mutate map");
+            if (!ModState.isEnabled()) {
+                var owner = players.getFirst();
+                owner.getInventory().setItem(5, originalTool(owner));
+                owner.getInventory().setSelectedSlot(5);
+                owner.experienceLevel = 11;
+                owner.totalExperience = 194;
+                owner.experienceProgress = .25f;
+                owner.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.WATER_BREATHING, 600));
+                command("myriad mod off");
+                checkVanillaInventory();
+                // Empty cursor, but ordinary ingredients are still in the personal crafting grid.
+                owner.inventoryMenu.getSlot(1).set(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.LAPIS_LAZULI, 7));
+            }
             command("myriad mod on");
             check(players.stream().allMatch(p -> p.position().distanceTo(new Vec3(-32.5,64,64.5))<.01), "both battlefields use the shared world lobby");
             check(LaneSystem.enabledLanes().size()==(mode.equals("5v5")?3:1), "profile restores its enabled lanes");
+            if (MatchArena.active() == MatchArena.Mode.DUEL) checkArenaConfigFailures();
             configurationRoundTrip();
             var crystal=LaneSystem.crystalPoint(Faction.DESTRUCTION);
             String other=mode.equals("5v5")?"3v3":"5v5";
@@ -392,12 +430,22 @@ public final class ArenaFixtureChecks implements ModInitializer {
             check(Arrays.equals(otherLayout,Files.readAllBytes(MatchArena.configuration(world,MatchArena.Mode.byId(other),CONFIGS[0]))), "editing one profile preserves the other profile bytes");
             MatchArena.shutdown(); MatchArena.initialize(server);
             check(MatchArena.active().id.equals(mode), "selected mode survives configuration lifecycle reload");
-            for (ServerPlayer player : players) lobby(player, "join", "");
+            boolean fivePerTeam = MatchArena.active() == MatchArena.Mode.RIFT;
+            for (ServerPlayer player : fivePerTeam ? players.reversed() : players) lobby(player, "join", "");
             check(GameManager.get().getPhase()==GameManager.Phase.PICKING, "full queue enters exactly one draft via its registered C2S receiver");
             check(players.stream().filter(p -> GameManager.get().factionOf(p)==Faction.GUARDIAN).count()==count/2, "queued teams are balanced at mode capacity");
             check(command("myriad team destruction ArenaFixture0")==0,"draft rejects administrator team-command changes");
             check(command("myriad arena " + other)==0 && !LaneSystem.setCrystalPoint(Faction.DESTRUCTION,crystal.offset(4,0,0)), "draft rejects mode switching and point edits");
             var order=pickOrder();
+            if (fivePerTeam) {
+                var manager = GameManager.get();
+                for (Faction faction : Faction.values()) {
+                    var byConnection = players.stream().filter(p -> manager.factionOf(p) == faction)
+                            .map(ServerPlayer::getUUID).toList();
+                    check(byConnection.equals(order.stream().filter(id -> manager.queueFaction(id) == faction).toList()),
+                            "5v5 preserves connection order within each team when the queue order is reversed");
+                }
+            }
             String chosen="shuo";
             var wrong=players.stream().filter(p -> !p.getUUID().equals(order.getFirst())).findFirst().orElseThrow();
             lobby(wrong,"lock",chosen);
@@ -533,6 +581,77 @@ public final class ArenaFixtureChecks implements ModInitializer {
                     "pre-reset withdrawal and proposal cannot alter a freshly rejoined identical roster");
             lobby(first, "leave", "");
             lobby(second, "leave", "");
+        }
+
+        void checkArenaConfigFailures() throws Exception {
+            Path laneFile = MatchArena.configPath(server, CONFIGS[0]);
+            Path mapFile = MatchArena.configPath(server, CONFIGS[4]);
+            byte[] originalLanes = Files.readAllBytes(laneFile);
+            byte[] originalMap = Files.readAllBytes(mapFile);
+            BlockPos originalCorner = MapSystem.corner(1);
+            ServerPlayer queued = players.getFirst();
+            lobby(queued, "join", "");
+            try {
+                var map = config(CONFIGS[4]);
+                for (var value : map.getAsJsonArray("corners")) {
+                    var row = value.getAsJsonObject();
+                    row.addProperty("x", originalCorner.getX());
+                    row.addProperty("z", originalCorner.getZ());
+                }
+                Files.writeString(mapFile, map.toString());
+                var error = MatchArena.selectError(server, "3v3");
+                check(error != null && error.getString().contains("corners") && MapSystem.configured(),
+                        "degenerate corners reject reselection without losing the active map");
+
+                map = JsonParser.parseString(new String(originalMap, java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
+                var firstCorner = map.getAsJsonArray("corners").get(0).getAsJsonObject();
+                int slot = firstCorner.get("slot").getAsInt();
+                var before = MapSystem.corner(slot);
+                firstCorner.addProperty("x", before.getX() + 1);
+                Files.writeString(mapFile, map.toString());
+                var layout = config(CONFIGS[0]);
+                layout.add("manualPaths", new JsonObject());
+                Files.writeString(laneFile, layout.toString());
+                clock(server.overworld().getGameTime() + 201);
+                QueueLobby.tick(server);
+                check(QueueLobby.snapshot(queued).reason().equals("unready") && MapSystem.corner(slot).equals(before),
+                        "one bad optional field blocks the queue and leaves the entire previous configuration live");
+                error = MatchArena.selectError(server, "3v3");
+                check(error != null && error.getString().contains("manualPaths")
+                        && error.getString().contains(CONFIGS[0]), "administrator sees failed field and file");
+                Files.write(laneFile, originalLanes);
+                clock(server.overworld().getGameTime() + 201);
+                QueueLobby.tick(server);
+                check(QueueLobby.snapshot(queued).position() == 1 && QueueLobby.snapshot(queued).reason().isEmpty()
+                        && MapSystem.corner(slot).equals(before.offset(1, 0, 0)), "hot repair activates new coordinates and keeps queue position");
+            } finally {
+                Files.write(laneFile, originalLanes);
+                Files.write(mapFile, originalMap);
+                check(MatchArena.select(server, "3v3"), "restore the accepted fixture");
+                lobby(queued, "leave", "");
+            }
+            var beforeEntries = MapFacilityEditor.snapshotEntries(server);
+            List<java.util.function.BooleanSupplier> edit = List.of(
+                    () -> LaneSystem.setCrystalPoint(Faction.GUARDIAN, originalCorner),
+                    () -> MonsterManager.setSpawnPoint("write_probe", originalCorner, MonsterType.FROST_HARE, false),
+                    () -> VisionSystem.setBrushCorner("write_probe", 1, originalCorner),
+                    () -> GameManager.get().setSpiritVeinSpawn(false, 1, originalCorner),
+                    () -> MapSystem.setCorner(1, originalCorner.above()));
+            for (int i = 0; i < CONFIGS.length; i++) {
+                Path target = MatchArena.configPath(server, CONFIGS[i]);
+                Path backup = target.resolveSibling(CONFIGS[i] + ".test-backup");
+                byte[] previous = Files.readAllBytes(target);
+                Files.move(target, backup);
+                try {
+                    Files.createDirectory(target); // Replacing a directory with the new file must fail.
+                    check(!edit.get(i).getAsBoolean(), "write failure reaches editor for " + CONFIGS[i]);
+                } finally {
+                    Files.deleteIfExists(target);
+                    Files.move(backup, target);
+                }
+                check(Arrays.equals(previous, Files.readAllBytes(target)) && beforeEntries.equals(MapFacilityEditor.snapshotEntries(server)),
+                        "failed edit preserves file and live facilities for " + CONFIGS[i]);
+            }
         }
 
         void configurationRoundTrip() throws Exception {
@@ -683,13 +802,60 @@ public final class ArenaFixtureChecks implements ModInitializer {
             lobby(attacker, "leave", "");
             check(GameManager.get().getPhase()==GameManager.Phase.WAITING, "leaving the next queue keeps the arena free");
         }
+        private void verifyFailedLoadPreservesCheckpoint() throws Exception {
+            Path file = world.resolve("myriad_fabric_match.json");
+            byte[] good = Files.readAllBytes(file);
+            var mismatched = JsonParser.parseString(Files.readString(file)).getAsJsonObject();
+            mismatched.addProperty("arena", MatchArena.active() == MatchArena.Mode.DUEL ? "5v5" : "3v3");
+            try {
+                Files.writeString(file, mismatched.toString());
+                byte[] before = Files.readAllBytes(file);
+                boolean rejected = false;
+                try {
+                    MatchProgress.load(server);
+                } catch (IllegalStateException expected) {
+                    rejected = true;
+                }
+                check(rejected, "Incompatible checkpoint fails to load");
+                MatchProgress.onServerStopping(server);
+                check(Arrays.equals(before, Files.readAllBytes(file)),
+                        "Shutdown after a failed load preserves the entire original checkpoint");
+            } finally {
+                Files.write(file, good);
+                MatchProgress.load(server);
+            }
+        }
+
+        private static net.minecraft.world.item.ItemStack originalTool(ServerPlayer player) {
+            var stack = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND_PICKAXE);
+            stack.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, net.minecraft.network.chat.Component.literal("Before the match"));
+            stack.enchant(player.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
+                    .getOrThrow(net.minecraft.world.item.enchantment.Enchantments.UNBREAKING), 2);
+            return stack;
+        }
+
+        private void checkVanillaInventory() {
+            var owner = players.getFirst();
+            check(net.minecraft.world.item.ItemStack.matches(owner.getInventory().getItem(5), originalTool(owner))
+                    && owner.getInventory().getSelectedSlot() == 5 && owner.experienceLevel == 11
+                    && owner.totalExperience == 194 && owner.experienceProgress == .25f
+                    && owner.gameMode.getGameModeForPlayer() == GameType.SURVIVAL
+                    && owner.hasEffect(net.minecraft.world.effect.MobEffects.WATER_BREATHING),
+                    "Off preserves the named enchanted item, hotbar selection, experience, effect and survival mode");
+        }
+
         void restored() throws Exception {
             String mode=System.getProperty("myriad.arenaFixtureMode","3v3");
             check(ModState.isEnabled() && MatchArena.active().id.equals(mode) && GameManager.get().getPhase()==GameManager.Phase.PLAYING,"actual dedicated restart restores selected arena, enabled flag and PLAYING checkpoint");
             check(units("TOWER",null).size()==(mode.equals("5v5")?18:4) && units("CRYSTAL",null).size()==2 && MonsterManager.snapshot().getAsJsonArray("alive").size()==3,"actual restart restores the active map facilities and monsters exactly once");
-            for(int i=0;i<MatchArena.active().teamSize*2;i++)player(i);
+            for(int i=0;i<MatchArena.active().teamSize*2;i++)player(i, true);
             check(players.stream().allMatch(p -> GameManager.get().factionOf(p)!=null),"reconnected fixture identities retain their new match factions");
             command("myriad mod off");check(lanes().isEmpty() && MonsterManager.snapshot().getAsJsonArray("alive").isEmpty(),"off after restart removes restored map runtime");
+            checkVanillaInventory();
+            var owner = players.getFirst();
+            owner.getInventory().setItem(5, net.minecraft.world.item.ItemStack.EMPTY);
+            PlayerDataProvider.onPlayerLoggedIn(owner);
+            check(owner.getInventory().getItem(5).isEmpty(), "A second login cannot reclaim the restored item");
             MatchProgress.save(server);
         }
         void report(String stage,Throwable failure) {

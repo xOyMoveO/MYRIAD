@@ -56,8 +56,7 @@ public final class MeleeAttackBuffer {
                 || mc.getCameraEntity() != player || !ClientDataHolder.canFight()
                 || !VanillaMeleeAttack.usesVanilla(CharacterType.byId(ClientDataHolder.characterId()))
                 || !player.isAlive() || player.isSpectator() || player.isHandsBusy() || player.isUsingItem()
-                || mc.gameMode.isDestroying() || ClientDataHolder.buffTicks("g1_root") > 0
-                || ClientDataHolder.buffTicks("zhongshengguizong") > 0) return false;
+                || mc.gameMode.isDestroying()) return false;
         var held = player.getMainHandItem();
         return PlayerDataProvider.isInitialWeapon(held) && held.isItemEnabled(mc.level.enabledFeatures())
                 && !held.has(DataComponents.PIERCING_WEAPON) && !player.cannotAttackWithItem(held, 0);

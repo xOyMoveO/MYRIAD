@@ -56,6 +56,10 @@ public final class LuoxiaBowView {
 
     private LuoxiaBowView() {}
 
+    private static boolean usesLockedAim(LuoxiaBowPosePayload cue) {
+        return cue != null && (cue.phase() == Phase.LOCK || cue.skill() == 7 && cue.phase() == Phase.RELEASE);
+    }
+
     private static ItemStack model(int stage) {
         if (BOWS[stage] == null) {
             var item = ModItems.GUIXIA_BOW.get().getDefaultInstance();
@@ -86,7 +90,7 @@ public final class LuoxiaBowView {
         float lift = motion.loaded() ? .095f + motion.pull() * .025f : motion.recoil() * .09f;
         var bow = new Matrix4f().translation(side * (.32f - lift * .64f),
                 -.36f + lift - (step ? .045f : 0), -1.10f - lift + motion.recoil() * .055f);
-        if (cue != null && (cue.phase() == Phase.LOCK || cue.phase() == Phase.RELEASE && cue.skill() == 7)) {
+        if (usesLockedAim(cue)) {
             bow.rotateY(-net.minecraft.util.Mth.wrapDegrees(cue.yaw() - p.getYRot()) * DEG);
             bow.rotateX(-(cue.pitch() - p.getXRot()) * DEG);
         }
@@ -147,7 +151,7 @@ public final class LuoxiaBowView {
         var front = left ? model.leftArm : model.rightArm;
         var rear = left ? model.rightArm : model.leftArm;
         boolean aimed = cue != null;
-        boolean locked = cue != null && (cue.phase() == Phase.LOCK || cue.skill() == 7 && cue.phase() == Phase.RELEASE);
+        boolean locked = usesLockedAim(cue);
         float aimYaw = locked ? (cue.yaw() - state.bodyRot) * DEG : model.head.yRot;
         float pitch = locked ? cue.pitch() * DEG : model.head.xRot;
         model.body.yRot += side * (aimed ? .16f + .20f * m.pull() : .08f);
@@ -188,7 +192,7 @@ public final class LuoxiaBowView {
         var palm = new PoseStack();
         model.translateToHand(state, arm, palm);
         var grip = palm.last().pose().transformPosition(new Vector3f(arm == HumanoidArm.RIGHT ? -.06f : .06f, .57f, 0));
-        boolean lock = cue != null && (cue.phase() == Phase.LOCK || cue.skill() == 7 && cue.phase() == Phase.RELEASE);
+        boolean lock = usesLockedAim(cue);
         float yaw = lock ? cue.yaw() : p.getYRot(), pitch = lock ? cue.pitch() : p.getXRot();
         stack.pushPose();
         try {

@@ -3,6 +3,7 @@ package com.myriad.game;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import com.myriad.registry.ModEntities;
+import java.util.function.Supplier;
 
 /**
  * 野怪类型表（策划案第十一节扩展）：
@@ -10,19 +11,19 @@ import com.myriad.registry.ModEntities;
  * 击杀奖励：经验/金币（金钱猪为全队金币）、灵石傀/荒古兽掉落强化 buff。
  */
 public enum MonsterType {
-    FROST_HARE("frost_hare", "monster.myriad.frost_hare", EntityTypes.RABBIT, 770, 30, 25, 70, 90, null, false, 60, 2.4, 1.5, 16, 24),
-    EMBER_IMP("ember_imp", "monster.myriad.ember_imp", EntityTypes.PIGLIN, 1050, 42, 35, 90, 90, null, false, 80, 2.1, 1.5, 28, 20),
-    SHADOW_FOX("shadow_fox", "monster.myriad.shadow_fox", EntityTypes.FOX, 1400, 54, 50, 120, 90, null, false, 100, 2.7, 1.5, 24, 28),
-    THUNDER_BADGER("thunder_badger", "monster.myriad.thunder_badger", EntityTypes.WOLF, 980, 48, 30, 80, 90, null, false, 75, 2.6, 1.5, 32, 24),
-    MIASMA_TOAD("miasma_toad", "monster.myriad.miasma_toad", EntityTypes.FROG, 1260, 60, 40, 105, 90, null, false, 90, 1.55, 1.6, 24, 40),
-    STONE_SHELL_CRAB("stone_shell_crab", "monster.myriad.stone_shell_crab", EntityTypes.TURTLE, 1820, 39, 55, 140, 90, null, false, 115, 0.95, 1.5, 60, 30),
-    GOLD_PIG("glod_pig", "monster.myriad.glod_pig", EntityTypes.PIG, 3500, 24, 180, 400, 0, null, true, 150, 1.75, 2.0, 50, 50),
-    SPRING_REEF_GUARDIAN("spring_reef_guardian", "monster.myriad.spring_reef_guardian", EntityTypes.DROWNED, 2870, 57, 165, 150, 120, "spring_mana", false, 135, 1.45, 1.8, 50, 70),
-    FROST_WEB_MATRIARCH("frost_web_matriarch", "monster.myriad.frost_web_matriarch", EntityTypes.CAVE_SPIDER, 3150, 63, 175, 155, 120, "beast", false, 145, 1.65, 1.7, 56, 60),
-    AZURE_HORN_GUARDIAN("azure_horn_guardian", "monster.myriad.azure_horn_guardian", EntityTypes.RAVAGER, 10080, 78, 350, 180, 300, "azure_attack", false, 180, 1.25, 2.3, 110, 90),
-    VERMILION_FLAME_TYRANT("vermilion_flame_tyrant", "monster.myriad.vermilion_flame_tyrant", EntityTypes.HOGLIN, 11340, 96, 420, 220, 300, "vermilion_spell", false, 190, 1.35, 2.0, 90, 120),
-    GALE_ROC_MATRIARCH("gale_roc_matriarch", "monster.myriad.gale_roc_matriarch", EntityTypes.PHANTOM, 9450, 72, 380, 200, 300, "gale_haste", false, 170, 1.8, 2.0, 80, 90),
-    OBSIDIAN_TORTOISE_WARDEN("obsidian_tortoise_warden", "monster.myriad.obsidian_tortoise_warden", EntityTypes.IRON_GOLEM, 13860, 66, 450, 240, 300, "obsidian_guard", false, 220, 0.9, 2.2, 160, 130),
+    FROST_HARE("frost_hare", "monster.myriad.frost_hare", () -> EntityTypes.RABBIT, 770, 30, 25, 70, 90, null, false, 60, 2.4, 1.5, 16, 24),
+    EMBER_IMP("ember_imp", "monster.myriad.ember_imp", () -> EntityTypes.PIGLIN, 1050, 42, 35, 90, 90, null, false, 80, 2.1, 1.5, 28, 20),
+    SHADOW_FOX("shadow_fox", "monster.myriad.shadow_fox", () -> EntityTypes.FOX, 1400, 54, 50, 120, 90, null, false, 100, 2.7, 1.5, 24, 28),
+    THUNDER_BADGER("thunder_badger", "monster.myriad.thunder_badger", () -> EntityTypes.WOLF, 980, 48, 30, 80, 90, null, false, 75, 2.6, 1.5, 32, 24),
+    MIASMA_TOAD("miasma_toad", "monster.myriad.miasma_toad", () -> EntityTypes.FROG, 1260, 60, 40, 105, 90, null, false, 90, 1.55, 1.6, 24, 40),
+    STONE_SHELL_CRAB("stone_shell_crab", "monster.myriad.stone_shell_crab", () -> EntityTypes.TURTLE, 1820, 39, 55, 140, 90, null, false, 115, 0.95, 1.5, 60, 30),
+    GOLD_PIG("glod_pig", "monster.myriad.glod_pig", () -> EntityTypes.PIG, 3500, 24, 180, 400, 0, null, true, 150, 1.75, 2.0, 50, 50),
+    SPRING_REEF_GUARDIAN("spring_reef_guardian", "monster.myriad.spring_reef_guardian", () -> EntityTypes.DROWNED, 2870, 57, 165, 150, 120, "spring_mana", false, 135, 1.45, 1.8, 50, 70),
+    FROST_WEB_MATRIARCH("frost_web_matriarch", "monster.myriad.frost_web_matriarch", () -> EntityTypes.CAVE_SPIDER, 3150, 63, 175, 155, 120, "beast", false, 145, 1.65, 1.7, 56, 60),
+    AZURE_HORN_GUARDIAN("azure_horn_guardian", "monster.myriad.azure_horn_guardian", () -> EntityTypes.RAVAGER, 10080, 78, 350, 180, 300, "azure_attack", false, 180, 1.25, 2.3, 110, 90),
+    VERMILION_FLAME_TYRANT("vermilion_flame_tyrant", "monster.myriad.vermilion_flame_tyrant", () -> EntityTypes.HOGLIN, 11340, 96, 420, 220, 300, "vermilion_spell", false, 190, 1.35, 2.0, 90, 120),
+    GALE_ROC_MATRIARCH("gale_roc_matriarch", "monster.myriad.gale_roc_matriarch", () -> EntityTypes.PHANTOM, 9450, 72, 380, 200, 300, "gale_haste", false, 170, 1.8, 2.0, 80, 90),
+    OBSIDIAN_TORTOISE_WARDEN("obsidian_tortoise_warden", "monster.myriad.obsidian_tortoise_warden", () -> EntityTypes.IRON_GOLEM, 13860, 66, 450, 240, 300, "obsidian_guard", false, 220, 0.9, 2.2, 160, 130),
     CHERRY_FROST_HARE("frost_hare", new CherryModel(1.1034F, .44F, .82F, .88F),
             950, 36, 85, 32, 90, null, 75, 2.4, 1.55, 24, 24),
     CHERRY_DUSK_FOX("dusk_fox", new CherryModel(2.1822F, .425F, 1.75F, .87F),
@@ -40,7 +41,7 @@ public enum MonsterType {
 
     private final String id;
     private final String nameKey;
-    private final EntityType<?> entityType;
+    private final Supplier<EntityType<?>> entityType;
     private final double health;
     private final double attack;
     private final int xp;
@@ -61,7 +62,7 @@ public enum MonsterType {
     private final double magicDefense;
     private final CherryModel cherryModel;
 
-    MonsterType(String id, String nameKey, EntityType<?> entityType, double health, double attack,
+    MonsterType(String id, String nameKey, Supplier<EntityType<?>> entityType, double health, double attack,
             int xp, int gold, int respawnSeconds, String buff, boolean teamGold, int hatred,
             double moveSpeed, double attackRange, double physicalDefense, double magicDefense) {
         this(id, nameKey, entityType, health, attack, xp, gold, respawnSeconds, buff, teamGold,
@@ -71,12 +72,12 @@ public enum MonsterType {
     MonsterType(String model, CherryModel cherryModel, double health, double attack, int xp, int gold,
             int respawnSeconds, String buff, int hatred, double moveSpeed, double attackRange,
             double physicalDefense, double magicDefense) {
-        this("cherry_" + model, "monster.myriad.cherry_" + model, ModEntities.CHERRY_RIFT_MONSTER.get(),
+        this("cherry_" + model, "monster.myriad.cherry_" + model, () -> ModEntities.CHERRY_RIFT_MONSTER.get(),
                 health, attack, xp, gold, respawnSeconds, buff, false, hatred, moveSpeed, attackRange,
                 physicalDefense, magicDefense, cherryModel);
     }
 
-    MonsterType(String id, String nameKey, EntityType<?> entityType, double health, double attack,
+    MonsterType(String id, String nameKey, Supplier<EntityType<?>> entityType, double health, double attack,
             int xp, int gold, int respawnSeconds, String buff, boolean teamGold, int hatred,
             double moveSpeed, double attackRange, double physicalDefense, double magicDefense,
             CherryModel cherryModel) {
@@ -122,7 +123,7 @@ public enum MonsterType {
     }
 
     public EntityType<?> getEntityType() {
-        return entityType;
+        return entityType.get();
     }
 
     public double getHealth() {

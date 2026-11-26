@@ -11,13 +11,17 @@ import net.minecraft.world.level.storage.LevelResource;
 
 /** World-local checkpoint; player progression uses Fabric's persistent attachment. */
 public final class MatchProgress {
+    // Fabric may run the normal shutdown callbacks after SERVER_STARTED throws.
+    // A server may replace its checkpoint only after it has finished loading it.
+    private static MinecraftServer writableServer;
     public static final Gson JSON = new GsonBuilder().enableComplexMapKeySerialization().create();
     private static Path path(MinecraftServer s) { return s.getWorldPath(LevelResource.ROOT).resolve("myriad_fabric_match.json"); }
     public static void save(MinecraftServer server) {
-        if (GameManager.get()==null || Boolean.getBoolean("myriad.combatTests")) return;
+        if (server != writableServer || GameManager.get()==null || Boolean.getBoolean("myriad.combatTests")) return;
         try {
             JsonObject root=new JsonObject();
             root.addProperty("version",1); root.addProperty("enabled",ModState.isEnabled());
+            if (ModState.isEnabled()) root.addProperty("session", ModState.session());
             root.addProperty("arena", MatchArena.active().id);
             root.addProperty("training",TrainingMode.isEnabled());
             root.addProperty("noCooldown",TrainingMode.isNoCooldown());
@@ -35,11 +39,17 @@ public final class MatchProgress {
         } catch(Exception e) { com.myriad.Myriad.LOGGER.error("Unable to save match checkpoint",e); }
     }
     public static void load(MinecraftServer server) {
+        writableServer = null;
         if (!server.isDedicatedServer()) {
             openHostSession(server);
+            writableServer = server;
             return;
         }
-        if(!Files.isRegularFile(path(server)) || Boolean.getBoolean("myriad.combatTests"))return;
+        if (Boolean.getBoolean("myriad.combatTests")) return;
+        if (Files.notExists(path(server))) {
+            writableServer = server;
+            return;
+        }
         try {
             JsonObject root=JSON.fromJson(Files.readString(path(server)),JsonObject.class);
             if (root.has("arena") && !root.get("arena").getAsString().equals(MatchArena.active().id))
@@ -48,7 +58,7 @@ public final class MatchProgress {
             // Never resume it when the host opens the world again, including
             // checkpoints written by older versions or before an abrupt exit.
             if (server.isDedicatedServer()) GameManager.restore(root.get("match"),server);
-            ModState.setEnabled(root.get("enabled").getAsBoolean());
+            ModState.resume(root.get("enabled").getAsBoolean(), root.has("session") ? root.get("session").getAsString() : "");
             TrainingMode.setEnabled(root.has("training") && root.get("training").getAsBoolean());
             TrainingMode.setNoCooldown(root.has("noCooldown") && root.get("noCooldown").getAsBoolean());
             TrainingMode.setNoGoldCost(root.has("noGoldCost") && root.get("noGoldCost").getAsBoolean());
@@ -58,15 +68,18 @@ public final class MatchProgress {
                 MonsterManager.restore(server.overworld(),root.getAsJsonObject("monsters"));
                 HeroRespawnSystem.restore(root.get("respawns"));
             }
+            writableServer = server;
         } catch(Exception e) { throw new IllegalStateException("Failed to restore myriad_fabric_match.json; preserve the checkpoint before retrying",e); }
     }
 
     /** Host leaving a local/LAN world ends the session before the final checkpoint. */
     public static void onServerStopping(MinecraftServer server) {
-        if (!server.isDedicatedServer()) {
-            endHostSession(server);
+        try {
+            if (!server.isDedicatedServer()) endHostSession(server);
+            save(server);
+        } finally {
+            if (writableServer == server) writableServer = null;
         }
-        save(server);
     }
 
     /** Local/LAN world sessions intentionally do not resume a checkpoint. */
