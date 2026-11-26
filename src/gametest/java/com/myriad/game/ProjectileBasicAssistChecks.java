@@ -104,7 +104,7 @@ final class ProjectileBasicAssistChecks {
 
         float[] before = {JiarenManager.hp(dummy.getUUID())};
         boolean[] done = {false};
-        for (int tick = 1; tick <= 37; tick++) {
+        for (int tick = 1; tick <= 42; tick++) {
             int current = tick;
             h.runAfterDelay(tick, () -> {
                 if (done[0]) return;
@@ -134,9 +134,9 @@ final class ProjectileBasicAssistChecks {
                         h.assertTrue(JiarenManager.hp(dummy.getUUID()) == before[0], "Luoxia's skill arrow keeps its .09 radius");
                         BasicAttackSystem.tryAttack(player, LuoxiaBow.PRESS);
                     }
-                    if (current == 29) BasicAttackSystem.tryAttack(player, LuoxiaBow.RELEASE);
+                    if (current == 34) BasicAttackSystem.tryAttack(player, LuoxiaBow.RELEASE);
                     AbilityRuntime.tick(player);
-                    if (current == 37) {
+                    if (current == 42) {
                         assertGrazing(h, dummy, before[0], "Luoxia");
                         done[0] = true;
                         cleanup.run();

@@ -83,8 +83,6 @@ public final class MagicBullet {
 
     /** 右键尝试发射魔法弹（初始武器 + 法师 + 攻速冷却） */
     public static void tryFire(ServerPlayer player, net.minecraft.world.item.ItemStack held) {
-        if (com.myriad.character.ability.AbilityRuntime.channeling(player)
-                || PlayerDataProvider.get(player).getBuff("g1_stun") > 0) return;
         if (!com.myriad.game.ModState.isEnabled()) {
             return;
         }
@@ -95,13 +93,18 @@ public final class MagicBullet {
             return;
         }
 
+        if (PlayerDataProvider.get(player).getBuff("g1_stun") > 0) { InputFailure.STUN.send(player); return; }
+        if (com.myriad.character.ability.AbilityRuntime.channeling(player)) { InputFailure.CHANNEL.send(player); return; }
         ServerLevel level = (ServerLevel) player.level();
         long now = level.getGameTime();
         double as = Math.max(0.05, player.getAttributeValue(
                 com.myriad.registry.ModAttributes.ATTACK_SPEED));
         int cd = (int) Math.ceil(20.0 / as);
         FireCooldown previous = FIRE_CD.get(player.getUUID());
-        if (previous != null && !previous.progress.advance(now,ActionTime.multiplier(player.getUUID(),now),previous.totalTicks)) return;
+        if (previous != null && !previous.progress.advance(now,ActionTime.multiplier(player.getUUID(),now),previous.totalTicks)) {
+            InputFailure.RECOVERING.send(player);
+            return;
+        }
         FIRE_CD.put(player.getUUID(), new FireCooldown(now,cd));
 
         Vec3 dir = player.getLookAngle().normalize();

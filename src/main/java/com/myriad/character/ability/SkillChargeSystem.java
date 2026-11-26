@@ -17,7 +17,7 @@ import java.util.UUID;
 /** Shared immobilisation only for explicitly registered stationary skill windups. */
 public final class SkillChargeSystem {
     private static final Identifier LOCK=Identifier.fromNamespaceAndPath("myriad","skill_charge_lock");
-    private record Charge(ServerPlayer player,String role,net.minecraft.server.level.ServerLevel level,String skill,long until,float walkFactor){}
+    private record Charge(ServerPlayer player,String role,net.minecraft.server.level.ServerLevel level,String skill, int total, long until, float walkFactor, SkillChargePayload sample) {}
     private static final Map<UUID,Charge> ACTIVE=new HashMap<>();
     private SkillChargeSystem(){}
     public static void start(ServerPlayer p,String skill,int ticks){
@@ -27,16 +27,26 @@ public final class SkillChargeSystem {
         walkFactor=Float.isFinite(walkFactor)?Math.clamp(walkFactor,0,1):0;
         clear(p);if(ticks<=0||!ModState.isEnabled())return;
         long now=p.level().getGameTime();
-        ACTIVE.put(p.getUUID(),new Charge(p,PlayerDataProvider.get(p).getCharacterId(),p.level(),skill,now+ticks,walkFactor));
+        var sample = new SkillChargePayload(skill, ticks, now, walkFactor);
+        ACTIVE.put(p.getUUID(), new Charge(p, PlayerDataProvider.get(p).getCharacterId(), p.level(), skill, ticks, now+ticks, walkFactor, sample));
         var speed=p.getAttribute(Attributes.MOVEMENT_SPEED);
         if(speed!=null)speed.addTransientModifier(new AttributeModifier(LOCK,walkFactor-1,AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
         if(walkFactor==0)freeze(p);else p.setSprinting(false);
-        Packets.sendToPlayer(p,new SkillChargePayload(skill,ticks,now,walkFactor));
+        Packets.sendToPlayer(p, sample);
     }
     /** Keep an explicitly local-time windup locked without restarting its presentation. */
-    public static void extend(ServerPlayer p,int remainingTicks){
-        var c=ACTIVE.get(p.getUUID());
-        if(c!=null)ACTIVE.put(p.getUUID(),new Charge(c.player,c.role,c.level,c.skill,p.level().getGameTime()+remainingTicks,c.walkFactor));
+    public static void extend(ServerPlayer player, int remainingTicks, double completed, double rate) {
+        Charge c = ACTIVE.get(player.getUUID());
+        if (c == null) return;
+        long now = player.level().getGameTime();
+        var sample = c.sample;
+        double expected = sample.completed() + (now - sample.started()) * sample.rate();
+        if (Math.abs(completed - expected) > .05 || Math.abs(rate - sample.rate()) > .0001) {
+            sample = new SkillChargePayload(c.skill, c.total, now, c.walkFactor, (float)completed, (float)rate);
+            Packets.sendToPlayer(player, sample);
+        }
+        ACTIVE.put(player.getUUID(), new Charge(player, c.role, c.level, c.skill, c.total,
+                now + remainingTicks, c.walkFactor, sample));
     }
     public static boolean active(ServerPlayer p){
         Charge c=ACTIVE.get(p.getUUID());return c!=null&&c.player==p&&c.level==p.level()&&c.until>p.level().getGameTime()

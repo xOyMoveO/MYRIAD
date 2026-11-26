@@ -23,6 +23,8 @@ public final class LobbyClient {
     private LobbyClient() {}
 
     public static void register() {
+        ClientPlayNetworking.registerGlobalReceiver(com.myriad.network.RemadePayload.TYPE, (payload, context) ->
+                context.client().setScreenAndShow(new LobbyScreen(true)));
         ClientPlayNetworking.registerGlobalReceiver(LobbyNetworking.Snapshot.TYPE, (snapshot, context) -> {
             boolean wasDraft = drafting();
             current = snapshot;
@@ -38,6 +40,18 @@ public final class LobbyClient {
                 lobby.update();
             }
         });
+    }
+
+    public static Component remakeNotice(LobbyNetworking.Snapshot state) {
+        if (state == null) return null;
+        if (state.remakeOfferSeconds() >= 0) {
+            if (state.remakeOfferId().isEmpty())
+                return Component.translatable("lobby.myriad.remake.other", state.remakeOfferSeconds());
+            return Component.translatable("lobby.myriad.remake.available", state.remakeOfferSeconds(),
+                    MyriadClient.KEY_LOBBY.getTranslatedKeyMessage());
+        }
+        return state.remakeWaitSeconds() < 0 ? null
+                : Component.translatable("lobby.myriad.remake.wait", state.remakeWaitSeconds());
     }
 
     public static LobbyNetworking.Snapshot snapshot() { return current; }

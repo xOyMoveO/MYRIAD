@@ -6,6 +6,7 @@ import com.myriad.game.Faction;
 import com.myriad.game.LaneSystem;
 import com.myriad.game.MatchArena;
 import com.myriad.network.NetworkSetup;
+import com.myriad.network.RiftCrabMarker;
 import io.netty.buffer.Unpooled;
 import java.io.*;
 import java.nio.file.*;
@@ -121,10 +122,11 @@ public final class ArenaModesCheck {
                     new NetworkSetup.MinimapMarker(9, 0, 4271.5F, 204.5F, new UUID(0,0)),
                     new NetworkSetup.MinimapMarker(10, 2, 4128.5F, 96.5F, new UUID(0,0)));
             var payload = new NetworkSetup.MinimapSnapshotPayload(true, 4096.5F, .5F, 4447.5F, .5F,
-                    4447.5F, 255.5F, 4096.5F, 255.5F, List.of(), markers);
+                    4447.5F, 255.5F, 4096.5F, 255.5F, List.of(), markers, List.of(
+                            new RiftCrabMarker("pit", 4271.5F, 204.5F, RiftCrabMarker.Status.WAITING, 7200)));
             NetworkSetup.MinimapSnapshotPayload.STREAM_CODEC.encode(buf, payload);
             check(NetworkSetup.MinimapSnapshotPayload.STREAM_CODEC.decode(buf).equals(payload) && !buf.isReadable(),
-                    "Camp/boss/fountain coordinates roundtrip without protocol changes");
+                    "Camp/boss/fountain coordinates and fixed-crab schedules roundtrip");
         } finally { buf.release(); }
         int chunks = 0, sections = 0;
         if (args.length > 1 && args[1].equals("--terrain")) {

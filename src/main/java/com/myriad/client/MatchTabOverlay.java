@@ -59,11 +59,11 @@ public final class MatchTabOverlay {
     }
     private static void column(GuiGraphicsExtractor g,Font f,List<MatchTabPayload.Entry> es,int x,int y) {
         for(var e:es) {
-            g.text(f,f.plainSubstrByWidth(e.name(),155),x,y,0xFFF4F4F4);
-            g.text(f,e.kills()+" / "+e.deaths(),x+145,y,0xFFE2C587);
-            g.text(f,Component.translatable("tab.myriad.gold_short", e.gold()),x+184,y,0xFFFFD570);
+            g.text(f,f.plainSubstrByWidth(e.name(),116),x,y,0xFFF4F4F4);
+            g.text(f,f.plainSubstrByWidth("K/D/A "+e.kills()+"/"+e.deaths()+"/"+e.assists(),78),x+120,y,0xFFE2C587);
+            g.text(f,Component.translatable("tab.myriad.gold_short", e.gold()),x+142,y+11,0xFFFFD570);
             String character = e.character().isEmpty() ? "—" : Component.translatable("character.myriad."+e.character()).getString();
-            g.text(f,f.plainSubstrByWidth(character+" · Lv."+e.level(),216),x,y+11,0xFF9DB1C8); y+=25;
+            g.text(f,f.plainSubstrByWidth(character+" · Lv."+e.level(),137),x,y+11,0xFF9DB1C8); y+=25;
         }
     }
     private static void title(GuiGraphicsExtractor g,Font f,String s,int x,int y,int c) { g.text(f,s,x-f.width(s)/2,y,c); }

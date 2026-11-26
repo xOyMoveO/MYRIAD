@@ -29,10 +29,18 @@ public final class VanillaMeleeAttack {
     }
 
     private static boolean canStart(ServerPlayer player, PlayerData data) {
-        return ModState.isEnabled() && usesVanilla(CharacterType.byId(data.getCharacterId()))
-                && BasicAttackSystem.canAttackNow(player, data) && !AbilityRuntime.channeling(player)
-                && player.getAttackStrengthScale(.5f) >= 1 && data.getBuff("g1_stun") <= 0
-                && PlayerDataProvider.isInitialWeapon(player.getMainHandItem());
+        if (!ModState.isEnabled() || !usesVanilla(CharacterType.byId(data.getCharacterId()))
+                || !com.myriad.game.TrainingGround.canFight(player) || !player.isAlive() || player.isSpectator()
+                || !PlayerDataProvider.isInitialWeapon(player.getMainHandItem())) return false;
+        InputFailure reason = null;
+        if (data.getBuff("g1_stun") > 0) reason = InputFailure.STUN;
+        else if (AbilityRuntime.channeling(player) || com.myriad.character.ability.SkillChargeSystem.active(player))
+            reason = InputFailure.CHANNEL;
+        else if (!BasicAttackSystem.canAttackNow(player, data)) reason = InputFailure.LINK;
+        else if (player.getAttackStrengthScale(.5f) < 1) reason = InputFailure.RECOVERING;
+        if (reason == null) return true;
+        reason.send(player);
+        return false;
     }
 
     /** Intent only: recompute the selection from authoritative player state. */
@@ -44,7 +52,7 @@ public final class VanillaMeleeAttack {
                 || weapon.has(DataComponents.PIERCING_WEAPON) || player.cannotAttackWithItem(weapon, 5)) return;
         LivingEntity target = MeleeAssistTargeting.find(player, living -> BasicAttackAssist.canAssist(player, living));
         // Fabric invokes AttackEntityCallback at Player.attack, including for this entry point.
-        if (target == null) return;
+        if (target == null) { InputFailure.ATTACK_TARGET.send(player); return; }
         player.resetLastActionTime();
         player.attack(target);
         if (player.getAttackStrengthScale(0) == 0) {
@@ -54,11 +62,15 @@ public final class VanillaMeleeAttack {
 
     public static boolean prepare(ServerPlayer player,Entity raw){
         var data=PlayerDataProvider.get(player);
-        if(!canStart(player,data)||!(raw instanceof LivingEntity target)||!target.isAlive()||target==player
+        if(!canStart(player,data))return false;
+        if(!(raw instanceof LivingEntity target)||!target.isAlive()||target==player
                 ||!SkillTargets.hostile(player,target)
                 ||target instanceof net.minecraft.world.entity.player.Player victim&&(victim.isCreative()||victim.isSpectator())
                 ||!player.isWithinEntityInteractionRange(target,0)||!player.hasLineOfSight(target)
-                ||!VisionSystem.canSee(player,target)||target.isInvisibleTo(player))return false;
+                ||!VisionSystem.canSee(player,target)||target.isInvisibleTo(player)){
+            InputFailure.ATTACK_TARGET.send(player);
+            return false;
+        }
         // Player.onAttack() resets strength BEFORE hurtOrSimulate in Minecraft 26.2.
         STRENGTH.put(player,new Snapshot(target.getUUID(),player.level().getGameTime(),player.getAttackStrengthScale(.5f)));
         com.myriad.character.skills.shuo.ShuoCombat.basic(player);

@@ -192,6 +192,9 @@ public final class QueueLobby {
                     for (UUID id : queue.players.keySet()) sendOnline(server, id);
                 }
             }
+            if (clockChanged && manager.remakeView().active()) {
+                for (UUID id : manager.queuePickOrder()) sendOnline(server, id);
+            }
             if ((clockChanged || draftChanged) && phase == GameManager.Phase.PICKING && manager.isQueuedMatch()) {
                 for (var seat : draftSeats(manager)) sendOnline(server, seat.id());
             }
@@ -201,6 +204,10 @@ public final class QueueLobby {
         publishedTurn = turn;
         publishedPreparation = preparation;
         publishedSecond = second;
+    }
+
+    static void remakeChanged() {
+        lobbyChanged = true;
     }
 
     private static void sendOnline(MinecraftServer server, UUID id) {
@@ -303,6 +310,7 @@ public final class QueueLobby {
                     else manager.queueLock(player, request.value());
                 }
             }
+            case "remake" -> manager.requestRemake(player, request.value(), request.token());
             case "propose" -> {
                 if (before.canPropose() && request.token() == before.proposalToken() && validateArena(server)) {
                     Line queue = line(selected);
@@ -366,6 +374,8 @@ public final class QueueLobby {
         boolean draft = queuedMatch && manager.getPhase() == GameManager.Phase.PICKING;
         List<LobbyNetworking.Seat> seats = draft ? draftSeats(manager) : List.of();
         UUID picker = draft ? manager.queueCurrentPicker() : null;
+        var remake = queuedMatch ? manager.remakeView() : EarlyRemake.View.NONE;
+        boolean canRemake = remake.side() != null && remake.side() == manager.queueFaction(id);
         return new LobbyNetworking.Snapshot(active.id, member == null ? "" : mode.id,
                 queue.players.size(), mode.teamSize * 2, position,
                 member == null ? 0 : (int) Math.max(0, (now - member.joinedAt) / 20),
@@ -375,7 +385,9 @@ public final class QueueLobby {
                 preselected == null ? "" : preselected, queuedMatch, TrainingGround.isSparring(player),
                 canPropose ? queue.proposalToken : 0, seats, picker == null ? "" : picker.toString(),
                 draft ? secondsRemaining(manager.queueDeadline(), now) : -1,
-                draft ? secondsRemaining(manager.queuePreparationDeadline(), now) : -1);
+                draft ? secondsRemaining(manager.queuePreparationDeadline(), now) : -1,
+                Math.min(20, secondsRemaining(remake.readyAt(), now)), secondsRemaining(remake.offerUntil(), now),
+                canRemake ? remake.offerId() : "");
     }
 
     private static List<LobbyNetworking.Seat> draftSeats(GameManager manager) {

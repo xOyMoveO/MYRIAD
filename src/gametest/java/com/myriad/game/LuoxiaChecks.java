@@ -9,6 +9,8 @@ import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.character.skills.luoxia.LuoxiaBow;
 import com.myriad.combat.BasicAttackSystem;
 import com.myriad.network.AbilityVfxPayload;
+import com.myriad.network.LuoxiaBowPosePayload;
+import com.myriad.network.LuoxiaBowPosePayload.Phase;
 import com.myriad.player.PlayerDataProvider;
 import com.myriad.registry.ModItems;
 import java.util.Map;
@@ -36,6 +38,12 @@ final class LuoxiaChecks {
                     && FirstGroupSkills.resolve(role,3,ranks)==graph.get(r)
                     && FirstGroupSkills.selected("luoxia",0,ranks)==graph.get(p), "All eight independent branch combinations");
         }
+        h.assertTrue(LuoxiaBow.NORMAL_WORK == 11 && Math.ceil(11 / LuoxiaBow.drawRate(.7, 1)) == 11
+                && Math.ceil(11 / LuoxiaBow.drawRate(1.05, 1)) == 8
+                && Math.ceil(11 / LuoxiaBow.drawRate(1.4, 1)) == 6
+                && LuoxiaBow.drawRate(1.4, .5) == 1, "Baseline, haste and local time apply once");
+        for (int rank = 1; rank <= 5; rank++)
+            h.assertTrue(Math.abs(LuoxiaBow.minimumWork(rank) - (11 - .4 * rank)) < .00001, "Quick draw rank " + rank);
         var uniqueArrows = new java.util.HashSet<java.util.List<AbilityVfxGeometry.Quad>>();
         var direction = new Vec3(1,2,-3).normalize();
         for (int shape = 0; shape < 8; shape++) {
@@ -55,9 +63,13 @@ final class LuoxiaChecks {
         TrainingMode.setNoMana(false); TrainingMode.setNoCooldown(false);
         var level = h.getLevel();
         var p = (ServerPlayer)h.makeMockServerPlayer(GameType.SURVIVAL);
+        var poses = new java.util.ArrayList<LuoxiaBowPosePayload>();
         p.connection = new ServerGamePacketListenerImpl(level.getServer(), new Connection(PacketFlow.SERVERBOUND), p,
                 CommonListenerCookie.createInitial(p.getGameProfile(),false)) {
-            @Override public void send(net.minecraft.network.protocol.Packet<?> packet) {}
+            @Override public void send(net.minecraft.network.protocol.Packet<?> packet) {
+                if (packet instanceof net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket cp
+                        && cp.payload() instanceof LuoxiaBowPosePayload pose) poses.add(pose);
+            }
         };
         p.connection.handleAcceptPlayerLoad(new net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket());
         var origin = Vec3.atBottomCenterOf(h.absolutePos(new BlockPos(4,3,4)));
@@ -76,20 +88,30 @@ final class LuoxiaChecks {
         var previous = level.getBlockState(wall);
         boolean[] done = {false};
         float[] before = new float[2];
-        for (int tick = 1; tick <= 85; tick++) {
+        for (int tick = 1; tick <= 178; tick++) {
             final int i = tick;
             h.runAfterDelay(tick, () -> {
                 if (done[0]) return;
                 try {
                     if (i==1 || i==7 || i==23) BasicAttackSystem.tryAttack(p,LuoxiaBow.PRESS);
-                    if (i==3 || i==13 || i==29) BasicAttackSystem.tryAttack(p,LuoxiaBow.RELEASE);
-                    if (i==5) h.assertTrue(target.getHealth()==initialHealth && LuoxiaBow.remaining(p)==0, "Premature release never attacks or starts recovery");
+                    if (i==3 || i==18 || i==34) BasicAttackSystem.tryAttack(p,LuoxiaBow.RELEASE);
+                    if (i==5) h.assertTrue(target.getHealth()==initialHealth && !LuoxiaBow.drawing(p), "Premature release never attacks or starts recovery");
                     if (i==6) level.setBlockAndUpdate(wall, Blocks.STONE.defaultBlockState());
                     if (i==19) {
                         h.assertTrue(target.getHealth()==initialHealth, "Solid wall stops arrows before a target");
                         level.setBlockAndUpdate(wall, previous);
                     }
-                    if (i==36) {
+                    if (i==35) {
+                        LuoxiaBow.input(p, LuoxiaBow.PRESS, 10);
+                        h.assertTrue(LuoxiaBow.drawing(p), "Can draw on the tick after a release");
+                        LuoxiaBow.input(p, LuoxiaBow.RELEASE, 9);
+                        LuoxiaBow.input(p, LuoxiaBow.PRESS, 10);
+                        h.assertTrue(LuoxiaBow.drawing(p), "Stale release and duplicate press preserve the active draw");
+                        LuoxiaBow.input(p, LuoxiaBow.CANCEL, 10);
+                        LuoxiaBow.input(p, LuoxiaBow.RELEASE, 10);
+                        h.assertTrue(!LuoxiaBow.drawing(p), "A cancelled gesture cannot release");
+                    }
+                    if (i==39) {
                         h.assertTrue(target.getHealth()<initialHealth && data.getMana()==700, "A charged basic attack is free and hits along its flight");
                         before[0] = target.getHealth();
                     }
@@ -102,9 +124,69 @@ final class LuoxiaChecks {
                     }
                     if (i==61) SkillSystem.cast(p,CharacterType.SLOT_R);
                     if (i==74) p.setYRot(90);
+                    if (i==88) {
+                        data.setSkillLevel(graph.get(7).getId(), 0);
+                        data.setSkillLevel(graph.get(6).getId(), 1);
+                        TrainingMode.setNoCooldown(true);
+                        SkillSystem.cast(p, CharacterType.SLOT_R);
+                    }
+                    if (i==122) {
+                        long[] waves = poses.stream().filter(s -> s.skill()==6 && s.phase()==Phase.RELEASE)
+                                .mapToLong(LuoxiaBowPosePayload::tick).toArray();
+                        h.assertTrue(waves.length==3 && waves[1]-waves[0]==12 && waves[2]-waves[1]==12
+                                && poses.stream().anyMatch(s -> s.skill()==6 && s.phase()==Phase.RELOAD),
+                                "Three fan releases and real reloads at twelve-action-tick intervals");
+                        data.setSkillLevel(graph.get(2).getId(), 1);
+                        SkillSystem.cast(p, CharacterType.SLOT_Q);
+                    }
+                    if (i==126) {
+                        LuoxiaBow.input(p, LuoxiaBow.PRESS, 11);
+                        data.setSkillLevel(graph.get(3).getId(), 1);
+                        SkillSystem.cast(p, CharacterType.SLOT_W);
+                        h.assertTrue(LuoxiaBow.drawing(p), "Slant Step preserves the nocked basic arrow");
+                    }
+                    if (i==130) p.getAttribute(com.myriad.registry.ModAttributes.ATTACK_SPEED).setBaseValue(1.4);
+                    if (i==134) {
+                        LuoxiaBow.input(p, LuoxiaBow.RELEASE, 11);
+                        LuoxiaBow.input(p, LuoxiaBow.RELEASE, 11);
+                        h.assertTrue(poses.stream().filter(s -> s.token()==11 && s.skill()<2
+                                && s.phase()==Phase.RELEASE).count()==1, "Speed changed mid-draw without losing work or duplicating the shot");
+                    }
+                    if (i==143) {
+                        LuoxiaBow.input(p, LuoxiaBow.PRESS, 12);
+                        data.setBuff("g1_stun", 3);
+                    }
+                    if (i==144) {
+                        h.assertTrue(!LuoxiaBow.drawing(p), "Stun clears an unfinished draw");
+                        data.setBuff("g1_stun", 0);
+                        data.setSkillLevel(graph.get(5).getId(), 1);
+                        SkillSystem.cast(p, CharacterType.SLOT_E);
+                    }
+                    if (i==148) data.setBuff("g1_stun", 3);
+                    if (i==152) {
+                        h.assertTrue(poses.stream().anyMatch(s -> s.skill()==5 && s.phase()==Phase.CANCEL)
+                                && poses.stream().noneMatch(s -> s.skill()==5 && s.phase()==Phase.RELEASE),
+                                "Interrupted Last Sun closes the pose before any release");
+                        data.setBuff("g1_stun", 0);
+                        SkillSystem.cast(p, CharacterType.SLOT_E);
+                    }
                     AbilityRuntime.tick(p);
                     if (i==85) {
                         h.assertTrue(before[1]-target.getHealth() >= 59 && data.getMana()==480, "Ultimate stays on the locked line despite turn");
+                        long[] shots = poses.stream().filter(s -> s.skill()==4 && s.phase()==Phase.RELEASE)
+                                .mapToLong(LuoxiaBowPosePayload::tick).toArray();
+                        h.assertTrue(shots.length==3 && shots[1]-shots[0]==5 && shots[2]-shots[1]==5,
+                                "Feather Burst pose matches three distinct release ticks");
+                        var locked = poses.stream().filter(s -> s.skill()==7 && s.phase()==Phase.LOCK).findFirst().orElseThrow();
+                        var loose = poses.stream().filter(s -> s.skill()==7 && s.phase()==Phase.RELEASE).findFirst().orElseThrow();
+                        h.assertTrue(locked.yaw()==loose.yaw() && locked.pitch()==loose.pitch()
+                                && loose.tick()-locked.tick()==7, "The arrow uses the authority's locked aim");
+                    }
+                    if (i==178) {
+                        h.assertTrue(poses.stream().filter(s -> s.skill()==5 && s.phase()==Phase.RELEASE).count()==1
+                                && poses.stream().filter(s -> s.skill()==2 && s.phase()==Phase.RELEASE).count()==1
+                                && poses.stream().anyMatch(s -> s.skill()==3 && s.phase()==Phase.STEP),
+                                "Heavy arrow, instant mark and actual step pose events");
                         done[0] = true;
                         clean(p,h,target,wall,previous,enabled,training,mana,cooldown);
                         h.succeed();

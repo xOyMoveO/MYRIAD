@@ -37,14 +37,14 @@ public final class BasicAttackSystem {
             com.myriad.character.skills.luoxia.LuoxiaBow.input(attacker, targetId);
             return;
         }
-        if (com.myriad.character.ability.AbilityRuntime.channeling(attacker)
-                || PlayerDataProvider.get(attacker).getBuff("g1_stun") > 0) return;
         if (!ModState.isEnabled()) return;
         PlayerData data = PlayerDataProvider.get(attacker);
         if (data == null || data.getCharacterId() == null || data.getCharacterId().isBlank()) return;
         if (!(attacker.level() instanceof ServerLevel level)) return;
         CharacterType role = CharacterType.byId(data.getCharacterId());
         if (role == null || !canAttackNow(attacker, data)) return;
+        if (data.getBuff("g1_stun") > 0) { InputFailure.STUN.send(attacker); return; }
+        if (com.myriad.character.ability.AbilityRuntime.channeling(attacker)) { InputFailure.CHANNEL.send(attacker); return; }
         if(role==CharacterType.YIKE){com.myriad.character.skills.yike.YikeBasicAttack.tryFire(attacker);return;}
         if (VanillaMeleeAttack.usesVanilla(role)) return;
         // Retained ranged heroes fire through MagicBullet; custom target-hit packets cannot deal damage.
@@ -84,7 +84,7 @@ public final class BasicAttackSystem {
     }
 
     public static int cooldownRemaining(ServerPlayer player) {
-        if("luoxia".equals(PlayerDataProvider.get(player).getCharacterId()))return com.myriad.character.skills.luoxia.LuoxiaBow.remaining(player);
+        if("luoxia".equals(PlayerDataProvider.get(player).getCharacterId()))return 0;
         if(VanillaMeleeAttack.usesVanilla(CharacterType.byId(PlayerDataProvider.get(player).getCharacterId())))
             return Math.max(0,(int)Math.ceil((1-player.getAttackStrengthScale(0))*player.getCurrentItemAttackStrengthDelay()));
         if("yike".equals(PlayerDataProvider.get(player).getCharacterId()))return com.myriad.character.skills.yike.YikeBasicAttack.remaining(player);
@@ -94,7 +94,7 @@ public final class BasicAttackSystem {
     }
 
     public static int cooldownTotal(ServerPlayer player) {
-        if("luoxia".equals(PlayerDataProvider.get(player).getCharacterId()))return com.myriad.character.skills.luoxia.LuoxiaBow.cooldownTotal();
+        if("luoxia".equals(PlayerDataProvider.get(player).getCharacterId()))return 0;
         if(VanillaMeleeAttack.usesVanilla(CharacterType.byId(PlayerDataProvider.get(player).getCharacterId())))
             return Math.max(1,(int)Math.ceil(player.getCurrentItemAttackStrengthDelay()));
         if("yike".equals(PlayerDataProvider.get(player).getCharacterId()))return com.myriad.character.skills.yike.YikeBasicAttack.total(player);

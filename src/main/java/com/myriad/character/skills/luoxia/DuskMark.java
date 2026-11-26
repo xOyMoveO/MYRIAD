@@ -23,6 +23,7 @@ final class DuskMark extends LuoxiaSkill {
     DuskMark(Definition definition) { super(definition); }
 
     @Override public void release(Cast c) {
+        LuoxiaBowPose.skill(c, com.myriad.network.LuoxiaBowPosePayload.Phase.RELEASE, 1, c.player.getLookAngle());
         LuoxiaVfx.shot(c, false, 1.18f);
         LuoxiaArrow.launch(c, c.player.getLookAngle(), 20, 1.6, LuoxiaArrow.Shape.MARK, false,
                 target -> { c.damage(target, ARROW.value(c), DamageCalc.Kind.PHYSICAL); return true; });

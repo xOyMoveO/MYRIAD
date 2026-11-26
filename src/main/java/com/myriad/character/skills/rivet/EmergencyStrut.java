@@ -23,7 +23,7 @@ public final class EmergencyStrut extends RivetSkill {
         recipients.add(c.player);
         for (var target : recipients) {
             ModShieldSystem.grantMaxGroup(target, "rivet_emergency_strut/" + c.player.getUUID(),
-                    "rivet_emergency_strut", c.value(95, 22, .5f), 40);
+                    "rivet_emergency_strut", c.value(95, 22, .5f), 40, c.player.getUUID());
             targets.add(target);
             RivetVfx.shield(c, target, .75);
         }

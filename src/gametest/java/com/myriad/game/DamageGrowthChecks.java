@@ -173,8 +173,8 @@ final class DamageGrowthChecks {
                 case SWORD_HEART -> primeSwordHeart(h, trial);
             }
         }
-        if (tick == 17 && trial.attack() == Attack.FULL_DRAW) BasicAttackSystem.tryAttack(actor, LuoxiaBow.RELEASE);
-        if (trial.respecAfterLaunch() && tick == (trial.attack() == Attack.FULL_DRAW ? 17 : 1)) {
+        if (tick == 21 && trial.attack() == Attack.FULL_DRAW) BasicAttackSystem.tryAttack(actor, LuoxiaBow.RELEASE);
+        if (trial.respecAfterLaunch() && tick == (trial.attack() == Attack.FULL_DRAW ? 21 : 1)) {
             h.assertTrue(trial.target().getHealth() == HEALTH, "Damage is still in flight: " + trial.attack());
             applyBuild(actor, new Build(25, 29));
             buff(actor, ModAttributes.SPELL_POWER, 60);

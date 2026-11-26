@@ -81,9 +81,10 @@ public class GameManager {
     /** 十秒连续击杀窗口，用于一杀至五杀的顶栏播报与语音。 */
     private record MultiKill(int count, long lastKillTick) { }
     private final Map<UUID, MultiKill> multiKills = new HashMap<>();
-    /** 当局 K/D，仅用于本局 Tab 展示。 */
+    /** 当局 K/D/A，按锁定席位保存。 */
     private final Map<UUID, Integer> matchKills = new HashMap<>();
     private final Map<UUID, Integer> matchDeaths = new HashMap<>();
+    private MatchAssists assists = new MatchAssists();
     private static final int SMALL_VEIN_CAPTURE_TICKS = 120;
     private static final int LARGE_VEIN_CAPTURE_TICKS = 200;
     private static final int SMALL_VEIN_RADIUS = 8;
@@ -125,6 +126,7 @@ public class GameManager {
     private final Map<UUID, String> preselected = new HashMap<>();
     private final Set<UUID> invalidatedPreselection = new HashSet<>();
     private UUID queueRound;
+    private EarlyRemake earlyRemake = new EarlyRemake();
     private record OfflineStats(int level, int gold) {}
     private final Map<UUID, OfflineStats> offlineStats = new HashMap<>();
     private long pickToken;
@@ -224,6 +226,49 @@ public class GameManager {
     public long queueDeadline() { return currentPicker() == null ? -1 : pickDeadlineTick; }
     public long queuePreparationDeadline() { return pickCountdownEndTick; }
 
+    EarlyRemake.View remakeView() {
+        return phase == Phase.PLAYING && isQueuedMatch() ? earlyRemake.view() : EarlyRemake.View.NONE;
+    }
+
+    /** Rebuild the online snapshot on the server thread, including immediately before accepting a request. */
+    private boolean refreshRemake(long now) {
+        if (!isQueuedMatch() || phase != Phase.PLAYING) return false;
+        var previous = earlyRemake.view();
+        var current = earlyRemake.evaluate(queueRound, now, matchStartTime, factions,
+                id -> server.getPlayerList().getPlayer(id) != null,
+                !matchKills.isEmpty() || LaneSystem.hasDestroyedTower(matchStartTime));
+        if (current.automatic()) {
+            finishRemake();
+            return true;
+        }
+        if (!previous.equals(current)) {
+            QueueLobby.remakeChanged();
+            if (previous.active() && (!current.active() || !previous.offerId().isEmpty()
+                    && !previous.offerId().equals(current.offerId())))
+                broadcast(Component.translatable("lobby.myriad.remake.cancelled"));
+        }
+        return false;
+    }
+
+    void requestRemake(ServerPlayer player, String offerId, long queueToken) {
+        if (phase != Phase.PLAYING || !isQueuedMatch() || !isParticipant(player.getUUID())
+                || server.getPlayerList().getPlayer(player.getUUID()) != player) return;
+        if (refreshRemake(server.overworld().getGameTime())) return;
+        var view = earlyRemake.view();
+        if (!offerId.isEmpty() && offerId.equals(view.offerId()) && queueFaction(player.getUUID()) == view.side()
+                && QueueLobby.snapshot(player).queueToken() == queueToken) finishRemake();
+    }
+
+    private void finishRemake() {
+        List<ServerPlayer> players = matchPlayers();
+        broadcast(Component.translatable("lobby.myriad.remake.passed"));
+        resetToLobby(server, true);
+        for (var player : players) {
+            QueueLobby.sync(player);
+            com.myriad.network.Packets.sendToPlayer(player, new com.myriad.network.RemadePayload());
+        }
+    }
+
     private boolean countsForMatch(ServerPlayer player) {
         return isQueuedMatch() ? factions.containsKey(player.getUUID()) : !TrainingGround.isTraining(player);
     }
@@ -232,8 +277,11 @@ public class GameManager {
         return server.getPlayerList().getPlayers().stream().filter(this::countsForMatch).toList();
     }
 
-    public int killsOf(ServerPlayer player) { return matchKills.getOrDefault(player.getUUID(), 0); }
-    public int deathsOf(ServerPlayer player) { return matchDeaths.getOrDefault(player.getUUID(), 0); }
+    public MatchAssists assists() { return assists; }
+    public int killsOf(UUID id) { return matchKills.getOrDefault(id, 0); }
+    public int killsOf(ServerPlayer player) { return killsOf(player.getUUID()); }
+    public int deathsOf(UUID id) { return matchDeaths.getOrDefault(id, 0); }
+    public int deathsOf(ServerPlayer player) { return deathsOf(player.getUUID()); }
 
     /** 记录服务器引用，供广播使用 */
     public void setServer(MinecraftServer server) {
@@ -247,6 +295,8 @@ public class GameManager {
     }
 
     public void onPlayerJoin(ServerPlayer player) {
+        if (phase == Phase.PLAYING && isQueuedMatch() && isParticipant(player.getUUID()))
+            earlyRemake.reconnect(player.getUUID());
         if (pendingRoundReset.remove(player.getUUID())) {
             if (ModState.isEnabled()) {
                 PlayerDataProvider.resetForHostSession(player);
@@ -319,7 +369,11 @@ public class GameManager {
     }
 
     public void onPlayerQuit(ServerPlayer player) {
-        if (isQueuedMatch() && isParticipant(player.getUUID())) rememberPlayerStats(player);
+        if (isQueuedMatch() && isParticipant(player.getUUID())) {
+            rememberPlayerStats(player);
+            if (phase == Phase.PLAYING)
+                earlyRemake.disconnect(player.getUUID(), server.overworld().getGameTime(), matchStartTime);
+        }
         // Keep the player's faction, character reservation and K/D for reconnecting.
         if (phase == Phase.WAITING) factions.remove(player.getUUID());
     }
@@ -541,6 +595,7 @@ public class GameManager {
             return;
         }
         if (phase == Phase.PLAYING) {
+            if (refreshRemake(gameTime)) return;
             enforcePlayingModes(server);
             tickSpiritVein(server, gameTime);
             tickPassiveGold(server, gameTime);
@@ -683,6 +738,7 @@ public class GameManager {
         }
         broadcastLineups(players);
         broadcastMatchStarted();
+        refreshRemake(matchStartTime);
         // 通知客户端关闭选人界面
         for (ServerPlayer p : players) {
             com.myriad.network.Packets.sendToPlayer(p,
@@ -881,6 +937,12 @@ public class GameManager {
     /** 记录一次实际发生的英雄死亡；击杀奖励与“不扣命”效果不影响 K/D 统计。 */
     public void recordHeroDeath(ServerPlayer victim, net.minecraft.world.entity.Entity killerEntity) {
         if (phase != Phase.PLAYING || !countsForMatch(victim) || factionOf(victim) == null) return;
+        if (isQueuedMatch()) {
+            UUID killerId = killerEntity instanceof ServerPlayer hero && countsForMatch(hero)
+                    && factionOf(hero) != null && factionOf(hero) != factionOf(victim) ? hero.getUUID() : null;
+            assists.death(victim.getUUID(), killerId, victim.getMaxHealth(), victim.level().getGameTime(),
+                    id -> factions.get(id) != null && factions.get(id) == factions.get(killerId));
+        }
         matchDeaths.merge(victim.getUUID(), 1, Integer::sum);
         multiKills.remove(victim.getUUID());
         com.myriad.player.PlayerNames.refresh(victim);
@@ -902,6 +964,7 @@ public class GameManager {
         multiKills.clear();
         matchKills.clear();
         matchDeaths.clear();
+        assists = new MatchAssists();
         heroDamage.clear();
         damageTaken.clear();
         healingReceived.clear();
@@ -1160,7 +1223,7 @@ public class GameManager {
                     player == null ? queueName(id) : player.getName().getString(),
                     faction == null ? "" : faction.getName(), character == null ? "" : character,
                     data == null ? last.level() : data.getLevel(), matchKills.getOrDefault(id, 0),
-                    matchDeaths.getOrDefault(id, 0), data == null ? Math.max(500, last.gold()) : data.getMatchGoldEarned(),
+                    matchDeaths.getOrDefault(id, 0), assists.total(id), data == null ? Math.max(500, last.gold()) : data.getMatchGoldEarned(),
                     (int)Math.round(heroDamage.getOrDefault(id, 0.0)), (int)Math.round(damageTaken.getOrDefault(id, 0.0)),
                     (int)Math.round(healingReceived.getOrDefault(id, 0.0))));
         }
@@ -1237,6 +1300,7 @@ public class GameManager {
         preselected.clear();
         invalidatedPreselection.clear();
         queueRound = null;
+        earlyRemake = new EarlyRemake();
         offlineStats.clear();
         pickToken = 0;
         for (ServerPlayer player : participants) {

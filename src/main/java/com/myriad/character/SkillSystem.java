@@ -4,6 +4,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 import com.myriad.Myriad;
+import com.myriad.combat.InputFailure;
 import com.myriad.game.GameManager;
 import com.myriad.game.TrainingGround;
 import com.myriad.game.TrainingMode;
@@ -56,10 +57,10 @@ public final class SkillSystem {
                 com.myriad.character.ability.AbilityRuntime.request(player, data, ability);
             return;
         }
-        if (com.myriad.character.ability.SkillChargeSystem.active(player)) return;
-        if (data.getBuff("g1_stun") > 0) return;
+        if (com.myriad.character.ability.SkillChargeSystem.active(player)) { InputFailure.CHANNEL.send(player); return; }
+        if (data.getBuff("g1_stun") > 0) { InputFailure.STUN.send(player); return; }
         if (com.myriad.combat.SilenceSystem.isSilenced(player)) {
-            player.sendSystemMessage(Component.translatable("message.myriad.silenced"));
+            InputFailure.SILENCE.send(player);
             return;
         }
         Skill skill = type.skill(slot);
@@ -68,7 +69,7 @@ public final class SkillSystem {
         }
         // 未学习（等级 0）：加点后才可释放（训练模式为测试沙盒，不受限）
         if (!training && data.skillLevel(skill.getId()) <= 0) {
-            player.sendSystemMessage(Component.translatable("message.myriad.skill_not_learned"));
+            InputFailure.UNLEARNED.send(player);
             return;
         }
         boolean noCd = TrainingMode.isNoCooldown(player);
@@ -79,8 +80,7 @@ public final class SkillSystem {
                 && com.myriad.character.skills.chixiao.ChiXiaoSkills.canReturn(player);
         int cd = data.getCooldown(skill.getId());
         if (!chixiaoReturn && !noCd && cd > 0) {
-            int seconds = (cd + 19) / 20;
-            player.sendSystemMessage(Component.translatable("message.myriad.skill_cd", seconds));
+            InputFailure.COOLDOWN.send(player);
             return;
         }
         // 法力（训练模式无限蓝开关开启时跳过）
@@ -100,12 +100,12 @@ public final class SkillSystem {
         }
         if (type == CharacterType.YUNSHENG
                 && !com.myriad.character.skills.yunsheng.YunShengSkills.hasTarget(player, slot)) {
-            player.sendSystemMessage(Component.translatable("message.myriad.no_skill_target"));
+            InputFailure.TARGET.send(player);
             return;
         }
 
         if (!chixiaoReturn && !swordUser && !noMana && data.getMana() < skill.getManaCost()) {
-            player.sendSystemMessage(Component.translatable("message.myriad.not_enough_mana"));
+            InputFailure.MANA.send(player);
             return;
         }
         skill.cast(player, data);

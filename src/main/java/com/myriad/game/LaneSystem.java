@@ -108,6 +108,7 @@ public final class LaneSystem {
         double attackRecovery = 36;
         transient long lastRecoveryTick = Long.MIN_VALUE;
         transient UUID towerLockTarget;
+        transient ServerPlayer warnedHero;
         /** 首名在塔下伤害友方英雄的敌方英雄；有效期间覆盖普通小兵仇恨。 */
         transient UUID towerHeroPriorityTarget;
         transient long towerLockStarted;
@@ -162,6 +163,11 @@ public final class LaneSystem {
     public static List<Lane> enabledLanes() { return List.copyOf(ENABLED_LANES); }
     public static List<Integer> enabledTowerTiers() { return List.copyOf(ENABLED_TOWER_TIERS); }
     private static final java.util.Set<String> DESTROYED_TOWERS = new java.util.HashSet<>();
+
+    static boolean hasDestroyedTower(long matchStart) {
+        return activeMatchStart == matchStart && !DESTROYED_TOWERS.isEmpty();
+    }
+
     private static String towerId(Faction faction,Lane lane,int tier){return faction.getName()+"/"+lane.id+"/"+tier;}
     private static boolean siegeUnlocked(Faction faction,Lane lane){
         if (!ENABLED_LANES.contains(lane)) return false;
@@ -462,18 +468,37 @@ public final class LaneSystem {
         if (!validTowerLockTarget(tower, state, target)) {
             state.towerLockTarget = null;
             target = priority;
-            if (target == null) target = nearestEnemyMinion(level, tower, state.faction, TOWER_ATTACK_RANGE);
-            if (target == null) target = nearestEnemyPlayer(level, tower, state.faction, TOWER_ATTACK_RANGE);
-            if (target == null) return;
+            if (target == null && state.kind == Kind.CRYSTAL) {
+                target = nearestEnemyMinion(level, tower, state.faction, TOWER_ATTACK_RANGE);
+                if (target == null) target = nearestEnemyPlayer(level, tower, state.faction, TOWER_ATTACK_RANGE);
+            } else if (target == null) {
+                target = nearest(level, tower, TOWER_ATTACK_RANGE, candidate -> {
+                    var minion = UNITS.get(candidate.getUUID());
+                    return minion != null && !minion.tower() && validTowerLockTarget(tower, state, candidate);
+                });
+                if (target == null) target = nearest(level, tower, TOWER_ATTACK_RANGE,
+                        candidate -> candidate instanceof ServerPlayer && validTowerLockTarget(tower, state, candidate));
+            }
+            if (target == null) {
+                warnTowerTarget(state, null);
+                return;
+            }
             state.towerLockTarget = target.getUUID();
             state.towerLockStarted = now;
-            level.playSound(null, tower.getX(), tower.getY(), tower.getZ(), SoundEvents.BEACON_ACTIVATE,
-                    SoundSource.HOSTILE, .45F, state.kind == Kind.CRYSTAL ? 1.25F : 1.0F);
+            if (state.kind == Kind.CRYSTAL) level.playSound(null, tower.getX(), tower.getY(), tower.getZ(),
+                    SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, .45F, 1.25F);
         }
+        Vec3 aim = state.kind == Kind.CRYSTAL ? target.getBoundingBox().getCenter() : TowerSight.visibleBodyPoint(tower, target);
+        if (aim == null) {
+            state.towerLockTarget = null;
+            state.towerHeroPriorityTarget = null;
+            warnTowerTarget(state, null);
+            return;
+        }
+        warnTowerTarget(state, target);
         float lockProgress = Math.clamp((now - state.towerLockStarted) / (float) TOWER_LOCK_TICKS, 0.0F, 1.0F);
         if ((now - state.towerLockStarted) % 2 == 0) {
-            spawnTowerLockBeam(level, tower.position().add(0, 7, 0),
-                    target.getBoundingBox().getCenter(), state.faction, lockProgress);
+            spawnTowerLockBeam(level, TowerSight.muzzle(tower), aim, state.faction, lockProgress);
         }
         if (now - state.towerLockStarted < TOWER_LOCK_TICKS) return;
         state.towerLockTarget = null;
@@ -498,8 +523,7 @@ public final class LaneSystem {
         }
         com.myriad.combat.NpcCombat.towerHit(target, tower, damage, .04F,
                 com.myriad.combat.DamageCalc.Kind.PHYSICAL);
-        spawnTowerLockBeam(level, tower.position().add(0, 7, 0),
-                target.getBoundingBox().getCenter(), state.faction, 1.0F);
+        spawnTowerLockBeam(level, TowerSight.muzzle(tower), aim, state.faction, 1.0F);
         level.playSound(null, tower.getX(), tower.getY(), tower.getZ(), SoundEvents.GUARDIAN_ATTACK,
                 SoundSource.HOSTILE, .8F, state.towerTier == 3 ? .75F : 1.0F);
     }
@@ -507,7 +531,23 @@ public final class LaneSystem {
     private static boolean validTowerLockTarget(Mob tower, UnitState state, LivingEntity target) {
         return target != null && com.myriad.combat.NpcCombat.canTarget(target)
                 && factionOf(target) != null && factionOf(target) != state.faction
-                && tower.distanceToSqr(target) <= TOWER_ATTACK_RANGE * TOWER_ATTACK_RANGE;
+                && tower.distanceToSqr(target) <= TOWER_ATTACK_RANGE * TOWER_ATTACK_RANGE
+                && (state.kind == Kind.CRYSTAL || (!(target instanceof ServerPlayer hero)
+                    || VisionSystem.visibleToTower(tower, state.faction, hero)) && TowerSight.visibleBodyPoint(tower, target) != null);
+    }
+
+    private static void warnTowerTarget(UnitState state, LivingEntity target) {
+        if (state.kind != Kind.TOWER) return;
+        var hero = target instanceof ServerPlayer player ? player : null;
+        if (state.warnedHero == hero) return;
+        int id = state.entity.getId();
+        if (state.warnedHero != null && !state.warnedHero.isRemoved()) {
+            com.myriad.network.Packets.sendToPlayer(state.warnedHero, new com.myriad.network.TowerLockPayload(id, false));
+        }
+        state.warnedHero = hero;
+        if (hero != null) {
+            com.myriad.network.Packets.sendToPlayer(hero, new com.myriad.network.TowerLockPayload(id, true));
+        }
     }
 
     /**
@@ -525,7 +565,7 @@ public final class LaneSystem {
             if (state.kind != Kind.TOWER || state.faction != defender || tower == null || !tower.isAlive()
                     || tower.distanceToSqr(victim) > TOWER_ATTACK_RANGE * TOWER_ATTACK_RANGE
                     || tower.distanceToSqr(attacker) > TOWER_ATTACK_RANGE * TOWER_ATTACK_RANGE
-                    || !NpcNavigation.visible(tower, attacker)) continue;
+                    || !validTowerLockTarget(tower, state, attacker)) continue;
             LivingEntity priority = state.towerHeroPriorityTarget == null ? null
                     : tower.level().getEntity(state.towerHeroPriorityTarget) instanceof LivingEntity living ? living : null;
             if (validTowerLockTarget(tower, state, priority)) continue;
@@ -538,8 +578,7 @@ public final class LaneSystem {
             state.towerHeroPriorityTarget = attacker.getUUID();
             state.towerLockTarget = attacker.getUUID();
             state.towerLockStarted = now;
-            tower.level().playSound(null, tower.getX(), tower.getY(), tower.getZ(), SoundEvents.BEACON_ACTIVATE,
-                    SoundSource.HOSTILE, .55F, 1.12F);
+            warnTowerTarget(state, attacker);
         }
     }
 
@@ -1024,6 +1063,10 @@ public final class LaneSystem {
 
     /** 兵线单位/塔死亡奖励与状态回收。 */
     public static void onDeath(LivingEntity entity, Entity killerEntity) {
+        onDeath(entity, killerEntity, false);
+    }
+
+    public static void onDeath(LivingEntity entity, Entity killerEntity, boolean administrativeRemoval) {
         UnitState state = UNITS.remove(entity.getUUID());
         if (state == null) return;
         if (entity.level() instanceof ServerLevel level) removeVisual(level, state);
@@ -1053,30 +1096,52 @@ public final class LaneSystem {
                         state.faction.displayName(), Component.translatable("lane.myriad." + state.lane.id),
                         state.towerTier, killerFaction.displayName(), reward));
             }
-        } else if (killerEntity instanceof ServerPlayer killer) {
-            if (killerFaction != null && killerFaction != state.faction) rewardMinion(killer, entity, state, true);
-        } else if (entity.level() instanceof ServerLevel level) {
-            for (ServerPlayer player : level.players()) {
-                Faction faction = factionOf(player);
-                if (faction != null && faction != state.faction && player.isAlive() && !player.isSpectator()
-                        && player.distanceToSqr(entity) <= 144) rewardMinion(player, entity, state, false);
-            }
+        } else if (!administrativeRemoval && entity.level() instanceof ServerLevel level
+                && (killerFaction == null || killerFaction != state.faction)) {
+            distributeMinionReward(level, entity, state, killerEntity);
         }
     }
 
-    private static void rewardMinion(ServerPlayer killer, LivingEntity entity, UnitState state, boolean lastHit) {
-            PlayerData data = PlayerDataProvider.get(killer);
-            if (data != null) {
-                int gold = minionReward(state.kind==Kind.MAGIC?65:state.kind==Kind.SIEGE?40:state.ranged() ? 18 : 12, lastHit, false);
-                int xp = minionReward(state.kind==Kind.SIEGE?50:state.ranged() ? 24 : 18, lastHit, true);
-                gold=MatchBalance.farmReward(killer,gold,false);
-                xp=MatchBalance.farmReward(killer,xp,true);
-                gold=GlobalBalance.goldIncome(gold);
-                data.addGold(gold);
-                LevelSystem.addXp(killer, data, xp);
-                com.myriad.network.RewardFloatPayload.send(killer, entity, gold, xp);
-                PlayerDataProvider.syncToClient(killer);
-            }
+    private enum MinionCredit { LAST_HIT, TEAMMATE, NON_PLAYER }
+
+    private static void distributeMinionReward(ServerLevel level, LivingEntity minion, UnitState state, Entity source) {
+        var match = GameManager.get();
+        if (match == null) return;
+        boolean queuedBattle = match.isQueuedMatch() && match.getPhase() == GameManager.Phase.PLAYING
+                && level == level.getServer().overworld();
+        ServerPlayer finisher = source instanceof ServerPlayer player ? player : null;
+        if (finisher != null) {
+            if (finisher.level() != level || !level.players().contains(finisher) || factionOf(finisher) == null
+                    || factionOf(finisher) == state.faction
+                    || queuedBattle && (!match.isParticipant(finisher.getUUID()) || TrainingMode.isEnabled(finisher)
+                        || level.getServer().getPlayerList().getPlayer(finisher.getUUID()) != finisher)) return;
+            rewardMinion(finisher, minion, state, MinionCredit.LAST_HIT);
+            if (!queuedBattle) return;
+        }
+        for (ServerPlayer player : level.players()) {
+            if (player == finisher || !player.isAlive() || player.isSpectator()
+                    || player.distanceToSqr(minion) > 144 || factionOf(player) == null || factionOf(player) == state.faction
+                    || queuedBattle && (!match.isParticipant(player.getUUID()) || TrainingMode.isEnabled(player)
+                        || level.getServer().getPlayerList().getPlayer(player.getUUID()) != player)) continue;
+            rewardMinion(player, minion, state, finisher == null ? MinionCredit.NON_PLAYER : MinionCredit.TEAMMATE);
+        }
+    }
+
+    private static void rewardMinion(ServerPlayer player, LivingEntity minion, UnitState state, MinionCredit credit) {
+        PlayerData data = PlayerDataProvider.get(player);
+        boolean lastHit = credit == MinionCredit.LAST_HIT;
+        int baseGold = switch (state.kind) {
+            case MAGIC -> 65;
+            case SIEGE -> 40;
+            default -> state.ranged() ? 18 : 12;
+        };
+        int baseXp = state.kind == Kind.SIEGE ? 50 : state.ranged() ? 24 : 18;
+        int gold = credit == MinionCredit.TEAMMATE ? 0
+                : GlobalBalance.goldIncome(MatchBalance.farmReward(player, minionReward(baseGold, lastHit, false), false));
+        int xp = MatchBalance.farmReward(player, minionReward(baseXp, lastHit, true), true);
+        data.addGold(gold);
+        LevelSystem.addXp(player, data, xp); // Synchronizes both values after the award.
+        com.myriad.network.RewardFloatPayload.send(player, minion, gold, xp);
     }
 
     static int minionReward(int base, boolean playerKill) {
@@ -1322,6 +1387,7 @@ public final class LaneSystem {
     }
 
     private static void removeVisual(ServerLevel level, UnitState state) {
+        warnTowerTarget(state, null);
         if (state.visualEntity != null) state.visualEntity.discard();
         state.visualEntity = null;
         if (state.visual != null && level.getEntity(state.visual) instanceof Entity display) display.discard();

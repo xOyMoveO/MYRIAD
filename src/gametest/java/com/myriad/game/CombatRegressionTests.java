@@ -22,8 +22,11 @@ public final class CombatRegressionTests {
         register("faction_identity",FactionIdentityChecks::run);
         register("training_ui",TrainingUiChecks::run);
         register("combat_feedback",CombatFeedbackChecks::run);
+        register("tower_cover", TowerCoverChecks::run);
         register("match_economy", MatchEconomyChecks::run);
+        register("match_assists", MatchAssistChecks::run);
         register("cherry_rift_camps", CherryRiftCampChecks::run);
+        register("rift_crab_minimap", RiftCrabMinimapChecks::run);
         register("cherry_flat_lane", CherryFlatLaneChecks::run);
         register("arena_switch", ArenaSwitchRegression::run);
         register("combat_regression", CombatRegressionTests::run);
@@ -114,6 +117,11 @@ public final class CombatRegressionTests {
                         && !com.myriad.combat.KnockbackBuffer.allow(tower),
                         "Towers must reject skill statuses and forced motion");
 
+                // This fixture exercises legacy three-lane waypoints without placed towers.
+                // An earlier arena test may have selected a persisted single-lane map.
+                ((java.util.Set<LaneSystem.Lane>) field(LaneSystem.class, null, "ENABLED_LANES"))
+                        .addAll(java.util.EnumSet.allOf(LaneSystem.Lane.class));
+                ((Map<?, ?>) field(LaneSystem.class, null, "TOWER_POINTS")).clear();
                 Map<LaneSystem.Lane, Map<Integer, BlockPos>> paths = (Map<LaneSystem.Lane, Map<Integer, BlockPos>>) field(LaneSystem.class, null, "PATH_POINTS");
                 Map<Faction, BlockPos> bases = (Map<Faction, BlockPos>) field(LaneSystem.class, null, "FOUNTAIN_POINTS");
                 bases.put(Faction.GUARDIAN, a);
@@ -458,7 +466,7 @@ public final class CombatRegressionTests {
         // Consume the normal deferred end-of-match cleanup before another test enables the mod.
         manager.tick(level.getServer(),level.getGameTime());
         helper.assertTrue(manager.getPhase()==GameManager.Phase.WAITING
-                        && !(Boolean)field(GameManager.class,manager,"returnToLobbyPending"),
+                        && manager.getWinner() == null && field(GameManager.class,manager,"pendingResults") == null,
                 "Crystal completion cleanup must finish before the next check");
         var clear=LaneSystem.class.getDeclaredMethod("clearRuntime",net.minecraft.server.level.ServerLevel.class);clear.setAccessible(true);clear.invoke(null,level);
         towerPoints.clear();

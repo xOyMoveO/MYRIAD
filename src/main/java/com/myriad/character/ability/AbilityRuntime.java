@@ -10,7 +10,6 @@ import com.myriad.player.*;
 import com.myriad.registry.ModAttributes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -110,6 +109,18 @@ public final class AbilityRuntime {
     private static boolean castPhase(ServerPlayer p,AbilitySkill skill){
         return TrainingGround.canFight(p)||preparationFor(p,skill);
     }
+    private static InputFailure controlFailure(ServerPlayer player, PlayerData data) {
+        if (data.getBuff("g1_stun") > 0) return InputFailure.STUN;
+        return SilenceSystem.isSilenced(player) ? InputFailure.SILENCE : null;
+    }
+
+    private static InputFailure resourceFailure(Cast cast) {
+        if (!TrainingMode.isNoCooldown(cast.player) && !cast.skill.cooldownReady(cast)) return InputFailure.COOLDOWN;
+        if (!preparationFor(cast.player, cast.skill) && !TrainingMode.isNoMana(cast.player)
+                && cast.data.getMana() < cast.skill.manaCost(cast)) return InputFailure.MANA;
+        return null;
+    }
+
     private static boolean learned(PlayerData d,AbilitySkill skill){return skill.baseAvailable()||d.skillLevel(skill.getId())>0;}
     /** Independent flights consume both explicit action sources and current spatial fields. */
     public static double projectileRate(ServerPlayer p,UUID flight,Vec3 position,long now){
@@ -128,20 +139,24 @@ public final class AbilityRuntime {
         if(!valid(p)||!castPhase(p,skill)||!skill.role().equals(d.getCharacterId())||skill.isPassive())return null;
         var selected=FirstGroupSkills.resolve(CharacterType.byId(d.getCharacterId()),skill.slot(),d.getSkillLevels());
         if(selected!=skill)return null;
-        if(!skill.canCastWhileControlled()&&(d.getBuff("g1_stun")>0||com.myriad.combat.SilenceSystem.isSilenced(p)))return null;
-        if(!TrainingMode.isEnabled(p)&&!learned(d,skill)){message(p,"message.myriad.skill_not_learned");return null;}
+        var control = controlFailure(p,d);
+        if(!skill.canCastWhileControlled() && control != null){control.send(p);return null;}
+        if(!TrainingMode.isEnabled(p)&&!learned(d,skill)){InputFailure.UNLEARNED.send(p);return null;}
         Cast c=context(p,skill);Owner o=c.owner;
-        if(com.myriad.character.skills.shuo.ShuoCombat.blocked(p))return null;
+        if(com.myriad.character.skills.shuo.ShuoCombat.blocked(p)){InputFailure.LINK.send(p);return null;}
         if(skill.recastAvailable(c)&&(!SkillChargeSystem.active(p)||skill.recastDuringChannel())){
-            if((d.getBuff("g1_root")>0&&!skill.recastWhileRooted()||moving(p)&&!skill.recastWhileMoving())&&!skill.role().equals("keheng"))return null;
+            if(!skill.role().equals("keheng")){
+                if(d.getBuff("g1_root")>0&&!skill.recastWhileRooted()){InputFailure.ROOT.send(p);return null;}
+                if(moving(p)&&!skill.recastWhileMoving()){InputFailure.LINK.send(p);return null;}
+            }
             skill.recast(c);SkillPresentation.cast(p,skill);PlayerDataProvider.syncToClient(p);return null;}
         if(o.preparing!=null&&skill.interruptPreparation(c))o.preparing.cancelCast();
-        if(SkillChargeSystem.active(p))return null;
+        if(SkillChargeSystem.active(p)){InputFailure.CHANNEL.send(p);return null;}
         boolean controlBreak=skill.canCastWhileControlled()&&controlled(p);
-        if(o.preparing!=null||o.channelUntil>c.now()||moving(p)&&!controlBreak||c.now()-o.lastCast<skill.inputRecoveryTicks()&&!controlBreak)return null;
-        boolean noCd=TrainingMode.isNoCooldown(p),noMana=preparationFor(p,skill)||TrainingMode.isNoMana(p);
-        if(!noCd&&!skill.cooldownReady(c)){message(p,"message.myriad.g1.not_ready");return null;}
-        if(!noMana&&d.getMana()<skill.manaCost(c)){message(p,"message.myriad.not_enough_mana");return null;}
+        if(o.preparing!=null||o.channelUntil>c.now()){InputFailure.CHANNEL.send(p);return null;}
+        if(!controlBreak&&(moving(p)||c.now()-o.lastCast<skill.inputRecoveryTicks())){InputFailure.LINK.send(p);return null;}
+        var resource = resourceFailure(c);
+        if(resource!=null){resource.send(p);return null;}
         if(skill.needsPoint()){
             o.pending=skill.getId();o.pendingWindup=windupTicks;o.pendingUntil=c.now()+200;d.setPlacementType(100+skill.index());
             skill.selectionPose(c,true);PlayerDataProvider.syncToClient(p);return null;
@@ -153,21 +168,23 @@ public final class AbilityRuntime {
         var o=owner(p);var skill=FirstGroupSkills.byId(o.pending);if(skill==null)return;
         var d=PlayerDataProvider.get(p);if(!valid(p)||!castPhase(p,skill)||!skill.role().equals(d.getCharacterId())){cancel(p);return;}
         if(FirstGroupSkills.resolve(CharacterType.byId(d.getCharacterId()),skill.slot(),d.getSkillLevels())!=skill){cancel(p);return;}
-        if(!TrainingMode.isEnabled(p)&&!learned(d,skill)){cancel(p);return;}
+        if(!TrainingMode.isEnabled(p)&&!learned(d,skill)){InputFailure.UNLEARNED.send(p);cancel(p);return;}
         Cast c=context(p,skill);
         if(o.preparing!=null&&skill.interruptPreparation(c))o.preparing.cancelCast();
-        if(d.getBuff("g1_stun")>0||com.myriad.combat.SilenceSystem.isSilenced(p)
-                ||moving(p)||o.channelUntil>p.level().getGameTime()||p.level().getGameTime()-o.lastCast<skill.inputRecoveryTicks())return;
-        boolean noCd=TrainingMode.isNoCooldown(p),noMana=preparationFor(p,skill)||TrainingMode.isNoMana(p);
-        if(!noCd&&!skill.cooldownReady(c)||!noMana&&d.getMana()<skill.manaCost(c))return;
-        c.point=c.point(skill.pointRange(c));if(c.point==null){message(p,"message.myriad.g1.invalid_point");return;}
+        var control = controlFailure(p,d);
+        if(control!=null){control.send(p);return;}
+        if(o.channelUntil>c.now()){InputFailure.CHANNEL.send(p);return;}
+        if(moving(p)||c.now()-o.lastCast<skill.inputRecoveryTicks()){InputFailure.LINK.send(p);return;}
+        var resource = resourceFailure(c);
+        if(resource!=null){resource.send(p);return;}
+        c.point=c.point(skill.pointRange(c));if(c.point==null){InputFailure.POINT.send(p);return;}
         begin(c,o.pendingWindup);
     }
     public static void cancel(ServerPlayer p){var o=owner(p);if(o.preparing!=null)o.preparing.cancelCast();if(o.winding!=null)o.winding.cancelCast();
         var selected=FirstGroupSkills.byId(o.pending);if(selected!=null)selected.selectionPose(context(p,selected),false);
         o.pending="";PlayerDataProvider.get(p).setPlacementType(0);PlayerDataProvider.syncToClient(p);}
     private static void begin(Cast c,int windupTicks){
-        if(!c.skill.canRelease(c)){message(c.player,"message.myriad.no_skill_target");c.phase=Phase.CANCELLED;return;}
+        if(!c.skill.canRelease(c)){InputFailure.TARGET.send(c.player);c.phase=Phase.CANCELLED;return;}
         c.owner.pending="";c.owner.lastCast=c.now();c.castToken=++c.owner.castToken;c.data.setPlacementType(0);
         c.accepted=true;c.owner.preparing=c;
         c.skill.preparing(c);
@@ -175,7 +192,6 @@ public final class AbilityRuntime {
         else c.commit();
     }
     public enum Phase { REQUESTED, WINDUP, COMMITTED, COMPLETED, CANCELLED }
-    private static void message(ServerPlayer p,String key){p.sendSystemMessage(Component.translatable(key));}
     public static void tick(ServerPlayer p){
         if(!valid(p)||!FirstGroupSkills.active(PlayerDataProvider.get(p).getCharacterId())){if(OWNERS.containsKey(p.getUUID()))clear(p);return;}
         com.myriad.character.skills.keheng.KehengTimeFields.refreshActor(p);
@@ -311,12 +327,14 @@ public final class AbilityRuntime {
             boolean noMana=preparationFor(player,skill)||TrainingMode.isNoMana(player);
             if(OWNERS.get(player.getUUID())!=owner||owner.preparing!=this||owner.level!=player.level()
                     ||!valid(player)||!castPhase(player,skill)||!skill.role().equals(data.getCharacterId())
-                    ||FirstGroupSkills.resolve(CharacterType.byId(data.getCharacterId()),skill.slot(),data.getSkillLevels())!=skill
-                    ||!TrainingMode.isEnabled(player)&&!learned(data,skill)
-                    ||!skill.canCastWhileControlled()&&(data.getBuff("g1_stun")>0||SilenceSystem.isSilenced(player))
-                    ||!noCd&&!skill.cooldownReady(this)||!noMana&&data.getMana()<skill.manaCost(this)
-                    ||skill.needsPoint()&&!AbilityTargeting.legalGround(player,point,skill.pointRange(this),skill.requiresStandingPoint())
-                    ||!skill.canRelease(this)){cancelCast();return false;}
+                    ||FirstGroupSkills.resolve(CharacterType.byId(data.getCharacterId()),skill.slot(),data.getSkillLevels())!=skill){cancelCast();return false;}
+            InputFailure failure = !skill.canCastWhileControlled() ? controlFailure(player,data) : null;
+            if(failure == null && !TrainingMode.isEnabled(player) && !learned(data,skill)) failure = InputFailure.UNLEARNED;
+            if(failure == null) failure = resourceFailure(this);
+            if(failure == null && skill.needsPoint() && !AbilityTargeting.legalGround(player,point,skill.pointRange(this),
+                    skill.requiresStandingPoint())) failure = InputFailure.POINT;
+            if(failure == null && !skill.canRelease(this)) failure = InputFailure.TARGET;
+            if(failure != null){failure.send(player);cancelCast();return false;}
             committed=true;phase=Phase.COMMITTED;owner.preparing=null;
             if(!noMana)data.spendMana(skill.manaCost(this));
             if(!noCd&&skill.cooldownTicks(this)>0){double reduction=Math.clamp(player.getAttributeValue(ModAttributes.COOLDOWN_REDUCTION),0,ModAttributes.MAX_COOLDOWN_REDUCTION);
@@ -401,7 +419,7 @@ public final class AbilityRuntime {
         public void shield(LivingEntity target,float amount,int ticks,Runnable onGain,
                            Consumer<net.minecraft.world.damagesource.DamageSource> onAbsorb){if(!SkillTargets.ally(player,target))return;
             float before=ModShieldSystem.value(target);
-            ModShieldSystem.grantMaxSource(target,shieldSource(),amount,ticks,onAbsorb);
+            ModShieldSystem.grantMaxSource(target,shieldSource(),amount,ticks,onAbsorb,player.getUUID());
             float gained=Math.max(0,ModShieldSystem.value(target)-before);
             if(gained>0){AbilityVisuals.shield(this,target);
                 if(!skill.role().equals("yingxiao"))AbilityVisuals.maintainShield(this,target,ticks);
@@ -411,6 +429,7 @@ public final class AbilityRuntime {
             if(!target.isAlive()||target.level()!=player.level()||!SkillTargets.ally(player,target)||amount<=0)return;
             float before=target.getHealth();CombatTelemetry.heal(target,Math.min(amount,Math.max(0,target.getMaxHealth()-before)),skill.role()+"_skill");
             float gained=Math.max(0,target.getHealth()-before);
+            com.myriad.game.MatchAssists.healed(player,target,gained);
             if(gained>0){if(target instanceof ServerPlayer ally)Packets.sendToPlayer(ally,new NetworkSetup.HealFloatPayload(Math.max(1,Math.round(gained))));supported(target);}
         }
         private void supported(LivingEntity target){if(!skill.isPassive()){var passive=passive(player);if(passive!=null)passive.onSupport(context(player,passive),target);}}
@@ -433,7 +452,10 @@ public final class AbilityRuntime {
             int duration=Math.max(1,(int)Math.ceil(ticks*(1-tenacity)));
             var attr=t.getAttribute(Attributes.MOVEMENT_SPEED);if(attr==null)return;
             var id=Identifier.fromNamespaceAndPath("myriad","ability_slow_"+skill.getId()+"_"+player.getUUID());
-            attr.removeModifier(id);attr.addTransientModifier(new AttributeModifier(id,-percent,AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+            attr.removeModifier(id);
+            double unmodifiedSpeed = attr.getValue();
+            attr.addTransientModifier(new AttributeModifier(id,-percent,AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+            if (percent > 0 && attr.getValue() < unmodifiedSpeed) com.myriad.game.MatchAssists.controlled(player, t);
             DEBUFFS.removeIf(d->d.target==t&&d.id.equals(id));DEBUFFS.add(new Debuff(t,id,t.level().getGameTime()+duration));
         }
         public void root(LivingEntity t,int ticks,boolean stun){
@@ -441,7 +463,11 @@ public final class AbilityRuntime {
             t.addEffect(new MobEffectInstance(MobEffects.SLOWNESS,ticks,6,false,false));
             if(t instanceof ServerPlayer hero){double ten=Math.clamp(t.getAttributeValue(ModAttributes.TENACITY),0,60)/100;
                 int duration=Math.max(1,(int)Math.ceil(ticks*(1-ten)));
-                PlayerDataProvider.get(hero).setBuff(stun?"g1_stun":"g1_root",duration);
+                String control = stun ? "g1_stun" : "g1_root";
+                PlayerData targetData = PlayerDataProvider.get(hero);
+                int previous = targetData.getBuff(control);
+                targetData.setBuff(control,duration);
+                if (duration > previous) com.myriad.game.MatchAssists.controlled(player, hero);
                 com.myriad.combat.DeathRecaps.control(player,hero,skill.getId(),stun?5:4,now(),duration);}
         }
         public void ring(Vec3 at,double radius,boolean personal){AbilityVisuals.seal(this,at,radius,personal);}
@@ -456,7 +482,7 @@ public final class AbilityRuntime {
             owner.channelImpulse=KnockbackBuffer.impulseToken(player);
             buff("g1_channel",ticks+1);SkillChargeSystem.start(player,skill.getId(),ticks,walkFactor);
             if(skill.role().equals("yike"))com.myriad.character.skills.yike.YikeStance.refreshMovement(player);
-            SkillChargeSystem.extend(player,ticks+1);
+            SkillChargeSystem.extend(player, ticks+1, 0, ActionTime.multiplier(player.getUUID(), now()));
             skill.windupPose(this,true);
             var progress=new ActionTime.Progress(now());
             owner.tasks.add(new Task(){
@@ -473,7 +499,7 @@ public final class AbilityRuntime {
                     }
                     int remaining=Math.max(2,(int)Math.ceil((ticks-progress.completed())/rate)+1);
                     owner.channelUntil=time+remaining;buff("g1_channel",remaining);
-                    SkillChargeSystem.extend(player,remaining);skill.windupPose(Cast.this,true);return true;
+                    SkillChargeSystem.extend(player, remaining, progress.completed(), rate);skill.windupPose(Cast.this,true);return true;
                 }
                 public void cancel(){cancelCast();}
             });

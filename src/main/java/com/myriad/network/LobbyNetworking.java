@@ -47,9 +47,10 @@ public final class LobbyNetworking {
                            int waitedSeconds, int voteSeconds, String reason, boolean canPropose,
                            boolean participant, boolean training, long queueToken, long pickToken,
                            String preselected, boolean queuedMatch, boolean sparring, long proposalToken,
-                           List<Seat> seats, String picker, int pickSeconds, int preparationSeconds)
+                           List<Seat> seats, String picker, int pickSeconds, int preparationSeconds,
+                           int remakeWaitSeconds, int remakeOfferSeconds, String remakeOfferId)
             implements CustomPacketPayload {
-        public static final Type<Snapshot> TYPE = new Type<>(Identifier.fromNamespaceAndPath(Myriad.MODID, "lobby_state"));
+        public static final Type<Snapshot> TYPE = new Type<>(Identifier.fromNamespaceAndPath(Myriad.MODID, "lobby_state_v2"));
         public static final StreamCodec<FriendlyByteBuf, Snapshot> CODEC =
                 StreamCodec.ofMember(Snapshot::write, Snapshot::read);
 
@@ -75,6 +76,9 @@ public final class LobbyNetworking {
             buf.writeUtf(picker, 36);
             buf.writeVarInt(pickSeconds);
             buf.writeVarInt(preparationSeconds);
+            buf.writeVarInt(remakeWaitSeconds);
+            buf.writeVarInt(remakeOfferSeconds);
+            buf.writeUtf(remakeOfferId, 64);
         }
 
         private static Snapshot read(FriendlyByteBuf buf) {
@@ -82,7 +86,8 @@ public final class LobbyNetworking {
                     buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf(24),
                     buf.readBoolean(), buf.readBoolean(), buf.readBoolean(), buf.readLong(),
                     buf.readLong(), buf.readUtf(64), buf.readBoolean(), buf.readBoolean(), buf.readLong(),
-                    readSeats(buf), buf.readUtf(36), buf.readVarInt(), buf.readVarInt());
+                    readSeats(buf), buf.readUtf(36), buf.readVarInt(), buf.readVarInt(),
+                    buf.readVarInt(), buf.readVarInt(), buf.readUtf(64));
         }
 
         private static List<Seat> readSeats(FriendlyByteBuf buf) {
@@ -99,6 +104,7 @@ public final class LobbyNetworking {
     public static void register() {
         PayloadTypeRegistry.serverboundPlay().register(Action.TYPE, Action.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(Snapshot.TYPE, Snapshot.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(RemadePayload.TYPE, RemadePayload.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(Action.TYPE,
                 (action, context) -> QueueLobby.handle(context.player(), action));
     }

@@ -110,7 +110,7 @@ public class HudOverlay implements HudElement {
             seconds = (int)Math.max(0,(preparation.countdownTick()-Minecraft.getInstance().level.getGameTime()+19)/20);
         }
         var queue = LobbyClient.snapshot();
-        Component notice = null;
+        Component notice = LobbyClient.remakeNotice(queue);
         if (seconds > 0) {
             notice = Component.translatable("rivet".equals(data.characterId())
                     ? "hud.myriad.rivet.preparation" : "hud.myriad.match.preparation", seconds);
@@ -148,7 +148,8 @@ public class HudOverlay implements HudElement {
             renderPlacementHint(gui, font);
             renderHeroRespawn(gui, font);
             renderRecall(gui, font);
-            SkillChargeClient.render(gui,font,delta.getGameTimeDeltaPartialTick(false));
+            SkillChargeClient.render(gui, font, delta.getGameTimeDeltaPartialTick(false),
+                    combatLayout == null ? null : combatLayout.bounds());
         });
         HudLayoutConfig.render(gui, HudLayoutConfig.Element.TARGET, () -> renderTargetHealth(gui, font));
         HudLayoutConfig.render(gui, HudLayoutConfig.Element.OBJECTIVE, () -> renderVeinStatus(gui, font));

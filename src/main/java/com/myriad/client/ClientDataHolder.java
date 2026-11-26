@@ -67,6 +67,10 @@ public final class ClientDataHolder {
 
     /** Connection-local snapshots must never carry rendering rules into another world/server. */
     public static void resetConnection() {
+        MinimapClientState.update(null);
+        LuoxiaPoseClient.reset();
+        MeleeAttackBuffer.reset();
+        InputFeedback.clear();
         TeamSignalClient.reset(); ControlStatusOverlay.reset(); EnemyHealthBars.reset(); DeathRecapStore.clear();
         com.myriad.client.firstperson.NightDaggerView.reset();
         com.myriad.client.firstperson.FlameDaoView.reset();

@@ -1898,15 +1898,15 @@ public final class PlayerDataProvider {
         // 野怪死亡：先发放击杀奖励（依赖存活标记），再清理标记 + 安排重生
         if (subject instanceof net.minecraft.world.entity.LivingEntity living
                 && com.myriad.game.MonsterManager.isMonster(living)) {
-            if (source.getEntity() instanceof ServerPlayer killer) {
-                com.myriad.game.MonsterManager.onKill(killer, living);
-            }
-            com.myriad.game.MonsterManager.onDeath(living);
+            ServerPlayer killer = source.getEntity() instanceof ServerPlayer player ? player : null;
+            if (killer != null) com.myriad.game.MonsterManager.onKill(killer, living);
+            com.myriad.game.MonsterManager.onDeath(living, killer);
         }
         if (subject instanceof net.minecraft.world.entity.LivingEntity living
                 && com.myriad.game.LaneSystem.isManaged(living)) {
 
-            com.myriad.game.LaneSystem.onDeath(living, source.getEntity());
+            com.myriad.game.LaneSystem.onDeath(living, source.getEntity(),
+                    source.is(net.minecraft.world.damagesource.DamageTypes.GENERIC_KILL));
             return cancelled;
         }
 

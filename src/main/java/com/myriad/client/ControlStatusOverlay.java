@@ -13,7 +13,19 @@ public final class ControlStatusOverlay {
     private static ControlStatusPayload latest = ControlStatusPayload.empty();
     private static net.minecraft.client.multiplayer.ClientLevel world;
     private static long received;
-    public static void reset() { latest = ControlStatusPayload.empty(); world = null; received = 0; }
+    private static final Set<Integer> towers = new HashSet<>();
+    private static net.minecraft.client.multiplayer.ClientLevel towerWorld;
+    public static void towerLock(com.myriad.network.TowerLockPayload lock) {
+        var level = Minecraft.getInstance().level;
+        if (level != towerWorld) towers.clear();
+        towerWorld = level;
+        if (!lock.locked()) {
+            towers.remove(lock.tower());
+        } else if (towers.add(lock.tower()) && Minecraft.getInstance().player != null) {
+            Minecraft.getInstance().player.playSound(net.minecraft.sounds.SoundEvents.BEACON_ACTIVATE, .45F, 1.12F);
+        }
+    }
+    public static void reset() { towers.clear(); towerWorld = null; latest = ControlStatusPayload.empty(); world = null; received = 0; }
     public static void receive(ControlStatusPayload p) {
         var mc = Minecraft.getInstance(); latest = p; world = mc.level; received = world == null ? 0 : world.getGameTime();
     }
@@ -27,15 +39,18 @@ public final class ControlStatusOverlay {
     private record Row(Component text, int color) {}
     private static String seconds(int ticks) { return String.format(Locale.ROOT, "%.1f", ticks / 20d); }
     public static void render(GuiGraphicsExtractor gui, Font font, boolean combatPanel) {
-        var s = current(); if (!s.active()) return;
+        var s = current();
+        var client = Minecraft.getInstance();
+        if (client.level != towerWorld || client.player == null || !client.player.isAlive()
+                || client.player.isSpectator() || !ClientDataHolder.canFight()) towers.clear();
+        if (!s.active() && towers.isEmpty()) return;
         var rows = new ArrayList<Row>();
+        if (!towers.isEmpty()) rows.add(new Row(Component.translatable("hud.myriad.tower_locked"), 0xFFFF926D));
         if (!combatPanel && s.stun() > 0) rows.add(new Row(Component.translatable("control.myriad.stun", seconds(s.stun())), 0xFFFFCC6A));
         if (s.root() > 0) rows.add(new Row(Component.translatable("control.myriad.root", seconds(s.root())), 0xFF9CDFFF));
         if (!combatPanel && s.silence() > 0) rows.add(new Row(Component.translatable("control.myriad.silence", seconds(s.silence())), 0xFFD5AEFF));
         if (s.actionRate() < 1) rows.add(new Row(Component.translatable("control.myriad.action_slow", Math.max(1, Math.round(s.actionRate() * 100))), 0xFF92EAE5));
-        if (s.charge() > 0) rows.add(new Row(Component.translatable(s.walkFactor() == 0 ? "control.myriad.charge_still" : "control.myriad.charge_walk",
-                Component.translatable("skill.myriad." + s.chargeSkill()), seconds(s.charge()), Math.round(s.walkFactor() * 100)), 0xFFB5CFFF));
-        else if (s.motion() > 0) rows.add(new Row(Component.translatable("control.myriad.motion"), 0xFFB5CFFF));
+        if (s.charge() == 0 && s.motion() > 0) rows.add(new Row(Component.translatable("control.myriad.motion"), 0xFFB5CFFF));
         if (rows.isEmpty()) return;
         var mc = Minecraft.getInstance(); int width = Math.max(80, Math.min(312, mc.getWindow().getGuiScaledWidth() - 18));
         var wrapped = rows.stream().map(row -> font.split(row.text, width - 16)).toList();

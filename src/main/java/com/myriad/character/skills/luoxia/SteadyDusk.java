@@ -7,7 +7,7 @@ import java.util.List;
 
 final class SteadyDusk extends LuoxiaSkill {
     SteadyDusk(Definition definition) { super(definition); }
-    static final int FULL_TICKS = 15;
+    static final int FULL_TICKS = 20;
     static final double RANGE = 26;
     private static final float INITIAL_MULTIPLIER = 1.21f;
     private static final float MULTIPLIER_PER_RANK = .06f;

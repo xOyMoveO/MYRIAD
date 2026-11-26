@@ -11,15 +11,15 @@ import com.myriad.game.GameManager;
 import com.myriad.player.PlayerDataProvider;
 
 public record MatchTabPayload(long elapsedTicks, List<Entry> players) implements CustomPacketPayload {
-    public record Entry(UUID id, String name, String character, int faction, int level, int kills, int deaths, int gold) {}
+    public record Entry(UUID id, String name, String character, int faction, int level, int kills, int deaths, int assists, int gold) {}
     public static final Type<MatchTabPayload> TYPE = new Type<>(Identifier.parse("myriad:match_tab"));
     public static final StreamCodec<FriendlyByteBuf, MatchTabPayload> CODEC = StreamCodec.ofMember(
             MatchTabPayload::write, b -> new MatchTabPayload(b.readLong(), PayloadBuffers.readList(b, v -> new Entry(
-                    v.readUUID(), v.readUtf(), v.readUtf(), v.readVarInt(), v.readVarInt(), v.readVarInt(), v.readVarInt(), v.readVarInt()))));
+                    v.readUUID(), v.readUtf(), v.readUtf(), v.readVarInt(), v.readVarInt(), v.readVarInt(), v.readVarInt(), v.readVarInt(), v.readVarInt()))));
     private static void write(MatchTabPayload p, FriendlyByteBuf b) {
         b.writeLong(p.elapsedTicks);
         PayloadBuffers.writeCollection(b, p.players, (v,e) -> { v.writeUUID(e.id); v.writeUtf(e.name); v.writeUtf(e.character);
-            v.writeVarInt(e.faction); v.writeVarInt(e.level); v.writeVarInt(e.kills); v.writeVarInt(e.deaths); v.writeVarInt(e.gold); });
+            v.writeVarInt(e.faction); v.writeVarInt(e.level); v.writeVarInt(e.kills); v.writeVarInt(e.deaths); v.writeVarInt(e.assists); v.writeVarInt(e.gold); });
     }
     @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     public static void sync(MinecraftServer server) {
@@ -30,7 +30,7 @@ public record MatchTabPayload(long elapsedTicks, List<Entry> players) implements
                 var online = server.getPlayerList().getPlayer(id);
                 if (online != null) return entry(online, gm);
                 return new Entry(id, gm.queueName(id), gm.queuePickedRole(id),
-                        NetworkSetup.factionId(gm.queueFaction(id)), 0, 0, 0, 0);
+                        NetworkSetup.factionId(gm.queueFaction(id)), 0, gm.killsOf(id), gm.deathsOf(id), gm.assists().total(id), 0);
             }).toList();
         } else {
             entries = server.getPlayerList().getPlayers().stream().map(p -> entry(p, gm)).toList();
@@ -44,7 +44,7 @@ public record MatchTabPayload(long elapsedTicks, List<Entry> players) implements
         var d = PlayerDataProvider.get(player);
         return new Entry(player.getUUID(), player.getName().getString(), d == null || d.getCharacterId() == null ? "" : d.getCharacterId(),
                 NetworkSetup.factionId(gm == null ? null : gm.factionOf(player)), d == null ? 1 : d.getLevel(),
-                gm == null ? 0 : gm.killsOf(player), gm == null ? 0 : gm.deathsOf(player),
+                gm == null ? 0 : gm.killsOf(player), gm == null ? 0 : gm.deathsOf(player), gm == null ? 0 : gm.assists().total(player.getUUID()),
                 d == null ? 0 : d.getMatchGoldEarned());
     }
 
