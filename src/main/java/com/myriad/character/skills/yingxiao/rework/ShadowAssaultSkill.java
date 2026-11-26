@@ -1,5 +1,7 @@
 package com.myriad.character.skills.yingxiao.rework;
 
+import static com.myriad.registry.ModSounds.Night.*;
+
 import com.myriad.character.ability.AbilityDamageFormula;
 import com.myriad.character.ability.AbilitySkill;
 import com.myriad.character.ability.AbilityRuntime;
@@ -23,9 +25,24 @@ public final class ShadowAssaultSkill extends AbilitySkill {
 
     public static final double DASH_DISTANCE=9;
     public static final int DASH_TICKS=5;
+    @Override public boolean hasOwnCastSound() { return true; }
+
     public ShadowAssaultSkill(Definition definition){super(definition);}
     @Override public void present(Cast c){NightVisuals.assault(c);
         NightSkillPresentation.play(c,com.myriad.network.NightSkillViewPayload.DASH,10);}
     @Override public boolean canRelease(Cast c){return c.data.getBuff("g1_root")==0;}
- @Override public void release(Cast c){c.actionDash(c.forward(DASH_DISTANCE),DASH_TICKS,1.2,(t,first)->{c.damage(t,DAMAGE.value(c),DAMAGE.kind());if(first&&c.behind(t))c.slow(t,.4f,20);},()->{},false,false);}
+    @Override public void dashPose(Cast c, DashPose phase, Vec3 direction) {
+        if (phase == DashPose.START) NightAudio.play(c, c.player.position(), DASH);
+    }
+
+    @Override public void release(Cast c) {
+        long[] nextContact = {Long.MIN_VALUE};
+        c.actionDash(c.forward(DASH_DISTANCE), DASH_TICKS, 1.2, (target, first) -> {
+            if (c.damage(target, DAMAGE.value(c), DAMAGE.kind()) && c.now() >= nextContact[0]) {
+                NightAudio.impact(c, target, CONTACT);
+                nextContact[0] = c.now() + 3;
+            }
+            if (first && c.behind(target)) c.slow(target, .4f, 20);
+        }, () -> {}, false, false);
+    }
 }

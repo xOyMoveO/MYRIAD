@@ -21,7 +21,7 @@ public abstract class ServerDamageMixin {
         PlayerDataProvider.onIncomingDamage(transaction);
         float before=entity.getHealth();
         if(!transaction.isCanceled()&&transaction.getAmount()>0)original.call(level,source,transaction.getAmount());
-        PlayerDataProvider.onDamageApplied(entity,source,Math.max(0,before-entity.getHealth()));
+        PlayerDataProvider.onDamageApplied(transaction,Math.max(0,before-entity.getHealth()));
     }
     @Inject(method="knockback(DDDLnet/minecraft/world/damagesource/DamageSource;FZ)V",at=@At("HEAD"),cancellable=true)
     private void myriad$knockback(double strength,double x,double z,DamageSource source,float amount,boolean impulse,CallbackInfo ci) {

@@ -24,6 +24,6 @@ public abstract class PlayerDamageMixin {
         float lost = Math.max(0, before - entity.getHealth());
         com.myriad.game.MatchAssists.healthLost(source.getEntity(), entity, lost);
         com.myriad.combat.DeathRecaps.afterHealth(transaction, lost);
-        PlayerDataProvider.onDamageApplied(entity,source,lost);
+        PlayerDataProvider.onDamageApplied(transaction,lost);
     }
 }

@@ -74,7 +74,7 @@ public final class PlayerDataProvider {
         if (attacker == null) return;
         // Confirm the primary contact before on-hit passives can recursively deal secondary damage.
         com.myriad.combat.CombatImpactFeedback.confirmed(attacker,target,pending.type(),pending.crit(),
-                pending.skill()&&!pending.direct(),actualDamage,false);
+                pending.skill()&&!pending.direct(),actualDamage,false,pending.abilitySource());
         if(!pending.skill())com.myriad.character.skills.yingxiao.rework.NightBasicVisuals.confirmed(attacker,target);
         if(target instanceof ServerPlayer victim && attacker!=victim && !TrainingGround.isTraining(attacker) && GameManager.get()!=null
                 && GameManager.get().factionOf(attacker)!=null
@@ -1665,14 +1665,19 @@ public final class PlayerDataProvider {
         }
         // 模组护盾在全部攻防修正完成后吸收最终伤害；生命扣除阶段不再依赖原版吸收生命。
         if (event.getAmount() > 0.0f) {
+            ServerPlayer night = entity instanceof ServerPlayer shieldOwner && "yingxiao".equals(victim.getCharacterId())
+                    && com.myriad.character.skills.yingxiao.rework.ShadowShieldSkill.hasShield(shieldOwner) ? shieldOwner : null;
             float absorbed = ModShieldSystem.consume(entity, event.getAmount(), event.getSource());
+            if (absorbed > 0 && night != null && !com.myriad.character.skills.yingxiao.rework.ShadowShieldSkill.hasShield(night)) {
+                event.markShieldBreakSound();
+            }
             if (absorbed > 0.0f) {
                 // Fabric enters after vanilla has set its cooldown; accepted shield/pool hits
                 // need the same three-tick cadence as accepted vanilla HP loss.
                 entity.damageCooldownTime = 3;
                 if(damageFloat!=null&&event.getSource().getEntity() instanceof ServerPlayer shieldAttacker){
                     com.myriad.combat.CombatImpactFeedback.confirmed(shieldAttacker,entity,damageFloat.type(),
-                            damageFloat.crit(),damageFloat.skill()&&!damageFloat.direct(),absorbed,true);
+                            damageFloat.crit(),damageFloat.skill()&&!damageFloat.direct(),absorbed,true,damageFloat.abilitySource());
                     // A fully absorbed hit still counts; partial absorption already notifies through the HP-loss path.
                     if(event.getAmount()-absorbed<=.0001f)com.myriad.character.ability.AbilityRuntime.hit(shieldAttacker,entity,absorbed,!damageFloat.skill(),
                             damageFloat.abilitySource(),damageFloat.direct(),damageFloat.type()==com.myriad.client.DamageFloater.TYPE_MAGIC?1:
@@ -1752,7 +1757,9 @@ public final class PlayerDataProvider {
     }
 
     /** 所有原版生命实体在护甲、减伤、格挡、吸收生命与生命扣除完成后，以实际生命损失显示飘字。 */
-    public static void onDamageApplied(LivingEntity subject, net.minecraft.world.damagesource.DamageSource source, float damage) {
+    public static void onDamageApplied(DamageContext transaction, float damage) {
+        LivingEntity subject = transaction.getEntity();
+        var source = transaction.getSource();
         // 原版默认受击无敌帧较长，会吞掉高频技能与攻速收益；模组对局统一缩短为 3 tick。
         if (!subject.level().isClientSide() && com.myriad.game.ModState.isEnabled()
                 && damage > 0) {
@@ -1764,8 +1771,13 @@ public final class PlayerDataProvider {
         if (entity instanceof ServerPlayer victimPlayer) {
             com.myriad.combat.CombatTelemetry.recordDamage(
                     victimPlayer, damage, source.getEntity());
+            boolean skillContact = source.getEntity() instanceof ServerPlayer attacker
+                    && com.myriad.character.skills.yingxiao.rework.NightAudio.ownsImpact(
+                            com.myriad.character.ability.AbilityRuntime.sourceSkill())
+                    && com.myriad.character.skills.yingxiao.rework.NightAudio.canHear(attacker, victimPlayer,
+                            victimPlayer.getBoundingBox().getCenter());
             com.myriad.network.Packets.sendToPlayer(victimPlayer,
-                    new NetworkSetup.HurtFeedbackPayload(damage, victimPlayer.getMaxHealth()));
+                    new NetworkSetup.HurtFeedbackPayload(damage, victimPlayer.getMaxHealth(), !skillContact && !transaction.hasShieldBreakSound()));
         }
         // 这些目标已在 Incoming 阶段按各自独立生命池的真实差值发送并消费上下文。
         if (com.myriad.game.MonsterManager.isMonster(entity)

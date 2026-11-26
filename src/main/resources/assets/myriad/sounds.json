@@ -1,4 +1,106 @@
 {
+  "yingxiao_throw": {
+    "subtitle": "subtitles.myriad.yingxiao_throw",
+    "sounds": [
+      "myriad:skill/yingxiao/throw"
+    ]
+  },
+  "yingxiao_hit": {
+    "subtitle": "subtitles.myriad.yingxiao_hit",
+    "sounds": [
+      "myriad:skill/yingxiao/hit"
+    ]
+  },
+  "yingxiao_block": {
+    "subtitle": "subtitles.myriad.yingxiao_block",
+    "sounds": [
+      "myriad:skill/yingxiao/block"
+    ]
+  },
+  "yingxiao_enter": {
+    "subtitle": "subtitles.myriad.yingxiao_enter",
+    "sounds": [
+      "myriad:skill/yingxiao/enter"
+    ]
+  },
+  "yingxiao_exit": {
+    "subtitle": "subtitles.myriad.yingxiao_exit",
+    "sounds": [
+      "myriad:skill/yingxiao/exit"
+    ]
+  },
+  "yingxiao_dash": {
+    "subtitle": "subtitles.myriad.yingxiao_dash",
+    "sounds": [
+      "myriad:skill/yingxiao/dash"
+    ]
+  },
+  "yingxiao_contact": {
+    "subtitle": "subtitles.myriad.yingxiao_contact",
+    "sounds": [
+      "myriad:skill/yingxiao/contact"
+    ]
+  },
+  "yingxiao_out": {
+    "subtitle": "subtitles.myriad.yingxiao_out",
+    "sounds": [
+      "myriad:skill/yingxiao/out"
+    ]
+  },
+  "yingxiao_return_vanish": {
+    "subtitle": "subtitles.myriad.yingxiao_return_vanish",
+    "sounds": [
+      "myriad:skill/yingxiao/return_vanish"
+    ]
+  },
+  "yingxiao_return_arrive": {
+    "subtitle": "subtitles.myriad.yingxiao_return_arrive",
+    "sounds": [
+      "myriad:skill/yingxiao/return_arrive"
+    ]
+  },
+  "yingxiao_windup": {
+    "subtitle": "subtitles.myriad.yingxiao_windup",
+    "sounds": [
+      "myriad:skill/yingxiao/windup"
+    ]
+  },
+  "yingxiao_blink": {
+    "subtitle": "subtitles.myriad.yingxiao_blink",
+    "sounds": [
+      "myriad:skill/yingxiao/blink"
+    ]
+  },
+  "yingxiao_stab": {
+    "subtitle": "subtitles.myriad.yingxiao_stab",
+    "sounds": [
+      "myriad:skill/yingxiao/stab"
+    ]
+  },
+  "yingxiao_cancel": {
+    "subtitle": "subtitles.myriad.yingxiao_cancel",
+    "sounds": [
+      "myriad:skill/yingxiao/cancel"
+    ]
+  },
+  "yingxiao_shield_open": {
+    "subtitle": "subtitles.myriad.yingxiao_shield_open",
+    "sounds": [
+      "myriad:skill/yingxiao/shield_open"
+    ]
+  },
+  "yingxiao_absorb": {
+    "subtitle": "subtitles.myriad.yingxiao_absorb",
+    "sounds": [
+      "myriad:skill/yingxiao/absorb"
+    ]
+  },
+  "yingxiao_shield_break": {
+    "subtitle": "subtitles.myriad.yingxiao_shield_break",
+    "sounds": [
+      "myriad:skill/yingxiao/shield_break"
+    ]
+  },
   "ui_level_up": {
     "sounds": [
       "myriad:foley/ice_1",

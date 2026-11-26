@@ -40,7 +40,9 @@ final class ThunderAudioChecks {
                 }
             }
             for(int i=2;i<8;i++)h.assertTrue(FirstGroupSkills.node("tianxing",i).hasOwnCastSound(),"Six active modules own staged audio");
-            h.assertTrue(!FirstGroupSkills.node("yingxiao",2).hasOwnCastSound(),"Other characters retain their audio policy");
+            for (int i = 2; i < 8; i++)
+                h.assertTrue(FirstGroupSkills.node("yingxiao",i).hasOwnCastSound(),"Nightshade replaces generic cast Foley");
+            h.assertTrue(!FirstGroupSkills.node("xuanchen",2).hasOwnCastSound(),"Unchanged characters retain their audio policy");
         }catch(java.io.IOException e){throw new IllegalStateException(e);}
     }
     static void start(GameTestHelper h){

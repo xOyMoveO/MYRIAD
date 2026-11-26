@@ -549,13 +549,24 @@ public final class AbilityRuntime {
         public UUID actionProjectile(double range,double speed,double radius,boolean pierce,boolean returning,BiConsumer<LivingEntity,Boolean> impact){
             return actionProjectileAlong(player.getLookAngle(),range,speed,radius,pierce,returning,impact);
         }
+        /** The precise endpoint already used to draw a non-piercing projectile's final segment. */
+        public void actionProjectileToFirst(double range, double speed, double radius, BiConsumer<LivingEntity, Vec3> impact) {
+            projectileAlong(player.getLookAngle(), range, speed, radius, false, false,
+                    (target, returning, contact) -> impact.accept(target, contact), UUID.randomUUID());
+        }
+
+        @FunctionalInterface
+        private interface FlightImpact {
+            void accept(LivingEntity target, boolean returning, Vec3 contact);
+        }
+
         public UUID actionProjectileAlong(Vec3 aim,double range,double speed,double radius,boolean pierce,boolean returning,BiConsumer<LivingEntity,Boolean> impact){
-            UUID id=UUID.randomUUID();projectileAlong(aim,range,speed,radius,pierce,returning,impact,id);return id;
+            UUID id=UUID.randomUUID();projectileAlong(aim,range,speed,radius,pierce,returning,(target,back,contact)->impact.accept(target,back),id);return id;
         }
         public void projectileAlong(Vec3 aim,double range,double speed,double radius,boolean pierce,boolean returning,BiConsumer<LivingEntity,Boolean> impact){
-            projectileAlong(aim,range,speed,radius,pierce,returning,impact,null);
+            projectileAlong(aim,range,speed,radius,pierce,returning,(target,back,contact)->impact.accept(target,back),null);
         }
-        private void projectileAlong(Vec3 aim,double range,double speed,double radius,boolean pierce,boolean returning,BiConsumer<LivingEntity,Boolean> impact,UUID actionId){
+        private void projectileAlong(Vec3 aim,double range,double speed,double radius,boolean pierce,boolean returning,FlightImpact impact,UUID actionId){
             Vec3 initial=aim.lengthSqr()<1E-8?forward(1):aim.normalize();
             final class Flight implements Task {
                 Vec3 pos=player.getEyePosition().add(initial.scale(.4)),direction=initial;double traveled;boolean back;
@@ -572,18 +583,19 @@ public final class AbilityRuntime {
                     if(back){Vec3 toward=player.getEyePosition().subtract(pos);if(toward.length()<step)return finish(true);direction=toward.normalize();}
                     Vec3 end=pos.add(direction.scale(back?step:Math.min(step,range-traveled)));
                     Vec3 wallHit=com.myriad.combat.WindWallSystem.interceptProjectile(player,pos,end);
-                    if(wallHit!=null){AbilityVisuals.flight(Cast.this,pos,wallHit,age,back,visual);pos=wallHit;return finish(true);}
+                    if(wallHit!=null){skill.projectileBlockedByWind(Cast.this, wallHit);AbilityVisuals.flight(Cast.this,pos,wallHit,age,back,visual);pos=wallHit;return finish(true);}
                     var clip=player.level().clip(new ClipContext(pos,end,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,player));boolean blocked=clip.getType()!=HitResult.Type.MISS;
                     if(blocked)end=clip.getLocation();final Vec3 dest=end;
                     var targets=player.level().getEntitiesOfClass(LivingEntity.class,new AABB(pos,end).inflate(radius),t->SkillTargets.enemy(player,t)&&!hit.contains(t.getUUID())
                         &&(actionId==null?t.getBoundingBox().inflate(radius).clip(pos,dest).isPresent()
                             :AbilityTargeting.unobstructedHit(player,t.getBoundingBox(),pos,dest,radius).isPresent())).stream().sorted(Comparator.comparingDouble(t->t.position().distanceToSqr(pos))).toList();
                     for(var target:targets){hit.add(target.getUUID());
+                        Vec3 contact=dest;
                         if(!pierce){
-                            Vec3 contact=target.getBoundingBox().inflate(radius).clip(pos,dest).orElse(dest);
+                            contact=target.getBoundingBox().inflate(radius).clip(pos,dest).orElse(dest);
                             AbilityVisuals.flight(Cast.this,pos,contact,age,back,visual);
                         }
-                        impact.accept(target,back);AbilityVisuals.burst(Cast.this,target.position().add(0,.5,0),.55);if(!pierce)return finish(false);}
+                        impact.accept(target,back,contact);AbilityVisuals.burst(Cast.this,target.position().add(0,.5,0),.55);if(!pierce)return finish(false);}
                     AbilityVisuals.flight(Cast.this,pos,end,age,back,visual);traveled+=pos.distanceTo(end);pos=end;if(blocked)return finish(true);
                     if(!back&&traveled>=range){if(!returning)return finish(true);back=true;hit.clear();
                         skill.projectileTurned(Cast.this,pos,direction);}return true;}
