@@ -34,7 +34,7 @@ import static com.myriad.character.skills.sulan.rework.WindCastAnimation.*;
 public final class WindBladeView {
     private static final WindHandMotion MOTION = new WindHandMotion();
     private static Object owner, world;
-    private static ModelPart wideArms, slimArms, fingers;
+    private static ModelPart wideArms, slimArms;
     private static long latestCue = Long.MIN_VALUE;
 
     private WindBladeView() {}
@@ -124,7 +124,8 @@ public final class WindBladeView {
         checkOwner(mc);
         double now = mc.player.tickCount + event.getPartialTick();
         var hands = MOTION.poseAt(now);
-        boolean off = hands.free().y > -1.15;
+        boolean left = mc.player.getMainArm() == net.minecraft.world.entity.HumanoidArm.LEFT;
+        boolean off = hands.free().y > -1.15 && mc.player.getOffhandItem().isEmpty();
         if (event.getHand() == InteractionHand.OFF_HAND) {
             if (off) event.setCanceled(true);
             return off;
@@ -134,52 +135,55 @@ public final class WindBladeView {
         PoseStack stack = event.getPoseStack();
         float equip = event.getEquipProgress();
         Matrix4f weapon = WindHandRig.weapon(MOTION, now, equip);
-        submitArm(event, mc, hands, false, equip, weapon);
+        submitArm(event, mc, hands, false, left, equip, weapon);
         stack.pushPose();
         try {
-            stack.mulPose(weapon);
+            stack.mulPose(HandedView.weapon(weapon,left));
             ClientItemRenderer.submit(mc.player, event.getItemStack(), ItemDisplayContext.NONE,
                     stack, event.getSubmitNodeCollector(), event.getPackedLight());
         } finally {
             stack.popPose();
         }
-        if (off) submitArm(event, mc, hands, true, equip, weapon);
-        AttackTrailRenderer.submit(event, WindHandVfx.geometry(MOTION, now, equip));
+        if (off) submitArm(event, mc, hands, true, left, equip, weapon);
+        AttackTrailRenderer.submit(event, HandedView.effects(WindHandVfx.geometry(MOTION, now, equip),left));
         event.setCanceled(true);
         return true;
     }
 
     private static void submitArm(HandRenderContext event, Minecraft mc, WindHandMotion.Pose hands,
-                                  boolean off, float equip, Matrix4f weapon) {
+                                  boolean off, boolean mainLeft, float equip, Matrix4f weapon) {
+        boolean left=mainLeft!=off;
         boolean slim = mc.player.getSkin().model() == PlayerModelType.SLIM;
         if (slim && slimArms == null) slimArms = NightDaggerArmModel.bake(true);
         if (!slim && wideArms == null) wideArms = NightDaggerArmModel.bake(false);
-        String side = off ? "left" : "right";
+        String side = left ? "left" : "right";
         ModelPart arm = (slim ? slimArms : wideArms).getChild(side + "_arm");
         arm.getChild(side + "_sleeve").visible = mc.player.isModelPartShown(
-                off ? PlayerModelPart.LEFT_SLEEVE : PlayerModelPart.RIGHT_SLEEVE);
+                left ? PlayerModelPart.LEFT_SLEEVE : PlayerModelPart.RIGHT_SLEEVE);
         var type = RenderTypes.entityTranslucent(mc.player.getSkin().body().texturePath());
         PoseStack stack = event.getPoseStack();
         stack.pushPose();
         try {
-            stack.mulPose(WindHandRig.arm(hands, off, slim, equip, weapon));
+            stack.mulPose(HandedView.arm(WindHandRig.arm(hands, off, slim, equip, weapon),mainLeft));
             event.getSubmitNodeCollector().submitModelPart(arm, stack, type, event.getPackedLight(), OverlayTexture.NO_OVERLAY, null);
             if (off && hands.point() > .36) {
-                if (fingers == null) fingers = bakeFingers();
-                stack.translate(slim ? -.035f : .005f, 10f / 16, 0);
+                int which=left?0:1;
+                if (fingerModels[which] == null) fingerModels[which] = bakeFingers(left);
+                stack.translate((left?1:-1)*(slim ? -.035f : .005f), 10f / 16, 0);
                 stack.scale(1, (float)((hands.point() - .36) / .64), 1);
-                event.getSubmitNodeCollector().submitModelPart(fingers, stack, type, event.getPackedLight(), OverlayTexture.NO_OVERLAY, null);
+                event.getSubmitNodeCollector().submitModelPart(fingerModels[which], stack, type, event.getPackedLight(), OverlayTexture.NO_OVERLAY, null);
             }
         } finally {
             stack.popPose();
         }
     }
 
-    private static ModelPart bakeFingers() {
+    private static final ModelPart[] fingerModels=new ModelPart[2];
+    private static ModelPart bakeFingers(boolean left) {
         var faces = EnumSet.allOf(Direction.class);
-        // Sample the player's left-hand skin; the two short extensions only appear in the mark pose.
-        var index = new ModelPart.Cube(39, 50, .12f, -.14f, -.78f, .79f, 1.8f, 1.28f, 0, 0, 0, false, 64, 64, faces);
-        var middle = new ModelPart.Cube(40, 50, 1.04f, -.14f, -.78f, .79f, 1.6f, 1.28f, 0, 0, 0, false, 64, 64, faces);
+        // Sample the free hand's skin; the two short extensions only appear in the mark pose.
+        var index = new ModelPart.Cube(left?39:47, left?50:18, left?.12f:-.91f, -.14f, -.78f, .79f, 1.8f, 1.28f, 0, 0, 0, !left, 64, 64, faces);
+        var middle = new ModelPart.Cube(left?40:48, left?50:18, left?1.04f:-1.83f, -.14f, -.78f, .79f, 1.6f, 1.28f, 0, 0, 0, !left, 64, 64, faces);
         return new ModelPart(List.of(index, middle), Map.of());
     }
 
@@ -188,7 +192,7 @@ public final class WindBladeView {
         double yaw = Math.toRadians(mc.player.getYRot());
         Vec3 right = new Vec3(-Math.cos(yaw), 0, -Math.sin(yaw));
         Vec3 up = right.cross(forward);
-        return new Vec3(Math.clamp(aim.dot(right) * .68, -.34, .34),
+        return new Vec3(Math.clamp((mc.player.getMainArm()==net.minecraft.world.entity.HumanoidArm.LEFT?-1:1) * aim.dot(right) * .68, -.34, .34),
                 Math.clamp(aim.dot(up) * .62, -.24, .22), 0);
     }
 }

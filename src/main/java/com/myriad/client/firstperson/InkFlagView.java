@@ -108,31 +108,33 @@ public final class InkFlagView {
         checkOwner(mc);
         double now = mc.player.tickCount + event.getPartialTick();
         var pose = MOTION.pose(now);
-        boolean showLeft = pose.palm().y > -1.14;
+        boolean mainLeft = mc.player.getMainArm() == net.minecraft.world.entity.HumanoidArm.LEFT;
+        boolean showSupport = pose.palm().y > -1.14 && mc.player.getOffhandItem().isEmpty();
         if (event.getHand() == InteractionHand.OFF_HAND) {
-            if (showLeft) event.setCanceled(true);
-            return showLeft;
+            if (showSupport) event.setCanceled(true);
+            return showSupport;
         }
         if (!event.getItemStack().is(ModItems.ZHENQI.get())) return false;
         float equip = event.getEquipProgress();
         PoseStack stack = event.getPoseStack();
-        drawArm(event, mc, pose, false, equip);
+        drawArm(event, mc, pose, false, mainLeft, equip);
         stack.pushPose();
         try {
-            stack.mulPose(InkHandRig.flag(pose, equip));
+            stack.mulPose(HandedView.weapon(InkHandRig.flag(pose, equip),mainLeft));
             ClientItemRenderer.submit(mc.player, event.getItemStack(), ItemDisplayContext.NONE,
                     stack, event.getSubmitNodeCollector(), event.getPackedLight());
         } finally {
             stack.popPose();
         }
-        if (showLeft) drawArm(event, mc, pose, true, equip);
-        AttackTrailRenderer.submit(event, InkHandEffects.geometry(MOTION, now, equip));
+        if (showSupport) drawArm(event, mc, pose, true, mainLeft, equip);
+        AttackTrailRenderer.submit(event, HandedView.effects(InkHandEffects.geometry(MOTION, now, equip),mainLeft));
         event.setCanceled(true);
         return true;
     }
 
     private static void drawArm(HandRenderContext event, Minecraft mc, InkHandMotion.Pose pose,
-                                boolean left, float equip) {
+                                boolean off, boolean mainLeft, float equip) {
+        boolean left = mainLeft != off;
         boolean slim = mc.player.getSkin().model() == PlayerModelType.SLIM;
         if (slim && slimArms == null) slimArms = NightDaggerArmModel.bake(true);
         if (!slim && wideArms == null) wideArms = NightDaggerArmModel.bake(false);
@@ -143,7 +145,7 @@ public final class InkFlagView {
         PoseStack stack = event.getPoseStack();
         stack.pushPose();
         try {
-            stack.mulPose(InkHandRig.arm(pose, left, slim, equip));
+            stack.mulPose(HandedView.arm(InkHandRig.arm(pose, off, slim, equip),mainLeft));
             var texture = RenderTypes.entityTranslucent(mc.player.getSkin().body().texturePath());
             event.getSubmitNodeCollector().submitModelPart(arm, stack, texture,
                     event.getPackedLight(), OverlayTexture.NO_OVERLAY, null);

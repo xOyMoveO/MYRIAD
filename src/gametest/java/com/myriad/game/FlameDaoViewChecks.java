@@ -43,7 +43,9 @@ final class FlameDaoViewChecks {
         }
         for(boolean left:new boolean[]{false,true}){
             var frame=new FlameDaoMotion().frame(0);var b=FlameDaoRig.wrist(frame.pose(),0,left).mul(FlameDaoRig.blade(frame,left));
-            h.assertTrue(b.transformDirection(new Vector3f(1,0,0)).normalize().z<-.97,"Idle edge faces forward");
+            var edge=b.transformDirection(new Vector3f(1,0,0)).normalize();
+            var side=b.transformDirection(new Vector3f(0,0,1)).normalize();
+            h.assertTrue(edge.z<-.70 && Math.abs(side.z)>.45,"Resting edge points forward with a readable blade face");
         }
         motion.reset();motion.attack(0,20);
         var before=motion.frame(4);var pose=before.pose();

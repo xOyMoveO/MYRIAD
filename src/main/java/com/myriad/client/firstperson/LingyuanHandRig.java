@@ -6,7 +6,7 @@ import org.joml.Vector4f;
 
 /** The real jade sword has its grip on (8,8,8), +Y tip and +/-X cutting edges. */
 final class LingyuanHandRig {
-    private static final float SCALE = .81f;
+    private static final float SCALE = .81f * 1.20f;
     private static final double TIP = (27.3-8)/16;
     private static final Vec3 RIGHT = new Vec3(1,0,0);
     private static final Vec3 UP = new Vec3(0,1,0);

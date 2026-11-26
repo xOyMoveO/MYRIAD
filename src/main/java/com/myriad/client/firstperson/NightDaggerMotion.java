@@ -8,7 +8,7 @@ public final class NightDaggerMotion {
                     mix(pitch,to.pitch,t), mix(yaw,to.yaw,t), mix(roll,to.roll,t), mix(wrist,to.wrist,t), mix(grip,to.grip,t));
         }
     }
-    public static final Pose IDLE = new Pose(.55,-.26,-1.03,0,-15,72,0,0);
+    public static final Pose IDLE = new Pose(.53,-.26,-1.16,-10,-10,28,-8,0);
     private record Key(double time, Pose pose) { }
     private static Key k(double t, double x,double y,double z,double pitch,double yaw,double roll,double wrist) {
         return k(t,x,y,z,pitch,yaw,roll,wrist,0);

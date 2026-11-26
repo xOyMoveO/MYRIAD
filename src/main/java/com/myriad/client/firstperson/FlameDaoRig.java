@@ -46,7 +46,7 @@ public final class FlameDaoRig {
         return angle(f,left,velocity.lengthSquared()>1E-12?velocity:new Vector3f(0,0,-1));
     }
     public static double turn(FlameDaoMotion.Frame f,boolean left){
-        double idle=angle(f,left,new Vector3f(0,0,-1));
+        double idle=angle(f,left,new Vector3f(left?-.65f:.65f,0,-.76f));
         if(f.cut()<0)return idle;
         double anchor=left?f.anchorLeft():f.anchorRight();
         double target=anchor+Math.IEEEremainder(target(f,left)-anchor,2*Math.PI);
