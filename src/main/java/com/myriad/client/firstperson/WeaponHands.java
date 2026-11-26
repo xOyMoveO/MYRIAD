@@ -15,6 +15,9 @@ final class WeaponHands {
     private static final ModelPart[] arms=new ModelPart[4];
     private WeaponHands(){}
     static void draw(HandRenderContext context, boolean left, Vector3f palm) {
+        draw(context, left, palm, new Vector3f(left ? -.87f : .87f, -.78f, -.12f), 0);
+    }
+    static void draw(HandRenderContext context, boolean left, Vector3f palm, Vector3f shoulder, float roll) {
         var player=Minecraft.getInstance().player;
         boolean slim=player.getSkin().model()==PlayerModelType.SLIM;
         int index=(left?1:0)+(slim?2:0);
@@ -22,9 +25,9 @@ final class WeaponHands {
         var arm=arms[index];arm.resetPose();
         arm.getChild(left?"left_sleeve":"right_sleeve").visible=player.isModelPartShown(
                 left?PlayerModelPart.LEFT_SLEEVE:PlayerModelPart.RIGHT_SLEEVE);
-        var along=new Vector3f(palm).sub(left?-.87f:.87f,-.78f,-.12f).normalize();
+        var along=new Vector3f(palm).sub(shoulder).normalize();
         Matrix4f placement=ShuoRig.basis(palm,along,new Vector3f(1,0,0),false)
-                .scale(.74f).mul(NightDaggerRig.arm(slim,left));
+                .rotateY(roll).scale(.74f).mul(NightDaggerRig.arm(slim,left));
         var stack=context.getPoseStack();stack.pushPose();
         try{
             stack.mulPose(placement);
