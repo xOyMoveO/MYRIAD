@@ -2,11 +2,13 @@ package com.myriad.client.gui;
 
 import com.myriad.client.gui.SkillChoiceLayout.Box;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.resources.Identifier;
 
 /** Character information panel art in fixed GUI pixels. */
 final class SkillChoiceTheme {
+    private static final Identifier PANEL = Identifier.fromNamespaceAndPath("myriad", "skill_choice/panel/myriad_default");
     private static final Identifier CREST = Identifier.fromNamespaceAndPath("myriad", "textures/gui/skill_choice/meridian_crest.png");
     static final int GOLD = 0xFFE8CE90;
     static final int JADE = 0xFF91D9CA;
@@ -20,37 +22,13 @@ final class SkillChoiceTheme {
     static void backdrop(GuiGraphicsExtractor g, SkillChoiceLayout layout) {
         var b = layout.panel();
         g.fill(b.x() - 2, b.y() - 2, b.right() + 2, b.bottom() + 2, 0x90000000);
-        g.fill(b.x(), b.y(), b.right(), b.bottom(), FRAME);
-        g.fill(b.x() + 1, b.y() + 1, b.right() - 1, b.bottom() - 1, 0xFF172A2C);
-        g.fill(b.x() + 3, b.y() + 3, b.right() - 3, b.bottom() - 3, INNER_FRAME);
-        g.fill(b.x() + 4, b.y() + 4, b.right() - 4, b.bottom() - 4, 0xFF10262B);
-        var area = layout.body();
-        g.fill(area.x() - 2, area.y() - 2, area.right() + 1, area.bottom() + 1, 0xFF0C1F25);
-        for (boolean right : new boolean[]{false, true}) {
-            for (boolean bottom : new boolean[]{false, true}) {
-                corner(g, right ? b.right() - 17 : b.x(), bottom ? b.bottom() - 17 : b.y(), right, bottom);
-            }
-        }
+        g.blitSprite(RenderPipelines.GUI_TEXTURED, PANEL, b.x(), b.y(), b.w(), b.h());
         int h = Math.min(26, layout.titleY() - b.y() + 1);
         if (h >= 8) {
             int w = Math.round(h * 164f / 170f);
             int x = b.x() + (b.w() - w) / 2;
             g.blit(CREST, x, b.y() - 2, x + w, b.y() - 2 + h, 0, 1, 0, 1);
         }
-    }
-
-    private static void corner(GuiGraphicsExtractor g, int x, int y, boolean right, boolean bottom) {
-        cornerStrip(g, x, y, right, bottom, 0, 0, 17, 2, 0xFFB9955D);
-        cornerStrip(g, x, y, right, bottom, 0, 2, 2, 17, 0xFFB9955D);
-        cornerStrip(g, x, y, right, bottom, 3, 3, 12, 4, 0xFF83B4A3);
-        cornerStrip(g, x, y, right, bottom, 3, 4, 4, 12, 0xFF83B4A3);
-        cornerStrip(g, x, y, right, bottom, 5, 5, 8, 8, 0xFFBD9D67);
-    }
-
-    private static void cornerStrip(GuiGraphicsExtractor g, int x, int y, boolean right, boolean bottom,
-            int left, int top, int endX, int endY, int color) {
-        g.fill(x + (right ? 17 - endX : left), y + (bottom ? 17 - endY : top),
-                x + (right ? 17 - left : endX), y + (bottom ? 17 - top : endY), color);
     }
 
     static void divider(GuiGraphicsExtractor g, int left, int right, int y, int color) {
