@@ -96,7 +96,19 @@ final class SkillChoiceUiChecks {
         verifyHoverResources(h);
         verifyMaterial(h, "panel/myriad_default", 512, 256);
         verifyMaterial(h, "tooltip/default", 256, 128);
-        for (String role : FirstGroupSkills.ROLES) verifyMaterial(h, "tooltip/" + role, 256, 128);
+        for (String role : FirstGroupSkills.ROLES) {
+            verifyMaterial(h, "tooltip/" + role, 256, 128);
+            String path = "/assets/myriad/textures/gui/sprites/skill_choice/tooltip/scene/" + role + ".png";
+            try (var input = SkillChoiceUiChecks.class.getResourceAsStream(path);
+                 var metadata = SkillChoiceUiChecks.class.getResourceAsStream(path + ".mcmeta")) {
+                h.assertTrue(input != null && metadata == null, "Scene uses the plain atlas sprite: " + role);
+                var scene = ImageIO.read(input);
+                h.assertTrue(scene.getWidth() == 512 && scene.getHeight() == 256 && scene.getColorModel().hasAlpha(),
+                        "Full-width RGBA scene for " + role);
+            } catch (java.io.IOException error) {
+                throw new IllegalStateException("Could not read " + path, error);
+            }
+        }
         try (var input = SkillChoiceUiChecks.class.getResourceAsStream("/assets/myriad/textures/gui/skill_choice/meridian_crest.png")) {
             h.assertTrue(input != null, "Original sword crest is packaged as a separate image");
             var image = ImageIO.read(input);
