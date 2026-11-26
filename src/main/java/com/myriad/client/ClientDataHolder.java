@@ -110,7 +110,7 @@ public final class ClientDataHolder {
     }
 
     /** Reject snapshots held across dimension changes, respawns or a stalled update stream. */
-    static PlayerDataPayload currentPlayerSnapshot(Minecraft mc) {
+    public static PlayerDataPayload currentPlayerSnapshot(Minecraft mc) {
         PlayerDataPayload snapshot = data;
         if (snapshot == null || mc.level == null || mc.player == null || mc.player != snapshotPlayer
                 || mc.level != snapshotLevel || mc.player.getId() != snapshot.ownerEntityId()

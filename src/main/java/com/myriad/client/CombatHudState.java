@@ -103,7 +103,7 @@ public final class CombatHudState {
         return new Slot(slot, skill, rank, key, status, cooldown, recastTicks, charges, chargeRemaining, chargeTotal);
     }
 
-    private static int recastTicks(AbilitySkill skill, YikeStatePayload yike, ControlStatusPayload control) {
+    static int recastTicks(AbilitySkill skill, YikeStatePayload yike, ControlStatusPayload control) {
         int ticks = SecondCastDisplay.remainingTicks(skill.getId());
         if (skill.getId().equals("keheng_suixing")) {
             return ClientDataHolder.buffTicks("g1_keheng_follow");
