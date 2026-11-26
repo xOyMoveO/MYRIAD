@@ -17,33 +17,33 @@ final class InkHandMotion {
                         double sampledAt, double prior, double progress) {}
 
     private static final Vec3 HIDDEN = new Vec3(-.67, -1.31, -.89);
-    static final Pose IDLE = new Pose(new Vec3(.56, -.53, -1.23), new Vec3(.20, .74, -.64), HIDDEN, .1, 0);
+    static final Pose IDLE = new Pose(new Vec3(.54, -.50, -1.06), new Vec3(.27, .81, -.52), HIDDEN, -.34, 0);
 
     private static Pose p(double x, double y, double z, double sx, double sy, double sz,
                           double lx, double ly, double lz, double turn, double palm) {
         return new Pose(new Vec3(x, y, z), new Vec3(sx, sy, sz), new Vec3(lx, ly, lz), turn, palm);
     }
 
-    private static final Pose BIND_DRAW = p(.65,-.66,-1.16,.25,.53,-.79, -.46,-.56,-1.06, -.25,-.3);
-    private static final Pose BIND_CAST = p(.61,-.61,-1.26,.28,.56,-.75, -.16,-.35,-1.66, -.16,.2);
+    private static final Pose BIND_DRAW = p(.62,-.61,-1.02,.30,.63,-.71, -.46,-.54,-1.02, -.52,-.3);
+    private static final Pose BIND_CAST = p(.58,-.56,-1.12,.32,.66,-.68, -.18,-.36,-1.56, -.44,.2);
 
-    private static final Pose SHIELD_HOLD = p(.57,-.49,-1.30,.16,.85,-.56, -.39,-.46,-1.22, .18,1.1);
-    private static final Pose SHIELD_SEND = p(.55,-.48,-1.33,.17,.84,-.57, -.25,-.31,-1.66, .12,1.75);
-    private static final Pose SHIELD_SELF = p(.56,-.50,-1.23,.21,.78,-.60, -.06,-.59,-.98, -.12,-.55);
+    private static final Pose SHIELD_HOLD = p(.55,-.46,-1.14,.22,.89,-.40, -.39,-.45,-1.16, -.20,1.1);
+    private static final Pose SHIELD_SEND = p(.53,-.45,-1.17,.23,.88,-.41, -.26,-.32,-1.56, -.26,1.75);
+    private static final Pose SHIELD_SELF = p(.54,-.47,-1.08,.27,.84,-.47, -.08,-.57,-.94, -.44,-.55);
 
-    private static final Pose GATE_AIM = p(.53,-.45,-1.30,.07,.92,-.38, -.34,-.39,-1.46, -.13,.65);
-    private static final Pose GATE_PUSH = p(.69,-.43,-1.35,.23,.90,-.37, -.60,-.32,-1.57, -.12,1.7);
+    private static final Pose GATE_AIM = p(.52,-.43,-1.14,.14,.94,-.31, -.35,-.39,-1.38, -.42,.65);
+    private static final Pose GATE_PUSH = p(.66,-.41,-1.19,.28,.92,-.27, -.58,-.33,-1.48, -.40,1.7);
 
-    private static final Pose GUARD_AIM = p(.56,-.64,-1.17,.26,.57,-.72, -.43,-.43,-1.44, -.3,1.6);
-    private static final Pose GUARD_PRESS = p(.56,-.70,-1.24,.28,.50,-.81, -.30,-.65,-1.44, -.38,-.75);
+    private static final Pose GUARD_AIM = p(.54,-.59,-1.03,.30,.67,-.68, -.44,-.43,-1.36, -.56,1.6);
+    private static final Pose GUARD_PRESS = p(.54,-.65,-1.10,.32,.60,-.73, -.31,-.63,-1.36, -.62,-.75);
 
-    private static final Pose ARRAY_BEGIN = p(.58,-.56,-1.27,-.28,.46,-.84, -.40,-.59,-1.22, -.36,.4);
-    private static final Pose ARRAY_GATHER = p(.38,-.53,-1.35,-.44,.31,-.84, -.13,-.47,-1.37, -.57,.92);
-    private static final Pose ARRAY_OPEN = p(.72,-.44,-1.37,.48,.71,-.60, -.70,-.38,-1.54, .24,1.8);
+    private static final Pose ARRAY_BEGIN = p(.56,-.52,-1.11,-.20,.58,-.79, -.40,-.57,-1.16, -.58,.4);
+    private static final Pose ARRAY_GATHER = p(.38,-.49,-1.19,-.35,.44,-.83, -.14,-.46,-1.30, -.74,.92);
+    private static final Pose ARRAY_OPEN = p(.70,-.41,-1.20,.50,.77,-.40, -.68,-.38,-1.45, -.12,1.8);
 
-    private static final Pose LOCK_AIM = p(.64,-.65,-1.20,.29,.47,-.83, -.61,-.42,-1.46, -.38,.1);
-    private static final Pose LOCK_BAR = p(.64,-.66,-1.24,.29,.44,-.85, -.14,-.44,-1.48, -.36,.15);
-    private static final Pose LOCK_FOLD = p(.63,-.67,-1.22,.31,.43,-.85, -.25,-.65,-1.22, -.45,-.9);
+    private static final Pose LOCK_AIM = p(.61,-.60,-1.05,.33,.58,-.74, -.59,-.42,-1.38, -.62,.1);
+    private static final Pose LOCK_BAR = p(.61,-.61,-1.09,.33,.55,-.77, -.16,-.44,-1.40, -.60,.15);
+    private static final Pose LOCK_FOLD = p(.60,-.62,-1.07,.35,.54,-.76, -.26,-.63,-1.16, -.68,-.9);
 
     private static final Action BIND = new Action(BIND_DRAW, BIND_CAST, BIND_CAST, 1.15, 2.25, 8);
     private static final Action SEND = new Action(SHIELD_HOLD, SHIELD_SEND, SHIELD_SEND, 1.35, 3.4, 8.5);
@@ -55,17 +55,17 @@ final class InkHandMotion {
 
     private static final Action[] BASICS = {
         new Action(
-            p(.59,-.53,-1.23,.19,.74,-.65, -.43,-.56,-1.14, .12,-.2),
-            p(.58,-.51,-1.27,.18,.75,-.63, -.28,-.42,-1.54, .16,.36),
-            p(.59,-.54,-1.23,.21,.71,-.66, -.36,-.51,-1.39, .12,.55), 1.05, 2.45, 6),
+            p(.56,-.50,-1.06,.26,.81,-.53, -.43,-.54,-1.09, -.32,-.2),
+            p(.55,-.48,-1.11,.25,.82,-.51, -.29,-.42,-1.46, -.28,.36),
+            p(.56,-.51,-1.07,.28,.79,-.55, -.37,-.50,-1.32, -.32,.55), 1.05, 2.45, 6),
         new Action(
-            p(.62,-.53,-1.23,.22,.73,-.64, -.62,-.47,-1.21, -.16,.32),
-            p(.64,-.52,-1.25,.24,.72,-.64, -.13,-.45,-1.54, -.22,.54),
-            p(.62,-.53,-1.23,.22,.73,-.64, -.22,-.51,-1.44, -.16,-.15), 1.18, 2.60, 6.6),
+            p(.59,-.50,-1.06,.29,.80,-.52, -.60,-.46,-1.16, -.52,.32),
+            p(.61,-.49,-1.09,.31,.79,-.52, -.15,-.44,-1.46, -.56,.54),
+            p(.59,-.50,-1.06,.29,.80,-.52, -.24,-.50,-1.37, -.52,-.15), 1.18, 2.60, 6.6),
         new Action(
-            p(.59,-.54,-1.23,.20,.72,-.65, -.46,-.69,-1.22, .08,1.30),
-            p(.56,-.50,-1.26,.20,.75,-.63, -.27,-.40,-1.63, .18,1.88),
-            p(.58,-.53,-1.24,.20,.73,-.64, -.33,-.45,-1.49, .12,1.32), 1.25, 2.90, 7.4)
+            p(.56,-.51,-1.06,.27,.79,-.54, -.46,-.67,-1.16, -.36,1.30),
+            p(.54,-.47,-1.10,.27,.82,-.51, -.28,-.40,-1.54, -.26,1.88),
+            p(.56,-.50,-1.07,.27,.80,-.53, -.34,-.45,-1.41, -.32,1.32), 1.25, 2.90, 7.4)
     };
     private static final int PREPARE = -1;
 
