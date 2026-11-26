@@ -24,6 +24,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.phys.Vec3;
 
+import net.minecraft.world.entity.player.Player;
 import com.myriad.character.ability.ActionTime;
 import com.myriad.character.skills.keheng.KehengTimeFields;
 import com.myriad.combat.NpcCombat;
@@ -515,7 +516,9 @@ public final class MonsterManager {
             s.returning=true;s.target=null;s.damageTable.clear();mob.setTarget(null);return;
         }
         mob.setTarget(target);
-        if (canReachByMelee(mob, s, target)) {
+        boolean crabChasingPlayer = isCrabPlayerPair(s, target);
+        Vec3 gap = crabChasingPlayer ? shellGap(mob, target) : Vec3.ZERO;
+        if ((!crabChasingPlayer || gap.lengthSqr() <= .55 * .55) && canReachByMelee(mob, s, target)) {
             mob.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES,target.getEyePosition());
             if(s.attackRecovery+1E-9>=cooldown){
                 s.attackRecovery=0;
@@ -529,7 +532,17 @@ public final class MonsterManager {
                     applyNpcDamage(target,mob,(float)(s.type.getAttack()*growthMultiplier(s.respawnGeneration)));
                 }
             }
-        }else NpcNavigation.move(level,mob,s.navigation,target.position(),s.type.getMoveSpeed()*growthMultiplier(s.respawnGeneration)/12.0);
+        } else {
+            double step = s.type.getMoveSpeed() * growthMultiplier(s.respawnGeneration) / 12.0;
+            Vec3 goal = target.position();
+            if (crabChasingPlayer && gap.lengthSqr() > .55 * .55) {
+                double travel = gap.length() - .45;
+                Vec3 edge = mob.position().add(gap.normalize().scale(travel));
+                goal = new Vec3(edge.x, target.getY(), edge.z);
+                step = Math.min(step, travel);
+            }
+            NpcNavigation.move(level, mob, s.navigation, goal, step);
+        }
     }
 
     private static boolean tickCherryStrike(ServerLevel level, CherryRiftMonsterEntity mob, State state,
@@ -562,9 +575,51 @@ public final class MonsterManager {
         return !finished;
     }
 
+    private static boolean isCrabPlayerPair(State state, LivingEntity target) {
+        return state.type == MonsterType.CHERRY_RIFT_CRAB && target instanceof Player;
+    }
+
+    /** Shortest horizontal displacement from the shell box to the player's box. */
+    private static Vec3 shellGap(Mob mob, LivingEntity target) {
+        var shell = mob.getBoundingBox();
+        var body = target.getBoundingBox();
+        double x = Math.max(0, body.minX - shell.maxX) - Math.max(0, shell.minX - body.maxX);
+        double z = Math.max(0, body.minZ - shell.maxZ) - Math.max(0, shell.minZ - body.maxZ);
+        return new Vec3(x, 0, z);
+    }
+
     private static boolean canReachByMelee(Mob mob, State state, LivingEntity target) {
+        if (isCrabPlayerPair(state, target)) {
+            return crabCanReach(mob, target, state.respawnGeneration);
+        }
         double range = state.type.getAttackRange() * growthMultiplier(state.respawnGeneration) + target.getBbWidth() * .25;
         return mob.distanceToSqr(target) <= range * range && NpcNavigation.visible(mob, target);
+    }
+
+    static boolean crabCanReach(Mob mob, LivingEntity target, int generation) {
+        // Keep the original range gained by later generations, measured from the calibrated shell edge.
+        double reach = .8 + MonsterType.CHERRY_RIFT_CRAB.getAttackRange() * (growthMultiplier(generation) - 1);
+        return shellGap(mob, target).lengthSqr() <= reach * reach
+                && Math.abs(mob.getY() - target.getY()) <= 1.05
+                && NpcNavigation.visible(mob, target) && continuousCrabGround(mob, target);
+    }
+
+    /** The wide shell can overhang a bank. Check the ground between the two bodies before striking. */
+    private static boolean continuousCrabGround(Mob mob, LivingEntity target) {
+        Vec3 from = mob.position(), to = target.position();
+        var level = mob.level();
+        var lowRay = new net.minecraft.world.level.ClipContext(from.add(0, .65, 0), to.add(0, .65, 0),
+                net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, mob);
+        if (level.clip(lowRay).getType() != net.minecraft.world.phys.HitResult.Type.MISS) return false;
+        int steps = Math.max(1, (int) Math.ceil(from.subtract(to).horizontalDistance() * 2));
+        for (int i = 1; i <= steps; i++) {
+            Vec3 at = from.lerp(to, (double) i / steps);
+            var ground = level.clip(new net.minecraft.world.level.ClipContext(at.add(0, .5, 0), at.add(0, -1.25, 0),
+                    net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.ANY, mob));
+            if (ground.getType() == net.minecraft.world.phys.HitResult.Type.MISS
+                    || !level.getFluidState(ground.getBlockPos()).isEmpty()) return false;
+        }
+        return true;
     }
 
     private static void endCherryStrike(State state) {

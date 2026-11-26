@@ -156,7 +156,8 @@ final class WorldTimeChecks {
     private static void cherryAttacks(Fixture f, CherryRiftMonsterEntity mob) throws Exception {
         MonsterType type = mob.variant();
         var timing = CherryRiftAttackTiming.forType(type);
-        Vec3 withinReach = mob.position().add(0, 0, .9);
+        Vec3 withinReach = mob.position().add(0, 0, type == MonsterType.CHERRY_RIFT_CRAB ? 3.48 : .9);
+        if (type == MonsterType.CHERRY_RIFT_CRAB) checkCrabShell(f, mob);
         f.target.setPos(withinReach);
         MonsterManager.onAttacked(mob, f.target, 100);
         float health = f.target.getHealth();
@@ -213,6 +214,42 @@ final class WorldTimeChecks {
         f.target.setHealth(health);
         System.out.println("[MYRIAD-CHERRY-STRIKE] " + type.getId() + " hit=" + timing.hit()
                 + " duration=" + timing.duration() + " verified cue, whiff and cancellation");
+    }
+
+    private static void checkCrabShell(Fixture f, CherryRiftMonsterEntity crab) throws Exception {
+        var player = f.target;
+        Vec3 center = crab.position();
+        var vanillaPush = LivingEntity.class.getDeclaredMethod("doPush", Entity.class);
+        vanillaPush.setAccessible(true);
+        player.setPos(center.add(.5, 0, 0));
+        player.setDeltaMovement(Vec3.ZERO);
+        crab.setDeltaMovement(Vec3.ZERO);
+        vanillaPush.invoke(player, crab);
+        vanillaPush.invoke(crab, player);
+        f.h.assertTrue(player.getDeltaMovement().equals(Vec3.ZERO) && crab.getDeltaMovement().equals(Vec3.ZERO),
+                "Both ticking directions suppress only passive crab/player contact");
+        var other = (CherryRiftMonsterEntity) f.monster(MonsterType.CHERRY_DUSK_FOX);
+        vanillaPush.invoke(other, player);
+        f.h.assertTrue(player.getDeltaMovement().horizontalDistance() > 0, "Other cherry variants still push players");
+        f.removeMob(other);
+        player.setDeltaMovement(Vec3.ZERO);
+        player.setPos(center.add(3.34, 0, 3.34));
+        f.h.assertTrue(MonsterManager.crabCanReach(crab, player, 0), "Exposed diagonal shell edge is in reach");
+        player.setPos(center.add(0, 0, 3.88));
+        f.h.assertTrue(!MonsterManager.crabCanReach(crab, player, 2) && MonsterManager.crabCanReach(crab, player, 3),
+                "Later generations preserve their original incremental reach");
+        player.setPos(center.add(3.34, 2, 3.34));
+        f.h.assertTrue(!MonsterManager.crabCanReach(crab, player, 0), "Upper floor is out of reach");
+        player.setPos(center.add(0, 0, 3.5));
+        f.block(0, 0, 2, Blocks.STONE);
+        f.block(0, 1, 2, Blocks.STONE);
+        f.h.assertTrue(!MonsterManager.crabCanReach(crab, player, 0), "Wall blocks a nearby strike");
+        f.block(0, 0, 2, Blocks.AIR);
+        f.block(0, 1, 2, Blocks.AIR);
+        f.block(0, -1, 2, Blocks.WATER);
+        f.h.assertTrue(!MonsterManager.crabCanReach(crab, player, 0), "A water channel under the shell separates the banks");
+        f.block(0, -1, 2, Blocks.STONE);
+        f.h.assertTrue(MonsterManager.crabCanReach(crab, player, 0), "Level supported ground is reachable");
     }
 
     private static void awaitCherrySwing(Fixture f, CherryRiftMonsterEntity mob, float health) throws Exception {
