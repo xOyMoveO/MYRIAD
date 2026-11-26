@@ -102,6 +102,6 @@
 | 一点残阳（1级） | 86.4 → 120 | 29 → 28 | 518 → 501 |
 | 千羽照野（4级） | 129.6 → 168 | 28 → 28 | 534 → 534 |
 
-用 JDK 25 在独立测试世界执行 `./gradlew --offline runGameTestServer -PmyriadGameTests -PgameTestFilter=myriad:cherry_hero_damage`。旧版套件为45组英雄场景和3次清兵，新版为141组英雄场景和3次清兵。完整运行分别生成一个具名 GameTest 的结果。旧／新原始日志和 XML 保存在本地 `build/verification/cherry-damage-last-five/baseline/` 与 `candidate/`。
+用 JDK 25 在独立测试世界执行 `./gradlew --offline runGameTestServer -PmyriadGameTests -PgameTestFilter=myriad:cherry_hero_damage`。旧版套件为45组英雄场景和3次清兵，新版为141组英雄场景和3次清兵。完整运行分别生成一个具名 GameTest 的结果。复跑后可在 `build/reports/fabric-gametest.xml` 核对用例名与结果。
 
 服务器在三种构筑下逐段核对。静止、瞄准不变、无打断时，同人可吃满飞羽三箭、千羽三轮与持续领域的全部跳数，移出弹道、离开范围、打断或更换目标都会改变真实结果。这里并未采集有移动对手的真人命中分布。基准数字和属性斜率的回归在 `LastFiveDamageFormulaChecks`，`DamageGrowthChecks` 还用物防100、法防25的猪复核飞羽三段。详细角色段定义及取样时点见[原有段数台账](role-damage-last-five.md)。

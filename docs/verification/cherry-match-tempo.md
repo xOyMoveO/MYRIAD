@@ -56,7 +56,7 @@
 
 JDK 25、Gradle Wrapper 9.7.0 离线构建成功。下列 10 个专项各通过 1/1，发行 JAR 通过命名空间、资源和包内容审计。最终 JAR 的 SHA-256 为 `611acb65da6fb6cbbecbcf669c00e335589411df1d4f38e843a8928ce216f330`。每项独立 JVM，检查同名 XML 用例及失败数。`cherry_flat_lane` 覆盖地图显式启用、同步首波、后两波和恢复。`cherry_rift_camps`、`rift_crab_minimap` 覆盖首刷前后一刻、死亡时刻、重生检查延迟、地图情报与地面可见性、旧检查点和新局。`world_time` 覆盖双向推挤、其他变体、壳边落钳、墙体、水沟、高差、代数成长、目标失效与退离。角色实扣、成长、连招和界面分别由 `cherry_first_ten_damage`、`cherry_hero_damage`、`damage_growth`、`first_group`、`chixiao_opening_pace`、`training_ui` 覆盖。
 
-可在仓库根目录依次运行 `bash ./gradlew --offline build`、`python tools/check_namespace.py --jar build/libs/myriad-0.1.0.jar`。专项命令为 `bash ./gradlew --offline runGameTestServer -PmyriadGameTests -PgameTestFilter=myriad:<专项名>`。本机原始 XML 与日志在 `build/tempo-checks/`。
+可在仓库根目录依次运行 `bash ./gradlew --offline build`、`python tools/check_namespace.py --jar build/libs/myriad-0.1.0.jar`。专项命令为 `bash ./gradlew --offline runGameTestServer -PmyriadGameTests -PgameTestFilter=myriad:<专项名>`。各专项复跑后可在 `build/reports/fabric-gametest.xml` 查看结果。
 
 ## 收集真人时长样本
 

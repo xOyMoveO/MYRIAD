@@ -70,20 +70,4 @@
 
 ## 复核
 
-随分支提供[关键帧与正式统计原始字段](evidence/cherry-six-client.json)，可直接核对服务端 tick、兵线、营地、经济、建筑和各端输入示例。完整原始数据存于本机测试 worktree。
-
-服务端逐 tick 观测与专用测试客户端输入分开记录。
-
-- [端口与七份主包散列](../../build/tempo-client/six/manifest.json)
-- [逐 tick 服务器原始状态](../../build/tempo-client/six/server/six-authority.jsonl)
-- [客户端原生输入与事件](../../build/tempo-client/six/session.jsonl)
-- [逐人摘要](../../build/tempo-client/six/summary.json)
-- [六人持久化钱包复核](../../build/tempo-client/six/wallet-check.jsonl)
-- [停止前的最后六人状态](../../build/tempo-client/six/stop-cutoff.json)
-- [六端释放与 PID、端口关闭核对](../../build/tempo-client/six/stop-status.json) · [输入释放回执](../../build/tempo-client/six/stop-release.json)
-- [服务器日志](../../build/tempo-client/six/server.log)
-- [独立分析脚本](../../build/tempo-client/sixanalyze.py)
-- [双方上线截图（落霞）](../../build/tempo-client/six/opening-map-pilot.png)
-- [双方上线截图（夜影）](../../build/tempo-client/six/opening-map-third.png)
-
-在 worktree 执行 `python build/tempo-client/sixanalyze.py` 可从原始 tick 重新提取同一组线上距离、兵线、营地、属性购买与建筑时刻。
+随分支提供[关键帧与正式统计原始字段](evidence/cherry-six-client.json)，可直接核对服务端 tick、兵线、营地、经济、建筑和各端输入示例。
