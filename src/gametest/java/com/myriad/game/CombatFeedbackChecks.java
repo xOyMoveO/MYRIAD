@@ -117,6 +117,9 @@ final class CombatFeedbackChecks {
             var status = ControlStatusSystem.snapshot(victim);
             helper.assertTrue(status.stun() > 0 && status.silence() == 15 && status.charge() == 20 && status.actionRate() == .5F,
                     "Status reads authoritative state for stun, silence, windup and action rate");
+            var publicControls = ControlStatusSystem.controls(victim);
+            helper.assertTrue(publicControls.stun() == status.stun() && publicControls.silence() == status.silence()
+                    && publicControls.root() == 0, "The owner and the observers use the same settled control readings");
             ControlStatusSystem.tick(server);
             helper.assertTrue(status.equals(rival.latest(ControlStatusPayload.class)), "Status reaches its owner");
             helper.assertTrue(!status.elapsed(13).active(), "Stale status expires");
@@ -130,8 +133,9 @@ final class CombatFeedbackChecks {
             ModShieldSystem.grant(victim, "feedback-test", 50, 200);
             helper.assertTrue(ModShieldSystem.displayValue(victim) == 50 && EnemyHealthPayload.shieldPixels(.1F, 2000, 60) == 1
                     && EnemyHealthPayload.shieldPixels(5000, 2000, 60) == 60, "Remaining shield is readable and sized safely");
-            wire(helper, new EnemyHealthPayload(List.of(new EnemyHealthPayload.Entry(victim.getId(), victim.getHealth(),
-                    victim.getMaxHealth(), false, 50F))), EnemyHealthPayload.CODEC);
+            wire(helper, new EnemyHealthPayload(victim.level().dimension().identifier(), 7,
+                    List.of(new EnemyHealthPayload.Entry(victim.getId(), victim.getUUID(), victim.getHealth(),
+                            victim.getMaxHealth(), false, 50F, new EnemyHealthPayload.Controls(3, 17, 42)))), EnemyHealthPayload.CODEC);
             float start = victim.getHealth();
             cast.damage(victim, 20, DamageCalc.Kind.TRUE);
             helper.assertTrue(victim.getHealth() == start && ModShieldSystem.displayValue(victim) == 30, "Fully absorbed hit consumes only shield");

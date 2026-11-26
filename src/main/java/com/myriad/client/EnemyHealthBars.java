@@ -17,24 +17,48 @@ public final class EnemyHealthBars {
     private static final int ENEMY_FILL = 0xFFEF5661;
     private static final int ALLY_EMPTY = 0xEE173D2A;
     private static final int ALLY_FILL = 0xFF55D985;
-    private static EnemyHealthPayload snapshot = new EnemyHealthPayload(java.util.List.of());
+    private static EnemyHealthPayload snapshot;
     private static net.minecraft.client.multiplayer.ClientLevel world;
-    private static long updated;
-    public static void reset() { update(new EnemyHealthPayload(java.util.List.of())); world = null; }
+    private static net.minecraft.client.player.LocalPlayer observer;
+    private static long sequence = -1;
+    private static int receivedTick;
+
+    public static void reset() {
+        snapshot = null;
+        world = null;
+        observer = null;
+    }
+
+    public static void resetConnection() {
+        reset();
+        sequence = -1;
+    }
+
     public static void update(EnemyHealthPayload payload) {
-        world = Minecraft.getInstance().level;
-        updated = world == null ? 0 : world.getGameTime();
+        var mc = Minecraft.getInstance();
+        if (payload.sequence() <= sequence) return;
+        sequence = payload.sequence();
+        if (mc.level == null || mc.player == null || !mc.level.dimension().identifier().equals(payload.dimension())) {
+            reset();
+            return;
+        }
+        world = mc.level;
+        observer = mc.player;
+        receivedTick = observer.tickCount;
         snapshot = payload;
     }
     public static void render(GuiGraphicsExtractor gui, Font font, float partialTick) {
         var mc = Minecraft.getInstance();
         boolean respawnSpectator = ClientDataHolder.buffTicks("hero_respawn") > 0;
-        if (!ClientDataHolder.modEnabled() || mc.player == null || mc.level == null || mc.level != world
-                || mc.level.getGameTime() - updated > 20 || mc.player.isSpectator() && !respawnSpectator) return;
+        if (snapshot == null || !ClientDataHolder.modEnabled() || mc.player == null || mc.player != observer || mc.level != world
+                || mc.player.tickCount - receivedTick > 20 || mc.player.isSpectator() && !respawnSpectator) return;
         int width = mc.getWindow().getGuiScaledWidth(), height = mc.getWindow().getGuiScaledHeight();
         var camera = mc.gameRenderer.mainCamera();
+        float age = Math.max(0, mc.player.tickCount - receivedTick + partialTick);
+        var rows = new OverheadControlRow();
         for (var entry : snapshot.entries()) {
             if (!(mc.level.getEntity(entry.entityId()) instanceof net.minecraft.world.entity.player.Player target)
+                    || target == mc.player || !target.getUUID().equals(entry.playerId())
                     || !target.isAlive() || target.isSpectator() || target.isInvisibleTo(mc.player)
                     || !FogOfWarClient.shouldRenderPlayer(target.getId()) || !mc.player.hasLineOfSight(target)) continue;
             Vec3 head = target.getPosition(partialTick).add(0, target.getBbHeight() + .35, 0);
@@ -53,6 +77,14 @@ public final class EnemyHealthBars {
                     Math.max(1, Math.round(entry.shield()))).withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xA1EEFF)));
             String name = target.getName().getString();
             int nameColor = entry.ally() ? 0xFF72E69A : 0xFFFF8088;
+            rows.protect(x, y, scale, Math.max(font.width(name), font.width(health)), entry.shield() > 0 ? 12 : 7);
+            boolean cameraCanSee = !respawnSpectator || entry.ally()
+                    || mc.getCameraEntity() instanceof net.minecraft.world.entity.player.Player teammate
+                    && teammate != mc.player && teammate.isAlive() && !teammate.isSpectator()
+                    && !target.isInvisibleTo(teammate) && teammate.hasLineOfSight(target);
+            if (cameraCanSee && EnemyHealthPayload.inRange(mc.player.distanceToSqr(target))) {
+                rows.offer(entry.entityId(), distance, x, y, scale, gui.pose().m00(), entry.controls(), age);
+            }
             gui.pose().pushMatrix();
             gui.pose().translate(x, y);
             gui.pose().scale(scale);
@@ -70,5 +102,6 @@ public final class EnemyHealthBars {
             gui.text(font, health, -font.width(health) / 2, -11, 0xFFFFFFFF);
             gui.pose().popMatrix();
         }
+        rows.draw(gui, width, height, age);
     }
 }
