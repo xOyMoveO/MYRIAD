@@ -56,7 +56,6 @@ public class GameManager {
     }
 
     private final Map<UUID, Faction> factions = new HashMap<>();
-    private final List<UUID> joinOrder = new ArrayList<>();
     private final java.util.Set<UUID> pendingRoundReset = new java.util.HashSet<>();
     /** Participants who were offline when preparation moved the match to its bases. */
     private final java.util.Set<UUID> pendingPreparationBase = new java.util.HashSet<>();
@@ -308,9 +307,6 @@ public class GameManager {
             }
         }
         if (ModState.isEnabled() && phase == Phase.WAITING) GuideBook.give(player);
-        if (!joinOrder.contains(player.getUUID())) {
-            joinOrder.add(player.getUUID());
-        }
         Faction faction = factions.get(player.getUUID());
         if (TrainingGround.isTraining(player) || isQueuedMatch() && faction == null) return;
         if (faction == null && phase == Phase.PLAYING) {
@@ -382,7 +378,7 @@ public class GameManager {
     public boolean startQueuedMatch(MinecraftServer server, List<ServerPlayer> players) {
         MatchArena.Mode mode = MatchArena.active();
         int count = players.size();
-        if (phase != Phase.WAITING || !ModState.isEnabled() || !MatchArena.available(server, mode)
+        if (phase != Phase.WAITING || !ModState.isEnabled()
                 || count < 2 || count % 2 != 0 || count > mode.teamSize * 2
                 || mode == MatchArena.Mode.RIFT && count != mode.teamSize * 2) return false;
         Set<UUID> ids = new HashSet<>();
@@ -395,14 +391,15 @@ public class GameManager {
             return false;
         }
 
+        if (!MatchArena.refreshReadiness(server)) return false;
         this.server = server;
         queueRound = UUID.randomUUID();
-        MonsterManager.reloadArena(server);
+        if (mode == MatchArena.Mode.DUEL) MonsterManager.resetArenaRuntime(server);
+        else MonsterManager.reloadArena(server);
         JiarenManager.clearGenerated(server.overworld());
         for (ServerPlayer player : players) {
             TrainingGround.leaveForMatch(player);
             queueRoster.add(player.getUUID());
-            if (!joinOrder.contains(player.getUUID())) joinOrder.add(player.getUUID());
             queueNames.put(player.getUUID(), player.getName().getString());
         }
         factions.clear();
@@ -440,7 +437,9 @@ public class GameManager {
         List<UUID> first = new ArrayList<>();
         List<UUID> second = new ArrayList<>();
         Faction openingSide = guardianFirst ? Faction.GUARDIAN : Faction.DESTRUCTION;
-        List<UUID> teamOrder = guardianFirst ? queueRoster : joinOrder;
+        // All seats are online at admission. For 5v5, retain their connection order within
+        // each faction. The resulting pickOrder then owns the seats across disconnects and saves.
+        List<UUID> teamOrder = guardianFirst ? queueRoster : matchPlayers().stream().map(ServerPlayer::getUUID).toList();
         for (UUID id : teamOrder) {
             Faction faction = factions.get(id);
             if (faction == openingSide) first.add(id);
@@ -804,10 +803,15 @@ public class GameManager {
     public boolean setSpiritVeinSpawn(boolean large, int slot, BlockPos pos) {
         int maxSlot = large ? LARGE_VEIN_CANDIDATE_COUNT : ATTRIBUTE_VEIN_COUNT;
         if (phase != Phase.WAITING || slot < 1 || slot > maxSlot) return false;
-        Map<Integer, BlockPos> targets = large ? largeVeinSpawns : attributeVeinSpawns;
+        if (server == null) return false;
+        var next = ArenaConfigFile.readForEdit(spiritVeinConfigPath(), GameManager::decodeVeins,
+                () -> new VeinLayout(spiritVeinsEnabled, new HashMap<>(attributeVeinSpawns), new HashMap<>(largeVeinSpawns))).orElse(null);
+        if (next == null) return false;
+        Map<Integer, BlockPos> targets = large ? next.large : next.attributes;
         if (pos == null) targets.remove(slot);
         else targets.put(slot, pos.immutable());
-        saveSpiritVeinSpawns();
+        if (!ArenaConfigFile.save(spiritVeinConfigPath(), next.json())) return false;
+        activateVeins(next);
         return true;
     }
 
@@ -819,42 +823,40 @@ public class GameManager {
     public boolean spiritVeinsEnabled() { return spiritVeinsEnabled; }
 
     /** 固定刷新点属于地图配置，写入世界存档并跨服务器重启保留。 */
-    private void saveSpiritVeinSpawns() {
-        if (server == null) return;
-        com.google.gson.JsonObject root = new com.google.gson.JsonObject();
-        root.addProperty("enabled", spiritVeinsEnabled);
-        root.add("attribute", veinPositionsToJson(attributeVeinSpawns));
-        root.add("large", veinPositionsToJson(largeVeinSpawns));
-        try {
-            java.nio.file.Files.writeString(spiritVeinConfigPath(), root.toString());
-        } catch (java.io.IOException e) {
-            com.myriad.Myriad.LOGGER.error("[vein] failed to save fixed spawn points", e);
+    record VeinLayout(boolean enabled, Map<Integer, BlockPos> attributes, Map<Integer, BlockPos> large) {
+        com.google.gson.JsonObject json() {
+            var root = new com.google.gson.JsonObject();
+            root.addProperty("enabled", enabled);
+            root.add("attribute", veinPositionsToJson(attributes));
+            root.add("large", veinPositionsToJson(large));
+            return root;
+        }
+    }
+
+    static VeinLayout decodeVeins(com.google.gson.JsonObject root) {
+        var layout = new VeinLayout(!root.has("enabled") || root.get("enabled").getAsBoolean(),
+                new HashMap<>(), new HashMap<>());
+        var attributes = ArenaConfigFile.object(root, root.has("attribute") ? "attribute" : "small");
+        veinPositionsFromJson(attributes, layout.attributes, ATTRIBUTE_VEIN_COUNT);
+        veinPositionsFromJson(ArenaConfigFile.object(root, "large"), layout.large, LARGE_VEIN_CANDIDATE_COUNT);
+        return layout;
+    }
+
+    void activateVeins(VeinLayout next) {
+        spiritVeinsEnabled = next.enabled;
+        attributeVeinSpawns.clear();
+        attributeVeinSpawns.putAll(next.attributes);
+        largeVeinSpawns.clear();
+        largeVeinSpawns.putAll(next.large);
+        if (!spiritVeinsEnabled) {
+            spiritVeins.clear();
+            spiritVeinAvailableAt = -1;
+            clearSpiritVeinBonuses();
         }
     }
 
     private void loadSpiritVeinSpawns() {
-        spiritVeinsEnabled = true;
-        attributeVeinSpawns.clear();
-        largeVeinSpawns.clear();
-        java.nio.file.Path path = spiritVeinConfigPath();
-        if (!java.nio.file.Files.isRegularFile(path)) return;
-        try {
-            com.google.gson.JsonObject root = com.google.gson.JsonParser.parseString(
-                    java.nio.file.Files.readString(path)).getAsJsonObject();
-            spiritVeinsEnabled = !root.has("enabled") || root.get("enabled").getAsBoolean();
-            com.google.gson.JsonObject attributes = root.getAsJsonObject("attribute");
-            if (attributes == null) attributes = root.getAsJsonObject("small");
-            veinPositionsFromJson(attributes, attributeVeinSpawns, ATTRIBUTE_VEIN_COUNT);
-            veinPositionsFromJson(root.getAsJsonObject("large"), largeVeinSpawns, LARGE_VEIN_CANDIDATE_COUNT);
-            if (!spiritVeinsEnabled) {
-                // Map configuration overrides old dedicated-server checkpoints too.
-                spiritVeins.clear();
-                spiritVeinAvailableAt = -1;
-                clearSpiritVeinBonuses();
-            }
-        } catch (Exception e) {
-            com.myriad.Myriad.LOGGER.error("[vein] failed to load fixed spawn points", e);
-        }
+        ArenaConfigFile.readOptional(spiritVeinConfigPath(), GameManager::decodeVeins).ifPresent(this::activateVeins);
     }
 
     private java.nio.file.Path spiritVeinConfigPath() {
@@ -953,7 +955,7 @@ public class GameManager {
         }
     }
 
-    private void resetMatchObjectives() {
+    void resetMatchObjectives() {
         if (server != null) {
             HeroRespawnSystem.reset(server, factions.keySet());
         }
@@ -1180,19 +1182,15 @@ public class GameManager {
 
     /** 到时按双方灵脉积分结算；同分则平局。 */
     public void checkTimeout(long gameTime) {
-        if (LaneSystem.hasCrystals()) return;
-        if (phase != Phase.PLAYING || matchStartTime < 0) {
-            return;
-        }
-        if (gameTime - matchStartTime >= GameRules.matchDurationTicks()) {
+        if (getRemainingTicks(gameTime) == 0) {
             endMatch(guardianScore == destructionScore ? null
                     : guardianScore > destructionScore ? Faction.GUARDIAN : Faction.DESTRUCTION);
         }
     }
 
-    /** 对局剩余刻数（非对局期返回 -1） */
+    /** 无水晶地图的对局倒计时；没有运行中的倒计时返回 -1。 */
     public long getRemainingTicks(long gameTime) {
-        if (phase != Phase.PLAYING || matchStartTime < 0) {
+        if (phase != Phase.PLAYING || matchStartTime < 0 || LaneSystem.hasCrystals()) {
             return -1;
         }
         return Math.max(0, GameRules.matchDurationTicks() - (gameTime - matchStartTime));
@@ -1274,7 +1272,17 @@ public class GameManager {
 
     public void resetToLobby(MinecraftServer server, boolean teleport) {
         this.server = server;
-        List<ServerPlayer> participants = List.copyOf(matchPlayers());
+        resetToLobby(server, teleport, matchPlayers());
+    }
+
+    /** Administrative reset includes online visitors and waiting players, even during a locked round. */
+    void resetAllToLobby(MinecraftServer server) {
+        pendingResults = null;
+        resetToLobby(server, true, List.copyOf(server.getPlayerList().getPlayers()));
+    }
+
+    private void resetToLobby(MinecraftServer server, boolean teleport, List<ServerPlayer> participants) {
+        this.server = server;
         var results = pendingResults;
         Set<UUID> finishedRoster = results == null ? Set.of() : Set.copyOf(factions.keySet());
         pendingResults = null;
@@ -1293,7 +1301,7 @@ public class GameManager {
         pickOrder.clear(); pendingPreparationBase.clear(); charPicks.clear(); heroDamage.clear(); damageTaken.clear(); healingReceived.clear();
         pickIndex = 0; pickDeadlineTick = -1; pickCountdownEndTick = -1;
         matchStartTime = -1; matchEndTime = -1; guardianScore = 0; destructionScore = 0;
-        pendingRoundReset.addAll(isQueuedMatch() ? queueRoster : joinOrder);
+        pendingRoundReset.addAll(isQueuedMatch() ? queueRoster : factions.keySet());
         factions.clear();
         queueRoster.clear();
         queueNames.clear();

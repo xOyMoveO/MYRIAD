@@ -108,11 +108,14 @@ final class TrainingGroundCombatChecks {
             check.accept(partner.getHealth() == before, "The raw damage event rejects an unconsented vanilla attack");
             TrainingActions.apply(actor, "sparring", true);
             check.accept(!SkillTargets.enemy(actor, partner) && !SkillTargets.enemy(partner, actor), "One-sided consent is ineffective");
+            check.accept(showsFriendlyBar(actor, partner), "A visitor who has not consented keeps a friendly health bar");
             check.accept(!preselectsAheadOfBlock(actor, partner),
                     "One-sided consent preserves the native block click even when the other player is in assist range");
             TrainingActions.apply(partner, "sparring", true);
             check.accept(SkillTargets.enemy(actor, partner) && SkillTargets.enemy(partner, actor)
                     && practice.getFaction() == other.getFaction(), "Mutual consent enables both directions, even for the same practice faction");
+            check.accept(!showsFriendlyBar(actor, partner) && !showsFriendlyBar(partner, actor),
+                    "Same-faction sparring opponents see hostile health bars in both snapshots");
             check.accept(preselectsAheadOfBlock(actor, partner), "Mutual consent enables assist for a graze ahead of the block");
             partner.damageCooldownTime = 0;
             DamageCalc.dealSkillDamage(actor, partner, 35, DamageCalc.Kind.TRUE, 0);
@@ -132,6 +135,7 @@ final class TrainingGroundCombatChecks {
             partner.damageCooldownTime = 0;
             DamageCalc.dealSkillDamage(actor, partner, 35, DamageCalc.Kind.TRUE, 0);
             check.accept(partner.getHealth() == after && !SkillTargets.enemy(actor, partner), "Either player can revoke consent before impact");
+            check.accept(showsFriendlyBar(actor, partner), "Revoking consent restores the friendly health bar");
             check.accept(!preselectsAheadOfBlock(actor, partner), "Revoked consent restores the native block click");
             check.accept(SkillTargets.enemy(actor, dummy) && !SkillTargets.enemy(partner, dummy),
                     "Only the dummy owner can practise damage against it");
@@ -160,6 +164,33 @@ final class TrainingGroundCombatChecks {
                     && "shuo".equals(PlayerDataProvider.get(partner).getCharacterId())
                     && !TrainingMode.isNoMana(partner) && !TrainingGround.isSparring(partner),
                     "Login restores the pre-training role and purse in the lobby with personal options cleared");
+            check.accept(manager.startQueuedMatch(server, entrants), "Full reset fixture has a locked roster");
+            enter(check, partner);
+            PlayerDataProvider.get(actor).setGold(137);
+            PlayerDataProvider.get(official).setGold(500);
+            var absent = player(server, channels, players.size());
+            players.add(absent);
+            PlayerDataProvider.get(absent).setGold(417);
+            server.getPlayerList().getPlayers().remove(absent);
+            server.getPlayerList().getPlayersByUUID().remove(absent.getUUID());
+            try {
+                FullGameReset.execute(server);
+            } catch (java.io.IOException error) {
+                throw new IllegalStateException("Failed to reset synthetic test world", error);
+            }
+            check.accept(List.of(actor, partner, official).stream().allMatch(p ->
+                            p.level() == server.overworld() && !TrainingGround.isTraining(p)
+                            && PlayerDataProvider.get(p).getCharacterId() == null && PlayerDataProvider.get(p).getGold() == 0),
+                    "Full reset clears queued participants, lobby visitors and the loadout restored on leaving practice");
+            check.accept(PlayerDataProvider.get(absent).getGold() == 417, "An offline player is deferred until login");
+            server.getPlayerList().getPlayers().add(absent);
+            server.getPlayerList().getPlayersByUUID().put(absent.getUUID(), absent);
+            PlayerDataProvider.onPlayerLoggedIn(absent);
+            check.accept(PlayerDataProvider.get(absent).getGold() == 0, "Login applies the pending full reset to an offline visitor");
+            PlayerDataProvider.get(actor).setGold(23);
+            FullGameReset.onLogin(actor);
+            check.accept(PlayerDataProvider.get(actor).getGold() == 23, "Completed reset generation is not applied twice");
+
         } finally {
             if (manager.getPhase() != GameManager.Phase.WAITING) manager.resetToLobby(server, false);
             for (var p : players) {
@@ -213,6 +244,11 @@ final class TrainingGroundCombatChecks {
             attacker.setXRot(oldPitch);
             target.setPos(oldTargetPos);
         }
+    }
+
+    private static boolean showsFriendlyBar(ServerPlayer viewer, ServerPlayer target) {
+        return VisionSystem.healthSnapshot(viewer).entries().stream()
+                .filter(entry -> entry.entityId() == target.getId()).findFirst().orElseThrow().ally();
     }
 
     private static ServerPlayer player(MinecraftServer server, List<EmbeddedChannel> channels, int index) {

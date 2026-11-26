@@ -114,7 +114,7 @@ public final class NetworkSetup {
             buf.writeBoolean(payload.modEnabled());
             buf.writeInt(payload.remainTicks());
             PayloadBuffers.writeCollection(buf, payload.equipment(), FriendlyByteBuf::writeUtf);
-            PayloadBuffers.writeMap(buf, payload.attrs(), FriendlyByteBuf::writeUtf, FriendlyByteBuf::writeDouble);
+            PayloadBuffers.writeMap(buf, payload.attrs(), HudAttributeKeys::write, FriendlyByteBuf::writeDouble);
             buf.writeInt(payload.swordQi());
             buf.writeInt(payload.flyingSwords());
             buf.writeInt(payload.basicAttackCooldown());
@@ -161,7 +161,7 @@ public final class NetworkSetup {
                     buf.readBoolean(),
                     buf.readInt(),
                     PayloadBuffers.readList(buf, FriendlyByteBuf::readUtf),
-                    PayloadBuffers.readMap(buf, FriendlyByteBuf::readUtf, FriendlyByteBuf::readDouble),
+                    PayloadBuffers.readMap(buf, HudAttributeKeys::read, FriendlyByteBuf::readDouble),
                     buf.readInt(),
                     buf.readInt(),
                     buf.readInt(),
@@ -319,6 +319,15 @@ public final class NetworkSetup {
         public static final StreamCodec<FriendlyByteBuf, MeleeAssistPayload> CODEC =
                 StreamCodec.unit(new MeleeAssistPayload());
 
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
+
+    /** A consumed physical input reservation. Carries no target, timing or damage claim. */
+    public record BufferedMeleePayload() implements CustomPacketPayload {
+        public static final Type<BufferedMeleePayload> TYPE =
+                new Type<>(Identifier.fromNamespaceAndPath(Myriad.MODID, "buffered_melee"));
+        public static final StreamCodec<FriendlyByteBuf, BufferedMeleePayload> CODEC =
+                StreamCodec.unit(new BufferedMeleePayload());
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
@@ -845,16 +854,20 @@ public final class NetworkSetup {
         public static final int CAMP = 8;
         public static final int BOSS = 9;
         public static final int FOUNTAIN = 10;
+        public static final java.util.UUID NO_PLAYER = new java.util.UUID(0, 0);
         private static void write(FriendlyByteBuf buf, MinimapMarker marker) {
             buf.writeByte(marker.kind());
             buf.writeByte(marker.factionId());
             buf.writeFloat(marker.x());
             buf.writeFloat(marker.z());
-            buf.writeUUID(marker.playerId());
+            boolean hasPlayer = !NO_PLAYER.equals(marker.playerId());
+            buf.writeBoolean(hasPlayer);
+            if (hasPlayer) buf.writeUUID(marker.playerId());
         }
 
         private static MinimapMarker read(FriendlyByteBuf buf) {
-            return new MinimapMarker(buf.readByte(), buf.readByte(), buf.readFloat(), buf.readFloat(), buf.readUUID());
+            return new MinimapMarker(buf.readByte(), buf.readByte(), buf.readFloat(), buf.readFloat(),
+                    buf.readBoolean() ? buf.readUUID() : NO_PLAYER);
         }
     }
 
@@ -1246,6 +1259,7 @@ public final class NetworkSetup {
 
     /** Registers the production codecs on both physical sides and authoritative server receivers. */
     public static void register() {
+        BattleSnapshots.initialize();
         NetworkProtocol.register();
         PayloadTypeRegistry.clientboundPlay().register(YikeStatePayload.TYPE, YikeStatePayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(ShuoViewPayload.TYPE, ShuoViewPayload.CODEC);
@@ -1304,6 +1318,7 @@ public final class NetworkSetup {
         PayloadTypeRegistry.serverboundPlay().register(LuoxiaBowInputPayload.TYPE, LuoxiaBowInputPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(BasicAttackPayload.TYPE, BasicAttackPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(MeleeAssistPayload.TYPE, MeleeAssistPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(BufferedMeleePayload.TYPE, BufferedMeleePayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(TrainActionPayload.TYPE, TrainActionPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(UpgradeSkillPayload.TYPE, UpgradeSkillPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(TeamListPayload.TYPE, TeamListPayload.STREAM_CODEC);
@@ -1391,6 +1406,8 @@ public final class NetworkSetup {
             ServerPlayNetworking.registerGlobalReceiver(MeleeAssistPayload.TYPE,
                     (payload, context) -> com.myriad.combat.VanillaMeleeAttack.tryAssist(context.player()));
         }
+        ServerPlayNetworking.registerGlobalReceiver(BufferedMeleePayload.TYPE,
+                (payload, context) -> com.myriad.combat.VanillaMeleeAttack.tryBuffered(context.player()));
         ServerPlayNetworking.registerGlobalReceiver(TrainActionPayload.TYPE,
                 (payload, context) -> {
             ServerPlayer player = context.player();

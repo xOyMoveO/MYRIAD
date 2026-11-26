@@ -37,7 +37,7 @@ final class RivetChecks {
     static void run(GameTestHelper h) {
         boolean enabled=ModState.isEnabled(),training=TrainingMode.isEnabled(),nc=TrainingMode.isNoCooldown(),nm=TrainingMode.isNoMana();
         var previous=GameManager.get();var fixtures=new ArrayList<Fixture>();boolean[] done={false};
-        @SuppressWarnings("unchecked") var fountains=(Map<Faction,BlockPos>)field(LaneSystem.class,null,"FOUNTAIN_POINTS");
+        var fountains = CombatRegressionTests.laneFixtureLayout().fountains;
         var oldFountains=new EnumMap<Faction,BlockPos>(Faction.class);oldFountains.putAll(fountains);
         Runnable cleanup=()->{fixtures.forEach(RivetChecks::cleanup);fountains.clear();fountains.putAll(oldFountains);set(GameManager.class,null,"instance",previous);
             ModState.setEnabled(enabled);TrainingMode.setEnabled(training);TrainingMode.setNoCooldown(nc);TrainingMode.setNoMana(nm);};

@@ -20,4 +20,17 @@ gradle.projectsEvaluated {
         }
         jvmArgs '-Xmx1G'
     }
+    rootProject.tasks.register('measureBattleTraffic', JavaExec) {
+        dependsOn compileCheck
+        mainClass = 'com.myriad.check.HudTrafficCheck'
+        javaLauncher = rootProject.javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
+        classpath = rootProject.files(checkOutput) + rootProject.sourceSets.main.runtimeClasspath
+        def baseline = rootProject.findProperty('trafficBaselineJar')
+        if (baseline) {
+            def jar = rootProject.file(baseline)
+            if (!jar.isFile()) throw new GradleException("Missing protocol 26 baseline JAR: " + jar)
+            classpath = rootProject.files(jar) + classpath
+            args '--baseline'
+        }
+    }
 }

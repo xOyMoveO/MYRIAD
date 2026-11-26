@@ -8,6 +8,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
@@ -16,11 +17,26 @@ public final class MeleeAssistTargeting {
     private MeleeAssistTargeting() {}
 
     public static LivingEntity find(Player player, Predicate<LivingEntity> allowed) {
+        return pick(player, target -> false, allowed, true);
+    }
+
+    /** Buffered presses can hit a native target (including enemy buildings) or an eligible graze. */
+    static LivingEntity buffered(net.minecraft.server.level.ServerPlayer player) {
+        return pick(player, target -> VanillaMeleeAttack.validTarget(player, target)
+                        && player.level().getWorldBorder().isWithinBounds(target.blockPosition())
+                        && (target instanceof com.myriad.game.DefenseTowerEntity || BasicAttackAssist.canAssist(player, target)),
+                target -> BasicAttackAssist.canAssist(player, target), BasicAttackAssist.enabled());
+    }
+
+    private static LivingEntity pick(Player player, Predicate<LivingEntity> nativeTarget,
+            Predicate<LivingEntity> allowed, boolean allowGraze) {
         double reach = player.entityInteractionRange();
         if (reach <= 0) return null;
         var itemRange = player.getMainHandItem().get(DataComponents.ATTACK_RANGE);
-        if (itemRange != null && itemRange.getClosesetHit(player, 1, EntitySelector.CAN_BE_PICKED).getType()
-                == HitResult.Type.ENTITY) return null;
+        if (itemRange != null && itemRange.getClosesetHit(player, 1, EntitySelector.CAN_BE_PICKED)
+                instanceof EntityHitResult hit) {
+            return hit.getEntity() instanceof LivingEntity living && nativeTarget.test(living) ? living : null;
+        }
 
         Vec3 start = player.getEyePosition();
         Vec3 limit = start.add(player.getLookAngle().scale(reach));
@@ -34,7 +50,10 @@ public final class MeleeAssistTargeting {
         AABB search = new AABB(start, end).inflate(1 + BasicAttackAssist.MAX_PADDING);
         var exact = ProjectileUtil.getEntityHitResult(player, start, end, search,
                 EntitySelector.CAN_BE_PICKED, distanceSquared);
-        if (exact != null && start.distanceToSqr(exact.getLocation()) < distanceSquared) return null;
+        if (exact != null && start.distanceToSqr(exact.getLocation()) < distanceSquared) {
+            return exact.getEntity() instanceof LivingEntity living && nativeTarget.test(living) ? living : null;
+        }
+        if (!allowGraze) return null;
 
         var collider = clip(player, start, end, ClipContext.Block.COLLIDER);
         if (collider.getType() == HitResult.Type.BLOCK) {

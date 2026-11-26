@@ -1,13 +1,11 @@
 package com.myriad.game;
 
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.myriad.combat.SkillTargets;
+import com.myriad.network.EnemyHealthPayload;
 import com.myriad.network.NetworkSetup;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,9 +35,9 @@ public final class VisionSystem {
     public record BrushInfo(String id, BlockPos min, BlockPos max) {}
     public record BrushDraftInfo(String id, BlockPos pos1, BlockPos pos2) {}
 
-    private static final class BrushDraft {
-        BlockPos pos1;
-        BlockPos pos2;
+    static final class BrushDraft {
+        final BlockPos pos1;
+        final BlockPos pos2;
         BrushDraft(BlockPos pos1, BlockPos pos2) { this.pos1 = pos1; this.pos2 = pos2; }
         boolean complete() { return pos1 != null && pos2 != null; }
         BrushInfo info(String id) {
@@ -59,7 +57,11 @@ public final class VisionSystem {
 
     public static void initialize(MinecraftServer minecraftServer) {
         server = minecraftServer;
-        loadBrushes();
+        ArenaConfigFile.readOptional(configPath(), VisionSystem::decodeBrushes).ifPresent(VisionSystem::activateBrushes);
+        clearTracking();
+    }
+
+    static void clearTracking() {
         REVEALED_UNTIL.clear();
         LAST_VISIBLE.clear();
         HEALTH_VIEWERS.clear();
@@ -82,10 +84,10 @@ public final class VisionSystem {
         for (ServerPlayer viewer : level.players()) {
             boolean participant = match && manager.isParticipant(viewer.getUUID()) && !TrainingMode.isEnabled(viewer);
             if (ModState.isEnabled() && (participant || TrainingMode.isEnabled(viewer))) {
-                syncHealth(viewer);
+                Packets.sendToPlayer(viewer, healthSnapshot(viewer));
                 HEALTH_VIEWERS.add(viewer.getUUID());
             } else if (HEALTH_VIEWERS.remove(viewer.getUUID())) {
-                Packets.sendToPlayer(viewer, new com.myriad.network.EnemyHealthPayload(List.of()));
+                Packets.sendToPlayer(viewer, new EnemyHealthPayload(List.of()));
             }
             if (!participant) {
                 if (LAST_VISIBLE.remove(viewer.getUUID()) != null) send(viewer, false, Set.of());
@@ -107,23 +109,24 @@ public final class VisionSystem {
         HEALTH_VIEWERS.removeIf(id -> players.getPlayer(id) == null);
     }
 
-    private static void syncHealth(ServerPlayer viewer) {
+    static EnemyHealthPayload healthSnapshot(ServerPlayer viewer) {
         var team = com.myriad.player.PlayerDataProvider.get(viewer).getFaction();
-        var bars = new ArrayList<com.myriad.network.EnemyHealthPayload.Entry>();
+        boolean inTraining = TrainingGround.isTraining(viewer);
+        var bars = new ArrayList<EnemyHealthPayload.Entry>();
         if (team != null && viewer.isAlive() && (!viewer.isSpectator() || HeroRespawnSystem.isWaiting(viewer))) {
             for (ServerPlayer target : viewer.level().players()) {
                 var targetData = com.myriad.player.PlayerDataProvider.get(target);
                 if (target == viewer || targetData.getFaction() == null || !TrainingGround.canFight(target)
                         || !target.isAlive() || target.isSpectator()
                         || target.isInvisibleTo(viewer) || !viewer.hasLineOfSight(target)) continue;
-                boolean ally = team == targetData.getFaction();
+                boolean ally = inTraining ? !SkillTargets.hostile(viewer, target) : team == targetData.getFaction();
                 if (!ally && !canSee(viewer, target)) continue;
-                bars.add(new com.myriad.network.EnemyHealthPayload.Entry(target.getId(),
+                bars.add(new EnemyHealthPayload.Entry(target.getId(),
                         target.getHealth(), targetData.getModMaxHealth(), ally,
                         com.myriad.player.ModShieldSystem.displayValue(target)));
             }
         }
-        Packets.sendToPlayer(viewer, new com.myriad.network.EnemyHealthPayload(bars));
+        return new EnemyHealthPayload(bars);
     }
 
     private static void send(ServerPlayer viewer, boolean enabled, Set<Integer> visible) {
@@ -289,19 +292,24 @@ public final class VisionSystem {
     public static boolean setBrushCorner(String id, int corner, BlockPos pos) {
         if (!canEdit() || !validId(id) || (corner != 1 && corner != 2) || pos == null) return false;
         String normalized = id.toLowerCase(java.util.Locale.ROOT);
-        BrushDraft draft = BRUSHES.computeIfAbsent(normalized, ignored -> new BrushDraft(null, null));
-        if (corner == 1) draft.pos1 = pos.immutable();
-        else draft.pos2 = pos.immutable();
-        // 单个角点也立即写入当前世界存档，服务器重启后可继续完成另一角点。
-        saveBrushes();
-        return true;
+        var next = brushEditBase();
+        if (next == null) return false;
+        var previous = next.getOrDefault(normalized, new BrushDraft(null, null));
+        next.put(normalized, corner == 1 ? new BrushDraft(pos.immutable(), previous.pos2)
+                : new BrushDraft(previous.pos1, pos.immutable()));
+        return saveBrushes(next);
     }
 
     public static boolean removeBrush(String id) {
         if (!canEdit() || id == null) return false;
-        if (BRUSHES.remove(id.toLowerCase(java.util.Locale.ROOT)) == null) return false;
-        saveBrushes();
-        return true;
+        var next = brushEditBase();
+        if (next == null) return false;
+        return next.remove(id.toLowerCase(java.util.Locale.ROOT)) != null && saveBrushes(next);
+    }
+
+    private static Map<String, BrushDraft> brushEditBase() {
+        return ArenaConfigFile.readForEdit(configPath(), VisionSystem::decodeBrushes,
+                () -> new LinkedHashMap<>(BRUSHES)).orElse(null);
     }
 
     public static List<BrushInfo> brushInfos() {
@@ -331,10 +339,9 @@ public final class VisionSystem {
         return id != null && id.matches("[A-Za-z0-9_-]{1,32}");
     }
 
-    private static void saveBrushes() {
-        if (server == null) return;
+    private static boolean saveBrushes(Map<String, BrushDraft> next) {
         JsonArray array = new JsonArray();
-        for (Map.Entry<String, BrushDraft> entry : BRUSHES.entrySet()) {
+        for (Map.Entry<String, BrushDraft> entry : next.entrySet()) {
             JsonObject json = new JsonObject();
             json.addProperty("id", entry.getKey());
             if (entry.getValue().pos1 != null) {
@@ -347,33 +354,29 @@ public final class VisionSystem {
         }
         JsonObject root = new JsonObject();
         root.add("brushes", array);
-        try {
-            Files.writeString(configPath(), new GsonBuilder().setPrettyPrinting().create().toJson(root));
-        } catch (IOException e) {
-            com.myriad.Myriad.LOGGER.error("[vision] failed to save brush zones", e);
-        }
+        if (!ArenaConfigFile.save(configPath(), root)) return false;
+        activateBrushes(next);
+        return true;
     }
 
-    private static void loadBrushes() {
+    static void activateBrushes(Map<String, BrushDraft> next) {
         BRUSHES.clear();
-        Path path = configPath();
-        if (!Files.isRegularFile(path)) return;
-        try {
-            JsonObject root = JsonParser.parseString(Files.readString(path)).getAsJsonObject();
-            JsonArray array = root.getAsJsonArray("brushes");
-            if (array == null) return;
-            for (JsonElement element : array) {
-                JsonObject json = element.getAsJsonObject();
-                String id = json.get("id").getAsString();
-                if (!validId(id)) continue;
-                BlockPos pos1 = readOptionalPos(json, "x1", "y1", "z1");
-                BlockPos pos2 = readOptionalPos(json, "x2", "y2", "z2");
-                if (pos1 == null && pos2 == null) continue;
-                BRUSHES.put(id.toLowerCase(java.util.Locale.ROOT), new BrushDraft(pos1, pos2));
-            }
-        } catch (Exception e) {
-            com.myriad.Myriad.LOGGER.error("[vision] failed to load brush zones", e);
+        BRUSHES.putAll(next);
+    }
+
+    static Map<String, BrushDraft> decodeBrushes(JsonObject root) {
+        var next = new LinkedHashMap<String, BrushDraft>();
+        var array = ArenaConfigFile.array(root, "brushes");
+        for (JsonElement element : array) {
+            JsonObject json = element.getAsJsonObject();
+            String id = json.get("id").getAsString();
+            if (!validId(id)) continue;
+            BlockPos pos1 = readOptionalPos(json, "x1", "y1", "z1");
+            BlockPos pos2 = readOptionalPos(json, "x2", "y2", "z2");
+            if (pos1 == null && pos2 == null) continue;
+            next.put(id.toLowerCase(java.util.Locale.ROOT), new BrushDraft(pos1, pos2));
         }
+        return next;
     }
 
     private static void writePos(JsonObject json, String x, String y, String z, BlockPos pos) {

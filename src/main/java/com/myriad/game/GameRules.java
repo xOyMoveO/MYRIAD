@@ -7,10 +7,9 @@ public final class GameRules {
     private GameRules() {}
 
     // ---- 胜负条件（可在开局前通过 /myriad settings 修改） ----
-    /** 双方阵营通过占领灵脉获得的胜利分数 */
-    public static int TEAM_TARGET_SCORE = 500;
-    /** 对局时长上限（秒）：到时积分更高的阵营胜利（30 分钟） */
-    public static int MATCH_DURATION_SECONDS = 1800;
+    /** 无水晶地图到时按积分结算。 */
+    public static final int DEFAULT_MATCH_DURATION_SECONDS = 1800;
+    public static int MATCH_DURATION_SECONDS = DEFAULT_MATCH_DURATION_SECONDS;
 
     // ---- 灵脉争夺节奏 ----
     /** 已占领灵脉被敌方单独进入后的免衰减窗口（4 秒）。 */

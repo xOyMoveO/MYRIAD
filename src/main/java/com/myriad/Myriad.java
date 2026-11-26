@@ -27,6 +27,7 @@ public final class Myriad implements ModInitializer {
         net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.MODIFY.register(Myriad::onModifyAttributes);
         com.myriad.player.PlayerDataProvider.initialize();
         com.myriad.player.EntityState.initialize();
+        com.myriad.game.VanillaSession.initialize();
         com.myriad.combat.VanillaArrowTime.initialize();
         com.myriad.game.TrainingGround.initialize();
         com.myriad.game.JiarenManager.initialize();

@@ -58,6 +58,14 @@ public final class CombatRegressionTests {
         Registry.register(BuiltInRegistries.TEST_FUNCTION, Identifier.fromNamespaceAndPath("myriad", name), function);
     }
 
+    static LaneSystem.Layout laneFixtureLayout() {
+        try {
+            return (LaneSystem.Layout) field(LaneSystem.class, null, "layout");
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError("Cannot access lane fixture layout", e);
+        }
+    }
+
     private static Object field(Class<?> owner, Object instance, String name) throws ReflectiveOperationException {
         var field = owner.getDeclaredField(name);
         field.setAccessible(true);
@@ -117,13 +125,11 @@ public final class CombatRegressionTests {
                         && !com.myriad.combat.KnockbackBuffer.allow(tower),
                         "Towers must reject skill statuses and forced motion");
 
-                // This fixture exercises legacy three-lane waypoints without placed towers.
-                // An earlier arena test may have selected a persisted single-lane map.
-                ((java.util.Set<LaneSystem.Lane>) field(LaneSystem.class, null, "ENABLED_LANES"))
-                        .addAll(java.util.EnumSet.allOf(LaneSystem.Lane.class));
-                ((Map<?, ?>) field(LaneSystem.class, null, "TOWER_POINTS")).clear();
-                Map<LaneSystem.Lane, Map<Integer, BlockPos>> paths = (Map<LaneSystem.Lane, Map<Integer, BlockPos>>) field(LaneSystem.class, null, "PATH_POINTS");
-                Map<Faction, BlockPos> bases = (Map<Faction, BlockPos>) field(LaneSystem.class, null, "FOUNTAIN_POINTS");
+                // The following cases construct a three-lane, three-tier map from scratch.
+                // A previous case may have persisted a two-tier profile or crystal positions.
+                LaneSystem.activateLayout(new LaneSystem.Layout());
+                Map<LaneSystem.Lane, Map<Integer, BlockPos>> paths = laneFixtureLayout().paths;
+                Map<Faction, BlockPos> bases = laneFixtureLayout().fountains;
                 bases.put(Faction.GUARDIAN, a);
                 bases.put(Faction.DESTRUCTION, a.offset(30, 0, 0));
                 for (var lane : LaneSystem.Lane.values()) {
@@ -410,7 +416,7 @@ public final class CombatRegressionTests {
         var towerPoints=configureTowerFixture(a);
         BaseRules.logout(player); // Independent fixture: earlier damage tests marked this mock player in combat.
         var phase=GameManager.class.getDeclaredField("phase");phase.setAccessible(true);phase.set(manager,GameManager.Phase.PLAYING);
-        var bases=(Map<Faction,BlockPos>)field(LaneSystem.class,null,"FOUNTAIN_POINTS");bases.put(Faction.GUARDIAN,a);
+        var bases=laneFixtureLayout().fountains;bases.put(Faction.GUARDIAN,a);
         player.setPos(a.getX()+.5,a.getY(),a.getZ()+.5);
         helper.assertTrue(BaseRules.canShop(player),"Own base permits equipment buying");
         BaseRules.tick(player);
@@ -439,6 +445,21 @@ public final class CombatRegressionTests {
             clock.setGameTime(Math.max(savedTime,4800));
             long now=overworld.getGameTime();
             matchStart.setLong(manager,now);helper.assertTrue(LaneSystem.minionReward(100,true)==100,"Opening minions keep base rewards");
+            var layout = (LaneSystem.Layout) field(LaneSystem.class, null, "layout");
+            var savedCrystals = new java.util.EnumMap<>(layout.crystals);
+            try {
+                long deadline = now + GameRules.matchDurationTicks();
+                layout.crystals.clear();
+                helper.assertTrue(manager.getRemainingTicks(deadline - 1) == 1 && manager.getRemainingTicks(deadline) == 0,
+                        "A score match advertises a countdown through its last tick");
+                layout.crystals.put(Faction.GUARDIAN, a);
+                manager.checkTimeout(deadline);
+                helper.assertTrue(manager.getRemainingTicks(deadline) == -1 && manager.getPhase() == GameManager.Phase.PLAYING,
+                        "A crystal match neither expires nor advertises a time limit");
+            } finally {
+                layout.crystals.clear();
+                layout.crystals.putAll(savedCrystals);
+            }
             matchStart.setLong(manager,now-2400);helper.assertTrue(LaneSystem.minionReward(100,true)==110
                     &&LaneSystem.minionReward(100,false)==27&&LaneSystem.minionReward(100,false,true)==88,
                     "Two minutes increases last-hit, shared gold, and shared experience rewards");
@@ -479,7 +500,7 @@ public final class CombatRegressionTests {
         // rather than for missing layout data.
         Class<?> keyType=Class.forName("com.myriad.game.LaneSystem$TowerKey");
         var key=keyType.getDeclaredConstructor(Faction.class,LaneSystem.Lane.class,int.class);key.setAccessible(true);
-        var points=(Map<Object,BlockPos>)field(LaneSystem.class,null,"TOWER_POINTS");points.clear();
+        var points=(Map<Object,BlockPos>)field(LaneSystem.Layout.class, laneFixtureLayout(), "towers");points.clear();
         for(var faction:Faction.values())for(var lane:LaneSystem.Lane.values())for(int tier=1;tier<=3;tier++)
             points.put(key.newInstance(faction,lane,tier),a.offset(10+faction.ordinal()*50+tier*8,0,lane.ordinal()*10));
         return points;
@@ -556,7 +577,7 @@ public final class CombatRegressionTests {
         clear.setAccessible(true); clear.invoke(null,level);
         Class<?> keyType = Class.forName("com.myriad.game.LaneSystem$TowerKey");
         var constructor = keyType.getDeclaredConstructor(Faction.class,LaneSystem.Lane.class,int.class); constructor.setAccessible(true);
-        Map<Object,BlockPos> points = (Map<Object,BlockPos>) field(LaneSystem.class,null,"TOWER_POINTS");
+        Map<Object,BlockPos> points = (Map<Object,BlockPos>) field(LaneSystem.Layout.class, laneFixtureLayout(), "towers");
         points.clear();
         var spawnTower = LaneSystem.class.getDeclaredMethod("spawnTower",net.minecraft.server.level.ServerLevel.class,keyType,BlockPos.class);
         spawnTower.setAccessible(true);
@@ -623,7 +644,7 @@ public final class CombatRegressionTests {
         advance.invoke(null,minion,minionState);
         helper.assertTrue(waypointField.getInt(minionState) == 1,
                 "A nearby forward segment behind a wall must not skip the current corner");
-        Map<LaneSystem.Lane,BlockPos> corners = (Map<LaneSystem.Lane,BlockPos>)field(LaneSystem.class,null,"LANE_CORNERS");
+        Map<LaneSystem.Lane,BlockPos> corners = laneFixtureLayout().corners;
         BlockPos corner = a.offset(10,0,10);
         corners.put(LaneSystem.Lane.TOP, corner);
         var ownRoute = (List<BlockPos>)ordered.invoke(null,LaneSystem.Lane.TOP,Faction.GUARDIAN);

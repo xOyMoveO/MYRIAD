@@ -1,16 +1,12 @@
 package com.myriad.game;
 
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.myriad.network.NetworkSetup;
 import com.myriad.player.LevelSystem;
 import com.myriad.player.PlayerData;
 import com.myriad.player.PlayerDataProvider;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -140,28 +136,18 @@ public final class LaneSystem {
         boolean ranged() { return kind == Kind.RANGED || kind == Kind.MAGIC; }
     }
 
-    private static final Map<Lane, Map<Integer, BlockPos>> PATH_POINTS = new EnumMap<>(Lane.class);
-    private static final Map<Lane, BlockPos> LANE_CORNERS = new EnumMap<>(Lane.class);
-    private static final java.util.EnumSet<Lane> MANUAL_PATHS = java.util.EnumSet.noneOf(Lane.class);
-    // A platform's footprint, not the building's combat range or player hitbox.
-    private static final Map<BlockPos, Double> MINION_PLATFORM_RADII = new LinkedHashMap<>();
 
-    public static BlockPos laneCorner(Lane lane) { return LANE_CORNERS.get(lane); }
+    public static BlockPos laneCorner(Lane lane) { return layout.corners.get(lane); }
 
     public static boolean setLaneCorner(Lane lane, BlockPos pos) {
         if (!canEdit() || lane == null || lane == Lane.MID) return false;
-        if (pos == null) LANE_CORNERS.remove(lane);
-        else LANE_CORNERS.put(lane, pos.immutable());
-        saveLayout();
-        return true;
+        return editLayout(next -> {
+            if (pos == null) next.corners.remove(lane);
+            else next.corners.put(lane, pos.immutable());
+        });
     }
-    private static final Map<TowerKey, BlockPos> TOWER_POINTS = new LinkedHashMap<>();
-    /** Map-owned lanes; older maps continue to enable all three lanes. */
-    private static final java.util.EnumSet<Lane> ENABLED_LANES = java.util.EnumSet.allOf(Lane.class);
-    /** 3v3 uses outer/high-ground towers (1,3); older maps retain all three tiers. */
-    private static final java.util.SortedSet<Integer> ENABLED_TOWER_TIERS = new java.util.TreeSet<>(List.of(1,2,3));
-    public static List<Lane> enabledLanes() { return List.copyOf(ENABLED_LANES); }
-    public static List<Integer> enabledTowerTiers() { return List.copyOf(ENABLED_TOWER_TIERS); }
+    public static List<Lane> enabledLanes() { return List.copyOf(layout.enabled); }
+    public static List<Integer> enabledTowerTiers() { return List.copyOf(layout.tiers); }
     private static final java.util.Set<String> DESTROYED_TOWERS = new java.util.HashSet<>();
 
     static boolean hasDestroyedTower(long matchStart) {
@@ -170,9 +156,9 @@ public final class LaneSystem {
 
     private static String towerId(Faction faction,Lane lane,int tier){return faction.getName()+"/"+lane.id+"/"+tier;}
     private static boolean siegeUnlocked(Faction faction,Lane lane){
-        if (!ENABLED_LANES.contains(lane)) return false;
+        if (!layout.enabled.contains(lane)) return false;
         Faction enemy=faction==Faction.GUARDIAN?Faction.DESTRUCTION:Faction.GUARDIAN;
-        for(int tier:ENABLED_TOWER_TIERS)if(!TOWER_POINTS.containsKey(new TowerKey(enemy,lane,tier))
+        for(int tier:layout.tiers)if(!layout.towers.containsKey(new TowerKey(enemy,lane,tier))
                 || !DESTROYED_TOWERS.contains(towerId(enemy,lane,tier)))return false;
         return true;
     }
@@ -189,9 +175,7 @@ public final class LaneSystem {
         }
         state.attackDamage=baseAttack(state.kind)*(1+stages*.10F)*(late?1.6F:1);
     }
-    private static final Map<Faction, BlockPos> FOUNTAIN_POINTS = new EnumMap<>(Faction.class);
-    private static final Map<Faction, BlockPos> CRYSTAL_POINTS = new EnumMap<>(Faction.class);
-    public static boolean hasCrystals(){return !CRYSTAL_POINTS.isEmpty();}
+    public static boolean hasCrystals(){return !layout.crystals.isEmpty();}
     private static boolean crystalVulnerable(Faction defender){
         Faction enemy=defender==Faction.GUARDIAN?Faction.DESTRUCTION:Faction.GUARDIAN;
         for(Lane lane:Lane.values())if(siegeUnlocked(enemy,lane))return true;
@@ -205,24 +189,60 @@ public final class LaneSystem {
     private static boolean layoutActive;
     private static boolean runtimeNeedsCleanup;
 
-    static {
-        for (Lane lane : Lane.values()) PATH_POINTS.put(lane, new LinkedHashMap<>());
+    static final class Layout {
+        final Map<Lane, Map<Integer, BlockPos>> paths = new EnumMap<>(Lane.class);
+        final Map<Lane, BlockPos> corners = new EnumMap<>(Lane.class);
+        final java.util.EnumSet<Lane> manual = java.util.EnumSet.noneOf(Lane.class);
+        final Map<BlockPos, Double> radii = new LinkedHashMap<>();
+        final Map<TowerKey, BlockPos> towers = new LinkedHashMap<>();
+        final java.util.EnumSet<Lane> enabled = java.util.EnumSet.allOf(Lane.class);
+        final java.util.SortedSet<Integer> tiers = new java.util.TreeSet<>(List.of(1, 2, 3));
+        final Map<Faction, BlockPos> fountains = new EnumMap<>(Faction.class);
+        final Map<Faction, BlockPos> crystals = new EnumMap<>(Faction.class);
+
+        Layout() {
+            for (Lane lane : Lane.values()) paths.put(lane, new LinkedHashMap<>());
+        }
+
+        Layout copy() {
+            Layout next = new Layout();
+            next.enabled.clear();
+            next.enabled.addAll(enabled);
+            next.tiers.clear();
+            next.tiers.addAll(tiers);
+            for (Lane lane : Lane.values()) next.paths.get(lane).putAll(paths.get(lane));
+            next.corners.putAll(corners);
+            next.manual.addAll(manual);
+            next.radii.putAll(radii);
+            next.towers.putAll(towers);
+            next.fountains.putAll(fountains);
+            next.crystals.putAll(crystals);
+            return next;
+        }
+    }
+
+    private static Layout layout = new Layout();
+
+    static void activateLayout(Layout candidate) {
+        layout = candidate;
     }
 
     public static void initialize(MinecraftServer minecraftServer) {
         server = minecraftServer;
-        loadLayout();
+        ArenaConfigFile.readOptional(layoutPath(), root -> decodeLayout(root, false)).ifPresent(LaneSystem::activateLayout);
         activeMatchStart = Long.MIN_VALUE;
         runtimeNeedsCleanup = true;
     }
 
-    public static void reloadArena(MinecraftServer minecraftServer) {
+    static void resetArenaRuntime(MinecraftServer minecraftServer) {
         clearRuntime(minecraftServer.overworld());
-        initialize(minecraftServer);
+        activeMatchStart = Long.MIN_VALUE;
+        runtimeNeedsCleanup = true;
     }
 
     public static void shutdown() {
         server = null;
+        layout = new Layout();
         UNITS.clear();
         activeMatchStart = Long.MIN_VALUE;
         nextWaveAt = Long.MAX_VALUE;
@@ -284,10 +304,10 @@ public final class LaneSystem {
             broadcast(MatchMessages.Tone.WARNING,
                     Component.translatable("message.myriad.lane_config_incomplete"));
         }
-        for (Map.Entry<TowerKey, BlockPos> entry : TOWER_POINTS.entrySet()) {
+        for (Map.Entry<TowerKey, BlockPos> entry : layout.towers.entrySet()) {
             spawnTower(level, entry.getKey(), entry.getValue());
         }
-        CRYSTAL_POINTS.forEach((faction,pos)->spawnCrystal(level,faction,pos));
+        layout.crystals.forEach((faction,pos)->spawnCrystal(level,faction,pos));
         if (!towerLayoutReady()) {
             broadcast(MatchMessages.Tone.WARNING,
                     Component.translatable("message.myriad.tower_config_incomplete"));
@@ -301,13 +321,13 @@ public final class LaneSystem {
         for (ServerPlayer player : level.players()) {
             if (!com.myriad.combat.NpcCombat.canTarget(player)) continue;
             Faction faction = manager.factionOf(player);
-            if (faction != null) for (var enemy : FOUNTAIN_POINTS.entrySet()) {
+            if (faction != null) for (var enemy : layout.fountains.entrySet()) {
                 if(enemy.getKey()==faction || player.distanceToSqr(Vec3.atCenterOf(enemy.getValue()))>FOUNTAIN_RADIUS*FOUNTAIN_RADIUS)continue;
                 float hit=Math.max(40,PlayerDataProvider.get(player).getModMaxHealth()*.25F);
                 com.myriad.combat.NpcCombat.environmentHit(player,hit,com.myriad.combat.DamageCalc.Kind.TRUE);
                 spawnAttackBeam(level,Vec3.atCenterOf(enemy.getValue()).add(0,3,0),player.getBoundingBox().getCenter(),enemy.getKey());
             }
-            BlockPos fountain = faction == null ? null : FOUNTAIN_POINTS.get(faction);
+            BlockPos fountain = faction == null ? null : layout.fountains.get(faction);
             if (fountain == null) continue;
             Vec3 center = Vec3.atCenterOf(fountain);
             if (player.distanceToSqr(center) > FOUNTAIN_RADIUS * FOUNTAIN_RADIUS) continue;
@@ -331,7 +351,7 @@ public final class LaneSystem {
                         player.getX(), player.getY() + .5, player.getZ(), 4, .25, .4, .25, .015);
             }
         }
-        for (Map.Entry<Faction, BlockPos> entry : FOUNTAIN_POINTS.entrySet()) {
+        for (Map.Entry<Faction, BlockPos> entry : layout.fountains.entrySet()) {
             BlockPos pos = entry.getValue();
             DustParticleOptions dust = new DustParticleOptions(
                     entry.getKey().rgb(), 1.0F);
@@ -347,17 +367,17 @@ public final class LaneSystem {
     }
 
     private static boolean pathLayoutReady() {
-        for (Lane lane : ENABLED_LANES) {
+        for (Lane lane : layout.enabled) {
             if (orderedPath(lane, Faction.GUARDIAN).size() < 2) return false;
         }
         return true;
     }
 
     private static boolean towerLayoutReady() {
-        for (Lane lane : ENABLED_LANES) {
+        for (Lane lane : layout.enabled) {
             for (Faction faction : Faction.values()) {
-                for (int tier : ENABLED_TOWER_TIERS) {
-                    if (!TOWER_POINTS.containsKey(new TowerKey(faction, lane, tier))) return false;
+                for (int tier : layout.tiers) {
+                    if (!layout.towers.containsKey(new TowerKey(faction, lane, tier))) return false;
                 }
             }
         }
@@ -390,7 +410,7 @@ public final class LaneSystem {
     }
 
     private static void spawnWave(ServerLevel level) {
-        for (Lane lane : ENABLED_LANES) {
+        for (Lane lane : layout.enabled) {
             for (Faction faction : Faction.values()) {
                 List<BlockPos> path = orderedPath(lane, faction);
                 if (path.size() < 2) continue;
@@ -452,48 +472,30 @@ public final class LaneSystem {
     private static void tickTower(ServerLevel level, Mob tower, UnitState state, long now) {
         tower.setDeltaMovement(Vec3.ZERO);
         if (now % 20 == 0) ensureTowerVisual(level, tower, state);
-        LivingEntity target = state.towerLockTarget == null ? null
+        LivingEntity locked = state.towerLockTarget == null ? null
                 : level.getEntity(state.towerLockTarget) instanceof LivingEntity living ? living : null;
         LivingEntity priority = state.towerHeroPriorityTarget == null ? null
                 : level.getEntity(state.towerHeroPriorityTarget) instanceof LivingEntity living ? living : null;
-        if (!validTowerLockTarget(tower, state, priority)) {
+        TowerAim choice = towerAim(tower, state, priority);
+        if (choice == null) {
             state.towerHeroPriorityTarget = null;
-            priority = null;
+            if (locked != priority) choice = towerAim(tower, state, locked);
         }
-        if (priority != null && target != priority) {
-            target = priority;
-            state.towerLockTarget = priority.getUUID();
-            state.towerLockStarted = now;
-        }
-        if (!validTowerLockTarget(tower, state, target)) {
+        if (choice == null) {
             state.towerLockTarget = null;
-            target = priority;
-            if (target == null && state.kind == Kind.CRYSTAL) {
-                target = nearestEnemyMinion(level, tower, state.faction, TOWER_ATTACK_RANGE);
-                if (target == null) target = nearestEnemyPlayer(level, tower, state.faction, TOWER_ATTACK_RANGE);
-            } else if (target == null) {
-                target = nearest(level, tower, TOWER_ATTACK_RANGE, candidate -> {
-                    var minion = UNITS.get(candidate.getUUID());
-                    return minion != null && !minion.tower() && validTowerLockTarget(tower, state, candidate);
-                });
-                if (target == null) target = nearest(level, tower, TOWER_ATTACK_RANGE,
-                        candidate -> candidate instanceof ServerPlayer && validTowerLockTarget(tower, state, candidate));
-            }
-            if (target == null) {
-                warnTowerTarget(state, null);
-                return;
-            }
+            choice = acquireTowerTarget(level, tower, state, locked, priority);
+        }
+        if (choice == null) {
+            warnTowerTarget(state, null);
+            return;
+        }
+        LivingEntity target = choice.target();
+        Vec3 aim = choice.point();
+        if (!target.getUUID().equals(state.towerLockTarget)) {
             state.towerLockTarget = target.getUUID();
             state.towerLockStarted = now;
             if (state.kind == Kind.CRYSTAL) level.playSound(null, tower.getX(), tower.getY(), tower.getZ(),
                     SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, .45F, 1.25F);
-        }
-        Vec3 aim = state.kind == Kind.CRYSTAL ? target.getBoundingBox().getCenter() : TowerSight.visibleBodyPoint(tower, target);
-        if (aim == null) {
-            state.towerLockTarget = null;
-            state.towerHeroPriorityTarget = null;
-            warnTowerTarget(state, null);
-            return;
         }
         warnTowerTarget(state, target);
         float lockProgress = Math.clamp((now - state.towerLockStarted) / (float) TOWER_LOCK_TICKS, 0.0F, 1.0F);
@@ -528,12 +530,49 @@ public final class LaneSystem {
                 SoundSource.HOSTILE, .8F, state.towerTier == 3 ? .75F : 1.0F);
     }
 
-    private static boolean validTowerLockTarget(Mob tower, UnitState state, LivingEntity target) {
-        return target != null && com.myriad.combat.NpcCombat.canTarget(target)
-                && factionOf(target) != null && factionOf(target) != state.faction
-                && tower.distanceToSqr(target) <= TOWER_ATTACK_RANGE * TOWER_ATTACK_RANGE
-                && (state.kind == Kind.CRYSTAL || (!(target instanceof ServerPlayer hero)
-                    || VisionSystem.visibleToTower(tower, state.faction, hero)) && TowerSight.visibleBodyPoint(tower, target) != null);
+    /** A sight test is valid only for this tower and tick. Keep its point through aim and fire. */
+    private record TowerAim(LivingEntity target, Vec3 point) {}
+
+    private static TowerAim towerAim(Mob tower, UnitState state, LivingEntity target) {
+        if (target == null || !com.myriad.combat.NpcCombat.canTarget(target)) return null;
+        Faction faction = factionOf(target);
+        if (faction == null || faction == state.faction
+                || tower.distanceToSqr(target) > TOWER_ATTACK_RANGE * TOWER_ATTACK_RANGE) return null;
+        if (state.kind == Kind.CRYSTAL) return new TowerAim(target, target.getBoundingBox().getCenter());
+        if (target instanceof ServerPlayer hero && !VisionSystem.visibleToTower(tower, state.faction, hero)) return null;
+        Vec3 point = TowerSight.visibleBodyPoint(tower, target);
+        return point == null ? null : new TowerAim(target, point);
+    }
+
+    private static TowerAim acquireTowerTarget(ServerLevel level, Mob tower, UnitState state,
+            LivingEntity rejectedLock, LivingEntity rejectedPriority) {
+        if (state.kind == Kind.CRYSTAL) {
+            LivingEntity target = nearestEnemyMinion(level, tower, state.faction, TOWER_ATTACK_RANGE);
+            if (target == null) target = nearestEnemyPlayer(level, tower, state.faction, TOWER_ATTACK_RANGE);
+            return target == null ? null : new TowerAim(target, target.getBoundingBox().getCenter());
+        }
+        // The nearest visible minion outranks every hero. A previously rejected target has
+        // already been tested against this same tower and block geometry during this tick.
+        TowerAim best = null;
+        boolean bestIsMinion = false;
+        double rangeSquared = TOWER_ATTACK_RANGE * TOWER_ATTACK_RANGE;
+        double bestDistance = rangeSquared;
+        for (LivingEntity candidate : level.getEntitiesOfClass(LivingEntity.class,
+                tower.getBoundingBox().inflate(TOWER_ATTACK_RANGE))) {
+            if (!candidate.isAlive() || candidate == tower || candidate == rejectedLock || candidate == rejectedPriority) continue;
+            var unit = UNITS.get(candidate.getUUID());
+            boolean minion = unit != null && !unit.tower();
+            if (!minion && (bestIsMinion || !(candidate instanceof ServerPlayer))) continue;
+            double distance = tower.distanceToSqr(candidate);
+            if (distance >= rangeSquared || minion == bestIsMinion && distance >= bestDistance) continue;
+            TowerAim visible = towerAim(tower, state, candidate);
+            if (visible != null) {
+                best = visible;
+                bestDistance = distance;
+                bestIsMinion = minion;
+            }
+        }
+        return best;
     }
 
     private static void warnTowerTarget(UnitState state, LivingEntity target) {
@@ -565,13 +604,13 @@ public final class LaneSystem {
             if (state.kind != Kind.TOWER || state.faction != defender || tower == null || !tower.isAlive()
                     || tower.distanceToSqr(victim) > TOWER_ATTACK_RANGE * TOWER_ATTACK_RANGE
                     || tower.distanceToSqr(attacker) > TOWER_ATTACK_RANGE * TOWER_ATTACK_RANGE
-                    || !validTowerLockTarget(tower, state, attacker)) continue;
+                    || towerAim(tower, state, attacker) == null) continue;
             LivingEntity priority = state.towerHeroPriorityTarget == null ? null
                     : tower.level().getEntity(state.towerHeroPriorityTarget) instanceof LivingEntity living ? living : null;
-            if (validTowerLockTarget(tower, state, priority)) continue;
+            if (towerAim(tower, state, priority) != null) continue;
             LivingEntity locked = state.towerLockTarget == null ? null
                     : tower.level().getEntity(state.towerLockTarget) instanceof LivingEntity living ? living : null;
-            if (locked instanceof ServerPlayer && validTowerLockTarget(tower, state, locked)) {
+            if (locked instanceof ServerPlayer && towerAim(tower, state, locked) != null) {
                 state.towerHeroPriorityTarget = locked.getUUID();
                 continue;
             }
@@ -679,8 +718,8 @@ public final class LaneSystem {
             if (objective != null && objective.tower() && state.path != null) {
                 // Engaging a tower commits lane progress, including for ranged units
                 // that stop before reaching the tower's waypoint.
-                BlockPos point = objective.kind==Kind.CRYSTAL?CRYSTAL_POINTS.get(objective.faction)
-                        :TOWER_POINTS.get(new TowerKey(objective.faction, objective.lane, objective.towerTier));
+                BlockPos point = objective.kind==Kind.CRYSTAL?layout.crystals.get(objective.faction)
+                        :layout.towers.get(new TowerKey(objective.faction, objective.lane, objective.towerTier));
                 int index = point==null?-1:state.path.indexOf(point);
                 if (index >= 0) state.waypointIndex = Math.max(state.waypointIndex, index);
             }
@@ -743,8 +782,8 @@ public final class LaneSystem {
     private static void skipDestroyedTowerPoints(UnitState state) {
         while (state.waypointIndex < state.path.size()) {
             BlockPos point = state.path.get(state.waypointIndex);
-            TowerKey key = TOWER_POINTS.keySet().stream().filter(k -> k.lane == state.lane
-                    && k.faction != state.faction && TOWER_POINTS.get(k).equals(point)).findFirst().orElse(null);
+            TowerKey key = layout.towers.keySet().stream().filter(k -> k.lane == state.lane
+                    && k.faction != state.faction && layout.towers.get(k).equals(point)).findFirst().orElse(null);
             if (key == null || UNITS.values().stream().anyMatch(s -> s.tower() && s.faction == key.faction
                     && s.lane == key.lane && s.towerTier == key.tier && s.health > 0
                     && s.entity != null && s.entity.isAlive())) break;
@@ -775,14 +814,14 @@ public final class LaneSystem {
         if (state.path == null) return true;
         for (int i = 1; i < state.path.size(); i++) {
             BlockPos point = state.path.get(i);
-            if (TOWER_POINTS.entrySet().stream().anyMatch(e -> e.getKey().lane == state.lane
+            if (layout.towers.entrySet().stream().anyMatch(e -> e.getKey().lane == state.lane
                     && e.getKey().faction != state.faction && e.getValue().equals(point))) return state.waypointIndex >= i;
         }
         return state.waypointIndex >= state.path.size();
     }
 
     private static boolean hasPendingCorner(UnitState state) {
-        BlockPos corner = LANE_CORNERS.get(state.lane);
+        BlockPos corner = layout.corners.get(state.lane);
         return corner != null && state.path != null && state.path.indexOf(corner) >= state.waypointIndex;
     }
 
@@ -793,7 +832,7 @@ public final class LaneSystem {
         // Combat can carry a minion around a bend. Rejoin the furthest nearby
         // forward segment instead of walking back to the missed corner.
         for (int i = state.path.size() - 1; i > state.waypointIndex; i--) {
-            BlockPos corner = LANE_CORNERS.get(state.lane);
+            BlockPos corner = layout.corners.get(state.lane);
             int cornerIndex = corner == null ? -1 : state.path.indexOf(corner);
             if (cornerIndex >= state.waypointIndex && i > cornerIndex) continue;
             Vec3 from = Vec3.atBottomCenterOf(state.path.get(i - 1)).multiply(1,0,1);
@@ -816,14 +855,14 @@ public final class LaneSystem {
             double projection = incoming.lengthSqr() > .01 ? position.subtract(point).dot(incoming) / incoming.lengthSqr() : 0;
             boolean passed = incoming.lengthSqr() > .01 && projection >= 0
                     && position.distanceToSqr(point.add(incoming.scale(projection))) <= 1.5625;
-            double radius = TOWER_POINTS.containsValue(state.path.get(i)) ? 3.5 : 1.25;
-            if (state.path.get(i).equals(LANE_CORNERS.get(state.lane))) {
+            double radius = layout.towers.containsValue(state.path.get(i)) ? 3.5 : 1.25;
+            if (state.path.get(i).equals(layout.corners.get(state.lane))) {
                 passed = false;
                 radius = 2.25; // navigation stops short; formations cannot all occupy one block
             }
             if (!passed && position.distanceToSqr(point) > radius*radius) break;
-            if (!state.path.get(i).equals(LANE_CORNERS.get(state.lane))
-                    && !TOWER_POINTS.containsValue(state.path.get(i)) && i + 1 < state.path.size()
+            if (!state.path.get(i).equals(layout.corners.get(state.lane))
+                    && !layout.towers.containsValue(state.path.get(i)) && i + 1 < state.path.size()
                     && !NpcNavigation.clearWalk(mob, Vec3.atBottomCenterOf(state.path.get(i + 1)))
                     && position.distanceToSqr(point) > .16) break;
             state.waypointIndex++;
@@ -871,8 +910,8 @@ public final class LaneSystem {
     }
 
     private static double platformRadius(LivingEntity target){
-        return MatchArena.active()==MatchArena.Mode.DUEL&&!MANUAL_PATHS.isEmpty()&&target instanceof DefenseTowerEntity
-                ? MINION_PLATFORM_RADII.getOrDefault(BlockPos.containing(target.position()),0.0) : 0.0;
+        return MatchArena.active()==MatchArena.Mode.DUEL&&!layout.manual.isEmpty()&&target instanceof DefenseTowerEntity
+                ? layout.radii.getOrDefault(BlockPos.containing(target.position()),0.0) : 0.0;
     }
 
     private static boolean visibleLaneTarget(Mob from,LivingEntity target){
@@ -1217,31 +1256,31 @@ public final class LaneSystem {
     }
 
     private static boolean usesManualPath(Lane lane){
-        return MatchArena.active()==MatchArena.Mode.DUEL&&MANUAL_PATHS.contains(lane)&&PATH_POINTS.get(lane).size()>=2;
+        return MatchArena.active()==MatchArena.Mode.DUEL&&layout.manual.contains(lane)&&layout.paths.get(lane).size()>=2;
     }
     static List<BlockPos> orderedPath(Lane lane, Faction faction) {
-        if (!ENABLED_LANES.contains(lane)) return List.of();
+        if (!layout.enabled.contains(lane)) return List.of();
         // Existing arenas keep tower-derived routing unless the 3v3 layout explicitly opts in.
-        if (!usesManualPath(lane)&&TOWER_POINTS.keySet().stream().anyMatch(k -> k.lane == lane)) {
+        if (!usesManualPath(lane)&&layout.towers.keySet().stream().anyMatch(k -> k.lane == lane)) {
             List<BlockPos> route = new ArrayList<>();
             Faction enemy = faction == Faction.GUARDIAN ? Faction.DESTRUCTION : Faction.GUARDIAN;
             BlockPos start = respawnPoint(faction);
             if (start != null) route.add(start);
             for (int tier = 3; tier >= 1; tier--) {
-                BlockPos p = TOWER_POINTS.get(new TowerKey(faction,lane,tier));
+                BlockPos p = layout.towers.get(new TowerKey(faction,lane,tier));
                 if (p != null && !route.contains(p)) route.add(p);
             }
-            BlockPos corner = LANE_CORNERS.get(lane);
+            BlockPos corner = layout.corners.get(lane);
             if (corner != null && !route.contains(corner)) route.add(corner);
             for (int tier = 1; tier <= 3; tier++) {
-                BlockPos p = TOWER_POINTS.get(new TowerKey(enemy,lane,tier));
+                BlockPos p = layout.towers.get(new TowerKey(enemy,lane,tier));
                 if (p != null && !route.contains(p)) route.add(p);
             }
-            BlockPos end = CRYSTAL_POINTS.getOrDefault(enemy,respawnPoint(enemy));
+            BlockPos end = layout.crystals.getOrDefault(enemy,respawnPoint(enemy));
             if (end != null && !route.contains(end)) route.add(end);
             if (route.size() >= 2) return route;
         }
-        List<Map.Entry<Integer, BlockPos>> entries = new ArrayList<>(PATH_POINTS.get(lane).entrySet());
+        List<Map.Entry<Integer, BlockPos>> entries = new ArrayList<>(layout.paths.get(lane).entrySet());
         entries.sort(Map.Entry.comparingByKey());
         List<BlockPos> result = new ArrayList<>(entries.stream().map(Map.Entry::getValue).toList());
         // 若管理员还没有设置三条路线，使用两座基地之间的自动兜底路线，保证
@@ -1307,53 +1346,40 @@ public final class LaneSystem {
 
     public static boolean setPathPoint(Lane lane, int slot, BlockPos pos) {
         if (!canEdit() || lane == null || slot < 1 || slot > MAX_PATH_POINTS || pos == null) return false;
-        PATH_POINTS.get(lane).put(slot, pos.immutable());
-        saveLayout();
-        return true;
+        return editLayout(next -> next.paths.get(lane).put(slot, pos.immutable()));
     }
 
     public static boolean clearPathPoint(Lane lane, int slot) {
         if (!canEdit() || lane == null || slot < 1 || slot > MAX_PATH_POINTS) return false;
-        PATH_POINTS.get(lane).remove(slot);
-        saveLayout();
-        return true;
+        return editLayout(next -> next.paths.get(lane).remove(slot));
     }
 
     public static boolean setTowerPoint(Faction faction, Lane lane, int tier, BlockPos pos) {
-        if (!canEdit() || faction == null || !ENABLED_LANES.contains(lane) || !ENABLED_TOWER_TIERS.contains(tier) || pos == null) {
-            return false;
-        }
-        forgetPlatform(TOWER_POINTS.put(new TowerKey(faction, lane, tier), pos.immutable()),pos);
-        saveLayout();
-        return true;
+        if (!canEdit() || faction == null || lane == null || pos == null) return false;
+        return editLayout(next -> next.enabled.contains(lane) && next.tiers.contains(tier),
+                next -> forgetPlatform(next, next.towers.put(new TowerKey(faction, lane, tier), pos.immutable()), pos));
     }
 
     public static boolean clearTowerPoint(Faction faction, Lane lane, int tier) {
         if (!canEdit() || faction == null || lane == null || tier < 1 || tier > TOWERS_PER_LANE) return false;
-        forgetPlatform(TOWER_POINTS.remove(new TowerKey(faction, lane, tier)),null);
-        saveLayout();
-        return true;
+        return editLayout(next -> forgetPlatform(next, next.towers.remove(new TowerKey(faction, lane, tier)), null));
     }
 
     public static boolean setFountainPoint(Faction faction, BlockPos pos) {
         if (!canEdit() || faction == null || pos == null) return false;
-        FOUNTAIN_POINTS.put(faction, pos.immutable());
-        saveLayout();
-        return true;
+        return editLayout(next -> next.fountains.put(faction, pos.immutable()));
     }
 
     public static boolean setCrystalPoint(Faction faction, BlockPos pos) {
         if (!canEdit() || faction == null || pos == null) return false;
-        forgetPlatform(CRYSTAL_POINTS.put(faction, pos.immutable()),pos);
-        saveLayout();
+        if (!editLayout(next -> forgetPlatform(next, next.crystals.put(faction, pos.immutable()),pos))) return false;
         syncBuildingLayout(server.overworld());
         return true;
     }
 
     public static boolean clearCrystalPoint(Faction faction) {
         if (!canEdit() || faction == null) return false;
-        forgetPlatform(CRYSTAL_POINTS.remove(faction),null);
-        saveLayout();
+        if (!editLayout(next -> forgetPlatform(next, next.crystals.remove(faction),null))) return false;
         syncBuildingLayout(server.overworld());
         return true;
     }
@@ -1362,9 +1388,9 @@ public final class LaneSystem {
         Map<String, BuildingVisuals.Placement> desired = new LinkedHashMap<>();
         GameManager manager = GameManager.get();
         if (manager == null || manager.getPhase() == GameManager.Phase.WAITING) {
-            CRYSTAL_POINTS.forEach((faction, pos) -> desired.put("crystal_" + faction.getName(),
+            layout.crystals.forEach((faction, pos) -> desired.put("crystal_" + faction.getName(),
                     new BuildingVisuals.Placement(Vec3.atBottomCenterOf(pos), faction, 0)));
-            TOWER_POINTS.forEach((key, pos) -> desired.put("tower_" + key.faction.getName() + "_" + key.lane.id + "_" + key.tier,
+            layout.towers.forEach((key, pos) -> desired.put("tower_" + key.faction.getName() + "_" + key.lane.id + "_" + key.tier,
                     new BuildingVisuals.Placement(Vec3.atBottomCenterOf(pos), key.faction, key.tier)));
         }
         BuildingVisuals.syncLayout(level, desired);
@@ -1396,24 +1422,22 @@ public final class LaneSystem {
 
     public static boolean clearFountainPoint(Faction faction) {
         if (!canEdit() || faction == null) return false;
-        FOUNTAIN_POINTS.remove(faction);
-        saveLayout();
-        return true;
+        return editLayout(next -> next.fountains.remove(faction));
     }
 
     public static BlockPos fountainPoint(Faction faction) {
-        return FOUNTAIN_POINTS.get(faction);
+        return layout.fountains.get(faction);
     }
 
     public static BlockPos crystalPoint(Faction faction) {
-        return CRYSTAL_POINTS.get(faction);
+        return layout.crystals.get(faction);
     }
 
     /** 返回阵营复活点；未设置泉水时使用水晶点作为安全兜底。 */
     public static BlockPos respawnPoint(Faction faction) {
         if (faction == null) return null;
-        BlockPos fountain = FOUNTAIN_POINTS.get(faction);
-        return fountain != null ? fountain : CRYSTAL_POINTS.get(faction);
+        BlockPos fountain = layout.fountains.get(faction);
+        return fountain != null ? fountain : layout.crystals.get(faction);
     }
 
     /** 开局把已分配阵营的玩家送到各自泉水，并清除上一局残余速度。 */
@@ -1435,13 +1459,13 @@ public final class LaneSystem {
 
     /** 地图编辑器只读查询。 */
     public static BlockPos pathPoint(Lane lane, int slot) {
-        Map<Integer, BlockPos> points = PATH_POINTS.get(lane);
+        Map<Integer, BlockPos> points = layout.paths.get(lane);
         return points == null ? null : points.get(slot);
     }
 
     /** 地图编辑器只读查询。 */
     public static BlockPos towerPoint(Faction faction, Lane lane, int tier) {
-        return TOWER_POINTS.get(new TowerKey(faction, lane, tier));
+        return layout.towers.get(new TowerKey(faction, lane, tier));
     }
 
     public static List<MinimapUnit> minimapUnits(ServerLevel level) {
@@ -1468,15 +1492,15 @@ public final class LaneSystem {
 
     public static List<MinimapUnit> minimapFacilities() {
         List<MinimapUnit> result = new ArrayList<>();
-        TOWER_POINTS.forEach((key, pos) -> {
-            if (ENABLED_LANES.contains(key.lane) && ENABLED_TOWER_TIERS.contains(key.tier)
+        layout.towers.forEach((key, pos) -> {
+            if (layout.enabled.contains(key.lane) && layout.tiers.contains(key.tier)
                     && !DESTROYED_TOWERS.contains(towerId(key.faction, key.lane, key.tier))) {
                 result.add(new MinimapUnit(pos.getX() + .5, pos.getZ() + .5, key.faction, 4));
             }
         });
-        CRYSTAL_POINTS.forEach((faction, pos) -> result.add(
+        layout.crystals.forEach((faction, pos) -> result.add(
                 new MinimapUnit(pos.getX() + .5, pos.getZ() + .5, faction, 5)));
-        FOUNTAIN_POINTS.forEach((faction, pos) -> result.add(new MinimapUnit(
+        layout.fountains.forEach((faction, pos) -> result.add(new MinimapUnit(
                 pos.getX() + .5, pos.getZ() + .5, faction, NetworkSetup.MinimapMarker.FOUNTAIN)));
         return List.copyOf(result);
     }
@@ -1497,10 +1521,10 @@ public final class LaneSystem {
 
     public static List<LayoutLine> layoutLines() {
         List<LayoutLine> lines = new ArrayList<>();
-        CRYSTAL_POINTS.forEach((faction, pos) -> lines.add(new LayoutLine("crystal " + faction.getName()
+        layout.crystals.forEach((faction, pos) -> lines.add(new LayoutLine("crystal " + faction.getName()
                 + " = " + pos.getX() + " " + pos.getY() + " " + pos.getZ())));
         for (Lane lane : Lane.values()) {
-            List<Map.Entry<Integer, BlockPos>> points = new ArrayList<>(PATH_POINTS.get(lane).entrySet());
+            List<Map.Entry<Integer, BlockPos>> points = new ArrayList<>(layout.paths.get(lane).entrySet());
             points.sort(Map.Entry.comparingByKey());
             for (Map.Entry<Integer, BlockPos> point : points) {
                 BlockPos p = point.getValue();
@@ -1508,7 +1532,7 @@ public final class LaneSystem {
                         + p.getX() + " " + p.getY() + " " + p.getZ()));
             }
         }
-        TOWER_POINTS.entrySet().stream()
+        layout.towers.entrySet().stream()
                 .sorted(Comparator.comparing((Map.Entry<TowerKey, BlockPos> e) -> e.getKey().lane.id)
                         .thenComparing(e -> e.getKey().faction.getName()).thenComparingInt(e -> e.getKey().tier))
                 .forEach(entry -> {
@@ -1517,7 +1541,7 @@ public final class LaneSystem {
                     lines.add(new LayoutLine("tower " + key.faction.getName() + " " + key.lane.id + " "
                             + key.tier + " = " + p.getX() + " " + p.getY() + " " + p.getZ()));
                 });
-        FOUNTAIN_POINTS.entrySet().stream()
+        layout.fountains.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
                 .forEach(entry -> {
                     BlockPos p = entry.getValue();
@@ -1561,19 +1585,31 @@ public final class LaneSystem {
         }
     }
 
-    private static void saveLayout() {
-        if (server == null) return;
+    private static boolean editLayout(java.util.function.Consumer<Layout> edit) {
+        return editLayout(next -> true, edit);
+    }
+
+    private static boolean editLayout(java.util.function.Predicate<Layout> allowed, java.util.function.Consumer<Layout> edit) {
+        Layout next = ArenaConfigFile.readForEdit(layoutPath(), root -> decodeLayout(root, false), layout::copy).orElse(null);
+        if (next == null || !allowed.test(next)) return false;
+        edit.accept(next);
+        if (!ArenaConfigFile.save(layoutPath(), layoutJson(next))) return false;
+        activateLayout(next);
+        return true;
+    }
+
+    private static JsonObject layoutJson(Layout layout) {
         JsonObject root = new JsonObject();
         JsonArray enabled = new JsonArray();
-        ENABLED_LANES.forEach(lane -> enabled.add(lane.id));
+        layout.enabled.forEach(lane -> enabled.add(lane.id));
         root.add("enabledLanes", enabled);
         JsonArray tiers = new JsonArray();
-        ENABLED_TOWER_TIERS.forEach(tiers::add);
+        layout.tiers.forEach(tiers::add);
         root.add("towerTiers", tiers);
         JsonObject paths = new JsonObject();
         for (Lane lane : Lane.values()) {
             JsonArray array = new JsonArray();
-            PATH_POINTS.get(lane).entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
+            layout.paths.get(lane).entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
                 JsonObject point = positionJson(entry.getValue());
                 point.addProperty("slot", entry.getKey());
                 array.add(point);
@@ -1581,134 +1617,140 @@ public final class LaneSystem {
             paths.add(lane.id, array);
         }
         root.add("paths", paths);
-        if(!MANUAL_PATHS.isEmpty()){
-            JsonArray manual=new JsonArray();
-            MANUAL_PATHS.forEach(lane->manual.add(lane.id));
-            root.add("manualPaths",manual);
+        if (!layout.manual.isEmpty()) {
+            JsonArray manual = new JsonArray();
+            layout.manual.forEach(lane -> manual.add(lane.id));
+            root.add("manualPaths", manual);
         }
         JsonObject corners = new JsonObject();
-        LANE_CORNERS.forEach((lane, pos) -> corners.add(lane.id(), positionJson(pos)));
+        layout.corners.forEach((lane, pos) -> corners.add(lane.id(), positionJson(pos)));
         root.add("laneCorners", corners);
         JsonArray towers = new JsonArray();
-        for (Map.Entry<TowerKey, BlockPos> entry : TOWER_POINTS.entrySet()) {
+        for (Map.Entry<TowerKey, BlockPos> entry : layout.towers.entrySet()) {
             JsonObject tower = positionJson(entry.getValue());
             tower.addProperty("faction", entry.getKey().faction.getName());
             tower.addProperty("lane", entry.getKey().lane.id);
             tower.addProperty("tier", entry.getKey().tier);
-            writePlatform(tower,entry.getValue());
+            writePlatform(layout, tower, entry.getValue());
             towers.add(tower);
         }
         root.add("towers", towers);
         JsonArray fountains = new JsonArray();
-        for (Map.Entry<Faction, BlockPos> entry : FOUNTAIN_POINTS.entrySet()) {
+        for (Map.Entry<Faction, BlockPos> entry : layout.fountains.entrySet()) {
             JsonObject fountain = positionJson(entry.getValue());
             fountain.addProperty("faction", entry.getKey().getName());
             fountains.add(fountain);
         }
         root.add("fountains", fountains);
         JsonArray crystals = new JsonArray();
-        CRYSTAL_POINTS.forEach((faction, pos) -> {
+        layout.crystals.forEach((faction, pos) -> {
             JsonObject crystal = positionJson(pos);
             crystal.addProperty("faction", faction.getName());
-            writePlatform(crystal,pos);
+            writePlatform(layout, crystal, pos);
             crystals.add(crystal);
         });
         root.add("crystals", crystals);
-        try {
-            Files.writeString(layoutPath(), new GsonBuilder().setPrettyPrinting().create().toJson(root));
-        } catch (IOException e) {
-            com.myriad.Myriad.LOGGER.error("[lane] failed to save layout", e);
-        }
+        return root;
     }
 
-    private static void loadLayout() {
-        readEnabledLanes(new JsonObject());
-        MANUAL_PATHS.clear();
-        MINION_PLATFORM_RADII.clear();
-        LANE_CORNERS.clear();
-        for (Lane lane : Lane.values()) PATH_POINTS.get(lane).clear();
-        TOWER_POINTS.clear();
-        FOUNTAIN_POINTS.clear();
-        CRYSTAL_POINTS.clear();
-        Path path = layoutPath();
-        if (!Files.isRegularFile(path)) return;
-        try {
-            JsonObject root = JsonParser.parseString(Files.readString(path)).getAsJsonObject();
-            readEnabledLanes(root);
-            JsonArray manual=root.getAsJsonArray("manualPaths");
-            if(manual!=null)for(JsonElement value:manual){
-                Lane lane=Lane.byId(value.getAsString());
-                if(lane!=null&&ENABLED_LANES.contains(lane))MANUAL_PATHS.add(lane);
-            }
-            JsonObject corners = root.getAsJsonObject("laneCorners");
-            if (corners != null) for (Lane lane : List.of(Lane.TOP, Lane.BOTTOM)) {
-                if (corners.has(lane.id())) LANE_CORNERS.put(lane, readPosition(corners.getAsJsonObject(lane.id())));
-            }
-            JsonArray crystals = root.getAsJsonArray("crystals");
-            if (crystals != null) for (JsonElement element : crystals) {
-                JsonObject crystal = element.getAsJsonObject();
-                Faction faction = parseFaction(crystal.get("faction").getAsString());
-                if (faction != null) {
-                    BlockPos pos=readPosition(crystal);
-                    CRYSTAL_POINTS.put(faction,pos);
-                    readPlatform(crystal,pos);
-                }
-            }
-            JsonObject paths = root.getAsJsonObject("paths");
-            if (paths != null) for (Lane lane : Lane.values()) {
-                JsonArray array = paths.getAsJsonArray(lane.id);
-                if (array == null) continue;
-                for (JsonElement element : array) {
-                    JsonObject point = element.getAsJsonObject();
-                    int slot = point.get("slot").getAsInt();
-                    if (slot >= 1 && slot <= MAX_PATH_POINTS) PATH_POINTS.get(lane).put(slot, readPosition(point));
-                }
-            }
-            JsonArray towers = root.getAsJsonArray("towers");
-            if (towers != null) for (JsonElement element : towers) {
-                JsonObject tower = element.getAsJsonObject();
-                Faction faction = parseFaction(tower.get("faction").getAsString());
-                Lane lane = Lane.byId(tower.get("lane").getAsString());
-                int tier = tower.get("tier").getAsInt();
-                if (faction != null && ENABLED_LANES.contains(lane) && ENABLED_TOWER_TIERS.contains(tier)) {
-                    BlockPos pos=readPosition(tower);
-                    TOWER_POINTS.put(new TowerKey(faction, lane, tier),pos);
-                    readPlatform(tower,pos);
-                }
-            }
-            JsonArray fountains = root.getAsJsonArray("fountains");
-            if (fountains != null) for (JsonElement element : fountains) {
-                JsonObject fountain = element.getAsJsonObject();
-                Faction faction = parseFaction(fountain.get("faction").getAsString());
-                if (faction != null) FOUNTAIN_POINTS.put(faction, readPosition(fountain));
-            }
-        } catch (Exception e) {
-            com.myriad.Myriad.LOGGER.error("[lane] failed to load layout", e);
+    static Layout decodeLayout(JsonObject root, boolean duel) {
+        Layout layout = new Layout();
+        readEnabledLanes(layout, root);
+        JsonArray manual = ArenaConfigFile.array(root, "manualPaths");
+        for (JsonElement value : manual) {
+            Lane lane = Lane.byId(value.getAsString());
+            if (lane != null && layout.enabled.contains(lane)) layout.manual.add(lane);
         }
+        JsonObject corners = ArenaConfigFile.object(root, "laneCorners");
+        for (Lane lane : List.of(Lane.TOP, Lane.BOTTOM)) {
+            if (corners.has(lane.id())) layout.corners.put(lane, readPosition(corners.getAsJsonObject(lane.id())));
+        }
+        JsonArray crystals = ArenaConfigFile.array(root, "crystals");
+        for (JsonElement element : crystals) {
+            JsonObject crystal = element.getAsJsonObject();
+            Faction faction = parseFaction(crystal.get("faction").getAsString());
+            if (faction != null) {
+                BlockPos pos = readPosition(crystal);
+                layout.crystals.put(faction, pos);
+                if (duel) validPosition("crystals", pos);
+                readPlatform(layout, crystal, pos);
+            }
+        }
+        JsonObject paths = ArenaConfigFile.object(root, "paths");
+        for (Lane lane : Lane.values()) {
+            JsonArray array = paths.getAsJsonArray(lane.id);
+            if (array == null) continue;
+            for (JsonElement element : array) {
+                JsonObject point = element.getAsJsonObject();
+                int slot = point.get("slot").getAsInt();
+                if (slot >= 1 && slot <= MAX_PATH_POINTS) layout.paths.get(lane).put(slot, readPosition(point));
+            }
+        }
+        JsonArray towers = ArenaConfigFile.array(root, "towers");
+        for (JsonElement element : towers) {
+            JsonObject tower = element.getAsJsonObject();
+            Faction faction = parseFaction(tower.get("faction").getAsString());
+            Lane lane = Lane.byId(tower.get("lane").getAsString());
+            int tier = tower.get("tier").getAsInt();
+            if (faction != null && layout.enabled.contains(lane) && layout.tiers.contains(tier)) {
+                BlockPos pos = readPosition(tower);
+                layout.towers.put(new TowerKey(faction, lane, tier), pos);
+                if (duel) validPosition("towers", pos);
+                readPlatform(layout, tower, pos);
+            }
+        }
+        JsonArray fountains = ArenaConfigFile.array(root, "fountains");
+        for (JsonElement element : fountains) {
+            JsonObject fountain = element.getAsJsonObject();
+            Faction faction = parseFaction(fountain.get("faction").getAsString());
+            if (faction != null) {
+                BlockPos point = readPosition(fountain);
+                if (duel) validPosition("fountains", point);
+                layout.fountains.put(faction, point);
+            }
+        }
+        if (duel) {
+            if (!layout.enabled.equals(java.util.Set.of(Lane.MID)) || ArenaConfigFile.array(root, "enabledLanes").size() != 1)
+                throw new IllegalArgumentException("enabledLanes must contain only mid");
+            if (layout.tiers.size() < 2 || root.has("towerTiers") && ArenaConfigFile.array(root, "towerTiers").size() != layout.tiers.size())
+                throw new IllegalArgumentException("towerTiers requires distinct tiers from 1 to 3");
+            int expectedTowers = layout.tiers.size() * 2;
+            if (layout.towers.size() != expectedTowers || ArenaConfigFile.array(root, "towers").size() != expectedTowers)
+                throw new IllegalArgumentException("towers must cover each side and tier once");
+            if (layout.crystals.size() != 2 || layout.fountains.size() != 2 || crystals.size() != 2 || fountains.size() != 2)
+                throw new IllegalArgumentException("crystals and fountains must cover both teams");
+        }
+        return layout;
+    }
+
+    private static void validPosition(String field, BlockPos p) {
+        if (Math.abs((long)p.getX()) > 29_000_000 || Math.abs((long)p.getZ()) > 29_000_000
+                || p.getY() < -63 || p.getY() > 318)
+            throw new IllegalArgumentException(field + " position outside world");
     }
 
     public static Faction parseFaction(String id) {
         return Faction.byId(id);
     }
 
-    private static void readPlatform(JsonObject entry,BlockPos pos){
+    private static void readPlatform(Layout layout, JsonObject entry, BlockPos pos){
         if(!entry.has("minionPlatformRadius"))return;
         double radius=entry.get("minionPlatformRadius").getAsDouble();
-        if(Double.isFinite(radius)&&radius>0&&radius<=10)MINION_PLATFORM_RADII.put(pos,radius);
+        if(Double.isFinite(radius)&&radius>0&&radius<=10)layout.radii.put(pos,radius);
     }
 
-    private static void writePlatform(JsonObject entry,BlockPos pos){
-        Double radius=MINION_PLATFORM_RADII.get(pos);
+    private static void writePlatform(Layout layout, JsonObject entry, BlockPos pos){
+        Double radius=layout.radii.get(pos);
         if(radius!=null)entry.addProperty("minionPlatformRadius",radius);
     }
 
-    private static void forgetPlatform(BlockPos old,BlockPos next){
-        if(old!=null&&!old.equals(next))MINION_PLATFORM_RADII.remove(old);
+    private static void forgetPlatform(Layout layout, BlockPos old, BlockPos next){
+        if(old!=null&&!old.equals(next))layout.radii.remove(old);
     }
 
-    private static void readEnabledLanes(JsonObject root) {
-        ENABLED_TOWER_TIERS.clear();
-        ENABLED_TOWER_TIERS.addAll(List.of(1,2,3));
+    private static void readEnabledLanes(Layout layout, JsonObject root) {
+        layout.tiers.clear();
+        layout.tiers.addAll(List.of(1,2,3));
         JsonArray tiers = root.getAsJsonArray("towerTiers");
         if (tiers != null) {
             java.util.SortedSet<Integer> requested = new java.util.TreeSet<>();
@@ -1717,12 +1759,12 @@ public final class LaneSystem {
                 if (tier >= 1 && tier <= TOWERS_PER_LANE) requested.add(tier);
             }
             if (!requested.isEmpty()) {
-                ENABLED_TOWER_TIERS.clear();
-                ENABLED_TOWER_TIERS.addAll(requested);
+                layout.tiers.clear();
+                layout.tiers.addAll(requested);
             }
         }
-        ENABLED_LANES.clear();
-        ENABLED_LANES.addAll(java.util.EnumSet.allOf(Lane.class));
+        layout.enabled.clear();
+        layout.enabled.addAll(java.util.EnumSet.allOf(Lane.class));
         JsonArray enabled = root.getAsJsonArray("enabledLanes");
         if (enabled == null) return;
         java.util.EnumSet<Lane> requested = java.util.EnumSet.noneOf(Lane.class);
@@ -1731,8 +1773,8 @@ public final class LaneSystem {
             if (lane != null) requested.add(lane);
         }
         if (!requested.isEmpty()) {
-            ENABLED_LANES.clear();
-            ENABLED_LANES.addAll(requested);
+            layout.enabled.clear();
+            layout.enabled.addAll(requested);
         }
     }
 
@@ -1790,13 +1832,13 @@ public final class LaneSystem {
         }
         // Upgrade pre-siege checkpoints: configured towers absent from an active snapshot were destroyed.
         if(!root.has("destroyedTowers") && layoutActive && activeMatchStart>=0){
-            for(TowerKey key:TOWER_POINTS.keySet()){
+            for(TowerKey key:layout.towers.keySet()){
                 boolean alive=UNITS.values().stream().anyMatch(s->s.tower()&&s.faction==key.faction&&s.lane==key.lane&&s.towerTier==key.tier);
                 if(!alive)DESTROYED_TOWERS.add(towerId(key.faction,key.lane,key.tier));
             }
         }
         // Old checkpoints contain only the decorative crystal; add its combat body on upgrade.
-        if(root.get("active").getAsBoolean())for(var entry:CRYSTAL_POINTS.entrySet())
+        if(root.get("active").getAsBoolean())for(var entry:layout.crystals.entrySet())
             if(UNITS.values().stream().noneMatch(s->s.kind==Kind.CRYSTAL&&s.faction==entry.getKey()))spawnCrystal(level,entry.getKey(),entry.getValue());
     }
 

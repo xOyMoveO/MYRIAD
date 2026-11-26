@@ -61,6 +61,10 @@ public abstract class AbilitySkill extends Skill {
     public double pointRange(AbilityRuntime.Cast c){return 12;}
     public double previewRadius(AbilityRuntime.Cast c){return 1;}
     public boolean canRelease(AbilityRuntime.Cast c){return true;}
+    /** Feedback for a failed canRelease check. Most skills reject an invalid target. */
+    public com.myriad.combat.InputFailure releaseRejection(AbilityRuntime.Cast c) {
+        return com.myriad.combat.InputFailure.TARGET;
+    }
     /** Explicit defensive exception; ordinary abilities remain blocked by stun/silence. */
     public boolean canCastWhileControlled(){return false;}
     public abstract void release(AbilityRuntime.Cast cast);

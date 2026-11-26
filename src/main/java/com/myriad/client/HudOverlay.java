@@ -132,13 +132,23 @@ public class HudOverlay implements HudElement {
             int y = 6;
             Component faction = Component.literal("阵营: " + ClientDataHolder.factionName())
                     .withStyle(net.minecraft.ChatFormatting.BOLD);
-            Component objective = Component.translatable("hud.myriad.destroy_crystal");
+            Component objective = null;
+            if (data.combatActive() && !data.training()) {
+                if (data.remainTicks() < 0) {
+                    objective = Component.translatable("hud.myriad.destroy_crystal");
+                } else {
+                    int secondsLeft = (data.remainTicks() + 19) / 20;
+                    String clock = secondsLeft / 60 + ":" + (secondsLeft % 60 < 10 ? "0" : "") + secondsLeft % 60;
+                    objective = Component.translatable("hud.myriad.timed_score", clock,
+                            data.guardianScore(), data.destructionScore());
+                }
+            }
             boolean occluded = combatLayout != null && Minecraft.getInstance().gui.screen() instanceof ChatScreen
                     && (overlapsInfoRow(gui, combatLayout.bounds(), x, y, font.width(faction), font.lineHeight)
-                    || overlapsInfoRow(gui, combatLayout.bounds(), x, y + line, font.width(objective), font.lineHeight));
+                    || objective != null && overlapsInfoRow(gui, combatLayout.bounds(), x, y + line, font.width(objective), font.lineHeight));
             if (!occluded) {
                 gui.text(font, faction, x, y, HIGHLIGHT_COLOR);
-                gui.text(font, objective, x, y + line, TEXT_COLOR);
+                if (objective != null) gui.text(font, objective, x, y + line, TEXT_COLOR);
             }
             gui.pose().popMatrix();
         });

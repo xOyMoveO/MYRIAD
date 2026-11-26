@@ -1,34 +1,89 @@
 package com.myriad.client.gui;
 
-import com.myriad.network.NetworkSetup;
+import com.mojang.blaze3d.platform.InputConstants;
+import com.myriad.client.LobbyClient;
+import com.myriad.game.Faction;
+import com.myriad.network.NetworkSetup.MatchResultEntry;
+import com.myriad.network.NetworkSetup.MatchResultsPayload;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.FormattedCharSequence;
 
-/** 最近一局双方玩家结算表。双行卡片保证在较小GUI宽度下仍能完整显示统计。 */
+/** A read-only result sheet; only the team rows scroll. */
 public final class MatchResultsScreen extends Screen {
-    private final NetworkSetup.MatchResultsPayload results;
-    private int scroll;
-    private int maximum;
+    private record Row(List<FormattedCharSequence> heading, List<FormattedCharSequence> detail,
+            int textColor, int background) {
+        int height(int lineStep) { return 7 + (heading.size() + detail.size()) * lineStep; }
+    }
 
-    public MatchResultsScreen(NetworkSetup.MatchResultsPayload results) {
+    private final MatchResultsPayload results;
+    private List<Row> rows = List.of();
+    private List<FormattedCharSequence> summary = List.of();
+    private int left, panelWidth, top, bottom, lineStep, scroll, maximum;
+
+    public MatchResultsScreen(MatchResultsPayload results) {
         super(Component.translatable("screen.myriad.match_results.title"));
         this.results = results;
     }
 
     @Override protected void init() {
+        panelWidth = Math.max(1, Math.min(620, width - 20));
+        left = (width - panelWidth) / 2;
+        int wrap = Math.max(1, panelWidth - 16);
+        lineStep = font.lineHeight + 3;
+        int minutes = results.durationSeconds() / 60;
+        int seconds = results.durationSeconds() % 60;
+        var winner = Faction.byId(results.winner());
+        Component summaryText = winner == null ? Component.translatable("screen.myriad.match_results.draw", minutes, seconds)
+                : Component.translatable("screen.myriad.match_results.summary", winner.displayName(), minutes, seconds);
+        summary = font.split(summaryText, panelWidth);
+        top = 30 + summary.size() * lineStep;
+        bottom = Math.max(top + 1, height - 34);
+
+        rows = wrapRows(results.entries(), font, wrap);
+        int contentHeight = 4 + rows.stream().mapToInt(row -> row.height(lineStep)).sum();
+        maximum = Math.max(0, contentHeight - (bottom - top));
+        scroll = Math.clamp(scroll, 0, maximum);
+
         int w = Math.min(112, (width - 18) / 2);
         addRenderableWidget(LobbyTheme.button(width / 2 - w - 2, height - 27, w, 20,
-                Component.translatable("lobby.myriad.results.lobby"), b -> com.myriad.client.LobbyClient.openLobby()));
+                Component.translatable("lobby.myriad.results.lobby"), b -> LobbyClient.openLobby()));
         addRenderableWidget(LobbyTheme.button(width / 2 + 2, height - 27, w, 20,
                 Component.translatable("lobby.myriad.results.requeue"), b -> {
-                    com.myriad.client.LobbyClient.send("requeue", "");
-                    com.myriad.client.LobbyClient.openLobby();
+                    LobbyClient.send("requeue", "");
+                    LobbyClient.openLobby();
                 }));
+    }
+
+    private static List<Row> wrapRows(List<MatchResultEntry> entries, Font font, int wrap) {
+        var rows = new ArrayList<Row>();
+        String currentFaction = null;
+        for (var entry : entries.stream()
+                .sorted(Comparator.comparing(MatchResultEntry::faction).thenComparing(MatchResultEntry::name)).toList()) {
+            if (!entry.faction().equals(currentFaction)) {
+                currentFaction = entry.faction();
+                var team = Faction.byId(currentFaction);
+                var teamName = team == null ? Component.literal("—") : team.displayName();
+                rows.add(new Row(font.split(teamName, wrap), List.of(),
+                        team == null ? 0xFFAAAAAA : team.argb(), 0xCC152536));
+            }
+            Component role = entry.character().isBlank() ? Component.literal("-")
+                    : Component.translatable("character.myriad." + entry.character());
+            Component identity = Component.literal(entry.name()).append(" · ").append(role)
+                    .append(Component.translatable("screen.myriad.match_results.identity",
+                            entry.level(), entry.kills(), entry.deaths(), entry.assists(), entry.gold()));
+            Component combat = Component.translatable("screen.myriad.match_results.combat",
+                    entry.heroDamage(), entry.damageTaken(), entry.healingReceived());
+            rows.add(new Row(font.split(identity, wrap), font.split(combat, wrap), 0xFFF2F4F7, 0xA8121B27));
+        }
+        return rows;
     }
 
     @Override public boolean isPauseScreen() { return false; }
@@ -36,57 +91,54 @@ public final class MatchResultsScreen extends Screen {
     @Override public void onClose() { Minecraft.getInstance().setScreenAndShow(null); }
 
     @Override public boolean mouseScrolled(double x, double y, double dx, double dy) {
-        scroll = Math.clamp(scroll - (int)(dy * 28), 0, maximum);
+        if (dy == 0 || maximum == 0) return super.mouseScrolled(x, y, dx, dy);
+        scroll = Math.clamp(scroll - (int) Math.round(dy * 28), 0, maximum);
         return true;
     }
 
-    private static Component teamName(String id){
-        var team=com.myriad.game.Faction.byId(id);
-        return team==null?Component.literal("—"):team.displayName();
+    @Override public boolean keyPressed(KeyEvent event) {
+        if (event.key() == InputConstants.KEY_PAGEUP || event.key() == InputConstants.KEY_PAGEDOWN) {
+            int page = Math.max(1, bottom - top - lineStep);
+            scroll = Math.clamp(scroll + (event.key() == InputConstants.KEY_PAGEUP ? -page : page), 0, maximum);
+            return true;
+        }
+        return super.keyPressed(event);
     }
+
     @Override public void extractRenderState(GuiGraphicsExtractor gui, int mouseX, int mouseY, float partialTick) {
         gui.fill(0, 0, width, height, 0xED08111C);
-        int panelWidth = Math.min(620, width - 20);
-        int left = (width - panelWidth) / 2;
-        gui.text(font, title, (width - font.width(title)) / 2, 10, 0xFFFFD77A);
-        Component summary = Component.translatable("screen.myriad.match_results.summary",
-                teamName(results.winner()),
-                results.durationSeconds() / 60, results.durationSeconds() % 60);
-        gui.text(font, summary, (width - font.width(summary)) / 2, 24, 0xFFE6F1F5);
-
-        int top = 42;
-        int bottom = height - 34;
+        gui.centeredText(font, title, width / 2, 10, 0xFFFFD77A);
+        int y = 24;
+        for (var line : summary) {
+            gui.centeredText(font, line, width / 2, y, 0xFFE6F1F5);
+            y += lineStep;
+        }
         gui.enableScissor(left, top, left + panelWidth, bottom);
-        int y = top + 2 - scroll;
-        List<NetworkSetup.MatchResultEntry> entries = new ArrayList<>(results.entries());
-        entries.sort(Comparator.comparing(NetworkSetup.MatchResultEntry::faction)
-                .thenComparing(NetworkSetup.MatchResultEntry::name));
-        String currentFaction = null;
-        for (NetworkSetup.MatchResultEntry entry : entries) {
-            if (!entry.faction().equals(currentFaction)) {
-                currentFaction = entry.faction();
-                Component faction = teamName(currentFaction);
-                com.myriad.game.Faction team=com.myriad.game.Faction.byId(currentFaction);
-                int color = team==null?0xFFAAAAAA:team.argb();
-                gui.fill(left, y, left + panelWidth, y + 17, 0xCC152536);
-                gui.text(font, faction, left + 7, y + 4, color);
-                y += 20;
+        y = top + 2 - scroll;
+        for (Row row : rows) {
+            int rowHeight = row.height(lineStep);
+            if (y >= bottom) break;
+            if (y + rowHeight > top) {
+                gui.fill(left, y, left + panelWidth, y + rowHeight - 2, row.background());
+                int lineY = y + 4;
+                for (var line : row.heading()) {
+                    gui.text(font, line, left + 7, lineY, row.textColor());
+                    lineY += lineStep;
+                }
+                for (var line : row.detail()) {
+                    gui.text(font, line, left + 7, lineY, 0xFFBFD4DE);
+                    lineY += lineStep;
+                }
             }
-            int rowHeight = 31;
-            gui.fill(left, y, left + panelWidth, y + rowHeight - 2, 0xA8121B27);
-            Component role = entry.character().isBlank() ? Component.literal("-")
-                    : Component.translatable("character.myriad." + entry.character());
-            Component identity = Component.literal(entry.name()).append(" · ").append(role)
-                    .append(Component.translatable("screen.myriad.match_results.identity",
-                            entry.level(), entry.kills(), entry.deaths(), entry.assists(), entry.gold()));
-            gui.text(font, identity, left + 7, y + 4, 0xFFF2F4F7);
-            Component combat = Component.translatable("screen.myriad.match_results.combat",
-                    entry.heroDamage(), entry.damageTaken(), entry.healingReceived());
-            gui.text(font, combat, left + 7, y + 16, 0xFFBFD4DE);
             y += rowHeight;
         }
-        maximum = Math.max(0, y + scroll - bottom + 2);
         gui.disableScissor();
+        if (maximum > 0) {
+            int h = bottom - top;
+            int thumb = Math.clamp(h * h / (h + maximum), Math.min(8, h), h);
+            int thumbY = top + (h - thumb) * scroll / maximum;
+            gui.fill(left + panelWidth - 4, thumbY, left + panelWidth - 2, thumbY + thumb, 0xFF789EAF);
+        }
         super.extractRenderState(gui, mouseX, mouseY, partialTick);
     }
 }

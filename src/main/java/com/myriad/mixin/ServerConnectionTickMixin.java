@@ -15,5 +15,6 @@ public abstract class ServerConnectionTickMixin {
     @Inject(method="tickPlayer",at=@At(value="INVOKE",target="Lnet/minecraft/server/level/ServerPlayer;absSnapTo(DDDFF)V",shift=At.Shift.AFTER))
     private void myriad$acceptedPlayerTick(CallbackInfoReturnable<Boolean> cir) {
         com.myriad.player.PlayerDataProvider.onPlayerTick(player);
+        com.myriad.combat.VanillaMeleeAttack.tickBuffered(player);
     }
 }

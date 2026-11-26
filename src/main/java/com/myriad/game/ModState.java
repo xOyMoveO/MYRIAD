@@ -11,22 +11,31 @@ public final class ModState {
     private ModState() {}
 
     private static boolean enabled = false;
+    private static String session = "";
+
+    static String session() { return session; }
+
+    static void resume(boolean value, String savedSession) {
+        enabled = value;
+        session = !value ? "" : savedSession.isEmpty() ? java.util.UUID.randomUUID().toString() : savedSession;
+    }
 
     public static boolean isEnabled() {
         return enabled;
     }
 
     public static void setEnabled(boolean value) {
-        enabled = value;
+        if (enabled != value) resume(value, "");
     }
 
     /** 开启新一轮模组玩法前，先回收上一轮遗留的临时实体与服务端技能状态。 */
     public static void setEnabled(boolean value, MinecraftServer server) {
-        if (value && !enabled) {
+        boolean opening = value && !enabled;
+        setEnabled(value);
+        if (opening) {
             for (var p : server.getPlayerList().getPlayers()) VanillaSession.capture(p);
             com.myriad.player.PlayerDataProvider.clearModGeneratedState(server);
             ModEntityTracker.clearGenerated(server);
         }
-        enabled = value;
     }
 }

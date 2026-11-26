@@ -1,16 +1,11 @@
 package com.myriad.game;
 
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.myriad.Myriad;
 import com.myriad.network.NetworkSetup;
 import com.myriad.network.RiftCrabMarker;
 import java.util.EnumMap;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -20,7 +15,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.storage.LevelResource;
 import com.myriad.network.Packets;
 
 /**
@@ -37,7 +31,7 @@ public final class MapSystem {
 
     public static void initialize(MinecraftServer minecraftServer) {
         server = minecraftServer;
-        load();
+        ArenaConfigFile.readOptional(configPath(), root -> decodeCorners(root, false)).ifPresent(MapSystem::activateCorners);
     }
 
     public static void shutdown() {
@@ -47,16 +41,23 @@ public final class MapSystem {
 
     public static boolean setCorner(int slot, BlockPos pos) {
         if (!canEdit() || slot < 1 || slot > CORNER_COUNT || pos == null) return false;
-        CORNERS.put(slot, pos.immutable());
-        save();
-        return true;
+        var next = cornerEditBase();
+        if (next == null) return false;
+        next.put(slot, pos.immutable());
+        return save(next);
     }
 
     public static boolean clearCorner(int slot) {
         if (!canEdit() || slot < 1 || slot > CORNER_COUNT) return false;
-        CORNERS.remove(slot);
-        save();
-        return true;
+        var next = cornerEditBase();
+        if (next == null) return false;
+        next.remove(slot);
+        return save(next);
+    }
+
+    private static Map<Integer, BlockPos> cornerEditBase() {
+        return ArenaConfigFile.readForEdit(configPath(), root -> decodeCorners(root, false),
+                () -> new LinkedHashMap<>(CORNERS)).orElse(null);
     }
 
     public static BlockPos corner(int slot) {
@@ -75,15 +76,21 @@ public final class MapSystem {
 
     /** HUD 要求逐 tick 刷新：每 tick 同步队友、兵线与建筑标记。 */
     public static void tick(ServerLevel level) {
+        if (level.players().isEmpty()) return;
         Geometry geometry = geometry();
         if (geometry == null) {
-            NetworkSetup.MinimapSnapshotPayload empty = emptySnapshot();
-            for (ServerPlayer player : level.players()) Packets.sendToPlayer(player, empty);
+            for (ServerPlayer player : level.players()) sendChanged(player, EMPTY);
             return;
         }
         GameManager manager = GameManager.get();
         if (manager == null) return;
-        List<LaneSystem.MinimapUnit> units = LaneSystem.minimapUnits(level);
+        List<NetworkSetup.MinimapMarker> units = new ArrayList<>();
+        for (var unit : LaneSystem.minimapUnits(level)) {
+            if (geometry.contains(unit.x(), unit.z())) {
+                units.add(new NetworkSetup.MinimapMarker(unit.kind(), NetworkSetup.factionId(unit.faction()),
+                        (float) unit.x(), (float) unit.z(), NetworkSetup.MinimapMarker.NO_PLAYER));
+            }
+        }
         List<NetworkSetup.MinimapMarker> camps = neutralCampMarkers();
         List<NetworkSetup.MinimapPathPoint> paths = LaneSystem.minimapPaths().stream()
                 .map(point -> new NetworkSetup.MinimapPathPoint(point.lane(), point.order(),
@@ -92,7 +99,7 @@ public final class MapSystem {
         var crabsByTeam = new EnumMap<Faction, List<RiftCrabMarker>>(Faction.class);
         for (ServerPlayer viewer : level.players()) {
             if (manager.isQueuedMatch() && !manager.isParticipant(viewer.getUUID())) {
-                Packets.sendToPlayer(viewer, emptySnapshot());
+                sendChanged(viewer, EMPTY);
                 continue;
             }
             Faction viewerFaction = manager.factionOf(viewer);
@@ -107,16 +114,16 @@ public final class MapSystem {
                             (float) candidate.getZ(), candidate.getUUID()));
                 }
             }
-            for (LaneSystem.MinimapUnit unit : units) {
-                if (!geometry.contains(unit.x(), unit.z())) continue;
-                markers.add(new NetworkSetup.MinimapMarker(unit.kind(), NetworkSetup.factionId(unit.faction()),
-                        (float) unit.x(), (float) unit.z(), new java.util.UUID(0L, 0L)));
-            }
+            markers.addAll(units);
             List<RiftCrabMarker> crabs = viewerFaction == null || !manager.isParticipant(viewer.getUUID())
                     || TrainingMode.isEnabled(viewer) ? List.of()
                     : crabsByTeam.computeIfAbsent(viewerFaction, team -> MonsterManager.crabMapMarkers(level, team));
-            Packets.sendToPlayer(viewer, snapshot(paths, markers, crabs));
+            sendChanged(viewer, snapshot(paths, markers, crabs));
         }
+    }
+
+    private static void sendChanged(ServerPlayer viewer, NetworkSetup.MinimapSnapshotPayload snapshot) {
+        if (com.myriad.network.BattleSnapshots.of(viewer).sendMap(snapshot)) Packets.sendToPlayer(viewer, snapshot);
     }
 
     /** Fixed configured locations only: no live entities, respawn timers or fog-hidden information. */
@@ -130,7 +137,7 @@ public final class MapSystem {
             if (!geometry.contains(x, z)) continue;
             result.add(new NetworkSetup.MinimapMarker(camp.boss()
                     ? NetworkSetup.MinimapMarker.BOSS : NetworkSetup.MinimapMarker.CAMP,
-                    0, x, z, new java.util.UUID(0L, 0L)));
+                    0, x, z, NetworkSetup.MinimapMarker.NO_PLAYER));
         }
         return List.copyOf(result);
     }
@@ -150,16 +157,18 @@ public final class MapSystem {
                 List.copyOf(markers), crabs);
     }
 
-    private static NetworkSetup.MinimapSnapshotPayload emptySnapshot() {
-        return new NetworkSetup.MinimapSnapshotPayload(false,
-                0, 0, 0, 0, 0, 0, 0, 0, List.of(), List.of(), List.of());
-    }
+    private static final NetworkSetup.MinimapSnapshotPayload EMPTY = new NetworkSetup.MinimapSnapshotPayload(
+            false, 0, 0, 0, 0, 0, 0, 0, 0, List.of(), List.of(), List.of());
 
     private static Geometry geometry() {
-        BlockPos p1 = CORNERS.get(1);
-        BlockPos p2 = CORNERS.get(2);
-        BlockPos p3 = CORNERS.get(3);
-        BlockPos p4 = CORNERS.get(4);
+        return geometry(CORNERS);
+    }
+
+    private static Geometry geometry(Map<Integer, BlockPos> corners) {
+        BlockPos p1 = corners.get(1);
+        BlockPos p2 = corners.get(2);
+        BlockPos p3 = corners.get(3);
+        BlockPos p4 = corners.get(4);
         if (p1 == null || p2 == null || p3 == null || p4 == null) return null;
 
         // 对边取平均，四个设置点都会参与矩形坐标系计算，并容忍管理员落点的轻微误差。
@@ -188,11 +197,10 @@ public final class MapSystem {
         return server != null && (manager == null || manager.getPhase() == GameManager.Phase.WAITING);
     }
 
-    private static void save() {
-        if (server == null) return;
+    private static boolean save(Map<Integer, BlockPos> next) {
         JsonArray array = new JsonArray();
         for (int slot = 1; slot <= CORNER_COUNT; slot++) {
-            BlockPos pos = CORNERS.get(slot);
+            BlockPos pos = next.get(slot);
             if (pos == null) continue;
             JsonObject point = new JsonObject();
             point.addProperty("slot", slot);
@@ -203,32 +211,30 @@ public final class MapSystem {
         }
         JsonObject root = new JsonObject();
         root.add("corners", array);
-        try {
-            Files.writeString(configPath(), new GsonBuilder().setPrettyPrinting().create().toJson(root));
-        } catch (IOException e) {
-            Myriad.LOGGER.error("[minimap] failed to save bounds", e);
-        }
+        if (!ArenaConfigFile.save(configPath(), root)) return false;
+        activateCorners(next);
+        return true;
     }
 
-    private static void load() {
+    static void activateCorners(Map<Integer, BlockPos> next) {
         CORNERS.clear();
-        Path path = configPath();
-        if (!Files.isRegularFile(path)) return;
-        try {
-            JsonObject root = JsonParser.parseString(Files.readString(path)).getAsJsonObject();
-            JsonArray array = root.getAsJsonArray("corners");
-            if (array == null) return;
-            for (JsonElement element : array) {
-                JsonObject point = element.getAsJsonObject();
-                int slot = point.get("slot").getAsInt();
-                if (slot >= 1 && slot <= CORNER_COUNT) {
-                    CORNERS.put(slot, new BlockPos(point.get("x").getAsInt(),
-                            point.get("y").getAsInt(), point.get("z").getAsInt()));
-                }
+        CORNERS.putAll(next);
+    }
+
+    static Map<Integer, BlockPos> decodeCorners(JsonObject root, boolean duel) {
+        var corners = new LinkedHashMap<Integer, BlockPos>();
+        var rows = ArenaConfigFile.array(root, "corners");
+        for (JsonElement element : rows) {
+            JsonObject point = element.getAsJsonObject();
+            int slot = point.get("slot").getAsInt();
+            if (slot >= 1 && slot <= CORNER_COUNT) {
+                corners.put(slot, new BlockPos(point.get("x").getAsInt(), point.get("y").getAsInt(),
+                        point.get("z").getAsInt()));
             }
-        } catch (Exception e) {
-            Myriad.LOGGER.error("[minimap] failed to load bounds", e);
         }
+        if (duel && (rows.size() != CORNER_COUNT || geometry(corners) == null))
+            throw new IllegalArgumentException("corners must define four distinct slots and a usable map area");
+        return corners;
     }
 
     private static Path configPath() {

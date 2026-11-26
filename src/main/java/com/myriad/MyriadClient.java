@@ -96,14 +96,26 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
         Minecraft mc = Minecraft.getInstance();
         event.setMeleeAssist(allowMeleeAssist && !event.isCanceled()
                 && com.myriad.client.MeleeAssistInput.shouldAssist(mc));
+        predictAttack(event);
+        if (event.isMeleeAssist()) com.myriad.client.MeleeAssistInput.send(mc.player, false);
+        return event;
+    }
+
+    /** The reservation was already validated and consumed after repicking the current crosshair. */
+    public static void submitBufferedMelee(Minecraft mc) {
+        var event = new AttackInput();
+        event.setMeleeAssist(!(mc.hitResult instanceof net.minecraft.world.phys.EntityHitResult));
+        predictAttack(event);
+        com.myriad.client.MeleeAssistInput.send(mc.player, true);
+    }
+
+    private static void predictAttack(AttackInput event) {
         com.myriad.client.firstperson.KehengView.attack(event);
         com.myriad.client.firstperson.NightDaggerView.onAttack(event);
         com.myriad.client.firstperson.ThunderSwordView.onAttack(event);
         com.myriad.client.firstperson.FlameDaoView.onAttack(event);
         com.myriad.client.firstperson.ShuoView.onAttack(event);
         com.myriad.client.firstperson.WindBladeView.onAttack(event);
-        if (event.isMeleeAssist()) com.myriad.client.MeleeAssistInput.send(mc.player);
-        return event;
     }
 
     /**
@@ -586,6 +598,7 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
 
     public static void onKeyInput(com.myriad.client.platform.KeyInput event) {
         com.myriad.client.MeleeAttackBuffer.binding(Minecraft.getInstance(), event);
+        com.myriad.client.LuoxiaInput.binding(Minecraft.getInstance(), event);
         if (event.getAction() != InputConstants.PRESS) {
             return;
         }

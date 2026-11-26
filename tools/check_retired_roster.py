@@ -27,18 +27,38 @@ TEXT_SUFFIXES = {
     ".sh", ".bat", ".gradle", ".properties", ".csv", ".md", ".svg", ".bbmodel",
 }
 SOURCE_ROOTS = {"src", "tools", "scripts", "art", "art_source"}
+EXPECTED_ROLES = {
+    "yingxiao", "tianxing", "fenjue", "xuanchen", "sulan", "lingyuan", "hanze",
+    "qingluo", "chixiao", "yunsheng", "shuo", "keheng", "yike", "rivet", "luoxia",
+}
+SKILLS_PER_ROLE = 8
+GRAPH_PREFIX = "data/myriad/role_rework/"
 # The assertions exercise rejection of every retired ID; they provide no skills.
 ALLOWED_SOURCE_CONTENT = {
     "tools/check_retired_roster.py": "audit vocabulary",
-    "src/main/java/com/myriad/game/RosterRetirementChecks.java": "retired-ID rejection assertions",
-}
-ALLOWED_JAR_CONTENT = {
-    "com/myriad/game/RosterRetirementChecks.class": "retired-ID rejection assertions",
+    "src/gametest/java/com/myriad/game/RosterRetirementChecks.java": "retired-ID rejection assertions",
 }
 
 
 def retired_tokens(text):
     return {match.group().lower() for match in RETIRED.finditer(SHARED_NAMES.sub("", text))}
+
+
+def audit_graphs(origin, graphs):
+    nodes = [skill for graph in graphs for skill in graph["skills"]]
+    counts = collections.Counter(skill["role"] for skill in nodes)
+    ids = collections.Counter(skill["id"] for skill in nodes)
+    failures = []
+    for role in sorted(EXPECTED_ROLES - counts.keys()):
+        failures.append(f"{origin} missing playable role: {role}")
+    for role in sorted(counts.keys() - EXPECTED_ROLES):
+        failures.append(f"{origin} unexpected playable role: {role}")
+    for role in sorted(EXPECTED_ROLES & counts.keys()):
+        if counts[role] != SKILLS_PER_ROLE:
+            failures.append(f"{origin} {role} has {counts[role]} candidates; expected {SKILLS_PER_ROLE}")
+    for skill_id in sorted(key for key, count in ids.items() if count > 1):
+        failures.append(f"{origin} duplicate candidate ID: {skill_id}")
+    return failures
 
 
 def asset_references(name, data):
@@ -126,14 +146,9 @@ def main():
                 source_resources[resource] = path
                 if resource.startswith("assets/myriad/") and resource.endswith(".json"):
                     source_edges.update(asset_references(resource, json.loads(path.read_text(encoding="utf-8-sig"))))
-    expected_roles = {"yingxiao", "tianxing", "fenjue", "xuanchen", "sulan", "lingyuan", "hanze", "qingluo", "chixiao", "yunsheng", "shuo", "keheng", "yike", "rivet"}
-    graphs = [json.loads(p.read_text(encoding="utf-8-sig")) for p in (root / "src/main/resources/data/myriad/role_rework").glob("*.json")]
-    nodes = [skill for graph in graphs for skill in graph.get("skills", [])]
-    role_counts = collections.Counter(skill["role"] for skill in nodes)
-    if set(role_counts) != expected_roles or len(nodes) != 112 or any(count != 8 for count in role_counts.values()):
-        failures.append(f"formal candidate graph must contain 14 roles / 112 skills: {dict(role_counts)}")
-    if len({skill["id"] for skill in nodes}) != 112:
-        failures.append("formal candidate IDs must be unique")
+    graphs = (json.loads(path.read_bytes()) for key, path in source_resources.items()
+              if key.startswith(GRAPH_PREFIX) and key.endswith(".json"))
+    failures.extend(audit_graphs("source", graphs))
     for origin, target in sorted(source_edges):
         if target not in source_resources:
             failures.append(f"source resource reference {origin} -> missing {target}")
@@ -143,6 +158,7 @@ def main():
     if args.jar:
         with zipfile.ZipFile(args.jar) as jar:
             jar_names = set(jar.namelist())
+            graphs = []
             for entry in jar.infolist():
                 if entry.is_dir():
                     continue
@@ -154,17 +170,20 @@ def main():
                 if name.endswith(".class") or pathlib.PurePosixPath(name).suffix.lower() in TEXT_SUFFIXES:
                     # ASCII IDs remain literal in class constant pools; JSON text
                     # and localized labels are checked as UTF-8 as well.
-                    check("JAR content " + name, jar.read(entry).decode("utf-8", errors="ignore"),
-                          allowance or ALLOWED_JAR_CONTENT.get(name))
+                    check("JAR content " + name, jar.read(entry).decode("utf-8", errors="ignore"), allowance)
                 if name.startswith("assets/myriad/") and name.endswith(".json"):
                     jar_edges.update(asset_references(name, json.loads(jar.read(entry).decode("utf-8-sig"))))
+                if name.startswith(GRAPH_PREFIX) and name.endswith(".json"):
+                    graphs.append(json.loads(jar.read(entry)))
+            failures.extend(audit_graphs("JAR", graphs))
             for origin, target in sorted(jar_edges):
                 if target not in jar_names:
                     failures.append(f"JAR resource reference {origin} -> missing {target}")
 
     if failures:
-        raise SystemExit("FAIL: retired-character references remain\n" + "\n".join(failures))
-    print("PASS: fourteen formal roles / 112 unique candidates, eight per role")
+        raise SystemExit("FAIL: roster and resource audit\n" + "\n".join(failures))
+    print(f"PASS: {len(EXPECTED_ROLES)} formal roles / {len(EXPECTED_ROLES) * SKILLS_PER_ROLE} unique candidates"
+          f", {SKILLS_PER_ROLE} per role" + (" in source and release JAR" if args.jar else " in source"))
     print(f"PASS: retired-character source/tool/asset scan ({source_count} files)"
           + (f" and release JAR scan ({jar_count} entries)" if args.jar else ""))
     print(f"PASS: owned model/texture/particle/sound references ({len(source_edges)} source edges"

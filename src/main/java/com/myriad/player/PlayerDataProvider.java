@@ -32,6 +32,7 @@ import com.myriad.character.Skill;
 import com.myriad.game.Faction;
 import com.myriad.game.GameManager;
 import com.myriad.game.GameRules;
+import com.myriad.game.LaneSystem;
 import com.myriad.game.TrainingGround;
 import com.myriad.game.TrainingMode;
 import com.myriad.game.SpiritFlow;
@@ -107,8 +108,35 @@ public final class PlayerDataProvider {
         ((net.fabricmc.fabric.api.attachment.v1.AttachmentTarget) player).setAttached(PLAYER_DATA, state);
     }
 
-    /** 将玩家数据与对局状态同步到客户端 */
+    private static final java.util.List<net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute>> HUD_ATTRIBUTES =
+            java.util.List.of(
+                    net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH,
+                    net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED,
+                    com.myriad.registry.ModAttributes.PHYSICAL_ATTACK,
+                    com.myriad.registry.ModAttributes.PHYSICAL_DEFENSE,
+                    com.myriad.registry.ModAttributes.MAGIC_RESISTANCE,
+                    com.myriad.registry.ModAttributes.ATTACK_SPEED,
+                    com.myriad.registry.ModAttributes.SPELL_POWER,
+                    com.myriad.registry.ModAttributes.CRIT_CHANCE,
+                    com.myriad.registry.ModAttributes.CRIT_DAMAGE,
+                    com.myriad.registry.ModAttributes.PHYSICAL_LIFESTEAL,
+                    com.myriad.registry.ModAttributes.TENACITY,
+                    com.myriad.registry.ModAttributes.FLAT_ARMOR_PEN,
+                    com.myriad.registry.ModAttributes.PERCENT_ARMOR_PEN,
+                    com.myriad.registry.ModAttributes.FLAT_MAGIC_PEN,
+                    com.myriad.registry.ModAttributes.PERCENT_MAGIC_PEN,
+                    com.myriad.registry.ModAttributes.MAX_MANA,
+                    com.myriad.registry.ModAttributes.MANA_REGEN,
+                    com.myriad.registry.ModAttributes.COOLDOWN_REDUCTION,
+                    com.myriad.registry.ModAttributes.HEALTH_REGEN,
+                    com.myriad.registry.ModAttributes.SPELL_LIFESTEAL);
+
+    /** Explicit refreshes (login, UI request, or an action) always deliver a complete snapshot. */
     public static void syncToClient(ServerPlayer player) {
+        syncToClient(player, true);
+    }
+
+    private static void syncToClient(ServerPlayer player, boolean force) {
         PlayerData data = get(player);
         if (data == null) {
             Myriad.LOGGER.info("[sync] skip (no data): {}", player.getName().getString());
@@ -121,37 +149,21 @@ public final class PlayerDataProvider {
                 && manager.isParticipant(player.getUUID()) && manager.queuePreparationDeadline() >= 0
                 && player.level().getServer().overworld().getGameTime() < manager.queuePreparationDeadline();
         int xpToNext = LevelSystem.xpToNext(data.getLevel());
-        // 属性快照（descriptionId -> 当前值，供客户端属性面板显示；模组属性不在 syncable 列表，需显式收集）
-        java.util.Map<String, Double> attrs = new java.util.HashMap<>();
-        java.util.List<net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute>> attrList =
-                java.util.List.of(
-                        net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH,
-                        net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED,
-                        com.myriad.registry.ModAttributes.PHYSICAL_ATTACK,
-                        com.myriad.registry.ModAttributes.PHYSICAL_DEFENSE,
-                        com.myriad.registry.ModAttributes.MAGIC_RESISTANCE,
-                        com.myriad.registry.ModAttributes.ATTACK_SPEED,
-                        com.myriad.registry.ModAttributes.SPELL_POWER,
-                        com.myriad.registry.ModAttributes.CRIT_CHANCE,
-                        com.myriad.registry.ModAttributes.CRIT_DAMAGE,
-                        com.myriad.registry.ModAttributes.PHYSICAL_LIFESTEAL,
-                        com.myriad.registry.ModAttributes.TENACITY,
-                        com.myriad.registry.ModAttributes.FLAT_ARMOR_PEN,
-                        com.myriad.registry.ModAttributes.PERCENT_ARMOR_PEN,
-                        com.myriad.registry.ModAttributes.FLAT_MAGIC_PEN,
-                        com.myriad.registry.ModAttributes.PERCENT_MAGIC_PEN,
-                        com.myriad.registry.ModAttributes.MAX_MANA,
-                        com.myriad.registry.ModAttributes.MANA_REGEN,
-                        com.myriad.registry.ModAttributes.COOLDOWN_REDUCTION,
-                        com.myriad.registry.ModAttributes.HEALTH_REGEN,
-                        com.myriad.registry.ModAttributes.SPELL_LIFESTEAL);
-        for (net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> holder : attrList) {
-            attrs.put(holder.value().getDescriptionId(), player.getAttributeValue(holder));
+        var delivery = com.myriad.network.BattleSnapshots.of(player);
+        var previousAttrs = delivery.lastAttributes();
+        var attrs = previousAttrs;
+        for (var holder : HUD_ATTRIBUTES) {
+            String key = holder.value().getDescriptionId();
+            // The mod health pool can exceed the vanilla cap.
+            double value = holder == net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH
+                    ? data.getModMaxHealth() : player.getAttributeValue(holder);
+            Double old = previousAttrs.get(key);
+            if (old == null || Double.compare(old, value) != 0) {
+                if (attrs == previousAttrs) attrs = new java.util.HashMap<>(previousAttrs);
+                attrs.put(key, value);
+            }
         }
-        // 属性面板中的最大生命使用模组生命池，不能显示被原版截断后的 1024。
-        attrs.put(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH.value().getDescriptionId(),
-                (double)data.getModMaxHealth());
-        NetworkSetup.sendToPlayer(player, new NetworkSetup.PlayerDataPayload(
+        var snapshot = new NetworkSetup.PlayerDataPayload(
                 data.getLevel(),
                 data.getXp(),
                 xpToNext,
@@ -173,7 +185,7 @@ public final class PlayerDataProvider {
                 TrainingMode.isNoGoldCost(player),
                 TrainingMode.isNoMana(player),
                 data.getBuffs(),
-                takenByOthers(player),
+                takenByOthers(player, force),
                 data.getSkillPoints(),
                 data.getPlacementType(),
                 data.getSkillLevels(),
@@ -194,33 +206,46 @@ public final class PlayerDataProvider {
                 player.getId(),
                 player.level().dimension().identifier(),
                 TrainingGround.canFight(player),
-                combatPreparing));
+                combatPreparing);
+        if (!delivery.sendHud(snapshot, player.tickCount, force)) return;
+        NetworkSetup.sendToPlayer(player, snapshot);
         Myriad.LOGGER.debug("[sync] -> {}@{}: lv={} char={} faction={} phase={}",
                 player.getName().getString(), System.identityHashCode(player), data.getLevel(), data.getCharacterId(),
                 data.getFaction(), manager == null ? "-" : manager.getPhase());
     }
 
-    /** 各角色是否已被"其他玩家"占用（选择职业界面展示用） */
-    public static java.util.Map<String, Boolean> takenByOthers(ServerPlayer self) {
-        java.util.Map<String, Boolean> taken = new java.util.HashMap<>();
-        for (CharacterType type : CharacterType.values()) {
-            taken.put(type.getId(), false);
-        }
-        net.minecraft.server.level.ServerLevel level = (net.minecraft.server.level.ServerLevel) self.level();
-        if (level.getServer() == null || TrainingGround.isTraining(self)) {
-            return taken;
-        }
-        for (ServerPlayer p : level.getServer().getPlayerList().getPlayers()) {
-            if (p == self || TrainingGround.isTraining(p)
-                    || GameManager.get() != null && GameManager.get().isQueuedMatch()
-                            && !GameManager.get().isParticipant(p.getUUID())) {
-                continue;
+    // Sample the online roster once per server tick. Explicit requests and authoritative picks
+    // go straight to the current roster, including changes made earlier in the same tick.
+    private static MinecraftServer rosterServer;
+    private static int rosterTick;
+    private static final java.util.Map<String,Integer> occupiedRoles = new java.util.HashMap<>();
+
+    public static java.util.Map<String,Boolean> takenByOthers(ServerPlayer self) {
+        return takenByOthers(self, true);
+    }
+
+    private static java.util.Map<String,Boolean> takenByOthers(ServerPlayer self, boolean refresh) {
+        MinecraftServer server = self.level().getServer();
+        if (server == null || TrainingGround.isTraining(self)) return java.util.Map.of();
+        GameManager match = GameManager.get();
+        boolean queued = match != null && match.isQueuedMatch();
+        if (refresh || rosterServer != server || rosterTick != server.getTickCount()) {
+            rosterServer = server;
+            rosterTick = server.getTickCount();
+            occupiedRoles.clear();
+            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                if (TrainingGround.isTraining(player) || queued && !match.isParticipant(player.getUUID())) continue;
+                String role = get(player).getCharacterId();
+                if (role != null) occupiedRoles.merge(role, 1, Integer::sum);
             }
-            PlayerData d = get(p);
-            if (d != null && d.getCharacterId() != null) {
-                taken.put(d.getCharacterId(), true);
-            }
         }
+        if (occupiedRoles.isEmpty()) return java.util.Map.of();
+        boolean countedSelf = server.getPlayerList().getPlayer(self.getUUID()) == self && (!queued || match.isParticipant(self.getUUID()));
+        String ownRole = countedSelf ? get(self).getCharacterId() : null;
+        java.util.Map<String,Boolean> taken = new java.util.HashMap<>();
+        occupiedRoles.forEach((role, count) -> {
+            if (count > 1 || !role.equals(ownRole)) taken.put(role, true);
+        });
         return taken;
     }
 
@@ -496,8 +521,9 @@ public final class PlayerDataProvider {
     }
 
     public static void onServerStopped(MinecraftServer server) {
+        rosterServer = null;
+        occupiedRoles.clear();
         com.myriad.character.ability.AbilityRuntime.clearAll();
-        com.myriad.game.VanillaSession.clear();
         com.myriad.game.BaseRules.clear();
         SESSION_PLAYERS.clear();
         PENDING_DAMAGE_FLOATS.clear();
@@ -1089,7 +1115,7 @@ public final class PlayerDataProvider {
             com.myriad.game.MatchReminders.tick(player);
         }
         if (com.myriad.game.HeroRespawnSystem.tick(player)) {
-            syncToClient(player);
+            syncToClient(player, false);
             return;
         }
         PlayerData data = get(player);
@@ -1227,7 +1253,7 @@ public final class PlayerDataProvider {
         com.myriad.combat.MagicBullet.tickBullets(player, data);
         SpiritFlow.tick(player);
         // 所有角色资源、技能窗口、冷却、生命、法力、金币与 HUD 计数均在逻辑推进后逐 tick 校正。
-        syncToClient(player);
+        syncToClient(player, false);
     }
 
     // ---- 传送阵交互（墨尘 W：队友右键传送） ----
@@ -2025,9 +2051,10 @@ public final class PlayerDataProvider {
                                 .suggests((ctx, builder) -> net.minecraft.commands.SharedSuggestionProvider.suggest(
                                         java.util.List.of("5v5", "3v3"), builder))
                                 .executes(ctx -> {
-                                    if (!com.myriad.game.MatchArena.select(ctx.getSource().getServer(),
-                                            StringArgumentType.getString(ctx, "mode"))) {
-                                        ctx.getSource().sendFailure(Component.translatable("message.myriad.arena_unavailable"));
+                                    var error = com.myriad.game.MatchArena.selectError(ctx.getSource().getServer(),
+                                            StringArgumentType.getString(ctx, "mode"));
+                                    if (error != null) {
+                                        ctx.getSource().sendFailure(error);
                                         return 0;
                                     }
                                     ctx.getSource().sendSuccess(() -> Component.translatable("message.myriad.arena_selected",
@@ -2064,9 +2091,14 @@ public final class PlayerDataProvider {
                                         || !GameManager.get().isParticipant(participant.getUUID())))
                                     com.myriad.game.LobbySystem.teleportToLobby(participant);
                             broadcastModState(ctx.getSource().getServer());
+                            com.myriad.game.MatchProgress.save(ctx.getSource().getServer());
                             return 1;
                         }))
                         .then(Commands.literal("off").executes(ctx -> {
+                            if (!com.myriad.game.ModState.isEnabled()) {
+                                ctx.getSource().sendSuccess(() -> Component.translatable("message.myriad.mod_off"), false);
+                                return 1;
+                            }
                             TrainingGround.closeAll(ctx.getSource().getServer());
                             com.myriad.game.ModState.setEnabled(false);
                             if (GameManager.get() != null) GameManager.get().resetToLobby(ctx.getSource().getServer(), false);
@@ -2093,9 +2125,11 @@ public final class PlayerDataProvider {
                         ctx.getSource().sendFailure(Component.translatable("message.myriad.no_game"));
                         return 0;
                     }
-                    ctx.getSource().sendSuccess(() -> Component.translatable("message.myriad.status",
-                            manager.getPhase().name(), manager.getGuardianScore(),
-                            GameRules.TEAM_TARGET_SCORE, manager.getDestructionScore()), false);
+                    ctx.getSource().sendSuccess(() -> LaneSystem.hasCrystals()
+                            ? Component.translatable("message.myriad.status_crystal", manager.getPhase().name())
+                            : Component.translatable("message.myriad.status", manager.getPhase().name(),
+                                    manager.getGuardianScore(), manager.getDestructionScore()),
+                            false);
                     return 1;
                 }))
                 .then(Commands.literal("team")
@@ -2500,8 +2534,11 @@ public final class PlayerDataProvider {
     /** 发送当前游戏设置 */
     public static void sendGameSettings(ServerPlayer requester) {
         java.util.Map<String, Integer> settings = new java.util.HashMap<>();
-        settings.put("matchDuration", com.myriad.game.GameRules.MATCH_DURATION_SECONDS);
-        settings.put("targetScore", com.myriad.game.GameRules.TEAM_TARGET_SCORE);
+        if (!LaneSystem.hasCrystals()) settings.put("matchDuration", GameRules.MATCH_DURATION_SECONDS);
+        var manager = GameManager.get();
+        boolean editable = requester.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)
+                && manager != null && manager.getPhase() == GameManager.Phase.WAITING;
+        settings.put("editable", editable ? 1 : 0);
         settings.put("spiritPerExtract", com.myriad.game.GameRules.SPIRIT_PER_EXTRACT);
         settings.put("channelTicks", com.myriad.game.GameRules.CHANNEL_TICKS);
         com.myriad.network.Packets.sendToPlayer(requester,
@@ -2514,15 +2551,15 @@ public final class PlayerDataProvider {
             return;
         }
         GameManager manager = GameManager.get();
-        if (manager != null && manager.getPhase() != GameManager.Phase.WAITING) {
+        if (manager == null || manager.getPhase() != GameManager.Phase.WAITING) {
             admin.sendSystemMessage(Component.translatable("message.myriad.settings_only_before"));
+            sendGameSettings(admin);
             return;
         }
         switch (key) {
-            case "matchDuration" -> com.myriad.game.GameRules.MATCH_DURATION_SECONDS =
-                    Math.max(60, Math.min(value, 7200));
-            case "targetScore" -> com.myriad.game.GameRules.TEAM_TARGET_SCORE =
-                    Math.max(100, Math.min(value, 100000));
+            case "matchDuration" -> {
+                if (!LaneSystem.hasCrystals()) GameRules.MATCH_DURATION_SECONDS = Math.clamp(value, 60, 7200);
+            }
             case "spiritPerExtract" -> com.myriad.game.GameRules.SPIRIT_PER_EXTRACT =
                     Math.max(1, Math.min(value, 1000));
             case "channelTicks" -> com.myriad.game.GameRules.CHANNEL_TICKS =
@@ -2634,8 +2671,8 @@ public final class PlayerDataProvider {
             return;
         }
         MinecraftServer server = admin.level().getServer();
-        if (!com.myriad.game.MatchArena.select(server, arenaId))
-            admin.sendSystemMessage(Component.translatable("message.myriad.arena_unavailable"));
+        var error = com.myriad.game.MatchArena.selectError(server, arenaId);
+        if (error != null) admin.sendSystemMessage(error);
         broadcastArenaTeams(server);
     }
 

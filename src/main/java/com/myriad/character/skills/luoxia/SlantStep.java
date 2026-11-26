@@ -1,11 +1,15 @@
 package com.myriad.character.skills.luoxia;
 
 import com.myriad.character.ability.AbilityRuntime.Cast;
+import com.myriad.combat.InputFailure;
 import net.minecraft.sounds.SoundEvents;
 
 final class SlantStep extends LuoxiaSkill {
     SlantStep(Definition definition) { super(definition); }
     @Override public boolean canRelease(Cast c) { return super.canRelease(c) && c.data.getBuff("g1_root") <= 0; }
+    @Override public InputFailure releaseRejection(Cast c) {
+        return c.data.getBuff("g1_root") > 0 ? InputFailure.ROOT : super.releaseRejection(c);
+    }
     @Override public void dashPose(Cast c, DashPose event, net.minecraft.world.phys.Vec3 direction) {
         boolean ended = event == DashPose.CANCEL || event == DashPose.FINISH;
         LuoxiaBowPose.skill(c, com.myriad.network.LuoxiaBowPosePayload.Phase.STEP, ended ? 1 : 0, direction.normalize());

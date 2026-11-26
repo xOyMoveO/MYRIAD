@@ -1,12 +1,14 @@
 package com.myriad.client;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import com.myriad.character.skills.luoxia.LuoxiaBow;
+import com.myriad.client.platform.KeyInput;
 import com.myriad.network.LuoxiaBowInputPayload;
 import com.myriad.network.Packets;
 import com.myriad.registry.ModItems;
 import net.minecraft.client.Minecraft;
 
-/** Read the rebound attack key without relying on repeated vanilla startAttack clicks. */
+/** Observe both attack edges in order; tick sampling also catches a lost or cancelled binding. */
 public final class LuoxiaInput {
     private static boolean wasDown, sent;
     private static Object connection;
@@ -34,6 +36,15 @@ public final class LuoxiaInput {
         if (predict) mc.player.startUsingItem(net.minecraft.world.InteractionHand.MAIN_HAND);
     }
 
+    public static void binding(Minecraft mc, KeyInput input) {
+        if (connection == null || connection != mc.getConnection() || !input.matches(mc.options.keyAttack)) return;
+        if (input.getAction() == InputConstants.PRESS) press(mc);
+        if (input.getAction() == InputConstants.RELEASE) {
+            finish(mc, !available(mc) || !mc.isWindowActive());
+            wasDown = false;
+        }
+    }
+
     public static void tick(Minecraft mc) {
         LuoxiaPoseClient.tick(mc);
         if (connection != mc.getConnection()) {
@@ -44,21 +55,16 @@ public final class LuoxiaInput {
         }
         if (connection == null) return;
         boolean down = mc.options.keyAttack.isDown();
-        if (sent && !available(mc)) {
-            send(LuoxiaBow.CANCEL);
-            stopPose(mc, true);
-            sent = false;
-        }
+        if (sent && !available(mc)) finish(mc, true);
         if (down && !wasDown) press(mc);
-        if (!down && sent) {
-            send(LuoxiaBow.RELEASE);
-            stopPose(mc, false);
-            sent = false;
-        }
+        if (!down) finish(mc, !mc.isWindowActive());
         wasDown = down;
     }
 
-    private static void stopPose(Minecraft mc, boolean cancel) {
+    private static void finish(Minecraft mc, boolean cancel) {
+        if (!sent) return;
+        sent = false;
+        send(cancel ? LuoxiaBow.CANCEL : LuoxiaBow.RELEASE);
         LuoxiaPoseClient.letGo(cancel);
         if (mc.player != null && mc.player.getUseItem().is(ModItems.GUIXIA_BOW.get())) mc.player.stopUsingItem();
     }
