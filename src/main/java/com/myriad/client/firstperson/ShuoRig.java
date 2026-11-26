@@ -7,16 +7,16 @@ import static com.myriad.network.ShuoViewPayload.*;
 
 /** Actual exported grip/throat coordinates, in camera blocks. No independent blade offsets. */
 public final class ShuoRig {
-    public static final float WEAPON_LENGTH=1.55f,MODEL_GRIP_TO_MOUTH=14f/64,MODEL_GRIP_TO_TIP=73.8f/64;
+    public static final float WEAPON_LENGTH=1.55f,WEAPON_WIDTH=1.14f,MODEL_GRIP_TO_MOUTH=14f/64,MODEL_GRIP_TO_TIP=73.8f/64;
     public static final float MODEL_SHEATH_LENGTH=63.25f/64;
     public static final float HAND_GRIP_RAISE=.11f;
     public static final float GRIP_TO_MOUTH=MODEL_GRIP_TO_MOUTH*WEAPON_LENGTH,
         EXTRACT=(MODEL_GRIP_TO_TIP-MODEL_GRIP_TO_MOUTH+.07f)*WEAPON_LENGTH;
     public static final boolean SHOW_OFF_HAND=false;
-    private static final Vector3f READY=v(.90f,-.72f,-1.58f),READY_AXIS=v(.18f,.98f,-.065f).normalize();
+    private static final Vector3f READY=v(.74f,-.61f,-1.32f),READY_AXIS=v(.18f,.982f,-.055f).normalize();
     // Grip frame is independent of the user's 180-degree item-facing correction.
     // Rotating the item must not flip the skin hand or alter its grip anchor.
-    private static final Vector3f READY_EDGE=v(0,0,-1);
+    private static final Vector3f READY_EDGE=v(-.24f,0,-.97f).normalize(),SHEATH_EDGE=v(.20f,0,-.98f).normalize();
     private ShuoRig(){}
     public record Frame(Vector3f palm,Vector3f axis,Vector3f edge,Vector3f mouth,Vector3f sheathAxis,float flash,int action,float slashProgress){}
     public static boolean showMainHand(Frame f,boolean drawn){return drawn||switch(f.action){
@@ -28,33 +28,33 @@ public final class ShuoRig {
     private static Vector3f mix(Vector3f a,Vector3f b,double t){return new Vector3f(a).lerp(b,ease(t));}
     public static Frame frame(int action,double p,boolean drawn){
         // Mouth at lower-left; the long +Y sheath axis points down, so its lower 2/3 leaves the view.
-        var mouth=v(-.69f,-.39f,-1.29f);var sheath=v(-.22f,-.974f,-.045f).normalize();
+        var mouth=v(-.64f,-.35f,-1.09f);var sheath=v(-.22f,-.974f,-.045f).normalize();
         var closed=new Vector3f(mouth).fma(-GRIP_TO_MOUTH,sheath);
         var ready=new Vector3f(READY);var readyAxis=new Vector3f(READY_AXIS);
-        Vector3f palm=drawn?new Vector3f(ready):new Vector3f(closed),axis=drawn?new Vector3f(readyAxis):new Vector3f(sheath),edge=drawn?new Vector3f(READY_EDGE):v(0,0,-1);
+        Vector3f palm=drawn?new Vector3f(ready):new Vector3f(closed),axis=drawn?new Vector3f(readyAxis):new Vector3f(sheath),edge=drawn?new Vector3f(READY_EDGE):new Vector3f(SHEATH_EDGE);
         float flash=0,slashProgress=-1;
         if(action==CHARGE){
-            mouth.y+=.035f*ease(p);palm=drawn?mix(ready,v(.30f,-.43f,-1.06f),p):new Vector3f(mouth).fma(-GRIP_TO_MOUTH-.045f*ease(p),sheath);
+            mouth.y+=.035f*ease(p);palm=drawn?mix(ready,v(.28f,-.42f,-1.02f),p):new Vector3f(mouth).fma(-GRIP_TO_MOUTH-.045f*ease(p),sheath);
         }else if(action==SHEATHE){
             var extended=new Vector3f(closed).fma(-EXTRACT,sheath);
             palm=p<.28?mix(ready,extended,p/.28):mix(extended,closed,(p-.28)/.72);
             axis=p<.28?mix(readyAxis,sheath,p/.28).normalize():new Vector3f(sheath);
-            edge=mix(READY_EDGE,v(0,0,-1),p/.28);
+            edge=mix(READY_EDGE,SHEATH_EDGE,p/.28);
         }else if(action==GUARD||action==COUNTER){
             float g=ease(p/.18)*(1-ease((p-.82)/.18));
             if(!drawn){
                 // Closed blade and sheath remain coaxial while lifted horizontally across the chest.
-                mouth=mix(mouth,v(.82f,-.10f,-1.55f),g);
+                mouth=mix(mouth,v(.70f,-.09f,-1.32f),g);
                 sheath=mix(sheath,v(-.999f,.035f,.025f).normalize(),g).normalize();
                 axis=new Vector3f(sheath);palm=new Vector3f(mouth).fma(-GRIP_TO_MOUTH,sheath);
-            }else palm=mix(ready,v(.25f,-.40f,-1.02f),g);
+            }else palm=mix(ready,v(.24f,-.40f,-.98f),g);
             flash=action==COUNTER?g:0;
         }else if(action==BASIC_RISE||action==BASIC_SWEEP){
             // A short anticipation, committed cut, then a separate relaxed recovery.
             // Actual item +X is reversed by blade(), so -edge follows the cutting direction.
             boolean rise=action==BASIC_RISE;
-            var begin=rise?v(-.46f,-.68f,-1.65f):v(-.50f,-.22f,-1.75f);
-            var end=rise?v(.53f,-.12f,-1.70f):v(.64f,-.34f,-1.75f);
+            var begin=rise?v(-.42f,-.62f,-1.42f):v(-.45f,-.22f,-1.48f);
+            var end=rise?v(.48f,-.14f,-1.44f):v(.56f,-.34f,-1.48f);
             var beginAxis=rise?v(-.67f,.23f,-.40f).normalize():v(-.62f,.58f,-.38f).normalize();
             var endAxis=rise?v(.45f,.76f,-.36f).normalize():v(.70f,.28f,-.36f).normalize();
             var cutEdge=new Vector3f(begin).sub(end).normalize();
@@ -63,11 +63,11 @@ public final class ShuoRig {
             else {double t=(p-.60)/.40;palm=mix(end,ready,t);axis=mix(endAxis,readyAxis,t).normalize();edge=mix(cutEdge,READY_EDGE,t);}
             slashProgress=(float)((p-.18)/.52);flash=slashProgress>0&&slashProgress<1?(float)Math.sin(Math.PI*slashProgress):0;
         }else if(moonCut(action)){
-            var left=v(-.34f,-.38f,-1.44f);var right=v(.58f,-.37f,-1.40f);
+            var left=v(-.31f,-.36f,-1.24f);var right=v(.52f,-.35f,-1.22f);
             var leftAxis=v(-.75f,.38f,-.42f).normalize();var rightAxis=v(.75f,.50f,-.45f).normalize();
             boolean finish=action==MOON_THIRD, wide=action==RETURNING_MOON;
             var from=action==MOON_FIRST&&!drawn?closed:action==MOON_SECOND?left:finish?right:ready;
-            var to=finish?v(.17f,-.66f,-1.4f):action==MOON_SECOND?right:wide?v(-.55f,-.55f,-1.5f):left;
+            var to=finish?v(.16f,-.60f,-1.22f):action==MOON_SECOND?right:wide?v(-.48f,-.50f,-1.30f):left;
             var startAxis=action==MOON_FIRST&&!drawn?sheath:action==MOON_SECOND?leftAxis:finish?rightAxis:readyAxis;
             var endAxis=finish?v(-.22f,-.62f,-.75f).normalize():action==MOON_SECOND?rightAxis:leftAxis;
             double sweep=ease(p/.60);
@@ -75,14 +75,14 @@ public final class ShuoRig {
             edge=new Vector3f(from).sub(to).normalize();
             flash=p<.65?(float)Math.sin(Math.PI*p/.65):0;
         }else if(action==PURSUIT){
-            palm=mix(ready,v(.48f,-.67f,-1.22f),.8);axis=v(.36f,.78f,-.50f).normalize();
+            palm=mix(ready,v(.44f,-.62f,-1.12f),.8);axis=v(.36f,.78f,-.50f).normalize();
         }else if(action==DRAW||action==FLASH||action==CUT_LEFT||action==CUT_RIGHT||action==CUT_DOWN){
             double extract=drawn?0:.32;
             if(p<extract){palm=new Vector3f(closed).fma(-EXTRACT*ease(p/extract),sheath);axis=new Vector3f(sheath);}
             else {
                 double t=(p-extract)/(1-extract);boolean reverse=action==CUT_RIGHT;
                 var launch=drawn?new Vector3f(ready):new Vector3f(closed).fma(-EXTRACT,sheath);
-                var finish=action==CUT_DOWN?v(-.12f,-.69f,-1.15f):v(reverse?.52f:-.38f,-.53f,-1.25f);
+                var finish=action==CUT_DOWN?v(-.12f,-.64f,-1.06f):v(reverse?.46f:-.34f,-.50f,-1.14f);
                 var bladeEnd=action==CUT_DOWN?v(-.15f,-.65f,-.75f):v(reverse?.70f:-.70f,-.30f,-.65f);
                 if(t<.52){
                     palm=mix(launch,finish,t/.52);axis=mix(drawn?readyAxis:sheath,bladeEnd,t/.52).normalize();
@@ -107,11 +107,11 @@ public final class ShuoRig {
     }
     // Turn both fitted items about their own long axis: shaft and anchors stay
     // fixed, and the curved blade still slides into the matching hollow sheath.
-    public static Matrix4f blade(Frame f,boolean mirror){return basis(f.palm,f.axis,f.edge,mirror).rotateY((float)Math.PI).scale(1,WEAPON_LENGTH,1);}
-    public static Matrix4f sheath(Frame f,boolean mirror){return basis(f.mouth,f.sheathAxis,v(0,0,-1),mirror).rotateY((float)Math.PI).scale(1,WEAPON_LENGTH,1);}
+    public static Matrix4f blade(Frame f,boolean mirror){return basis(f.palm,f.axis,f.edge,mirror).rotateY((float)Math.PI).scale(WEAPON_WIDTH,WEAPON_LENGTH,WEAPON_WIDTH);}
+    public static Matrix4f sheath(Frame f,boolean mirror){return basis(f.mouth,f.sheathAxis,SHEATH_EDGE,mirror).rotateY((float)Math.PI).scale(WEAPON_WIDTH,WEAPON_LENGTH,WEAPON_WIDTH);}
     public static Matrix4f hand(Frame f,boolean off,boolean mirror){
-        // Item-only axial scale: never stretch the player's fist/skin with the longer weapon.
-        return off?basis(f.mouth,f.sheathAxis,v(0,0,-1),mirror).translate(0,.12f,0).scale(.74f)
+        // Item-only scale: never stretch or bloat the player's fist/skin with the weapon.
+        return off?basis(f.mouth,f.sheathAxis,SHEATH_EDGE,mirror).translate(0,.12f,0).scale(.74f)
             // Lift the grasp towards the guard. Skin +Y is wrist-to-fingers,
             // not the blade shaft: permute the grip axes so the forearm reaches
             // forwards from the camera, with a small natural upward wrist tilt.
