@@ -9,7 +9,35 @@ import net.minecraft.sounds.SoundEvent;
 /** 模组技能音效注册表。 */
 public final class ModSounds {
     /** Forces synchronous registration of this class's static entries during mod initialization. */
-    public static void initialize() { }
+    public static void initialize() { Night.values(); }
+
+    public enum Night {
+        THROW(0.55f),
+        HIT(0.46f),
+        BLOCK(0.46f),
+        ENTER(0.32f),
+        EXIT(0.28f),
+        DASH(0.56f),
+        CONTACT(0.40f),
+        OUT(0.51f),
+        RETURN_VANISH(0.37f),
+        RETURN_ARRIVE(0.41f),
+        WINDUP(0.57f),
+        BLINK(0.43f),
+        STAB(0.60f),
+        CANCEL(0.30f),
+        SHIELD_OPEN(0.53f),
+        ABSORB(0.34f),
+        SHIELD_BREAK(0.50f);
+
+        public final SoundEvent sound;
+        public final float volume;
+
+        Night(float volume) {
+            this.volume = volume;
+            this.sound = register("yingxiao_" + name().toLowerCase(java.util.Locale.ROOT)).get();
+        }
+    }
 
     public static final java.util.function.Supplier<SoundEvent> HANZE_PASSIVE_PROC = register("hanze_passive_proc");
     public static final java.util.function.Supplier<SoundEvent> HANZE_ICE_SPIKE_CAST = register("hanze_ice_spike_cast");

@@ -510,7 +510,7 @@ public final class NetworkSetup {
     }
 
     /** 玩家实际掉血反馈（服务端 -> 受伤玩家）：用于红屏强度和本地受击声。 */
-    public record HurtFeedbackPayload(float healthDamage, float maxHealth) implements CustomPacketPayload {
+    public record HurtFeedbackPayload(float healthDamage, float maxHealth, boolean playSound) implements CustomPacketPayload {
         public static final Type<HurtFeedbackPayload> TYPE =
                 new Type<>(Identifier.fromNamespaceAndPath(Myriad.MODID, "hurt_feedback"));
         public static final StreamCodec<FriendlyByteBuf, HurtFeedbackPayload> STREAM_CODEC =
@@ -519,10 +519,11 @@ public final class NetworkSetup {
         private static void write(HurtFeedbackPayload payload, FriendlyByteBuf buf) {
             buf.writeFloat(payload.healthDamage());
             buf.writeFloat(payload.maxHealth());
+            buf.writeBoolean(payload.playSound());
         }
 
         private static HurtFeedbackPayload decode(FriendlyByteBuf buf) {
-            return new HurtFeedbackPayload(buf.readFloat(), buf.readFloat());
+            return new HurtFeedbackPayload(buf.readFloat(), buf.readFloat(), buf.readBoolean());
         }
 
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
@@ -1265,6 +1266,7 @@ public final class NetworkSetup {
         PayloadTypeRegistry.clientboundPlay().register(ShuoViewPayload.TYPE, ShuoViewPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(FlameSkillViewPayload.TYPE, FlameSkillViewPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(ThunderSkillViewPayload.TYPE, ThunderSkillViewPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(NightWindupPayload.TYPE, NightWindupPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(NightSkillViewPayload.TYPE, NightSkillViewPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(LuoxiaBowPosePayload.TYPE, LuoxiaBowPosePayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(SkillChargePayload.TYPE, SkillChargePayload.CODEC);

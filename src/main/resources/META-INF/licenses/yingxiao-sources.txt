@@ -1,0 +1,9 @@
+MYRIAD — Night Shadow active skills · original procedural sound · 2026-11-26.
+
+All 17 mono 48 kHz Ogg Vorbis recordings in assets/myriad/sounds/skill/yingxiao/
+were synthesized for this project by tools/audio/generate_yingxiao.py.
+Deterministically seeded filtered noise, friction envelopes and damped resonances
+model cloth, air, narrow metal edges and a membrane. No input recordings,
+third-party samples, model-generated audio, voice or music were used.
+The rendered sound assets are original project assets. All rights reserved
+under META-INF/LICENSE-SCOPE.txt. The generator is project code under LICENSE.

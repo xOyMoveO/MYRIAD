@@ -56,13 +56,13 @@ public class HudOverlay implements HudElement {
         targetModMaxHp = maxHp;
     }
 
-    public static void showHurtFeedback(float damage, float maxHealth) {
+    public static void showHurtFeedback(float damage, float maxHealth, boolean playSound) {
         if(!ClientDataHolder.modEnabled()||!Float.isFinite(damage)||damage<=0)return;
         float ratio = damage / Math.max(1.0F, maxHealth);
         hurtFeedbackStrength = Math.max(hurtFeedbackStrength,
                 net.minecraft.util.Mth.clamp(.18F + ratio * 2.2F, .18F, .62F));
         hurtFeedbackUntil = System.currentTimeMillis() + 320L;
-        CombatImpactAudio.hurt(ratio);
+        if (playSound) CombatImpactAudio.hurt(ratio);
     }
 
     private static final int LINE_HEIGHT = 12;

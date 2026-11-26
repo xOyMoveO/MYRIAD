@@ -43,6 +43,10 @@ final class NetworkClientSetup {
                 (payload,context)->com.myriad.client.firstperson.FlameDaoView.receive(payload));
         ClientPlayNetworking.registerGlobalReceiver(ThunderSkillViewPayload.TYPE,
                 (payload,context)->com.myriad.client.firstperson.ThunderSwordView.receive(payload));
+        ClientPlayNetworking.registerGlobalReceiver(NightWindupPayload.TYPE,
+                (payload, context) -> com.myriad.client.NightWindupSound.receive(payload));
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT.register(
+                (handler, client) -> com.myriad.client.NightWindupSound.reset());
         ClientPlayNetworking.registerGlobalReceiver(NightSkillViewPayload.TYPE,
                 (payload,context)->com.myriad.client.firstperson.NightDaggerView.receive(payload));
         ClientPlayNetworking.registerGlobalReceiver(SkillChargePayload.TYPE,
@@ -88,7 +92,7 @@ final class NetworkClientSetup {
                 payload.x(), payload.y(), payload.z()));
         ClientPlayNetworking.registerGlobalReceiver(HurtFeedbackPayload.TYPE,
                 (payload, context) -> com.myriad.client.HudOverlay.showHurtFeedback(
-                payload.healthDamage(), payload.maxHealth()));
+                payload.healthDamage(), payload.maxHealth(), payload.playSound()));
         ClientPlayNetworking.registerGlobalReceiver(TargetHealthPayload.TYPE,
                 (payload, context) -> com.myriad.client.HudOverlay.setTarget(
                 payload.entityId(), payload.physicalDefense(), payload.magicDefense()));

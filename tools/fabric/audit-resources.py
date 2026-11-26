@@ -138,7 +138,11 @@ else:
             decoded += 1
 
 baseline = "8da79ddc329492155cea44f3166c97f0e37d86fc"
-unchanged_audio = all(subprocess.check_output(["git", "show", f"{baseline}:{p.relative_to(root)}"], cwd=root) == p.read_bytes() for p in audio)
+baseline_audio = set(subprocess.check_output(
+    ["git", "ls-tree", "-r", "--name-only", baseline, "--", (assets / "sounds").relative_to(root)],
+    cwd=root, text=True).splitlines())
+current_audio = {p.relative_to(root).as_posix() for p in audio}
+unchanged_audio = current_audio == {p for p in baseline_audio if p.endswith(".ogg")} and all(subprocess.check_output(["git", "show", f"{baseline}:{p.relative_to(root)}"], cwd=root) == p.read_bytes() for p in audio)
 result = {
     "source_sha": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip(),
     "models": len(models), "item_definitions": len(items), "particle_definitions": len(particles),

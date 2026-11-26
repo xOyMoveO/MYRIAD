@@ -1,5 +1,7 @@
 package com.myriad.character.skills.yingxiao.rework;
 
+import static com.myriad.registry.ModSounds.Night.*;
+
 import com.myriad.character.ability.AbilityDamageFormula;
 import com.myriad.character.ability.AbilitySkill;
 import com.myriad.character.ability.AbilityRuntime;
@@ -21,8 +23,20 @@ public final class ShadowDaggerSkill extends AbilitySkill {
         return List.of(DAMAGE);
     }
 
+    @Override public boolean hasOwnCastSound() { return true; }
+
     public ShadowDaggerSkill(Definition definition){super(definition);}
     @Override public void present(Cast c){NightVisuals.daggerRelease(c);
         NightSkillPresentation.play(c,com.myriad.network.NightSkillViewPayload.THROW,9);}
-    @Override public void release(Cast c){c.actionProjectile(15,1.5,.8,false,false,(t,back)->{c.damage(t,DAMAGE.value(c),DAMAGE.kind());c.slow(t,.25f,30);});}
+    @Override public void release(Cast c) {
+        c.actionProjectileToFirst(15, 1.5, .8, (target, contact) -> {
+            if (c.damage(target, DAMAGE.value(c), DAMAGE.kind())) NightAudio.impact(c, target, contact, HIT);
+            c.slow(target, .25f, 30);
+        });
+        NightAudio.play(c, c.player.getEyePosition().add(c.player.getLookAngle().scale(.4)), THROW);
+    }
+
+    @Override public void projectileBlockedByWind(Cast c, Vec3 contact) {
+        NightAudio.play(c, contact, BLOCK);
+    }
 }

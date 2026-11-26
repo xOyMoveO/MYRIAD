@@ -48,6 +48,7 @@ public abstract class AbilitySkill extends Skill {
     public void present(AbilityRuntime.Cast cast){}
     public void projectileTurned(AbilityRuntime.Cast cast, net.minecraft.world.phys.Vec3 end,
             net.minecraft.world.phys.Vec3 outboundDirection){}
+    public void projectileBlockedByWind(AbilityRuntime.Cast cast, net.minecraft.world.phys.Vec3 contact) {}
     public void preparing(AbilityRuntime.Cast c){}
     public void selectionPose(AbilityRuntime.Cast c,boolean selecting){}
     public void windupPose(AbilityRuntime.Cast c,boolean winding){}
