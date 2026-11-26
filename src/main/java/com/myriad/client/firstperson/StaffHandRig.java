@@ -6,11 +6,18 @@ import org.joml.Quaternionf;
 
 /** Both item assets have the wrapped grip centered at item origin. */
 final class StaffHandRig {
+    static final float FROST_SCALE = .69f * 1.06f;
+    static final float HERB_SCALE = .69f * 1.05f;
+
     private StaffHandRig() {}
 
     static Matrix4f item(StaffHandMotion.Pose pose, boolean mirrored, float equip) {
+        return item(pose, true, mirrored, equip);
+    }
+
+    static Matrix4f item(StaffHandMotion.Pose pose, boolean frost, boolean mirrored, float equip) {
         return pivot(lowered(pose.grip(), mirrored, equip), mirror(pose.axis(), mirrored),
-                mirrored ? -pose.roll() : pose.roll()).scale(.69f);
+                mirrored ? -pose.roll() : pose.roll()).scale(frost ? FROST_SCALE : HERB_SCALE);
     }
 
     static Matrix4f arm(StaffHandMotion.Pose pose, boolean mirrored, boolean offhand, boolean slim, float equip) {

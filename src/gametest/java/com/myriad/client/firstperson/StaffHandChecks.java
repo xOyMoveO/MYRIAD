@@ -25,7 +25,7 @@ public final class StaffHandChecks {
                             var wrist = StaffHandRig.arm(pose, mirror, false, slim, .21f);
                             float x = (slim ? .5f : 1f) / 16 * (mirror ? -1 : 1);
                             var actual = wrist.transformPosition(new Vector3f(-x, .5f, 0));
-                            var item = StaffHandRig.item(pose, mirror, .21f).getTranslation(new Vector3f());
+                            var item = StaffHandRig.item(pose, frost, mirror, .21f).getTranslation(new Vector3f());
                             h.assertTrue(actual.distance(item) < 1e-5, "The item's origin stays on the palm");
                             h.assertTrue(item.z < -.9f && item.y < -.4f, "Grip stays below the center of view");
                         }
