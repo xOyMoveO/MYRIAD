@@ -16,6 +16,58 @@ public final class LuoxiaGeometry {
     private static final RosterProjectileModels ARROWS = RosterProjectileModels.load("luoxia_arrows.json");
     private LuoxiaGeometry() {}
 
+    private static boolean ultimate(AbilityMeshBuilder g, AbilityVfxPayload p, Vec3 f, Vec3 side, Vec3 up) {
+        boolean fan = p.variant() == 6;
+        Vec3 from = p.from(), to = p.to();
+        double phase = g.progress;
+        int frame = Math.min(3, (int)(phase * 4));
+        switch (p.kind()) {
+            case BEAM -> {
+                // A single locked 3D ray; both narrow planes lie along the same clipped segment.
+                double length = from.distanceTo(to);
+                if (length < .001) break;
+                var mid = from.lerp(to, .5);
+                g.line(from, to, side, .024, CORAL, .70);
+                g.line(from, to, up, .018, GOLD, .64);
+                if (!g.reduced) {
+                    g.frame(mid, f, side, length / 2, .042, LANCE_WARNING, frame, .58);
+                    g.frame(mid, f, up, length / 2, .042, LANCE_WARNING, frame, .58);
+                }
+            }
+            case CHARGE -> {
+                boolean winding = p.angle() == 1;
+                int material = winding ? (fan ? VOLLEY_CHARGE : LANCE_CHARGE) : (fan ? VOLLEY_CROWN : LANCE_RELEASE);
+                double length = winding ? .23 : fan ? .57 : .74;
+                double width = winding ? .13 : fan ? (p.angle() == 5 ? .16 : .22) : .10;
+                if (winding && g.reduced) break;
+                var mid = winding ? from : from.add(f.scale(length));
+                g.frame(mid, f, side, length, width, material, frame, winding ? .52 : .88);
+                g.frame(mid, f, up, length, width * .68, material, frame, winding ? .38 : .67);
+                if (!winding) g.frame(mid, side, up, width * .48, width * .32, material, frame, .46);
+            }
+            case TRAIL -> {
+                if (g.reduced) return false; // use the existing short four-frame arrow wake
+                var tail = from.lerp(to, phase * .63);
+                double length = tail.distanceTo(to);
+                var mid = tail.lerp(to, .5);
+                int material = fan ? VOLLEY_TRAIL : LANCE_TRAIL;
+                double width = fan ? .086 : .125;
+                if (fan && p.angle() == 3) g.line(tail, to, up, .027, WHITE, .88);
+                g.frame(mid, f, up, length / 2, width, material, frame, .85);
+                g.frame(mid, f, side, length / 2, width * .85, material, frame, .66);
+            }
+            case BURST -> {
+                boolean graze = p.angle() == 1;
+                int material = graze ? LANCE_GRAZE : fan ? VOLLEY_HIT : LANCE_HIT;
+                double size = graze ? .15 : fan ? .26 : .33;
+                g.frame(from, side, up, size, size, material, frame, graze ? .54 : .93);
+                if (!g.reduced) g.frame(from, f, up, size * .8, size * .8, material, frame, graze ? .36 : .65);
+            }
+            default -> { return false; }
+        }
+        return true;
+    }
+
     /** Bow-local mesh, nock at zero and tip along -X. Uses the same authored mesh as flight. */
     public static List<Quad> nockedArrow(String model) {
         var out = new ArrayList<Quad>(ARROWS.faces(model));
@@ -36,6 +88,7 @@ public final class LuoxiaGeometry {
         var g = new AbilityMeshBuilder(p, age, reduced);
         Vec3 right = side(forward), up = right.cross(forward);
         double r = p.radius(), phase = g.progress;
+        if ((p.variant() == 6 || p.variant() == 7) && ultimate(g, p, forward, right, up)) return g.result();
         switch (p.kind()) {
             case BEAM -> {
                 g.line(at, to, up, .052, VIOLET, .85);

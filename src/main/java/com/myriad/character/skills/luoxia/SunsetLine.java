@@ -44,15 +44,14 @@ final class SunsetLine extends LuoxiaSkill {
         Vec3 direction = aim.point == null ? c.player.getLookAngle() : aim.point;
         aim.point = null;
         LuoxiaBowPose.skill(c, com.myriad.network.LuoxiaBowPosePayload.Phase.RELEASE, 1, direction);
-        LuoxiaVfx.shot(c, true, .72f);
+        LuoxiaVfx.shot(c, true, .72f, direction, 0);
         int[] heroes = {0};
-        LuoxiaArrow.launch(c, direction, RANGE, 3.25, LuoxiaArrow.Shape.LANCE, false, target -> {
-            if (c.hero(target)) {
-                c.damage(target, heroDamage(++heroes[0]).value(c), DamageCalc.Kind.PHYSICAL);
-                return heroes[0] == 3;
-            }
-            c.damage(target, NON_HERO.value(c), DamageCalc.Kind.PHYSICAL);
-            return false;
+        LuoxiaArrow.launchResolved(c, direction, RANGE, 3.25, LuoxiaArrow.Shape.LANCE, false, 0, target -> {
+            boolean hero = c.hero(target);
+            var formula = hero ? heroDamage(++heroes[0]) : NON_HERO;
+            boolean hit = c.damage(target, formula.value(c), DamageCalc.Kind.PHYSICAL);
+            return new LuoxiaArrow.Impact(hero && heroes[0] == 3,
+                    hit ? LuoxiaArrow.Feedback.HIT : LuoxiaArrow.Feedback.GRAZE);
         });
     }
 }

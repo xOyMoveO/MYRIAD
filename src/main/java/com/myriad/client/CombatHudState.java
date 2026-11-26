@@ -33,7 +33,7 @@ public final class CombatHudState {
 
     public record Snapshot(CharacterType character, float health, float maxHealth, float shield, int mana,
             double maxMana, boolean unlimitedMana, int level, int xp, int xpToNext, boolean maxLevel,
-            int gold, List<Slot> activeSlots, Slot passive, Attack attack, boolean preparing,
+            int gold, int skillPoints, List<Slot> activeSlots, Slot passive, Attack attack, boolean preparing,
             ControlStatusPayload control) {}
 
     private CombatHudState() {}
@@ -70,7 +70,7 @@ public final class CombatHudState {
         Slot passiveSlot = passive == null ? null : new Slot(BINDINGS.size(), passive, data.skillLevels().get(passive.getId()),
                 Component.translatable("hud.myriad.combat.passive"), SkillStatus.PASSIVE, 0, 0, -1, 0, 0);
         return new Snapshot(character, data.health(), data.maxHealth(), data.shield(), data.mana(), maxMana,
-                unlimitedMana, data.level(), data.xp(), data.xpToNext(), data.level() >= data.levelCap(), data.gold(),
+                unlimitedMana, data.level(), data.xp(), data.xpToNext(), data.level() >= data.levelCap(), data.gold(), data.skillPoints(),
                 List.copyOf(activeSlots), passiveSlot, attack(data, character, player, yike, control),
                 data.combatPreparing(), control);
     }

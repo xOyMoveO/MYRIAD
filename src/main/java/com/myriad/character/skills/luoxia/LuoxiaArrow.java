@@ -48,6 +48,8 @@ final class LuoxiaArrow {
             return id >= 0 && id < WIRE_ORDER.length ? WIRE_ORDER[id] : BASIC;
         }
     }
+    enum Feedback { HIT, GRAZE, NONE }
+    record Impact(boolean stop, Feedback feedback) {}
     private record Contact(LivingEntity target, Vec3 point) {}
     private LuoxiaArrow() {}
 
@@ -73,6 +75,11 @@ final class LuoxiaArrow {
     /** Radius checks and closest contact are computed on the wall-truncated segment. */
     static void launch(Cast c, Vec3 aim, double range, double velocity, Shape shape, boolean basic,
                        Predicate<LivingEntity> impact) {
+        launchResolved(c, aim, range, velocity, shape, basic, 0, target -> new Impact(impact.test(target), Feedback.HIT));
+    }
+
+    static void launchResolved(Cast c, Vec3 aim, double range, double velocity, Shape shape, boolean basic, int lane,
+                               java.util.function.Function<LivingEntity, Impact> impact) {
         UUID clock = UUID.randomUUID();
         int id = c.newVisualInstance();
         Vec3 direction = aim.normalize();
@@ -132,11 +139,13 @@ final class LuoxiaArrow {
                 hits.sort(Comparator.comparingDouble(hit -> hit.point().distanceToSqr(pos)));
                 for (Contact hit : hits) {
                     struck.add(hit.target.getUUID());
-                    boolean stop = impact.test(hit.target);
-                    LuoxiaVfx.impact(c, hit.point, direction, shape.heavy);
-                    if (stop) { LuoxiaVfx.wake(c, pos, hit.point, shape); finish(); return false; }
+                    Impact result = impact.apply(hit.target);
+                    if (result.feedback != Feedback.NONE) {
+                        LuoxiaVfx.impact(c, hit.point, direction, shape.heavy, result.feedback == Feedback.GRAZE);
+                    }
+                    if (result.stop) { LuoxiaVfx.wake(c, pos, hit.point, shape, lane); finish(); return false; }
                 }
-                LuoxiaVfx.wake(c, pos, end, shape);
+                LuoxiaVfx.wake(c, pos, end, shape, lane);
                 remaining -= pos.distanceTo(end);
                 if ((segment != null ? segment.blocked() : end.distanceToSqr(raw) > 1E-8) || remaining <= 1E-6) {
                     finish();

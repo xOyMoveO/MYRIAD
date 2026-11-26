@@ -159,6 +159,16 @@
     "myriad:vfx/spirit_hd_beacon_model",
     "myriad:vfx/luoxia_wake",
     "myriad:vfx/luoxia_impact",
-    "myriad:vfx/luoxia_arrow_atlas"
+    "myriad:vfx/luoxia_arrow_atlas",
+    "myriad:vfx/volley_charge",
+    "myriad:vfx/volley_crown",
+    "myriad:vfx/volley_trail",
+    "myriad:vfx/volley_hit",
+    "myriad:vfx/lance_charge",
+    "myriad:vfx/lance_release",
+    "myriad:vfx/lance_trail",
+    "myriad:vfx/lance_hit",
+    "myriad:vfx/lance_graze",
+    "myriad:vfx/lance_warning"
   ]
 }

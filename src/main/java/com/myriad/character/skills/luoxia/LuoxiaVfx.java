@@ -21,8 +21,14 @@ final class LuoxiaVfx {
         p.level().playSound(null, p.getX(), p.getY(), p.getZ(), event, SoundSource.PLAYERS, volume, pitch);
     }
     static void shot(Cast c, boolean heavy, float pitch) {
-        var at = LuoxiaArrow.muzzle(c).add(c.player.getLookAngle().scale(.58));
-        send(c, -1, CHARGE, at, at.add(c.player.getLookAngle()), heavy ? .28f : .16f, 0, 5, 0);
+        Vec3 aim = c.player.getLookAngle();
+        shot(c, heavy, pitch, LuoxiaArrow.muzzle(c).add(aim.scale(.58)), aim, 0);
+    }
+    static void shot(Cast c, boolean heavy, float pitch, Vec3 direction, int round) {
+        shot(c, heavy, pitch, LuoxiaArrow.muzzle(c), direction, round);
+    }
+    private static void shot(Cast c, boolean heavy, float pitch, Vec3 at, Vec3 direction, int round) {
+        send(c, -1, CHARGE, at, at.add(direction), heavy ? .28f : .16f, round == 0 ? 0 : 2 + round, 5, 0);
         sound(c.player, SoundEvents.ARROW_SHOOT, heavy ? .95f : .65f, pitch);
         if (heavy) {
             sound(c.player, SoundEvents.PLAYER_ATTACK_SWEEP, .42f, .85f);
@@ -52,13 +58,17 @@ final class LuoxiaVfx {
     static void flight(Cast c, Vec3 tip, Vec3 along, LuoxiaArrow.Shape shape, int id) {
         send(c, -1, FLIGHT, tip, along, .20f, shape.ordinal(), 3, id);
     }
-    static void wake(Cast c, Vec3 from, Vec3 to, LuoxiaArrow.Shape shape) {
+    static void wake(Cast c, Vec3 from, Vec3 to, LuoxiaArrow.Shape shape, int lane) {
         if (from.distanceToSqr(to) < 1E-6) return;
-        send(c, -1, TRAIL, from, to, shape.heavy ? .11f : .06f, shape.heavy ? 1 : 0,
+        int detail = shape == LuoxiaArrow.Shape.VOLLEY && lane == 0 ? 3 : (shape.heavy ? 1 : 0);
+        send(c, -1, TRAIL, from, to, shape.heavy ? .11f : .06f, detail,
                 shape.heavy ? 7 : 4, 0);
     }
     static void impact(Cast c, Vec3 at, Vec3 direction, boolean heavy) {
-        send(c, -1, BURST, at, at.add(direction), heavy ? .66f : .32f, 0, 8, 0);
+        impact(c, at, direction, heavy, false);
+    }
+    static void impact(Cast c, Vec3 at, Vec3 direction, boolean heavy, boolean graze) {
+        send(c, -1, BURST, at, at.add(direction), heavy ? .66f : .32f, graze ? 1 : 0, graze ? 4 : 8, 0);
     }
     static void finish(Cast c, int id) { AbilityVisuals.finishFlight(c, id); }
 
