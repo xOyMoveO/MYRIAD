@@ -71,7 +71,7 @@ public final class ClientDataHolder {
         LuoxiaPoseClient.reset();
         MeleeAttackBuffer.reset();
         InputFeedback.clear();
-        TeamSignalClient.reset(); ControlStatusOverlay.reset(); EnemyHealthBars.reset(); DeathRecapStore.clear();
+        TeamSignalClient.reset(); ControlStatusOverlay.reset(); EnemyHealthBars.resetConnection(); DeathRecapStore.clear();
         com.myriad.client.firstperson.NightDaggerView.reset();
         com.myriad.client.firstperson.FlameDaoView.reset();
         com.myriad.client.firstperson.ShuoView.reset();

@@ -4,6 +4,8 @@ import com.myriad.character.ability.*;
 import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.game.ModState;
 import com.myriad.network.ControlStatusPayload;
+import com.myriad.network.EnemyHealthPayload.Controls;
+import com.myriad.character.skills.rivet.RivetPush;
 import com.myriad.player.PlayerDataProvider;
 import java.util.*;
 import net.minecraft.server.MinecraftServer;
@@ -14,14 +16,21 @@ public final class ControlStatusSystem {
     private ControlStatusSystem() {}
     private record Sent(ControlStatusPayload payload, long at) {}
     private static final Map<UUID, Sent> LAST = new HashMap<>();
+    public static Controls controls(ServerPlayer player) {
+        var data = PlayerDataProvider.get(player);
+        return new Controls(ControlStatusPayload.ticks(data.getBuff("g1_stun")),
+                ControlStatusPayload.ticks(SilenceSystem.remaining(player)),
+                ControlStatusPayload.ticks(Math.max(data.getBuff("g1_root"), RivetPush.rootRemaining(player))));
+    }
+
     public static ControlStatusPayload snapshot(ServerPlayer p) {
         var d = PlayerDataProvider.get(p);
         if (!ModState.isEnabled() || !p.isAlive() || p.isSpectator() || !FirstGroupSkills.active(d.getCharacterId()))
             return ControlStatusPayload.empty();
         var charge = SkillChargeSystem.view(p);
+        var controls = controls(p);
         return new ControlStatusPayload(d.getCharacterId(), p.level().dimension().identifier().toString(),
-ControlStatusPayload.ticks(d.getBuff("g1_stun")), ControlStatusPayload.ticks(Math.max(d.getBuff("g1_root"), com.myriad.character.skills.rivet.RivetPush.rootRemaining(p))),
-                ControlStatusPayload.ticks(SilenceSystem.remaining(p)), (float)ActionTime.multiplier(p.getUUID(), p.level().getGameTime()),
+                controls.stun(), controls.root(), controls.silence(), (float)ActionTime.multiplier(p.getUUID(), p.level().getGameTime()),
                 charge == null ? "" : charge.skill(), charge == null ? 0 : ControlStatusPayload.ticks(charge.ticks()),
                 charge == null ? 1 : charge.walkFactor(), ControlStatusPayload.ticks(AbilityRuntime.motionRemaining(p)));
     }

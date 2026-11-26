@@ -23,7 +23,7 @@ public record ControlStatusPayload(String role, String dimension, int stun, int 
         b.writeFloat(p.actionRate); b.writeUtf(p.chargeSkill, 128); b.writeVarInt(p.charge); b.writeFloat(p.walkFactor); b.writeVarInt(p.motion);
     }, b -> new ControlStatusPayload(b.readUtf(64), b.readUtf(256), readTicks(b), readTicks(b), readTicks(b), rate(b, false),
             b.readUtf(128), readTicks(b), rate(b, true), readTicks(b)));
-    private static int readTicks(FriendlyByteBuf b) {
+    static int readTicks(FriendlyByteBuf b) {
         int v = b.readVarInt(); if (v < 0 || v > MAX_TICKS) throw new io.netty.handler.codec.DecoderException("Invalid status duration"); return v;
     }
     private static float rate(FriendlyByteBuf b, boolean zeroAllowed) {

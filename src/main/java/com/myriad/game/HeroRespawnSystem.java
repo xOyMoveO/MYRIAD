@@ -20,6 +20,12 @@ public final class HeroRespawnSystem {
     private HeroRespawnSystem() {}
     public static void clear() { WAITING.clear(); }
     public static boolean isWaiting(ServerPlayer player) { return WAITING.containsKey(player.getUUID()); }
+    static ServerPlayer followedAlly(ServerPlayer player) {
+        var waiting = WAITING.get(player.getUUID());
+        if (waiting == null || !(player.getCamera() instanceof ServerPlayer teammate)
+                || !teammate.getUUID().equals(waiting.target()) || !isEligibleAlly(player, teammate)) return null;
+        return teammate;
+    }
     public static com.google.gson.JsonElement snapshot() { return MatchProgress.JSON.toJsonTree(WAITING); }
     public static void restore(com.google.gson.JsonElement json) {
         WAITING.clear();

@@ -88,7 +88,14 @@ final class TrainingGroundCombatChecks {
                     "Official players cannot enter training or inherit its costs");
 
             enter(check, partner);
+            com.myriad.combat.SilenceSystem.apply(partner, 15);
+            check.accept(!healthEntry(actor, partner).controls().active(),
+                    "An unselected practice player has a health bar without public control icons");
             PlayerDataProvider.chooseCharacter(partner, CharacterType.TIANXING);
+            com.myriad.combat.SilenceSystem.apply(partner, 15);
+            check.accept(healthEntry(actor, partner).controls().silence() == 15,
+                    "A practice observer can see a selected hero's real silence before opting into sparring");
+            com.myriad.combat.SilenceSystem.cleanse(partner);
             check.accept(!TrainingMode.isNoMana(partner) && !TrainingMode.isNoCooldown(partner) && !TrainingMode.isNoGoldCost(partner),
                     "A second visitor starts with independent practice settings");
             practice.setMana(0);
@@ -247,8 +254,12 @@ final class TrainingGroundCombatChecks {
     }
 
     private static boolean showsFriendlyBar(ServerPlayer viewer, ServerPlayer target) {
+        return healthEntry(viewer, target).ally();
+    }
+
+    private static com.myriad.network.EnemyHealthPayload.Entry healthEntry(ServerPlayer viewer, ServerPlayer target) {
         return VisionSystem.healthSnapshot(viewer).entries().stream()
-                .filter(entry -> entry.entityId() == target.getId()).findFirst().orElseThrow().ally();
+                .filter(entry -> entry.entityId() == target.getId()).findFirst().orElseThrow();
     }
 
     private static ServerPlayer player(MinecraftServer server, List<EmbeddedChannel> channels, int index) {

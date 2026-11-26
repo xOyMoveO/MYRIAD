@@ -4,6 +4,9 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.myriad.combat.SkillTargets;
+import com.myriad.combat.ControlStatusSystem;
+import com.myriad.character.rework.FirstGroupSkills;
+import com.myriad.network.EnemyHealthPayload.Controls;
 import com.myriad.network.EnemyHealthPayload;
 import com.myriad.network.NetworkSetup;
 import java.nio.file.Path;
@@ -55,6 +58,10 @@ public final class VisionSystem {
     private static MinecraftServer server;
     private static final Set<UUID> HEALTH_VIEWERS = new HashSet<>();
 
+    // A reconnect starts a fresh stream. Respawn and dimension transfer keep the same connection.
+    private static final Map<net.minecraft.server.network.ServerGamePacketListenerImpl, Long> HEALTH_SEQUENCES =
+            new java.util.WeakHashMap<>();
+
     public static void initialize(MinecraftServer minecraftServer) {
         server = minecraftServer;
         ArenaConfigFile.readOptional(configPath(), VisionSystem::decodeBrushes).ifPresent(VisionSystem::activateBrushes);
@@ -87,7 +94,7 @@ public final class VisionSystem {
                 Packets.sendToPlayer(viewer, healthSnapshot(viewer));
                 HEALTH_VIEWERS.add(viewer.getUUID());
             } else if (HEALTH_VIEWERS.remove(viewer.getUUID())) {
-                Packets.sendToPlayer(viewer, new EnemyHealthPayload(List.of()));
+                Packets.sendToPlayer(viewer, healthSample(viewer, List.of()));
             }
             if (!participant) {
                 if (LAST_VISIBLE.remove(viewer.getUUID()) != null) send(viewer, false, Set.of());
@@ -121,12 +128,30 @@ public final class VisionSystem {
                         || target.isInvisibleTo(viewer) || !viewer.hasLineOfSight(target)) continue;
                 boolean ally = inTraining ? !SkillTargets.hostile(viewer, target) : team == targetData.getFaction();
                 if (!ally && !canSee(viewer, target)) continue;
-                bars.add(new EnemyHealthPayload.Entry(target.getId(),
+                Controls controls = Controls.NONE;
+                if (FirstGroupSkills.active(targetData.getCharacterId())
+                        && EnemyHealthPayload.inRange(viewer.distanceToSqr(target))
+                        && maySeeControls(viewer, target, ally)) {
+                    controls = ControlStatusSystem.controls(target);
+                }
+                bars.add(new EnemyHealthPayload.Entry(target.getId(), target.getUUID(),
                         target.getHealth(), targetData.getModMaxHealth(), ally,
-                        com.myriad.player.ModShieldSystem.displayValue(target)));
+                        com.myriad.player.ModShieldSystem.displayValue(target), controls));
             }
         }
-        return new EnemyHealthPayload(bars);
+        return healthSample(viewer, bars);
+    }
+
+    private static boolean maySeeControls(ServerPlayer viewer, ServerPlayer target, boolean ally) {
+        if (ally || !HeroRespawnSystem.isWaiting(viewer)) return true;
+        var teammate = HeroRespawnSystem.followedAlly(viewer);
+        return teammate != null
+                && !target.isInvisibleTo(teammate) && teammate.hasLineOfSight(target) && canSee(teammate, target);
+    }
+
+    private static EnemyHealthPayload healthSample(ServerPlayer viewer, List<EnemyHealthPayload.Entry> bars) {
+        long sequence = HEALTH_SEQUENCES.merge(viewer.connection, 1L, Long::sum);
+        return new EnemyHealthPayload(viewer.level().dimension().identifier(), sequence, bars);
     }
 
     private static void send(ServerPlayer viewer, boolean enabled, Set<Integer> visible) {
