@@ -28,6 +28,7 @@ final class CherryRiftCampChecks {
         var server = level.getServer();
         var config = MatchArena.configPath(server, "myriad_monster_spawns.json");
         var originalMonsters = MonsterManager.snapshot();
+        var originalMatch = GameManager.snapshot();
         boolean enabled = ModState.isEnabled();
         boolean training = TrainingMode.isEnabled();
         byte[] originalConfig = null;
@@ -59,6 +60,29 @@ final class CherryRiftCampChecks {
                 helper.assertTrue(mobs(level, bounds).size() == step[1], "Correct first spawn at " + step[0]);
             }
             MonsterManager.reloadArena(server);
+            var cherryMatch = originalMatch.deepCopy().getAsJsonObject();
+            cherryMatch.addProperty("phase", "PLAYING");
+            cherryMatch.addProperty("tempo", "CHERRY_V1");
+            GameManager.restore(cherryMatch, server);
+            for (long[] step : new long[][]{{399,0},{400,3},{799,3},{800,5},{4799,5},{4800,6},{4801,6}}) {
+                spawnByTime.invoke(null, level, step[0]);
+                helper.assertTrue(mobs(level, bounds).size() == step[1], "Cherry camp population at " + step[0]);
+            }
+            var cherryMobs = mobs(level, bounds);
+            var small = find(cherryMobs, MonsterType.CHERRY_DUSK_FOX);
+            var medium = find(cherryMobs, MonsterType.CHERRY_JADE_BEAST);
+            MonsterManager.onDeath(small, null);
+            MonsterManager.onDeath(medium, null);
+            var deadlines = new java.util.HashSet<Long>();
+            for (var row : MonsterManager.snapshot().getAsJsonArray("respawns"))
+                deadlines.add(row.getAsJsonObject().get("at").getAsLong() - level.getGameTime());
+            helper.assertTrue(deadlines.equals(java.util.Set.of(1500L, 2000L))
+                    && MatchTempo.CHERRY_V1.respawnSeconds(MonsterType.GOLD_PIG) == 0,
+                    "Small and medium death timers and zero-respawn camp");
+            small.discard();
+            medium.discard();
+            MonsterManager.reloadArena(server);
+            GameManager.restore(originalMatch, server);
             ModState.setEnabled(true);
             TrainingMode.setEnabled(false);
             helper.assertTrue(MonsterManager.previewFixedSpawnPoints(level) == 0, "Training preview is gated");
@@ -112,6 +136,7 @@ final class CherryRiftCampChecks {
             try {
                 if (originalConfig == null) Files.deleteIfExists(config); else Files.write(config, originalConfig);
                 MonsterManager.reloadArena(server);
+                GameManager.restore(originalMatch, server);
                 MonsterManager.restore(level, originalMonsters);
             } catch (Exception error) {
                 throw new IllegalStateException(error);

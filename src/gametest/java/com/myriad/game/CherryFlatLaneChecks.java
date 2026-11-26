@@ -38,11 +38,17 @@ final class CherryFlatLaneChecks {
             set(before,profile.resolve("myriad_vein_spawns.json"),"{\"enabled\":false}");
             set(before,profile.resolve("myriad_monster_spawns.json"),"{\"points\":[]}");
             set(before,profile.resolve("myriad_minimap.json"),"""
-                    {"corners":[{"x":-40,"y":81,"z":-30},{"x":40,"y":81,"z":-30},
-                                {"x":40,"y":81,"z":30},{"x":-40,"y":81,"z":30}]}
+                    {"corners":[{"slot":1,"x":-40,"y":81,"z":-30},{"slot":2,"x":40,"y":81,"z":-30},
+                                {"slot":3,"x":40,"y":81,"z":30},{"slot":4,"x":-40,"y":81,"z":30}]}
                     """);
             MatchArena.initialize(server);
             LaneSystem.initialize(server);
+            h.assertTrue(MatchArena.refreshReadiness(server) && MatchArena.selectedTempo() == MatchTempo.STANDARD,
+                    "An unmarked single-lane map keeps standard timing");
+            set(before, profile.resolve("myriad_match_tempo.json"), "{\"profile\":\"cherry_v1\"}");
+            h.assertTrue(MatchArena.refreshReadiness(server) && MatchArena.selectedTempo() == MatchTempo.CHERRY_V1,
+                    "Map opts in through its own optional configuration");
+            checkWaves(h);
             var mid=LaneSystem.Lane.MID;
             h.assertTrue(MatchArena.active()==MatchArena.Mode.DUEL,"Valid saved 3v3 activates");
             var expected=List.of(new BlockPos(-20,81,6),new BlockPos(0,81,0),new BlockPos(20,81,-6));
@@ -63,6 +69,11 @@ final class CherryFlatLaneChecks {
                     &&!LaneSystem.platformInReach(new Vec3(0,81,8),new Vec3(0,84,0),5.5,1.8)
                     &&!LaneSystem.platformInReach(new Vec3(0,81,6),new Vec3(0,87,0),5.5,1.8),
                     "Pedestal reach is horizontally and vertically bounded");
+            Files.writeString(selection, "{\"mode\":\"5v5\"}");
+            MatchArena.initialize(server);
+            h.assertTrue(MatchArena.active() == MatchArena.Mode.RIFT && MatchArena.selectedTempo() == MatchTempo.STANDARD
+                    && MatchArena.selectedTempo().firstWaveTicks() == 1400,
+                    "Selecting 5v5 ignores the other map's cherry profile");
         } catch(Exception e) {throw new IllegalStateException("Synthetic Cherry Rift lane fixture failed",e);}
         finally {
             try {
@@ -76,6 +87,48 @@ final class CherryFlatLaneChecks {
         }
         System.out.println("[MYRIAD-CHERRY-FLAT] PASS: manual/reverse routes, minimap, bounded raised objectives, old layout fallback and save round trip");
         h.succeed();
+    }
+
+    private static void checkWaves(GameTestHelper h) {
+        var level = h.getLevel();
+        var server = level.getServer();
+        var clock = (net.minecraft.world.level.storage.ServerLevelData) level.getLevelData();
+        long originalTime = level.getGameTime(), start = originalTime + 100;
+        var previous = GameManager.snapshot();
+        var originalLanes = LaneSystem.snapshot();
+        boolean enabled = ModState.isEnabled();
+        try {
+            var match = previous.deepCopy().getAsJsonObject();
+            match.addProperty("phase", "PLAYING");
+            match.addProperty("tempo", "CHERRY_V1");
+            match.addProperty("matchStartTime", start);
+            GameManager.restore(match, server);
+            ModState.setEnabled(true);
+            for (long[] step : new long[][]{{0,0},{699,0},{700,1},{1499,1},{1500,2},{2300,3}}) {
+                clock.setGameTime(start + step[0]);
+                LaneSystem.tick(level);
+                var snapshot = LaneSystem.snapshot();
+                h.assertTrue(snapshot.get("wave").getAsInt() == step[1], "Wave number at " + step[0]);
+                if (step[0] == 700) {
+                    var counts = new java.util.HashMap<String, Integer>();
+                    for (var value : snapshot.getAsJsonArray("units")) {
+                        var unit = value.getAsJsonObject();
+                        if (unit.get("kind").getAsString().equals("MELEE") || unit.get("kind").getAsString().equals("RANGED"))
+                            counts.merge(unit.get("faction").getAsString(), 1, Integer::sum);
+                    }
+                    h.assertTrue(counts.size() == 2 && counts.values().stream().allMatch(n -> n == 4),
+                            "Both teams generate four first-wave minions on tick 700: " + counts);
+                    LaneSystem.restore(level, snapshot);
+                    h.assertTrue(LaneSystem.snapshot().get("nextWave").getAsLong() == start + 1500,
+                            "Restore preserves next wave deadline");
+                }
+            }
+        } finally {
+            clock.setGameTime(originalTime);
+            GameManager.restore(previous, server);
+            LaneSystem.restore(level, originalLanes);
+            ModState.setEnabled(enabled);
+        }
     }
 
     private static void set(LinkedHashMap<Path,byte[]> before,Path target,String json)throws java.io.IOException {

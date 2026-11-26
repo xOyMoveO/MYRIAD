@@ -80,9 +80,6 @@ public final class MonsterManager {
 
     static double growthMultiplier(int generation) { return 1.0 + Math.max(0,generation-2)*.03; }
     private static double initialHealth(MonsterType type,int generation) { return type.getHealth()*growthMultiplier(generation); }
-    private static final long SMALL_MONSTER_FIRST_SPAWN_TICKS = 30L * 20L;
-    private static final long MEDIUM_MONSTER_FIRST_SPAWN_TICKS = 60L * 20L;
-    private static final long FIXED_BOSS_FIRST_SPAWN_TICKS = 6L * 60L * 20L;
     private static final long FIRST_BOSS_SPAWN_TICKS = 8L * 60L * 20L;
     private static final long BOSS_SPAWN_INTERVAL_TICKS = 5L * 60L * 20L;
     private static final MonsterType[] LARGE_BOSSES = {
@@ -301,7 +298,7 @@ public final class MonsterManager {
                     observeCrab(level, pending, Vec3.atBottomCenterOf(entry.getKey()).add(0, 1.5, 0));
                 }
                 long at = pending.at();
-                int remain = (int) Math.max(0, (at - now) / 20);
+                int remain = (int) Math.max(0, (at - now + 19) / 20);
                 ArmorStand stand = RESPAWN_DISPLAY.get(entry.getKey());
                 if (stand == null || !stand.isAlive()) {
                     stand = createRespawnStand(level, entry.getKey(), pending);
@@ -349,8 +346,7 @@ public final class MonsterManager {
     }
 
     private static long firstSpawnDelay(MonsterType type) {
-        return type.isSmallMonster() ? SMALL_MONSTER_FIRST_SPAWN_TICKS
-                : type.isMediumMonster() ? MEDIUM_MONSTER_FIRST_SPAWN_TICKS : FIXED_BOSS_FIRST_SPAWN_TICKS;
+        return GameManager.combatTempo().firstSpawnTicks(type);
     }
 
     static List<RiftCrabMarker> crabMapMarkers(ServerLevel level, Faction team) {
@@ -630,10 +626,12 @@ public final class MonsterManager {
         endCherryStrike(s);
         // 大型随机首领不在原地点直接复活，由全局 5 分钟轮次重新抽取位置和类型。
         if (!s.randomBoss && s.type.getRespawnSeconds() > 0 && entity.level() instanceof ServerLevel level) {
-            long at = level.getGameTime() + s.type.getRespawnSeconds() * 20L;
+            int seconds = s.spawnPointId == null ? s.type.getRespawnSeconds() : GameManager.combatTempo().respawnSeconds(s.type);
+            long at = level.getGameTime() + seconds * 20L;
             PendingRespawn pending = new PendingRespawn(s.type, at, s.spawnPointId, Set.of());
             if (isMatchCrab(pending)) {
                 var manager = GameManager.get();
+                manager.recordCrabKill(level.getGameTime());
                 if (killer != null && killer.level() == level && manager.isParticipant(killer.getUUID())
                         && !TrainingMode.isEnabled(killer)) {
                     Faction team = manager.factionOf(killer);
@@ -645,7 +643,7 @@ public final class MonsterManager {
             // 立即创建倒计时显示
             ArmorStand stand = createRespawnStand(level, s.spawnPos, pending);
             if (stand != null) {
-                stand.setCustomName(Component.literal("刷新: " + s.type.getRespawnSeconds() + "s"));
+                stand.setCustomName(Component.literal("刷新: " + seconds + "s"));
                 RESPAWN_DISPLAY.put(s.spawnPos, stand);
             }
         }

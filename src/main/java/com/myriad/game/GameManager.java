@@ -66,6 +66,12 @@ public class GameManager {
     @com.google.gson.annotations.SerializedName(value="destructionScore",alternate={"youmingScore"})
     private int destructionScore = 0;
     private long matchStartTime = -1;
+    private MatchTempo tempo = MatchTempo.STANDARD;
+
+    static MatchTempo combatTempo() {
+        return instance != null && instance.phase == Phase.PLAYING && instance.tempo != null
+                ? instance.tempo : MatchTempo.STANDARD;
+    }
     public static final int ATTRIBUTE_VEIN_COUNT = 3;
     public static final int LARGE_VEIN_CANDIDATE_COUNT = 2;
     /** 地图固定刷新点：月、火、木三座属性灵脉，以及 2 个大型候选点。 */
@@ -126,7 +132,53 @@ public class GameManager {
     private final Set<UUID> invalidatedPreselection = new HashSet<>();
     private UUID queueRound;
     private EarlyRemake earlyRemake = new EarlyRemake();
-    private record OfflineStats(int level, int gold) {}
+    private record OfflineStats(int level, int gold, long purchases) {}
+    private record EconomySample(int minute, int players, double meanLevel, double meanEarnedGold, double meanPurchases) {}
+    private final List<EconomySample> economySamples = new ArrayList<>();
+    private final List<Long> crabKillTicks = new ArrayList<>();
+    private long firstTowerTick = -1;
+    private long crystalTick = -1;
+
+    private void sampleEconomy(long now) {
+        if (tempo != MatchTempo.CHERRY_V1) return;
+        long elapsed = now - matchStartTime;
+        if (elapsed != 6000 && elapsed != 12000 && elapsed != 18000) return;
+        int minute = (int) (elapsed / 1200);
+        if (economySamples.stream().anyMatch(sample -> sample.minute() == minute)) return;
+        for (ServerPlayer player : matchPlayers()) rememberPlayerStats(player);
+        var roster = isQueuedMatch() ? queueRoster : factions.keySet();
+        if (roster.isEmpty()) return;
+        double levels = 0, gold = 0, purchases = 0;
+        for (var id : roster) {
+            OfflineStats stats = offlineStats.getOrDefault(id, new OfflineStats(1, 500, 0));
+            levels += stats.level();
+            gold += Math.max(500, stats.gold());
+            purchases += stats.purchases();
+        }
+        int count = roster.size();
+        var sample = new EconomySample(minute, count, levels/count, gold/count, purchases/count);
+        economySamples.add(sample);
+        com.myriad.Myriad.LOGGER.info("[cherry-tempo] round={} {}", queueRound, sample);
+    }
+
+    void recordTowerFall(long time) {
+        if (combatTempo() == MatchTempo.CHERRY_V1 && firstTowerTick < 0) firstTowerTick = time - matchStartTime;
+    }
+
+    void recordCrabKill(long time) {
+        if (combatTempo() == MatchTempo.CHERRY_V1) crabKillTicks.add(time - matchStartTime);
+    }
+
+    void crystalDestroyed(Faction winningSide, long time) {
+        if (combatTempo() == MatchTempo.CHERRY_V1) crystalTick = time - matchStartTime;
+        endMatch(winningSide);
+    }
+
+    private void logTempoResult(String outcome, long time) {
+        if (tempo == MatchTempo.CHERRY_V1) com.myriad.Myriad.LOGGER.info(
+                "[cherry-tempo] round={} players={} outcome={} ticks={} firstTower={} crabKills={} crystal={} samples={}",
+                queueRound, factions.size(), outcome, time - matchStartTime, firstTowerTick, crabKillTicks, crystalTick, economySamples);
+    }
     private final Map<UUID, OfflineStats> offlineStats = new HashMap<>();
     private long pickToken;
     private transient boolean checkDraftPool = true;
@@ -259,6 +311,7 @@ public class GameManager {
     }
 
     private void finishRemake() {
+        logTempoResult("remake", server.overworld().getGameTime());
         List<ServerPlayer> players = matchPlayers();
         broadcast(Component.translatable("lobby.myriad.remake.passed"));
         resetToLobby(server, true);
@@ -361,7 +414,8 @@ public class GameManager {
 
     private void rememberPlayerStats(ServerPlayer player) {
         PlayerData data = PlayerDataProvider.get(player);
-        offlineStats.put(player.getUUID(), new OfflineStats(data.getLevel(), data.getMatchGoldEarned()));
+        offlineStats.put(player.getUUID(), new OfflineStats(data.getLevel(), data.getMatchGoldEarned(),
+                com.myriad.character.rework.FirstGroupGrowth.ATTRIBUTES.stream().mapToLong(data::firstGroupAttribute).sum()));
     }
 
     public void onPlayerQuit(ServerPlayer player) {
@@ -598,6 +652,7 @@ public class GameManager {
             enforcePlayingModes(server);
             tickSpiritVein(server, gameTime);
             tickPassiveGold(server, gameTime);
+            sampleEconomy(gameTime);
             return;
         }
         if (phase != Phase.PICKING) {
@@ -714,6 +769,11 @@ public class GameManager {
     private void finishPicking(MinecraftServer server) {
         phase = Phase.PLAYING;
         pickCountdownEndTick = -1;
+        tempo = MatchArena.selectedTempo();
+        economySamples.clear();
+        crabKillTicks.clear();
+        firstTowerTick = -1;
+        crystalTick = -1;
         matchStartTime = server.overworld().getGameTime();
         matchEndTime = -1;
         if (!rollSpiritVeins()) {
@@ -1206,6 +1266,7 @@ public class GameManager {
                 Component.translatable("message.myriad.match_draw", guardianScore));
         else broadcast(MatchMessages.Tone.SUCCESS,
                 Component.translatable("message.myriad.match_end", winner.displayName()));
+        logTempoResult(crystalTick >= 0 ? "crystal" : "other_end", matchEndTime);
         long seconds = Math.max(0, matchEndTime - matchStartTime) / 20;
         broadcast(MatchMessages.Tone.OBJECTIVE,
                 Component.translatable("message.myriad.results_header", seconds / 60, seconds % 60));
@@ -1214,7 +1275,7 @@ public class GameManager {
         for (UUID id : roster) {
             ServerPlayer player = server.getPlayerList().getPlayer(id);
             PlayerData data = player == null ? null : PlayerDataProvider.get(player);
-            OfflineStats last = offlineStats.getOrDefault(id, new OfflineStats(1, 0));
+            OfflineStats last = offlineStats.getOrDefault(id, new OfflineStats(1, 0, 0));
             Faction faction = player == null ? queueFaction(id) : factionOf(player);
             String character = data == null ? queuePickedRole(id) : data.getCharacterId();
             resultEntries.add(new com.myriad.network.NetworkSetup.MatchResultEntry(
