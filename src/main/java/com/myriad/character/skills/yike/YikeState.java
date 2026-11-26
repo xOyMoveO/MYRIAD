@@ -22,7 +22,7 @@ public final class YikeState {
         int windup=skill==null?-1:skill.index();
         if(beamCharging(p))windup=7;
         var packet=new YikeStatePayload(p.getId(),mode,YikeStance.shots(p),mode==3?PrismaticBeam.remaining(p):YikeStance.remaining(p),
-            YikeStance.nextShotTicks(p),windup,PrismaticBeam.jumps(p),mode==3?PrismaticBeam.aim(p):YikeStance.aim(p),
+            YikeStance.nextShotTicks(p),windup,PrismaticBeam.jumps(p),mode==3?PrismaticBeam.aim(p):windup==6 && winding.point!=null?YikeProjectiles.launchAim(winding):YikeStance.aim(p),
             SteadyBarrier.cooldown(p),SteadyBarrier.ready(p),winding==null?0:winding.windupProgress(),p.level().getGameTime());
         for(var viewer:p.level().players()){
             if(viewer==p||viewer.position().distanceToSqr(p.position())<64*64&&VisionSystem.canSee(viewer,p))Packets.sendToPlayer(viewer,packet);

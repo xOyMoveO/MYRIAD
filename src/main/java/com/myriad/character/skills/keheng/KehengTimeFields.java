@@ -1,4 +1,6 @@
 package com.myriad.character.skills.keheng;
+import com.myriad.network.WeaponPosePayload;
+import com.myriad.network.WeaponPosePayload.Move;
 
 import com.myriad.Myriad;
 import com.myriad.character.ability.*;
@@ -61,6 +63,7 @@ public final class KehengTimeFields {
         add(new Field(c,at,Vec3.ZERO,radius,warning,duration,rate,rate,opening,pulse,0,false,false));
     }
     public static void follow(AbilityRuntime.Cast c,int duration,double rate,float ending){
+        WeaponPosePayload.play(c.player, Move.FOLLOW, duration);
         add(new Field(c,c.player.position(),Vec3.ZERO,3,0,duration,rate,rate,0,0,ending,true,false));
         c.buff("g1_keheng_follow",duration);
     }
@@ -72,9 +75,10 @@ public final class KehengTimeFields {
     public static void cancelFollowing(ServerPlayer p){for(var f:new ArrayList<>(FIELDS))if(f.follows&&f.cast.player==p)remove(f);}
     public static void remove(Field f){remove(f,false,false);}
     private static void remove(Field f,boolean natural,boolean clear){if(f.removed)return;f.removed=true;FIELDS.remove(f);KehengVisuals.end(f.cast,f.center(),f.radius,natural,f.visual,clear);
-        if(f.follows)f.cast.buff("g1_keheng_follow",0);
+        if(f.follows){f.cast.buff("g1_keheng_follow",0);WeaponPosePayload.play(f.cast.player, natural?Move.CLOSE_FIELD:Move.DROP_FIELD, 6);}
         KehengAudio.play(f.cast.player,"end");refreshPublished();}
     public static void penetrate(Field f,float damage){if(f.removed)return;
+        WeaponPosePayload.aimed(f.cast.player, Move.LINE, 8, f.direction);
         for(var target:f.cast.player.level().getEntitiesOfClass(LivingEntity.class,new AABB(f.origin,f.origin.add(f.direction.scale(f.length()))).inflate(1.6,3,1.6),
                 t->SkillTargets.enemy(f.cast.player,t)&&f.contains(t.getBoundingBox().getCenter()))){
             f.cast.damage(target,damage,MAGIC);KehengVisuals.impact(f.cast,target.position().add(0,.9,0));

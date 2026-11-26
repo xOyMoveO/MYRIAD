@@ -610,6 +610,13 @@ public final class AbilityRuntime {
         /** Stops at the earliest enemy body in each confirmed swept step, including ordinary mobs.
          * The next server/client velocity is clipped before it is sent; damage follows real contact. */
         public void actionDashFirst(Vec3 delta,int ticks,double radius,Consumer<LivingEntity> impact,Runnable end){
+            dashFirst(delta,ticks,radius,0,impact,end,end);
+        }
+        /** Stop before the first enemy without widening the sweep sideways. */
+        public void actionApproach(Vec3 delta,int ticks,double gap,Runnable arrived,Runnable interrupted){
+            dashFirst(delta,ticks,Math.max(0,player.getBbWidth()*.5-.25),gap,t->{},arrived,interrupted);
+        }
+        private void dashFirst(Vec3 delta,int ticks,double radius,double gap,Consumer<LivingEntity> impact,Runnable end,Runnable interrupted){
             if(ticks<=0||delta.lengthSqr()<.0025||data.getBuff("g1_root")>0||data.getBuff("g1_stun")>0)return;
             final int token=++owner.motionToken;final long start=now(),impulse=KnockbackBuffer.impulseToken(player);
             final Vec3 direction=delta.normalize(),destination=player.position().add(delta);
@@ -632,33 +639,48 @@ public final class AbilityRuntime {
                     if(KnockbackBuffer.impulseToken(player)!=impulse){
                         owner.motionUntil=0;Vec3 v=player.getDeltaMovement();
                         Packets.sendToPlayer(player,new NetworkSetup.DashPayload((float)v.x,(float)v.y,(float)v.z,-1));
-                        ended=true;end.run();return false;
+                        ended=true;interrupted.run();return false;
                     }
                     Vec3 pos=player.position();moved+=Math.max(0,pos.subtract(last).dot(direction));
-                    var touched=first(last,pos);
+                    var touched=gap==0?first(last,pos):null;
                     AbilityVisuals.motionTrail(Cast.this,last,pos);last=pos;
                     if(touched!=null){finish();impact.accept(touched);return false;}
                     double rate=ActionTime.multiplier(player.getUUID(),now);age+=rate;
-                    if(moved>=delta.length()-.04||age>=ticks+4||data.getBuff("g1_root")>0||data.getBuff("g1_stun")>0){finish();return false;}
+                    if(data.getBuff("g1_root")>0||data.getBuff("g1_stun")>0||gap>0&&SilenceSystem.isSilenced(player)){finish(interrupted);return false;}
+                    if(moved>=delta.length()-.04||age>=ticks+(gap==0?4:10)){finish();return false;}
                     owner.motionUntil=now+Math.max(2,(int)Math.ceil((ticks+4-age)/rate));
                     return step(rate);
                 }
                 boolean step(double rate){
                     Vec3 pos=player.position(),velocity=direction.scale(Math.min(delta.length()/ticks*rate,Math.max(0,delta.length()-moved)));
-                    var target=first(pos,pos.add(velocity));
+                    // Tell the client the actual stopping point on the first packet, even when
+                    // the next authoritative position will only arrive after several client ticks.
+                    var endpoint=gap>0?destination:pos.add(velocity);
+                    var ahead=endpoint.add(direction.scale(gap));
+                    var target=first(pos,ahead);
                     if(target!=null){
-                        Vec3 center=pos.add(0,.9,0),hit=contact(target,center,center.add(velocity));
-                        double distance=center.distanceTo(hit);
+                        Vec3 center=pos.add(0,.9,0),hit=contact(target,center,ahead.add(0,.9,0));
+                        double distance=Math.max(0,center.distanceTo(hit)-gap);
                         if(distance<1E-5){finish();impact.accept(target);return false;}
+                        endpoint=pos.add(direction.scale(Math.min(pos.distanceTo(endpoint),distance)));
                         velocity=direction.scale(Math.min(velocity.length(),distance));
                     }
                     if(!AbilityTargeting.clearSweep(player,velocity)){finish();return false;}
-                    sendMotion(velocity,pos.add(velocity));return true;
+                    if(gap==0)sendMotion(velocity,pos.add(velocity));
+                    else {
+                        player.setDeltaMovement(velocity);
+                        player.syncVelocity=false; // the bounded lease owns this movement
+                        player.resetFallDistance();
+                        Packets.sendToPlayer(player,new com.myriad.network.AbilityMotionPayload((float)velocity.x,
+                                (float)velocity.y,(float)velocity.z,endpoint.x,endpoint.y,endpoint.z,3));
+                    }
+                    return true;
                 }
-                void finish(){if(ended)return;ended=true;owner.motionUntil=0;
+                void finish(){finish(end);}
+                void finish(Runnable callback){if(ended)return;ended=true;owner.motionUntil=0;
                     player.setDeltaMovement(Vec3.ZERO);player.syncVelocity=true;player.resetFallDistance();
-                    Packets.sendToPlayer(player,new NetworkSetup.DashPayload(0,0,0,-1));end.run();}
-                public void cancel(){if(token==owner.motionToken)finish();}
+                    Packets.sendToPlayer(player,new NetworkSetup.DashPayload(0,0,0,-1));callback.run();}
+                public void cancel(){if(token==owner.motionToken)finish(interrupted);}
             }
             var task=new FirstDash();if(task.step(ActionTime.multiplier(player.getUUID(),start)))owner.tasks.add(task);
         }

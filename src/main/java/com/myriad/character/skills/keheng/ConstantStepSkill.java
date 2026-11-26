@@ -1,4 +1,6 @@
 package com.myriad.character.skills.keheng;
+import com.myriad.network.WeaponPosePayload;
+import com.myriad.network.WeaponPosePayload.Move;
 import com.myriad.character.ability.*;
 /** Entry edges and the independent real-time internal cooldown belong to the field owner. */
 public final class ConstantStepSkill extends KehengSkill {
@@ -8,6 +10,7 @@ public final class ConstantStepSkill extends KehengSkill {
         var skill=com.myriad.character.rework.FirstGroupSkills.node("keheng",1);
         var data=com.myriad.player.PlayerDataProvider.get(p);if(data.skillLevel(skill.getId())<=0)return;
         var c=AbilityRuntime.context(p,skill);if(c.memory().cooldown>c.now())return;
-        c.memory().cooldown=c.now()+240;c.shield(p,c.value(75,15,.3f),40);KehengVisuals.watchShield(c,40);c.buff("g1_keheng_step_cd",240);KehengAudio.play(p,"shield");
+        c.memory().cooldown=c.now()+240;c.shield(p,c.value(75,15,.3f),40);WeaponPosePayload.play(p, Move.FIELD_SHIELD, 6);
+        KehengVisuals.watchShield(c,40);c.buff("g1_keheng_step_cd",240);KehengAudio.play(p,"shield");
     }
 }

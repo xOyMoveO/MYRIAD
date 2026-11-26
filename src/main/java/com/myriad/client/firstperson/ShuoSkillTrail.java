@@ -17,7 +17,7 @@ public final class ShuoSkillTrail {
             var p=new Vec3(a.x,a.y,a.z);var q=new Vec3(b.x,b.y,b.z);var up=new Vec3(0,.045,0);
             ShuoBladeLight.panel(out,p.subtract(up),q.subtract(up),q.add(up),p.add(up),77,0xD2EDFF,.9f*fade,true,0,1,0,1);
         }
-        boolean cutting=action==ShuoViewPayload.FLASH||action>=ShuoViewPayload.CUT_LEFT&&action<=ShuoViewPayload.CUT_DOWN;
+        boolean cutting=ShuoViewPayload.moonCut(action)||action==ShuoViewPayload.FLASH||action>=ShuoViewPayload.CUT_LEFT&&action<=ShuoViewPayload.CUT_DOWN;
         if(cutting&&exposure>.05){
             double begin=motion.fromDrawn()?0:.32,end=begin+(1-begin)*.52;
             var samples=AttackTrailMesh.samples(now,motion.started(),motion.duration(),begin,end,t->{

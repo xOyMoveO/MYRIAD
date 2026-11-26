@@ -400,7 +400,8 @@ def main():
                 part["light_emission"]=15
         for suffix,data in [("spec.json",source),("bbmodel",model)]:
             (OUT/f"{art.name}.{suffix}").write_text(json.dumps(data,indent=2)+"\n",encoding="utf-8",newline="\n")
-        compile_item(art.name,item,scale,edge,source=OUT,stored_y_scale=y_fit)
+        compile_item(art.name,item,scale,edge,source=OUT,stored_y_scale=y_fit,
+                     thirdperson_ring=item=="yunsheng_bell")
 
 
 if __name__=="__main__":

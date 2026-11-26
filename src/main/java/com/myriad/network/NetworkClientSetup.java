@@ -33,6 +33,8 @@ final class NetworkClientSetup {
         });
         ClientConfigurationConnectionEvents.DISCONNECT.register((listener, client) -> MATCHED.remove(listener));
 
+        ClientPlayNetworking.registerGlobalReceiver(WeaponPosePayload.TYPE,
+                (p,ctx) -> com.myriad.client.firstperson.WeaponBodyPose.receive(p));
         ClientPlayNetworking.registerGlobalReceiver(YikeStatePayload.TYPE,
                 (payload,context)->com.myriad.client.YikeClientState.receive(payload));
         ClientPlayNetworking.registerGlobalReceiver(LuoxiaBowPosePayload.TYPE,

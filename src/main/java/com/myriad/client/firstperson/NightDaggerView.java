@@ -80,8 +80,8 @@ public final class NightDaggerView {
         if(mc.gui.screen()!=null){MOTION.reset();return false;}
         checkOwner(mc);
         if (event.getHand()!=InteractionHand.MAIN_HAND) {
-            if(SKILL.sample(mc.player.tickCount+event.getPartialTick()).showOff()){
-                // The cosmetic two-hand gesture temporarily replaces offhand rendering, not its inventory stack.
+            if(event.getItemStack().isEmpty() && SKILL.sample(mc.player.tickCount+event.getPartialTick()).showOff()){
+                // Only an empty offhand is available for the support gesture.
                 event.setCanceled(true);return true;
             }
             // Only one idle hand; never conceal a real offhand item such as a map.
@@ -122,7 +122,7 @@ public final class NightDaggerView {
             try{stack.scale(.55f,.55f,.55f);NightSkillHandRenderer.submit(event,stack,NightSkillHandVfx.needle(skill));}
             finally{stack.popPose();}
         } finally { stack.popPose(); }
-        if(skill.showOff()){
+        if(skill.showOff() && mc.player.getOffhandItem().isEmpty()){
             stack.pushPose();try{
                 stack.mulPose(NightDaggerRig.wrist(skill.off(),!left));
                 submitArm(event,stack,mc,slim,!left);

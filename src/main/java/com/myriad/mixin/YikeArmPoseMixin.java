@@ -10,6 +10,7 @@ public abstract class YikeArmPoseMixin {
     private void myriad$yikeGrip(HumanoidRenderState state,CallbackInfo ci){
         var model = (HumanoidModel<?>)(Object)this;
         com.myriad.client.firstperson.YikeWeaponView.pose(model,state);
+        com.myriad.client.firstperson.WeaponBodyPose.pose(model,state);
         com.myriad.client.firstperson.LuoxiaBowView.pose(model,state);
     }
 }

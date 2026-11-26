@@ -8,7 +8,7 @@ import org.joml.Vector4f;
 /** First-person grip pivots in raw item-model space. The dao's silver edge is model +X. */
 public final class WarSpiritHandRig {
     private static final Vec3 RIGHT=new Vec3(1,0,0), UP=new Vec3(0,1,0);
-    private static final float DAO_SCALE=.77f, BELL_SCALE=.60f;
+    private static final float DAO_SCALE=.77f*1.20f, BELL_SCALE=.60f;
     // Center of jade_loop_joint_2, the top of the jade ring (model origin is 8,8,8).
     private static final float BELL_GRIP_X=(7.8025f-8)/16, BELL_GRIP_Y=(30.12f-8)/16;
 
@@ -31,7 +31,7 @@ public final class WarSpiritHandRig {
                 roll+=Math.IEEEremainder(lead-roll,2*Math.PI)*p.edge();
             }
         }
-        var hand=war?p.grip():p.grip().add(0,.54,-.37);
+        var hand=war?p.grip():p.grip().add(-.10,.84,-.70);
         var item=basis(StaffHandRig.lowered(hand,left,equip),twist(side,face,roll),axis).scale(war?DAO_SCALE:BELL_SCALE);
         // Rotate about the ring itself, not the original model's lower handle.
         return war?item:item.translate(-BELL_GRIP_X,-BELL_GRIP_Y,0);

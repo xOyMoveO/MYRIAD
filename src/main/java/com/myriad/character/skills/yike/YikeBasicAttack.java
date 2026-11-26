@@ -1,4 +1,6 @@
 package com.myriad.character.skills.yike;
+import com.myriad.network.WeaponPosePayload;
+import com.myriad.network.WeaponPosePayload.Move;
 
 import com.myriad.combat.InputFailure;
 
@@ -35,6 +37,7 @@ public final class YikeBasicAttack {
         Vec3 origin=p.getEyePosition();
         Vec3[] pos={origin.add(direction.scale(.4))};double[] distance={0};long[] last={c.now()};UUID flight=UUID.randomUUID();int visual=c.newVisualInstance();
         float damage=(float)p.getAttributeValue(ModAttributes.PHYSICAL_ATTACK);
+        WeaponPosePayload.play(p, Move.CANNON_BASIC, 5);
         YikeVfx.event(c,"basic_muzzle",pos[0],pos[0].add(direction),.2f,3);YikeAudio.play(p,"basic",pos[0],.35f,1.2f);PlayerDataProvider.syncToClient(p);
         c.whileActive(17,age->{
             if(c.now()<=last[0])return true;last[0]=c.now();if(age>16){ActionTime.clearTarget(flight);YikeVfx.finish(c,visual);return false;}

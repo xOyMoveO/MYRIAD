@@ -73,7 +73,7 @@ public final class ThunderSwordView {
         double now=mc.player.tickCount+event.getPartialTick();
         var skill=SKILL.sample(now);
         if(skill.action()<0&&aiming)skill=ThunderSkillMotion.aim(now-aimStart);
-        if(event.getHand()!=InteractionHand.MAIN_HAND){if(skill.showOff()){event.setCanceled(true);return true;}return false;}
+        if(event.getHand()!=InteractionHand.MAIN_HAND){if(skill.showOff() && event.getItemStack().isEmpty()){event.setCanceled(true);return true;}return false;}
         if(!event.getItemStack().is(ModItems.LEITINGJIAN.get()))return false;
         // Maps, offhand use, mining and other vanilla use poses keep their ordinary rendering.
         if(busy(mc)){MOTION.reset();if(mc.gui.screen()!=null||mc.player.isUsingItem()||(mc.gameMode!=null&&mc.gameMode.isDestroying()))return false;}
@@ -92,7 +92,7 @@ public final class ThunderSwordView {
                 if(gesture&&skill.showBlade())ThunderSkillHandRenderer.submit(event,stack,ThunderSkillHandVfx.blade(skill,now));
             }finally{stack.popPose();}
         }finally{stack.popPose();}
-        if(gesture&&skill.showOff()){
+        if(gesture&&skill.showOff()&&mc.player.getOffhandItem().isEmpty()){
             stack.pushPose();try{stack.mulPose(ThunderSkillRig.off(skill,left));submitArm(event,stack,mc,slim,!left);}finally{stack.popPose();}
         }
         if(gesture)ThunderSkillHandRenderer.submit(event,stack,ThunderSkillHandVfx.camera(skill,now,left));

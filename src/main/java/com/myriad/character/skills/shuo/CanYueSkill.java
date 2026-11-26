@@ -14,13 +14,20 @@ public final class CanYueSkill extends AbilitySkill {
     }
 
     public CanYueSkill(Definition d){super(d);}
+    static void display(AbilityRuntime.Cast c, int completed, int ticks) {
+        for (int i = 0; i <= 3; i++) c.buff("g1_shuo_moon_" + i, i == completed ? ticks : 0);
+    }
+    @Override public void windupPose(AbilityRuntime.Cast c, boolean winding) {
+        if (!winding) { CrescentGesture.discard(c.player); display(c, -1, 0); }
+    }
     @Override public boolean hasOwnCastSound(){return true;}
     @Override public void release(AbilityRuntime.Cast c){
+        CrescentGesture.discard(c.player);
         c.memory().count=0;c.memory().until=0;c.memory().targets.clear();c.buff(getId()+"_recast",0);
         if(ShuoCombat.drawn(c.player)){
             c.memory().tag="drawn";
             ShuoCombat.windup(c,6,()->{
-                ShuoCombat.cut(c,com.myriad.network.ShuoViewPayload.CUT_DOWN,8);
+                ShuoCombat.cut(c,com.myriad.network.ShuoViewPayload.RETURNING_MOON,8);
                 ShuoVisuals.slash(c,5,140,2);
                 ShuoCombat.cone(c,5,140,DRAWN.value(c),0);
                 ShuoCombat.follow(c,6,()->ShuoCombat.sheathe(c.player));
@@ -32,18 +39,27 @@ public final class CanYueSkill extends AbilitySkill {
     @Override public void recast(AbilityRuntime.Cast c){cut(c);}
     private void cut(AbilityRuntime.Cast c){
         var m=c.memory();int step=m.count++;m.until=0;c.buff(getId()+"_recast",0);
-        boolean chase=step>0&&c.player.isShiftKeyDown();
+        var gesture = step > 0 ? CrescentGesture.accepted(c.player) : null;
+        display(c, step, 24);
         ShuoCombat.windup(c,4,()->{
-            if(chase){
-                ShuoCombat.cut(c,com.myriad.network.ShuoViewPayload.FLASH,5);
-                c.actionDash(c.forward(2),4,.2,(t,first)->{},()->{if(!AbilityRuntime.controlled(c.player))strike(c,step);},false,false);
-                ShuoVisuals.trackMotion(c,true);
-            }else strike(c,step);
+            if(gesture==null) strike(c,step);
+            else gesture.decide(c,chase->{if(chase) pursue(c,step); else strike(c,step);});
         });
+    }
+    private void pursue(AbilityRuntime.Cast c,int step) {
+        CrescentGesture.discard(c.player);
+        ShuoCombat.cut(c,com.myriad.network.ShuoViewPayload.PURSUIT,5);
+        c.actionApproach(c.forward(4), 4, 1, () -> {
+            if (!AbilityRuntime.controlled(c.player)) strike(c, step);
+        }, () -> {
+            display(c,-1,0);
+            ShuoCombat.cue(c.player,com.myriad.network.ShuoViewPayload.CANCEL,0);
+        });
+        ShuoVisuals.trackMotion(c,true);
     }
     private void strike(AbilityRuntime.Cast c,int step){
             var m=c.memory();
-            float bonus=ShuoCombat.draw(c.player,step==0?com.myriad.network.ShuoViewPayload.CUT_LEFT:step==1?com.myriad.network.ShuoViewPayload.CUT_RIGHT:com.myriad.network.ShuoViewPayload.CUT_DOWN,7);
+            float bonus=ShuoCombat.draw(c.player,com.myriad.network.ShuoViewPayload.MOON_FIRST + step,7);
             ShuoVisuals.slash(c,step==2?4.5:4,step==2?90:110,step);
             var hits=ShuoCombat.coneAt(c,c.player.position(),c.forward(1),step==2?4.5:4,step==2?90:110,
                 (step==2?THIRD.value(c):FIRST_TWO.value(c))+bonus,0,step==0?.25f:0,20);
@@ -52,8 +68,10 @@ public final class CanYueSkill extends AbilitySkill {
                 if(step==2&&prior==3&&c.player.level().getEntity(id) instanceof net.minecraft.world.entity.LivingEntity t)c.root(t,10,false);
                 m.targets.put(id,prior|(1L<<step));
             }
+            display(c, step+1, step==2?6:40);
             if(step==2){m.count=0;m.targets.clear();ShuoCombat.follow(c,6,()->ShuoCombat.sheathe(c.player));}
             else {m.until=c.now()+40;c.buff(getId()+"_recast",40);long window=m.until;
-                c.later(41,false,()->{if(m.until==window&&m.count>0){m.count=0;m.until=0;m.targets.clear();c.buff(getId()+"_recast",0);ShuoCombat.sheathe(c.player);}});}
+                c.later(41,false,()->{if(m.until==window&&m.count>0){m.count=0;m.until=0;m.targets.clear();c.buff(getId()+"_recast",0);ShuoCombat.sheathe(c.player);}});
+                CrescentGesture.consume(c);}
     }
 }

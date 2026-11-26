@@ -1,4 +1,6 @@
 package com.myriad.character.skills.shuo;
+import com.myriad.network.WeaponPosePayload;
+import com.myriad.network.WeaponPosePayload.Move;
 import com.myriad.character.ability.*;
 import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.combat.*;
@@ -22,14 +24,23 @@ public final class ShuoCombat {
     private ShuoCombat(){}
     private static State state(ServerPlayer p){var s=STATES.computeIfAbsent(p,k->new State());if(s.level!=p.level()){s=new State();s.level=p.level();STATES.put(p,s);}return s;}
     public static boolean isShuo(ServerPlayer p){return "shuo".equals(PlayerDataProvider.get(p).getCharacterId());}
-    public static boolean blocked(ServerPlayer p){if(!isShuo(p))return false;var s=state(p);advance(p,s);return s.charging||s.sheath!=null||s.busy!=null||AbilityRuntime.moving(p);}
+    public static boolean blocked(ServerPlayer p){if(!isShuo(p))return false;var s=state(p);advance(p,s);return CrescentGesture.waiting(p)||s.charging||s.sheath!=null||s.busy!=null||AbilityRuntime.moving(p);}
     public static boolean drawn(ServerPlayer p){return state(p).drawn;}
     public static int gauge(ServerPlayer p){return state(p).gauge;}
-    public static void cue(ServerPlayer p,int action,int ticks){int token=SEQUENCE.updateAndGet(v->v==Integer.MAX_VALUE?1:v+1);Packets.sendToPlayer(p,new ShuoViewPayload(action,ticks,p.level().getGameTime(),token));}
+    public static void cue(ServerPlayer p,int action,int ticks){int token=SEQUENCE.updateAndGet(v->v==Integer.MAX_VALUE?1:v+1);Packets.sendToPlayer(p,new ShuoViewPayload(action,ticks,p.level().getGameTime(),token));
+        var move=switch(action){
+            case MOON_FIRST -> Move.FIRST; case MOON_SECOND -> Move.SECOND; case MOON_THIRD -> Move.THIRD;
+            case RETURNING_MOON -> Move.FINAL; case PURSUIT -> Move.PURSUE; case SHEATHE -> Move.SHEATHE;
+            case CANCEL -> Move.RELAX; case CHARGE -> state(p).chargeSkill==7?Move.MOON_READY:null;
+            default -> null;
+        };
+        if(move!=null)WeaponPosePayload.play(p,move,action==MOON_FIRST||action==MOON_SECOND?40:Math.max(3,ticks));
+    }
     public static void clear(ServerPlayer p){
+        CrescentGesture.clear(p);
         ShuoWeaponState.sync(p,false);
         if(STATES.remove(p)!=null&&p.connection!=null)cue(p,CANCEL,0);
-        var d=PlayerDataProvider.get(p);for(String key:List.of("g1_shuo_drawn","g1_shuo_gauge","g1_shuo_ready","g1_shuo_sheathing","shuo_qiaofan_recast","shuo_canyue_recast"))d.setBuff(key,0);
+        var d=PlayerDataProvider.get(p);for(String key:List.of("g1_shuo_drawn","g1_shuo_gauge","g1_shuo_ready","g1_shuo_sheathing","shuo_qiaofan_recast","shuo_canyue_recast","g1_shuo_moon_0","g1_shuo_moon_1","g1_shuo_moon_2","g1_shuo_moon_3"))d.setBuff(key,0);
     }
     public static void tick(ServerPlayer p){if(!isShuo(p))return;
         var s=state(p);long now=p.level().getGameTime();
@@ -67,7 +78,7 @@ public final class ShuoCombat {
         ShuoWeaponState.sync(p,true);
         s.guardUntil=0;d.setBuff("g1_shuo_drawn",2);
         if(!basicAction(action))s.combo.reset();
-        cue(p,action,ticks);ShuoAudio.play(p,"draw");if(bonus>0)ShuoVisuals.body(p,passiveIndex,ShuoSkillVfx.EMPOWER,8);return bonus;
+        cue(p,action,ticks);if(action < MOON_FIRST || action > MOON_THIRD)ShuoAudio.play(p,"draw");if(bonus>0)ShuoVisuals.body(p,passiveIndex,ShuoSkillVfx.EMPOWER,8);return bonus;
     }
     public static void basic(ServerPlayer p){if(!isShuo(p))return;var s=state(p);boolean wasDrawn=s.drawn;
         int action=s.combo.select(p.level().getGameTime(),wasDrawn);s.basicBonus=draw(p,action,9);s.bonusTick=p.level().getGameTime();

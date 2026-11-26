@@ -91,7 +91,10 @@ public final class FlameDaoView {
         boolean aiming=ClientDataHolder.placementType()==104;
         if(aiming&&aimStart<0)aimStart=mc.player.tickCount;
         if(SKILL.active(now)||aiming){
-            if(event.getHand()==InteractionHand.OFF_HAND){event.setCanceled(true);return true;}
+            if(event.getHand()==InteractionHand.OFF_HAND){
+                if(!mc.player.getOffhandItem().isEmpty())return false;
+                event.setCanceled(true);return true;
+            }
             if(!event.getItemStack().is(ModItems.LIEYANJIAN.get()))return false;
             var frame=SKILL.active(now)?SKILL.frame(now):FlameSkillMotion.aim(now-aimStart);
             renderSkill(event,frame,now);event.setCanceled(true);return true;
@@ -137,7 +140,7 @@ public final class FlameDaoView {
                 com.myriad.client.platform.ClientItemRenderer.submit(mc.player,event.getItemStack(),ItemDisplayContext.NONE,stack,event.getSubmitNodeCollector(),event.getPackedLight());
             }finally{stack.popPose();}
         }
-        if(f.showOff())arm(event,f.off(),FlameSkillRig.off(f,left),slim,!left);
+        if(f.showOff() && mc.player.getOffhandItem().isEmpty())arm(event,f.off(),FlameSkillRig.off(f,left),slim,!left);
         AttackTrailRenderer.submit(event,FlameSkillHandVfx.build(f,now,left));
     }
     private static void arm(HandRenderContext event,FlameDaoMotion.Pose pose,org.joml.Matrix4f hand,boolean slim,boolean left){
