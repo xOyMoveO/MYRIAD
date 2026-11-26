@@ -94,6 +94,9 @@ final class SkillChoiceUiChecks {
         verifyActivation(h);
         verifyDamageText(h);
         verifyHoverResources(h);
+        verifyMaterial(h, "panel/myriad_default", 512, 256);
+        verifyMaterial(h, "tooltip/default", 256, 128);
+        for (String role : FirstGroupSkills.ROLES) verifyMaterial(h, "tooltip/" + role, 256, 128);
         try (var input = SkillChoiceUiChecks.class.getResourceAsStream("/assets/myriad/textures/gui/skill_choice/meridian_crest.png")) {
             h.assertTrue(input != null, "Original sword crest is packaged as a separate image");
             var image = ImageIO.read(input);
@@ -104,6 +107,23 @@ final class SkillChoiceUiChecks {
         }
         System.out.println("[MYRIAD-SKILL-UI] PASS: " + states + " responsive layouts, " + tooltipStates
                 + " bounded tooltip states, selection/confirmation, focus and scrollbar contracts");
+    }
+
+    private static void verifyMaterial(GameTestHelper h, String name, int width, int height) {
+        String path = "/assets/myriad/textures/gui/sprites/skill_choice/" + name + ".png";
+        try (var input = SkillChoiceUiChecks.class.getResourceAsStream(path);
+             var metadata = SkillChoiceUiChecks.class.getResourceAsStream(path + ".mcmeta")) {
+            h.assertTrue(input != null && metadata != null, "Panel art and scaling metadata are packaged for " + name);
+            var image = ImageIO.read(input);
+            h.assertTrue(image != null && image.getWidth() == width && image.getHeight() == height
+                            && (image.getRGB(0, 0) >>> 24) == 0 && (image.getRGB(width / 2, height / 2) >>> 24) == 255,
+                    "Material has the expected size, transparent cut corner and opaque text area: " + name);
+            var scaling = JsonParser.parseReader(new InputStreamReader(metadata, StandardCharsets.UTF_8))
+                    .getAsJsonObject().getAsJsonObject("gui").getAsJsonObject("scaling");
+            h.assertTrue("nine_slice".equals(scaling.get("type").getAsString()), "Corners use nine-slice scaling: " + name);
+        } catch (java.io.IOException error) {
+            throw new IllegalStateException("Could not read " + path, error);
+        }
     }
 
     private static void verifyFrame(GameTestHelper h, SkillChoiceLayout layout, int width, int height) {

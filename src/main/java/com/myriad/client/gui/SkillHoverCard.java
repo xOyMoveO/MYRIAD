@@ -1,20 +1,33 @@
 package com.myriad.client.gui;
 
 import com.myriad.character.ability.AbilitySkill;
+import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.client.SkillHoverDetails;
 import com.myriad.client.SkillIcon;
 import com.myriad.client.gui.SkillChoiceLayout.Box;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.data.AtlasIds;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
 
 /** A frame-local drawing. Its bounds are never registered as an input or focus target. */
 final class SkillHoverCard {
     private static final int PAPER = 0xF90B1A22, EDGE = 0xFF90754E, TEXT = 0xFFE1E9E8;
     private static final int JADE = 0xFF95D5C5, AMBER = 0xFFF0CC8D, MUTED = 0xFFA9C2BD;
+    private static final Identifier DEFAULT_SKIN = skin("default");
+    private static final Map<String, Identifier> ROLE_SKINS = FirstGroupSkills.ROLES.stream()
+            .collect(Collectors.toUnmodifiableMap(Function.identity(), SkillHoverCard::skin));
+
     private record Line(int x, int y, FormattedCharSequence text, int color) {}
     private record Face(int width, int height, int pad, int icon, int stripTop, int stripBottom, List<Line> lines) {}
     private record Placement(Box box, Face face, float scale, int side, int overlap) {}
@@ -36,16 +49,32 @@ final class SkillHoverCard {
         g.pose().scale(best.scale);
         int w = face.width, h = face.height, pad = face.pad;
         g.fill(1, 2, w + 1, h + 2, 0x88030A0D);
-        g.fill(0, 0, w, h, EDGE);
-        g.fill(1, 1, w - 1, h - 1, PAPER);
-        for (int x : new int[]{2, w - 6}) {
-            for (int y : new int[]{2, h - 3}) g.fill(x, y, x + 4, y + 1, JADE);
+        var atlas = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.GUI);
+        Identifier background = availableSkin(atlas, skill.role());
+        if (background != null) {
+            g.blitSprite(RenderPipelines.GUI_TEXTURED, background, 0, 0, w, h);
+        } else {
+            g.fill(0, 0, w, h, EDGE);
+            g.fill(1, 1, w - 1, h - 1, PAPER);
+            for (int x : new int[]{2, w - 6}) {
+                for (int y : new int[]{2, h - 3}) g.fill(x, y, x + 4, y + 1, JADE);
+            }
         }
         if (face.stripBottom > face.stripTop)
             g.fill(pad - 2, face.stripTop, w - pad + 2, face.stripBottom, 0xFF173238);
         SkillIcon.drawArtwork(g, font, pad, pad, face.icon, skill);
         for (var line : face.lines) g.text(font, line.text, line.x, line.y, line.color);
         g.pose().popMatrix();
+    }
+
+    private static Identifier skin(String role) {
+        return Identifier.fromNamespaceAndPath("myriad", "skill_choice/tooltip/" + role);
+    }
+
+    private static Identifier availableSkin(TextureAtlas atlas, String role) {
+        Identifier skin = ROLE_SKINS.getOrDefault(role, DEFAULT_SKIN);
+        if (atlas.getSprite(skin) != atlas.missingSprite()) return skin;
+        return atlas.getSprite(DEFAULT_SKIN) != atlas.missingSprite() ? DEFAULT_SKIN : null;
     }
 
     private static Placement choose(Font font, SkillChoiceLayout layout, Box anchor, List<Box> regions,
