@@ -20,6 +20,8 @@ public abstract class AbilitySkill extends Skill {
     public int maxRank(){return definition.maxRank();} public String displayName(){return definition.name();}
     public String description(){return definition.description();} public String iconAlias(){return definition.iconAlias();}
     public List<AbilityDamageFormula> damageFormulas(){return List.of();}
+    /** Set only when all listed segments can belong to the same cast, form and target. */
+    public String singleTargetTotalKey() { return ""; }
     public String evaluatedDescription(int rank, double skillPower, int purchasedStrength){
         return AbilityFormulaText.evaluate(description(), rank, skillPower);
     }

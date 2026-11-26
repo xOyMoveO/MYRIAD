@@ -6,7 +6,7 @@ import com.myriad.combat.DamageCalc;
 import java.util.List;
 
 final class LastSun extends LuoxiaSkill {
-    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.purchased(DamageCalc.Kind.PHYSICAL, 108, 12, .50f);
+    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.purchased(DamageCalc.Kind.PHYSICAL, 150, 5, .50f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

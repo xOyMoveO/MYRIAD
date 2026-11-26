@@ -51,7 +51,6 @@ public final class LaneSystem {
     public static final double FOUNTAIN_RESTORE_RATIO = 0.10;
     private static final String LANE_ENTITY_TAG = "myriad_lane_entity";
     /** 对局开始后首波兵线的延迟：1 分 10 秒。 */
-    private static final long FIRST_WAVE_DELAY = 70L * 20L;
     private static final long WAVE_INTERVAL = 40L * 20L;
     private static final int MELEE_PER_WAVE = 2;
     /** Each faction's wave on a lane may contain at most one siege minion. */
@@ -312,8 +311,8 @@ public final class LaneSystem {
             broadcast(MatchMessages.Tone.WARNING,
                     Component.translatable("message.myriad.tower_config_incomplete"));
         }
-        // 首波在开局 1 分 10 秒后生成，之后按固定间隔刷新。
-        nextWaveAt = matchStart + FIRST_WAVE_DELAY;
+        // 首波从正式开战时刻计时，后续使用共同的波次间隔。
+        nextWaveAt = matchStart + GameManager.combatTempo().firstWaveTicks();
     }
 
     /** 阵营泉水：己方玩家处于中心半径 6 格内时，每秒恢复 10% 最大生命与最大法力。 */
@@ -1114,10 +1113,12 @@ public final class LaneSystem {
         if(state.kind==Kind.CRYSTAL){
             if(crystalVulnerable(state.faction)
                     &&GameManager.get()!=null&&GameManager.get().getPhase()==GameManager.Phase.PLAYING)
-                GameManager.get().endMatch(state.faction == Faction.GUARDIAN ? Faction.DESTRUCTION : Faction.GUARDIAN);
+                GameManager.get().crystalDestroyed(state.faction == Faction.GUARDIAN ? Faction.DESTRUCTION : Faction.GUARDIAN,
+                        entity.level().getGameTime());
             return;
         }
         if (state.tower()) {
+            if (!administrativeRemoval && GameManager.get() != null) GameManager.get().recordTowerFall(entity.level().getGameTime());
             DESTROYED_TOWERS.add(towerId(state.faction,state.lane,state.towerTier));
             if (server != null) {
                 for (ServerPlayer player : server.overworld().players()) {
