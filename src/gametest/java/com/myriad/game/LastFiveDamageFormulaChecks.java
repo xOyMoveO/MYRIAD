@@ -80,9 +80,9 @@ final class LastFiveDamageFormulaChecks {
                 skill("luoxia_steady_dusk", 5, physical(121, 145, 18.15)),
                 skill("luoxia_dusk_mark", 5, physical(52, 80, 4.166667), physical(25, 45, 3.333333)),
                 skill("luoxia_slant_step", 5),
-                skill("luoxia_feather_burst", 7, new Segment(32, 55, 3, 0, 2), physical(16, 27.5, 1.5)),
-                skill("luoxia_last_sun", 7, physical(108, 180, 7.5)),
-                skill("luoxia_thousand_feathers", 3, new Segment(54, 80, 4, 0, 3)),
+                skill("luoxia_feather_burst", 7, new Segment(50, 55, 3, 0, 2), physical(25, 27.5, 1.5)),
+                skill("luoxia_last_sun", 7, physical(150, 180, 7.5)),
+                skill("luoxia_thousand_feathers", 3, new Segment(70, 80, 4, 0, 3)),
                 skill("luoxia_sunset_line", 3, physical(175, 260, 12), physical(121.153846, 180, 8.307692),
                         physical(84.134615, 125, 5.769231), physical(40, 60, 2.285714)));
         System.out.println("[MYRIAD-DAMAGE-LAST-FIVE] PASS: 40 candidates, 45 damage formulas, all ranks, zero and one-point purchases, and ten-point deltas");

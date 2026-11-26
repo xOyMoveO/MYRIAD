@@ -201,6 +201,8 @@
   "skill.myriad.damage.reference": "Uninvested reference %s %s before mitigation",
   "skill.myriad.damage.strength_per_point": "+%s per point of Strength",
   "skill.myriad.damage.wisdom_per_point": "+%s per point of Wisdom",
+  "skill.myriad.damage.full_total": "All hits on one target: %s before mitigation",
+  "skill.myriad.damage.stable_total": "Both sweeps on one target: %s before mitigation",
   "skill.myriad.damage.hit_count": "Up to %s hits per target",
   "skill.myriad.current_form": "Current form: %s",
   "hero.guide.reworked_controls": "At level 20 you have 20 skill points. Choose one passive, one major skill and one ultimate. You can learn both regular skills. Strength increases physical basic attacks and skills that scale with Strength. Wisdom increases magic basic attacks and skills, healing and shields that scale with spell power. Spend gold on attributes and supplies.",

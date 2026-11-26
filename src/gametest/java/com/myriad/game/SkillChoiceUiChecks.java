@@ -232,10 +232,21 @@ final class SkillChoiceUiChecks {
         var stats = jsonResource("skill_choice/metrics");
         var english = jsonResource("lang/en_us");
         var chinese = jsonResource("lang/zh_cn");
+        var totals = java.util.Map.of("g1_fenjue_n1", 104, "luoxia_feather_burst", 125, "luoxia_thousand_feathers", 210);
         for (var role : FirstGroupSkills.ROLES) {
             for (var skill : FirstGroupSkills.candidates(role)) {
                 String id = skill.getId();
                 String prefix = "skill.myriad." + id + ".hover.";
+                if (!skill.singleTargetTotalKey().isEmpty()) {
+                    String key = skill.singleTargetTotalKey();
+                    h.assertTrue(chinese.has(key) && english.has(key), "Both languages label the same-target total: " + id);
+                }
+                if (totals.containsKey(id)) {
+                    h.assertTrue(!skill.singleTargetTotalKey().isEmpty(), "Publish the verified same-target total: " + id);
+                    double total = skill.damageFormulas().stream()
+                            .mapToDouble(segment -> segment.value(1, 0, 0, 0, 0) * segment.maxHits()).sum();
+                    h.assertTrue(Math.abs(total - totals.get(id)) < .01, "Same-target pre-mitigation preview: " + id);
+                }
                 var fields = stats.getAsJsonArray(id);
                 h.assertTrue(fields.size() > 0 && fields.size() <= 2, "Concise metrics for " + id);
                 h.assertTrue(chinese.has(prefix + "summary") && english.has(prefix + "summary")

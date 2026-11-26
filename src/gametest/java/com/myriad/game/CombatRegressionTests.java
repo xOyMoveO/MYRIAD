@@ -37,6 +37,8 @@ public final class CombatRegressionTests {
         register("luoxia", LuoxiaChecks::run);
         register("projectile_basic_assist", ProjectileBasicAssistChecks::run);
         register("damage_growth", DamageGrowthChecks::run);
+        register("cherry_first_ten_damage", CherryFirstTenDamageChecks::run);
+        register("cherry_hero_damage", CherryHeroDamageChecks::run);
         register("chixiao_opening_pace", ChixiaoOpeningPaceChecks::run);
         register("hero_action_time", HeroActionTimeChecks::run);
         register("first_group", FirstGroupRegressionChecks::run);

@@ -31,7 +31,9 @@ public final class MatchArena {
     }
     private static final String SELECTION = "myriad_arena_selection.json";
     private static final String[] CONFIGS = {"myriad_lane_layout.json", "myriad_brush_zones.json",
-            "myriad_monster_spawns.json", "myriad_vein_spawns.json", "myriad_minimap.json"};
+            "myriad_monster_spawns.json", "myriad_vein_spawns.json", "myriad_minimap.json", "myriad_match_tempo.json"};
+    private static MatchTempo selectedTempo = MatchTempo.STANDARD;
+    static MatchTempo selectedTempo() { return active == Mode.DUEL ? selectedTempo : MatchTempo.STANDARD; }
     private static Mode active = Mode.RIFT;
     public static Mode active() { return active; }
     public static void shutdown() { active = Mode.RIFT; }
@@ -65,7 +67,7 @@ public final class MatchArena {
     }
 
     private record Profile(LaneSystem.Layout lanes, Map<String, VisionSystem.BrushDraft> brushes,
-            Map<String, MonsterManager.SpawnPoint> monsters, GameManager.VeinLayout veins, Map<Integer, BlockPos> corners) {
+            Map<String, MonsterManager.SpawnPoint> monsters, GameManager.VeinLayout veins, Map<Integer, BlockPos> corners, MatchTempo tempo) {
         static Profile read(Path world, Mode mode) throws IOException {
             boolean required = mode == Mode.DUEL;
             return new Profile(
@@ -73,10 +75,13 @@ public final class MatchArena {
                     ArenaConfigFile.read(configuration(world, mode, CONFIGS[1]), required, VisionSystem::decodeBrushes),
                     ArenaConfigFile.read(configuration(world, mode, CONFIGS[2]), required, MonsterManager::decodeSpawns),
                     ArenaConfigFile.read(configuration(world, mode, CONFIGS[3]), required, GameManager::decodeVeins),
-                    ArenaConfigFile.read(configuration(world, mode, CONFIGS[4]), required, root -> MapSystem.decodeCorners(root, required)));
+                    ArenaConfigFile.read(configuration(world, mode, CONFIGS[4]), required, root -> MapSystem.decodeCorners(root, required)),
+                    required ? ArenaConfigFile.read(configuration(world, mode, CONFIGS[5]), false, MatchTempo::decode)
+                            : MatchTempo.STANDARD);
         }
 
         void activate(GameManager manager) {
+            selectedTempo = tempo;
             LaneSystem.activateLayout(lanes);
             VisionSystem.activateBrushes(brushes);
             MonsterManager.activateSpawns(monsters);
@@ -109,12 +114,17 @@ public final class MatchArena {
 
     public static void initialize(MinecraftServer server) {
         active = Mode.RIFT;
+        selectedTempo = MatchTempo.STANDARD;
         var path = server.getWorldPath(LevelResource.ROOT).resolve(SELECTION);
         if (!Files.isRegularFile(path)) return;
         try {
             Mode saved = Mode.byId(JsonParser.parseString(Files.readString(path)).getAsJsonObject().get("mode").getAsString());
-            if (saved != null && available(server, saved)) active = saved;
-            else Myriad.LOGGER.warn("Saved arena unavailable; using original arena");
+            if (saved == Mode.DUEL) {
+                selectedTempo = Profile.read(server.getWorldPath(LevelResource.ROOT), saved).tempo();
+                active = saved;
+            } else if (saved == null) {
+                Myriad.LOGGER.warn("Saved arena unavailable; using original arena");
+            }
         } catch (Exception error) { Myriad.LOGGER.warn("Cannot load arena selection", error); }
     }
 

@@ -187,6 +187,7 @@ public final class SkillTooltipDescriptions {
                     ClientDataHolder.buffTicks(skill.getId() + "_recast") > 0);
             if (!form.isEmpty()) lines.add(0, text("skill.myriad.current_form", form));
         }
+        double total = 0;
         for (var formula : formulas) {
             boolean current = currentRole && switch (formula.scaling()) {
                 case TOTAL_PHYSICAL -> Double.isFinite(physical);
@@ -196,7 +197,10 @@ public final class SkillTooltipDescriptions {
             double value = current ? formula.value(rank, physical, spell, strength, wisdom)
                     : formula.value(rank, innatePhysical, innateSpell, 0, 0);
             if (Double.isFinite(value)) lines.add(damageLine(formula, rank, value, current));
+            total += value * formula.maxHits();
         }
+        if (!skill.singleTargetTotalKey().isEmpty() && Double.isFinite(total))
+            lines.add(text(skill.singleTargetTotalKey(), AbilityFormulaText.amount(total)));
         return lines;
     }
 
@@ -204,14 +208,21 @@ public final class SkillTooltipDescriptions {
         var formulas = skill.damageFormulas();
         if (index < 0 || index >= formulas.size()) return "";
         var formula = formulas.get(index);
-        double value = formula.value(rank,
-                ClientDataHolder.attrValue(ModAttributes.PHYSICAL_ATTACK.value().getDescriptionId()),
-                ClientDataHolder.attrValue(ModAttributes.SPELL_POWER.value().getDescriptionId()),
-                data.buffs().getOrDefault("g1_attribute_strength", 0), data.buffs().getOrDefault("g1_attribute_wisdom", 0));
+        double attack = ClientDataHolder.attrValue(ModAttributes.PHYSICAL_ATTACK.value().getDescriptionId());
+        double spell = ClientDataHolder.attrValue(ModAttributes.SPELL_POWER.value().getDescriptionId());
+        int strength = data.buffs().getOrDefault("g1_attribute_strength", 0);
+        int wisdom = data.buffs().getOrDefault("g1_attribute_wisdom", 0);
+        double value = formula.value(rank, attack, spell, strength, wisdom);
         if (!Double.isFinite(value)) return "";
         String kind = text("skill.myriad.damage." + formula.kind().name().toLowerCase(Locale.ROOT));
         String line = text("screen.myriad.hover.damage", AbilityFormulaText.amount(value), kind);
-        return formula.labelKey().isEmpty() ? line : text(formula.labelKey()) + " · " + line;
+        if (!formula.labelKey().isEmpty()) line = text(formula.labelKey()) + " · " + line;
+        if (index == 0 && !skill.singleTargetTotalKey().isEmpty()) {
+            double total = formulas.stream().mapToDouble(segment ->
+                    segment.value(rank, attack, spell, strength, wisdom) * segment.maxHits()).sum();
+            if (Double.isFinite(total)) line += " · " + text(skill.singleTargetTotalKey(), AbilityFormulaText.amount(total));
+        }
+        return line;
     }
 
     private static String damageLine(AbilityDamageFormula formula, int rank, double value, boolean current) {

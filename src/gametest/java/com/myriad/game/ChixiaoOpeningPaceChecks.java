@@ -238,7 +238,7 @@ final class ChixiaoOpeningPaceChecks {
                 h.assertTrue(Math.abs(trial.combo.get(swing) - expected) < .02,
                         "Matched-seed full attack scales only with Strength: " + build);
             }
-            double expectedQ = (93 + 7.5 * build.strength) / 1.24;
+            double expectedQ = (98 + 7.5 * build.strength) / 1.24;
             h.assertTrue(Math.abs(trial.combo.get(3) - expectedQ) < .02, "Actual Q at 24 defense: " + build);
             System.out.printf(Locale.ROOT, "[MYRIAD-CHIXIAO-V1] combo str=%d wis=%d A=[%.3f,%.3f,%.3f] Q=%.3f sum=%.3f endTick=%d%n",
                     build.strength, build.wisdom, trial.combo.get(0), trial.combo.get(1), trial.combo.get(2), trial.combo.get(3),
