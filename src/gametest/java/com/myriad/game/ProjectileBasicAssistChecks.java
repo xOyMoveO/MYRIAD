@@ -71,7 +71,10 @@ final class ProjectileBasicAssistChecks {
 
                 pig.setPos(origin.add(1.45, 1, 1.7));
                 shootMage(player, pig);
-                h.assertTrue(pig.getHealth() == 1000, "15% does not add a box corner outside the mage's sphere: " + role);
+                h.assertTrue(pig.getHealth() < 1000, "Hero padding now reaches just outside the old mage sphere: " + role);
+                pig.setPos(origin.add(1.65, 1, 1.7));
+                shootMage(player, pig);
+                h.assertTrue(pig.getHealth() == 1000, "Assist does not extend beyond the tuned mage sphere: " + role);
 
                 pig.setPos(origin.add(0, 1, 1.7));
                 level.setBlockAndUpdate(cover, Blocks.GLASS_PANE.defaultBlockState());
@@ -91,7 +94,7 @@ final class ProjectileBasicAssistChecks {
                 h.assertTrue(pig.getHealth() == 1000, "Enemy wind wall stops a same-step target: " + role);
                 pig.setPos(origin.add(0, 1, .85));
                 shootMage(player, pig);
-                h.assertTrue(pig.getHealth() == 1000, "The mage's existing wind-wall priority applies to the whole step: " + role);
+                h.assertTrue(pig.getHealth() < 1000, "The mage hits the target whose real box is in front of the wind wall: " + role);
                 WindWallSystem.clearFor(wallOwner.getUUID());
             }
             PlayerDataProvider.chooseCharacter(player, CharacterType.YIKE);
@@ -131,7 +134,7 @@ final class ProjectileBasicAssistChecks {
                         SkillSystem.cast(player, CharacterType.SLOT_Q);
                     }
                     if (current == 23) {
-                        h.assertTrue(JiarenManager.hp(dummy.getUUID()) == before[0], "Luoxia's skill arrow keeps its .09 radius");
+                        h.assertTrue(JiarenManager.hp(dummy.getUUID()) == before[0], "Luoxia's skill arrow stays within its .108 radius");
                         BasicAttackSystem.tryAttack(player, LuoxiaBow.PRESS);
                     }
                     if (current == 34) BasicAttackSystem.tryAttack(player, LuoxiaBow.RELEASE);

@@ -135,7 +135,7 @@ final class LuoxiaChecks {
                     if (i==42) SkillSystem.cast(p,CharacterType.SLOT_E);
                     if (i==57) {
                         float loss = before[0]-target.getHealth();
-                        h.assertTrue(loss > 125 && loss < 150 && data.getMana()==635,
+                        h.assertTrue(loss > 125 && loss < 150 && data.getMana()==654.5f,
                                 "All three arrows hit with the third halved and only one mana payment: "+loss);
                         before[1] = target.getHealth();
                     }
@@ -189,7 +189,7 @@ final class LuoxiaChecks {
                     }
                     AbilityRuntime.tick(p);
                     if (i==85) {
-                        h.assertTrue(before[1]-target.getHealth() >= 59 && data.getMana()==480, "Ultimate stays on the locked line despite turn");
+                        h.assertTrue(before[1]-target.getHealth() >= 59 && data.getMana()==515, "Ultimate stays on the locked line despite turn");
                         long[] shots = poses.stream().filter(s -> s.skill()==4 && s.phase()==Phase.RELEASE)
                                 .mapToLong(LuoxiaBowPosePayload::tick).toArray();
                         h.assertTrue(shots.length==3 && shots[1]-shots[0]==5 && shots[2]-shots[1]==5,

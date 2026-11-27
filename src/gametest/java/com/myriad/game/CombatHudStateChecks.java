@@ -28,6 +28,9 @@ final class CombatHudStateChecks {
         boolean enoughMana = CombatHudSkillRules.enoughMana(shell, 34, false, false, 0);
         h.assertTrue(!enoughMana && CombatHudSkillRules.enoughMana(shell, 35, false, false, 0),
                 "Shell uses its actual 35-mana cost");
+        h.assertTrue(!CombatHudSkillRules.enoughMana(shell, 2, 33.249f, false, false, 0)
+                        && CombatHudSkillRules.enoughMana(shell, 2, 33.25f, false, false, 0),
+                "HUD and server use the same fractional rank-2 shell threshold");
         int cooldown = CombatHudSkillRules.blockingCooldown(40, false, 0, -1, 0);
         h.assertTrue(CombatHudSkillRules.status(true, true, cooldown, 0, -1, enoughMana, false)
                         == SkillStatus.COOLDOWN, "An active cooldown takes priority over insufficient mana");
@@ -85,7 +88,7 @@ final class CombatHudStateChecks {
 
     private static void checkPlayerSnapshotCodec(GameTestHelper h) {
         var dim = Identifier.parse("myriad:training");
-        var payload = new PlayerDataPayload(6, 17, 61, 840, 196, 0, 1, 3, 2, 0, "rivet",
+        var payload = new PlayerDataPayload(6, 17, 61, 840, 196.25f, 0, 1, 3, 2, 0, "rivet",
                 5, 9, 20, 0, 0, false, false, false, false, Map.of(), Map.of(),
                 0, 0, Map.of("rivet_tactical_anchor", 2), false, 0, true, 180,
                 List.of(), Map.of(), 0, 0, 3, 8, 842, 1200, 116, 20, 36, dim, false, true);

@@ -23,6 +23,7 @@ import static com.myriad.combat.DamageCalc.Kind.MAGIC;
 public final class KehengTimeFields {
     private KehengTimeFields(){}
     private static final Identifier MOVE=Identifier.fromNamespaceAndPath("myriad","local_action_movement");
+    private static final double CORRIDOR_LENGTH=14, CORRIDOR_HALF_WIDTH=1.8;
     public static final class Field {
         final AbilityRuntime.Cast cast;final String key;final Vec3 origin,direction;final double radius,actorRate,flightRate;
         final long begins,ends,impulse,created;final int visual;final boolean follows,corridor;final float opening,pulse,ending;
@@ -34,14 +35,14 @@ public final class KehengTimeFields {
         }
         public Vec3 center(){return follows?cast.player.position():origin;}
         public double length(){
-            var from=origin.add(0,1.5,0);var to=from.add(direction.scale(12));
+            var from=origin.add(0,1.5,0);var to=from.add(direction.scale(CORRIDOR_LENGTH));
             var hit=cast.player.level().clip(new ClipContext(from,to,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,cast.player));
-            return hit.getType()==HitResult.Type.MISS?12:Math.max(0,from.distanceTo(hit.getLocation())-.02);
+            return hit.getType()==HitResult.Type.MISS?CORRIDOR_LENGTH:Math.max(0,from.distanceTo(hit.getLocation())-.02);
         }
         public boolean contains(Vec3 point){
             var at=center();
             if(corridor){var delta=point.subtract(origin.add(0,1.5,0));var side=new Vec3(direction.z,0,-direction.x);
-                double along=delta.dot(direction);if(along<0||along>length()||Math.abs(delta.dot(side))>1.5||Math.abs(delta.y)>1.5)return false;
+                double along=delta.dot(direction);if(along<0||along>length()||Math.abs(delta.dot(side))>radius||Math.abs(delta.y)>1.5)return false;
                 return clear(cast.player,origin.add(0,1.5,0),point);
             }
             return point.distanceToSqr(at)<=radius*radius+.00001&&clear(cast.player,at.add(0,.12,0),point.add(0,.12,0));
@@ -60,7 +61,10 @@ public final class KehengTimeFields {
     public static float health(LivingEntity t){return (MonsterManager.isMonster(t)?MonsterManager.modHealth(t):LaneSystem.isManaged(t)?LaneSystem.health(t):t.getHealth())+ModShieldSystem.value(t);}
     public static boolean clear(ServerPlayer p,Vec3 from,Vec3 to){return p.level().clip(new ClipContext(from,to,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,p)).getType()==HitResult.Type.MISS;}
     public static void ground(AbilityRuntime.Cast c,Vec3 at,double radius,int warning,int duration,double rate,float opening,float pulse){
-        add(new Field(c,at,Vec3.ZERO,radius,warning,duration,rate,rate,opening,pulse,0,false,false));
+        ground(c,at,radius,warning,duration,rate,rate,opening,pulse);
+    }
+    public static void ground(AbilityRuntime.Cast c,Vec3 at,double radius,int warning,int duration,double actorRate,double flightRate,float opening,float pulse){
+        add(new Field(c,at,Vec3.ZERO,radius,warning,duration,actorRate,flightRate,opening,pulse,0,false,false));
     }
     public static void follow(AbilityRuntime.Cast c,int duration,double rate,float ending){
         WeaponPosePayload.play(c.player, Move.FOLLOW, duration);
@@ -68,7 +72,7 @@ public final class KehengTimeFields {
         c.buff("g1_keheng_follow",duration);
     }
     public static Field corridor(AbilityRuntime.Cast c,Vec3 origin,Vec3 facing){
-        var f=new Field(c,origin,facing.normalize(),1.5,0,Integer.MAX_VALUE,.7,.4,0,0,0,false,true);FIELDS.add(f);return f;
+        var f=new Field(c,origin,facing.normalize(),CORRIDOR_HALF_WIDTH,0,Integer.MAX_VALUE,.60,.4,0,0,0,false,true);FIELDS.add(f);return f;
     }
     private static void add(Field field){FIELDS.add(field);tick(field.cast.player.level());refreshActor(field.cast.player);}
     public static boolean following(ServerPlayer p){return FIELDS.stream().anyMatch(f->f.follows&&f.cast.player==p&&!f.removed);}
@@ -79,11 +83,11 @@ public final class KehengTimeFields {
         KehengAudio.play(f.cast.player,"end");refreshPublished();}
     public static void penetrate(Field f,float damage){if(f.removed)return;
         WeaponPosePayload.aimed(f.cast.player, Move.LINE, 8, f.direction);
-        for(var target:f.cast.player.level().getEntitiesOfClass(LivingEntity.class,new AABB(f.origin,f.origin.add(f.direction.scale(f.length()))).inflate(1.6,3,1.6),
+        for(var target:f.cast.player.level().getEntitiesOfClass(LivingEntity.class,new AABB(f.origin,f.origin.add(f.direction.scale(f.length()))).inflate(f.radius+.1,3,f.radius+.1),
                 t->SkillTargets.enemy(f.cast.player,t)&&f.contains(t.getBoundingBox().getCenter()))){
             f.cast.damage(target,damage,MAGIC);KehengVisuals.impact(f.cast,target.position().add(0,.9,0));
         }
-        KehengVisuals.penetrate(f.cast,f.origin.add(0,1.3,0),f.origin.add(f.direction.scale(f.length())).add(0,1.3,0));KehengAudio.play(f.cast.player,"pierce");
+        KehengVisuals.penetrate(f.cast,f.origin.add(0,1.3,0),f.origin.add(f.direction.scale(f.length())).add(0,1.3,0),f.radius);KehengAudio.play(f.cast.player,"pierce");
     }
     private static List<LivingEntity> targets(Field f){var at=f.center();return f.cast.player.level().getEntitiesOfClass(LivingEntity.class,
             new AABB(at,at).inflate(f.radius),t->SkillTargets.enemy(f.cast.player,t)&&f.contains(t.position()));}
@@ -98,7 +102,7 @@ public final class KehengTimeFields {
             if(now<f.begins){if(now==f.created||(now-f.created)%3==0)KehengVisuals.warning(f.cast,f.center(),f.radius,now-f.created,f.visual);continue;}
             if(!f.opened){f.opened=true;if(f.opening>0)damage(f,f.opening);KehengAudio.play(f.cast.player,"field");}
             if(f.pulse>0&&now>f.begins&&(now-f.begins)%10==0){damage(f,f.pulse);KehengVisuals.pulse(f.cast,f.center(),f.radius);KehengAudio.play(f.cast.player,"pulse");}
-            if(now==f.begins||now%3==0){if(f.corridor)KehengVisuals.corridor(f.cast,f.origin,f.origin.add(f.direction.scale(f.length())),f.visual);else KehengVisuals.field(f.cast,f.center(),f.radius,f.follows,now-f.begins,f.visual);}
+            if(now==f.begins||now%3==0){if(f.corridor)KehengVisuals.corridor(f.cast,f.origin,f.origin.add(f.direction.scale(f.length())),f.radius,f.visual);else KehengVisuals.field(f.cast,f.center(),f.radius,f.follows,now-f.begins,f.visual);}
             boolean inside=!f.corridor&&f.contains(f.cast.player.position());if(inside&&!f.inside)ConstantStepSkill.entered(f.cast.player);f.inside=inside;
         }
         NEEDLES.removeIf(n->n.cast.player.level()!=n.target.level()||!n.target.isAlive()||now>=n.until||!AbilityRuntime.valid(n.cast.player));

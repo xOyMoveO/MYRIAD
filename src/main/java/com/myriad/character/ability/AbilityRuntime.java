@@ -118,7 +118,7 @@ public final class AbilityRuntime {
     private static InputFailure resourceFailure(Cast cast) {
         if (!TrainingMode.isNoCooldown(cast.player) && !cast.skill.cooldownReady(cast)) return InputFailure.COOLDOWN;
         if (!preparationFor(cast.player, cast.skill) && !TrainingMode.isNoMana(cast.player)
-                && cast.data.getMana() < cast.skill.manaCost(cast)) return InputFailure.MANA;
+                && cast.data.getMana() < cast.skill.manaCost(cast.rank)) return InputFailure.MANA;
         return null;
     }
 
@@ -341,7 +341,7 @@ public final class AbilityRuntime {
             if(failure == null && !skill.canRelease(this)) failure = skill.releaseRejection(this);
             if(failure != null){failure.send(player);cancelCast();return false;}
             committed=true;phase=Phase.COMMITTED;owner.preparing=null;
-            if(!noMana)data.spendMana(skill.manaCost(this));
+            if(!noMana)data.spendMana(skill.manaCost(rank));
             if(!noCd&&skill.cooldownTicks(this)>0){double reduction=Math.clamp(player.getAttributeValue(ModAttributes.COOLDOWN_REDUCTION),0,ModAttributes.MAX_COOLDOWN_REDUCTION);
                 data.setCooldown(skill.getId(),Math.max(1,(int)(skill.cooldownTicks(this)*(1-reduction/100))));}
             player.removeEffect(MobEffects.INVISIBILITY);data.setStealthBonus(false);
@@ -572,36 +572,55 @@ public final class AbilityRuntime {
         }
         private void projectileAlong(Vec3 aim,double range,double speed,double radius,boolean pierce,boolean returning,FlightImpact impact,UUID actionId){
             Vec3 initial=aim.lengthSqr()<1E-8?forward(1):aim.normalize();
+            double velocity=speed*com.myriad.combat.HeroProjectileTuning.SPEED;
+            double padding=radius*com.myriad.combat.HeroProjectileTuning.ENTITY_PADDING;
             final class Flight implements Task {
-                Vec3 pos=player.getEyePosition().add(initial.scale(.4)),direction=initial;double traveled;boolean back;
+                final Vec3 launchEye=player.getEyePosition();
+                Vec3 pos=launchEye.add(initial.scale(.4)),direction=initial;double traveled;boolean back;
                 final Set<UUID> hit=new HashSet<>();final int visual=newVisualInstance();int age;boolean ended;
                 long lastTick=now();double flightAge;
                 public void cancel(){if(actionId!=null)ActionTime.clearTarget(actionId);}
-                final int safetyTicks=2*(returning?160:Math.min(160,Math.max(1,(int)Math.ceil(range/speed))));
+                final int safetyTicks=4*(returning?160:Math.min(160,Math.max(1,(int)Math.ceil(range/velocity))));
                 boolean finish(boolean dissipate){if(!ended){ended=true;cancel();AbilityVisuals.finishFlight(Cast.this,visual);if(dissipate)AbilityVisuals.dissipate(Cast.this,pos);}return false;}
                 public boolean tick(long now){
                     if(actionId!=null&&now<=lastTick)return true;lastTick=now;
                     double rate=actionId==null?1:projectileRate(player,actionId,pos,now);flightAge+=rate;
                     if(++age>(actionId==null?160:safetyTicks)||flightAge>160)return finish(true);
-                    double step=speed*rate;
+                    if (age == 1) {
+                        var muzzle=com.myriad.combat.ProjectileBasicAttack.clip(player,launchEye,pos);
+                        if (muzzle.blocked()) {
+                            if (muzzle.windBlocked()) {
+                                muzzle.showWindIntercept();
+                                skill.projectileBlockedByWind(Cast.this,muzzle.end());
+                            }
+                            AbilityVisuals.flight(Cast.this,launchEye,muzzle.end(),age,false,visual);
+                            pos=muzzle.end();
+                            return finish(true);
+                        }
+                    }
+                    double step=velocity*rate;
                     if(back){Vec3 toward=player.getEyePosition().subtract(pos);if(toward.length()<step)return finish(true);direction=toward.normalize();}
                     Vec3 end=pos.add(direction.scale(back?step:Math.min(step,range-traveled)));
-                    Vec3 wallHit=com.myriad.combat.WindWallSystem.interceptProjectile(player,pos,end);
-                    if(wallHit!=null){skill.projectileBlockedByWind(Cast.this, wallHit);AbilityVisuals.flight(Cast.this,pos,wallHit,age,back,visual);pos=wallHit;return finish(true);}
-                    var clip=player.level().clip(new ClipContext(pos,end,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,player));boolean blocked=clip.getType()!=HitResult.Type.MISS;
-                    if(blocked)end=clip.getLocation();final Vec3 dest=end;
-                    var targets=player.level().getEntitiesOfClass(LivingEntity.class,new AABB(pos,end).inflate(radius),t->SkillTargets.enemy(player,t)&&!hit.contains(t.getUUID())
-                        &&(actionId==null?t.getBoundingBox().inflate(radius).clip(pos,dest).isPresent()
-                            :AbilityTargeting.unobstructedHit(player,t.getBoundingBox(),pos,dest,radius).isPresent())).stream().sorted(Comparator.comparingDouble(t->t.position().distanceToSqr(pos))).toList();
-                    for(var target:targets){hit.add(target.getUUID());
-                        Vec3 contact=dest;
+                    var segment=com.myriad.combat.ProjectileBasicAttack.clip(player,pos,end);
+                    end=segment.end();
+                    record Contact(LivingEntity target,Vec3 point){}
+                    var targets=new ArrayList<Contact>();
+                    for(var target:player.level().getEntitiesOfClass(LivingEntity.class,new AABB(pos,end).inflate(padding),
+                            t->SkillTargets.enemy(player,t)&&!hit.contains(t.getUUID()))) {
+                        segment.contact(target.getBoundingBox(),padding,back?Double.POSITIVE_INFINITY:range-traveled)
+                                .ifPresent(at->targets.add(new Contact(target,at)));
+                    }
+                    targets.sort(Comparator.comparingDouble(t->t.point().distanceToSqr(pos)));
+                    for(var collision:targets){var target=collision.target();hit.add(target.getUUID());
+                        Vec3 contact=collision.point();
                         if(!pierce){
-                            contact=target.getBoundingBox().inflate(radius).clip(pos,dest).orElse(dest);
                             AbilityVisuals.flight(Cast.this,pos,contact,age,back,visual);
                         }
                         impact.accept(target,back,contact);AbilityVisuals.burst(Cast.this,target.position().add(0,.5,0),.55);if(!pierce)return finish(false);}
-                    AbilityVisuals.flight(Cast.this,pos,end,age,back,visual);traveled+=pos.distanceTo(end);pos=end;if(blocked)return finish(true);
-                    if(!back&&traveled>=range){if(!returning)return finish(true);back=true;hit.clear();
+                    AbilityVisuals.flight(Cast.this,pos,end,age,back,visual);traveled+=pos.distanceTo(end);pos=end;
+                    if(segment.windBlocked()){segment.showWindIntercept();skill.projectileBlockedByWind(Cast.this,end);}
+                    if(segment.blocked())return finish(true);
+                    if(!back&&traveled+1E-7>=range){if(!returning)return finish(true);back=true;hit.clear();
                         skill.projectileTurned(Cast.this,pos,direction);}return true;}
             }owner.tasks.add(new Flight());
         }

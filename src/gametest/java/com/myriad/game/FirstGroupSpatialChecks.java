@@ -2,6 +2,7 @@ package com.myriad.game;
 
 import com.myriad.character.ability.*;
 import com.myriad.character.rework.FirstGroupSkills;
+import com.myriad.character.skills.tianxing.rework.ThunderBlinkSkill;
 import com.myriad.player.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -61,6 +62,49 @@ final class FirstGroupSpatialChecks {
         h.assertTrue(AbilityTargeting.clampPrediction(new Vec3(2,0,0),new Vec3(1,0,0),new Vec3(1,0,0)).equals(Vec3.ZERO),
                 "An already-passed waypoint cannot send the player farther away");
         h.assertTrue(!AbilityTargeting.canStand(p,new Vec3(Double.NaN,0,0)),"Non-finite landing coordinates are rejected");
+        verifyThunderBlink(h, p, d, floor, origin);
         System.out.println("[MYRIAD-G1-SPATIAL] PASS: reticle, slabs, headroom, swept walls, motion-only, cleanup, endpoint clamp");
+    }
+
+    private static void verifyThunderBlink(GameTestHelper h, ServerPlayer p, PlayerData data, BlockPos floor, Vec3 origin) {
+        var level = h.getLevel();
+        var skill = FirstGroupSkills.node("tianxing", 2);
+        data.setCharacterId("tianxing");
+        var flat = ThunderBlinkSkill.landing(p);
+        h.assertTrue(flat != null && Math.abs(flat.z - origin.z - 6) < .01, "Blink has a six-block horizontal limit on flat terrain");
+
+        BlockPos step = floor.offset(0, 1, 5);
+        level.setBlockAndUpdate(step, Blocks.STONE_SLAB.defaultBlockState());
+        var half = Vec3.atBottomCenterOf(step).add(0, .525, 0);
+        h.assertTrue(ThunderBlinkSkill.legalLanding(p, half), "Blink can land on a raised half slab");
+        level.setBlockAndUpdate(step, Blocks.STONE.defaultBlockState());
+        level.setBlockAndUpdate(step.above(), Blocks.STONE.defaultBlockState());
+        var raised = ThunderBlinkSkill.landing(p);
+        h.assertTrue(raised != null && raised.y > origin.y + 1.9, "Panning at a raised platform selects the top of its own supporting face");
+
+        var cast = AbilityRuntime.context(p, skill);
+        h.assertTrue(skill.canRelease(cast), "Blink resolves the same point at acceptance");
+        p.setYRot(180);
+        h.assertTrue(skill.canRelease(cast) && cast.point.equals(raised), "Commit rechecks the marked point without reading the new look direction");
+        level.setBlockAndUpdate(BlockPos.containing(raised).above(), Blocks.STONE.defaultBlockState());
+        h.assertTrue(!skill.canRelease(cast), "A ceiling added after preview rejects the same point");
+        level.setBlockAndUpdate(BlockPos.containing(raised).above(), Blocks.AIR.defaultBlockState());
+        data.setBuff("g1_root", 3);
+        h.assertTrue(!skill.canRelease(cast), "Root rejects blink even when its marked destination remains legal");
+        data.setBuff("g1_root", 0);
+
+        p.setPos(Vec3.atBottomCenterOf(step.above(2)));
+        p.setYRot(180);
+        h.assertTrue(ThunderBlinkSkill.legalLanding(p, origin.add(0,.025,0)), "Blink can go down two blocks from a platform");
+        p.setPos(p.position().add(0, 3, 0));
+        h.assertTrue(!ThunderBlinkSkill.legalLanding(p, origin.add(0,.025,0)), "Blink rejects a floor more than four blocks below");
+        p.setPos(origin);
+        p.setYRot(0);
+        level.setBlockAndUpdate(step, Blocks.AIR.defaultBlockState());
+        level.setBlockAndUpdate(step.above(), Blocks.AIR.defaultBlockState());
+        level.setBlockAndUpdate(step.below(), Blocks.AIR.defaultBlockState());
+        h.assertTrue(!ThunderBlinkSkill.legalLanding(p, Vec3.atBottomCenterOf(step).add(0,.025,0)), "Blink rejects the former surface after removing its support");
+        level.setBlockAndUpdate(step.below(), Blocks.STONE.defaultBlockState());
+        data.setCharacterId("yingxiao");
     }
 }

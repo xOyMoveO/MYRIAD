@@ -31,7 +31,7 @@ public final class CombatHudState {
 
     public record Attack(float progress, boolean ready, int cooldownTicks) {}
 
-    public record Snapshot(CharacterType character, float health, float maxHealth, float shield, int mana,
+    public record Snapshot(CharacterType character, float health, float maxHealth, float shield, float mana,
             double maxMana, boolean unlimitedMana, int level, int xp, int xpToNext, boolean maxLevel,
             int gold, int skillPoints, List<Slot> activeSlots, Slot passive, Attack attack, boolean preparing,
             ControlStatusPayload control) {}
@@ -94,7 +94,7 @@ public final class CombatHudState {
         boolean controlled = !skill.canCastWhileControlled() && (control.stun() > 0 || control.silence() > 0);
         SkillStatus status = CombatHudSkillRules.status(CombatHudSkillRules.learned(skill, rank, data.training()),
                 inPhase, cooldown, recastTicks, charges,
-                CombatHudSkillRules.enoughMana(skill, data.mana(), unlimitedMana, anchorInPreparation, recastTicks),
+                CombatHudSkillRules.enoughMana(skill, rank, data.mana(), unlimitedMana, anchorInPreparation, recastTicks),
                 controlled);
 
         KeyMapping binding = BINDINGS.get(slot);

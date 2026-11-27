@@ -168,7 +168,7 @@ public final class PlayerDataProvider {
                 data.getXp(),
                 xpToNext,
                 data.getGold(),
-                (int) data.getMana(),
+                data.getMana(),
                 data.getCarrying(),
                 NetworkSetup.factionId(data.getFaction()),
                 showMatch ? manager.getGuardianScore() : 0,
@@ -1692,6 +1692,9 @@ public final class PlayerDataProvider {
                     com.myriad.combat.DeathRecaps.shield(event, absorbed);
                     com.myriad.combat.CombatTelemetry.recordShieldDamage(
                             shieldedPlayer, absorbed, event.getSource().getEntity());
+                    if (event.getAmount()-absorbed<=.0001f && !TrainingGround.isTraining(shieldedPlayer)
+                            && event.getSource().getEntity() instanceof ServerPlayer attacker)
+                        com.myriad.game.LaneSystem.defendPlayer(shieldedPlayer,attacker);
                 }
                 com.myriad.game.BaseRules.combat(entity,event.getSource().getEntity());
                 event.setAmount(Math.max(0.0f, event.getAmount() - absorbed));
@@ -1755,10 +1758,6 @@ public final class PlayerDataProvider {
                     .addLast(damageFloat);
         }
         SpiritFlow.onDamage(entity);
-        if (event.getAmount() > 0 && entity instanceof ServerPlayer defendedPlayer && !TrainingGround.isTraining(defendedPlayer)
-                && event.getSource().getEntity() instanceof ServerPlayer attacker) {
-            com.myriad.game.LaneSystem.defendPlayer(defendedPlayer, attacker);
-        }
     }
 
     /** 所有原版生命实体在护甲、减伤、格挡、吸收生命与生命扣除完成后，以实际生命损失显示飘字。 */
@@ -1774,6 +1773,8 @@ public final class PlayerDataProvider {
         if (subject.level().isClientSide() || !com.myriad.game.ModState.isEnabled()) return;
         LivingEntity entity = subject;
         if (entity instanceof ServerPlayer victimPlayer) {
+            if(damage>0 && !TrainingGround.isTraining(victimPlayer) && source.getEntity() instanceof ServerPlayer attacker)
+                com.myriad.game.LaneSystem.defendPlayer(victimPlayer,attacker);
             com.myriad.combat.CombatTelemetry.recordDamage(
                     victimPlayer, damage, source.getEntity());
             boolean skillContact = source.getEntity() instanceof ServerPlayer attacker

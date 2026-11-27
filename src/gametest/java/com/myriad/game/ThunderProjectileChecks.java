@@ -15,8 +15,11 @@ import static com.myriad.character.ability.AbilityVfxMaterials.*;
 
 final class ThunderProjectileChecks {
     static void verify(GameTestHelper h){
-        h.assertTrue(ThunderArcSkill.SPEED*20==50&&ThunderArcSkill.RANGE==18,"Arc: exactly 50 blocks/s; range unchanged");
-        h.assertTrue(ThunderSlashSkill.SPEED*20==80&&ThunderSlashSkill.RANGE==20&&ThunderSlashSkill.RADIUS==1,"Slash: exactly 80 blocks/s, 20 blocks, hit radius unchanged");
+        double speed = com.myriad.combat.HeroProjectileTuning.SPEED;
+        double padding = com.myriad.combat.HeroProjectileTuning.ENTITY_PADDING;
+        h.assertTrue(ThunderArcSkill.SPEED*20*speed==65&&ThunderArcSkill.RANGE==18,"Arc: 65 blocks/s, original 18-block range");
+        h.assertTrue(ThunderSlashSkill.SPEED*20*speed==104&&ThunderSlashSkill.RANGE==20&&ThunderSlashSkill.RADIUS*padding==1.2,
+                "Slash: 104 blocks/s, unchanged 20-block range and 1.2 entity padding");
         try{
             for(String lang:List.of("zh_cn","en_us")){
                 try(var in=ThunderProjectileChecks.class.getResourceAsStream("/assets/myriad/lang/"+lang+".json")){

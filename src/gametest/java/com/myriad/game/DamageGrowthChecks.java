@@ -147,7 +147,8 @@ final class DamageGrowthChecks {
         actor.setPos(Vec3.atBottomCenterOf(start));
         actor.setOnGround(true);
         boolean melee = attack == Attack.MELEE || attack == Attack.RESONANCE || attack == Attack.SWORD_HEART;
-        var pig = h.spawn(EntityTypes.PIG, local.offset(0, melee ? 0 : 1, melee ? 2 : 5));
+        int offsetZ = melee ? 2 : attack == Attack.MAGE ? 7 : 5;
+        var pig = h.spawn(EntityTypes.PIG, local.offset(0, melee ? 0 : 1, offsetZ));
         pig.setNoAi(true);
         pig.setNoGravity(true);
         pig.noPhysics = true;

@@ -63,7 +63,8 @@ final class ThunderSkillReleaseChecks {
                 var f=fixture(h,i);fixtures.add(f);var d=PlayerDataProvider.get(f.caster);
                 var skill=FirstGroupSkills.node("tianxing",slash(i)?5:7);SkillSystem.cast(f.caster,skill.slot());
                 h.assertTrue(SkillChargeSystem.active(f.caster)&&f.cues.size()==1&&f.cues.getFirst().action()==(slash(i)?SLASH_READY:JUDGMENT_READY),"Real charge begins before damage");
-                h.assertTrue(d.getMana()==700-skill.getManaCost()&&d.getCooldown(skill.getId())>0,"Async cast retains original fee/CD");
+                h.assertTrue(d.getMana()==700-skill.manaCost(d.skillLevel(skill.getId()))
+                        &&d.getCooldown(skill.getId())>0,"Async cast pays its learned rank's cost and starts cooldown");
             }
         }catch(Throwable failure){fixtures.forEach(f->cleanup(h,f));throw failure;}
         finally{TrainingMode.setNoCooldown(noCd);TrainingMode.setNoMana(noMana);}
@@ -86,8 +87,8 @@ final class ThunderSkillReleaseChecks {
                     }
                     if(f.index==0||f.index==1){
                         var far=f.hits.getLast();
-                        if(elapsed<15)h.assertTrue(far.getHealth()==1000,"80 blocks/s: far target is not hit before five travelling ticks");
-                        if(elapsed==15)h.assertTrue(Math.abs(far.getHealth()-(1000-f.damage))<.03,"20-block Slash reaches the 19.5-block target on travelling tick five");
+                        if(elapsed<14)h.assertTrue(far.getHealth()==1000,"104 blocks/s: far target is not hit before four travelling ticks");
+                        if(elapsed==14)h.assertTrue(Math.abs(far.getHealth()-(1000-f.damage))<.03,"20-block Slash reaches the 19.5-block target on travelling tick four");
                     }
                 }
                 if(elapsed==30){

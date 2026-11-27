@@ -5,6 +5,7 @@ import com.myriad.character.ability.*;
 import com.myriad.combat.DamageCalc;
 import java.util.List;
 public final class BeyondOneSecondSkill extends KehengSkill {
+    private static final double RADIUS=5;
     private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 24, 9.2f, .12f)
             .segment("skill.myriad.damage.per_pulse", 6);
 
@@ -15,7 +16,8 @@ public final class BeyondOneSecondSkill extends KehengSkill {
     public BeyondOneSecondSkill(Definition d){super(d);}
     @Override public boolean needsPoint(){return true;}
     @Override public double pointRange(AbilityRuntime.Cast c){return 12;}
-    @Override public double previewRadius(AbilityRuntime.Cast c){return 4;}
+    @Override public double previewRadius(AbilityRuntime.Cast c){return RADIUS;}
     @Override public void release(AbilityRuntime.Cast c){WeaponPosePayload.play(c.player, Move.DOME, 12);
-        KehengTimeFields.ground(c,c.point,4,13,60,.4-.05*(c.rank-1),0,DAMAGE.value(c));}
+        double flight=.4-.05*(c.rank-1);
+        KehengTimeFields.ground(c,c.point,RADIUS,13,60,flight-.05,flight,0,DAMAGE.value(c));}
 }

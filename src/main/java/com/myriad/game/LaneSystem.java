@@ -107,6 +107,9 @@ public final class LaneSystem {
         /** 首名在塔下伤害友方英雄的敌方英雄；有效期间覆盖普通小兵仇恨。 */
         transient UUID towerHeroPriorityTarget;
         transient long towerLockStarted;
+        transient long lastTowerHitFeedback = Long.MIN_VALUE;
+        transient boolean towerFlashing;
+        transient net.minecraft.util.Brightness towerLightBeforeHit;
         transient UUID visual;
         transient Mob entity;
         transient net.minecraft.world.entity.Display.ItemDisplay visualEntity;
@@ -167,12 +170,17 @@ public final class LaneSystem {
     private static void scaleMinion(Mob mob,UnitState state,long now){
         int stages=Math.max(0,(waveNumber-1)/4);
         boolean late=activeMatchStart>=0 && now-activeMatchStart>=20L*60*20;
-        float maximum=baseHealth(state.kind)*(1+stages*.15F)*(late?2:1);
+        float maximum=scaledMinionHealth(baseHealth(state.kind),stages,late);
         if(Math.abs(state.maxHealth-maximum)>.01){
             state.health=maximum*Math.max(0,Math.min(1,state.health/state.maxHealth));state.maxHealth=maximum;
             configureProxyHealth(mob,maximum);
         }
         state.attackDamage=baseAttack(state.kind)*(1+stages*.10F)*(late?1.6F:1);
+    }
+
+    static float scaledMinionHealth(float base, int stages, boolean late) {
+        float oldMaximum = base * (1 + stages * .15F) * (late ? 2 : 1);
+        return base + (oldMaximum - base) * .40F;
     }
     public static boolean hasCrystals(){return !layout.crystals.isEmpty();}
     private static boolean crystalVulnerable(Faction defender){
@@ -472,6 +480,11 @@ public final class LaneSystem {
     private static void tickTower(ServerLevel level, Mob tower, UnitState state, long now) {
         tower.setDeltaMovement(Vec3.ZERO);
         if (now % 20 == 0) ensureTowerVisual(level, tower, state);
+        if (state.towerFlashing && now >= state.lastTowerHitFeedback + 4) {
+            if (state.visualEntity != null && !state.visualEntity.isRemoved())
+                state.visualEntity.setBrightnessOverride(state.towerLightBeforeHit);
+            state.towerFlashing = false;
+        }
         LivingEntity locked = state.towerLockTarget == null ? null
                 : level.getEntity(state.towerLockTarget) instanceof LivingEntity living ? living : null;
         LivingEntity priority = state.towerHeroPriorityTarget == null ? null
@@ -654,13 +667,15 @@ public final class LaneSystem {
             tracked = UNITS.get(target.getUUID());
             towerTarget = true;
             state.chaseTarget = target.getUUID();
+            state.defendedAgainst = null;
             state.chaseOrigin = minion.position();
             state.navigation.clear();
         }
         if (state.chaseTarget != null && (target == null || !com.myriad.combat.NpcCombat.canTarget(target)
                 || factionOf(target) == null || factionOf(target) == state.faction
                 || target instanceof ServerPlayer player && (VisionSystem.concealedFromNpc(minion, player)
-                        || !NpcNavigation.visible(minion, target))
+                        || !NpcNavigation.visible(minion, target)
+                        || target.getUUID().equals(state.defendedAgainst) && !inDefenseRange(minion,player,state))
                 || towerTarget && (tracked.kind!=Kind.CRYSTAL&&tracked.lane != state.lane || !isTowerVulnerable(tracked))
                 || towerTarget && (platformRadius(target)>0&&!inMinionAttackRange(minion,target,state,minionAttackRange(state))
                         || hasPendingCorner(state)
@@ -697,8 +712,8 @@ public final class LaneSystem {
             target = nearestVulnerableTower(level, minion, state, attackRange);
             if (target == null) target = nearestLaneEnemy(level, minion, state);
             if (target == null) {
-                target = nearestEnemyPlayer(level, minion, state.faction, 12.0);
-                if (target != null && now < state.ignoreUntil && target.getUUID().equals(state.ignoredTarget)) target = null;
+                target = nearestEnemyPlayer(level, minion, state.faction, 12.0,
+                        now < state.ignoreUntil ? state.ignoredTarget : null);
             }
             if (target == null) {
                 Mob objective = laneObjective(state);
@@ -941,10 +956,16 @@ public final class LaneSystem {
 
     private static LivingEntity nearestEnemyPlayer(ServerLevel level, LivingEntity source, Faction faction,
             double range) {
+        return nearestEnemyPlayer(level, source, faction, range, null);
+    }
+
+    private static LivingEntity nearestEnemyPlayer(ServerLevel level, LivingEntity source, Faction faction,
+            double range, UUID ignoredTarget) {
         LivingEntity best = null;
         double bestDistance = range * range;
         for (ServerPlayer player : level.getEntitiesOfClass(ServerPlayer.class,
                 source.getBoundingBox().inflate(range), p -> com.myriad.combat.NpcCombat.canTarget(p))) {
+            if (player.getUUID().equals(ignoredTarget)) continue;
             if (factionOf(player) == null || factionOf(player) == faction) continue;
             if (source instanceof LaneMinionEntity && (VisionSystem.concealedFromNpc(source, player)
                     || !source.hasLineOfSight(player))) continue;
@@ -1047,7 +1068,9 @@ public final class LaneSystem {
             long elapsed = manager == null ? 0 : manager.getMatchElapsedTicks(target.level().getGameTime());
             amount *= (float) MatchBalance.towerDamageTakenScale(elapsed);
         }
+        float before=state.health;
         state.health = Math.max(0.0F, state.health - amount);
+        if (state.kind==Kind.TOWER && state.health<before) towerHitFeedback(target,state);
         updateName(target, state);
         if (source.getEntity() instanceof ServerPlayer player) {
             com.myriad.network.Packets.sendToPlayer(player,
@@ -1199,6 +1222,35 @@ public final class LaneSystem {
         return (int)Math.min(Integer.MAX_VALUE,base*tenths*sharePercent/1000L);
     }
 
+    private static void towerHitFeedback(LivingEntity tower,UnitState state) {
+        if (!(tower.level() instanceof ServerLevel level))return;
+        long now=level.getGameTime();
+        if(state.lastTowerHitFeedback!=Long.MIN_VALUE && now-state.lastTowerHitFeedback<5)return;
+        state.lastTowerHitFeedback=now;
+        if(state.visualEntity!=null&&!state.visualEntity.isRemoved()){
+            if (!state.towerFlashing) state.towerLightBeforeHit=state.visualEntity.getBrightnessOverride();
+            state.visualEntity.setBrightnessOverride(new net.minecraft.util.Brightness(15,15));
+            state.towerFlashing = true;
+        }
+        Vec3 at=tower.getBoundingBox().getCenter().add(0,.25,0);
+        var gold=new DustParticleOptions(0xFFC670,1.3F);
+        var ice=new DustParticleOptions(0xB8EAFF,1F);
+        var sound=new net.minecraft.network.protocol.game.ClientboundSoundPacket(
+                net.minecraft.core.Holder.direct(net.minecraft.sounds.SoundEvents.IRON_GOLEM_HURT),
+                net.minecraft.sounds.SoundSource.BLOCKS,at.x,at.y,at.z,.55F,1.30F,level.getRandom().nextLong());
+        for(var viewer:level.players()) {
+            if(viewer.connection==null||viewer.distanceToSqr(tower)>32*32||!VisionSystem.canSee(viewer,tower)
+                    ||!viewer.hasLineOfSight(tower))continue;
+            level.sendParticles(viewer,gold,false,false,at.x,at.y,at.z,9,.38,.43,.38,.0);
+            level.sendParticles(viewer,ice,false,false,at.x,at.y,at.z,6,.30,.45,.30,.0);
+            viewer.connection.send(sound);
+        }
+    }
+
+    private static boolean inDefenseRange(Mob minion,ServerPlayer attacker,UnitState state) {
+        return inMinionAttackRange(minion,attacker,state,minionAttackRange(state)*1.10);
+    }
+
     /** Nearby allied minions defend a hero against a visible player attacker. */
     public static void defendPlayer(ServerPlayer victim, ServerPlayer attacker) {
         GameManager manager = GameManager.get();
@@ -1208,9 +1260,10 @@ public final class LaneSystem {
         for (UnitState state : UNITS.values()) {
             Mob minion = state.entity;
             if (state.tower() || state.faction != ally || minion == null || !minion.isAlive()
-                    || minion.level() != attacker.level() || minion.distanceToSqr(attacker) > 100
+                    || minion.level() != attacker.level() || !inDefenseRange(minion,attacker,state)
                     || VisionSystem.concealedFromNpc(minion, attacker)
                     || !NpcNavigation.visible(minion, attacker)) continue;
+            if(attacker.getUUID().equals(state.defendedAgainst)&&attacker.getUUID().equals(state.chaseTarget))continue;
             state.chaseTarget = attacker.getUUID();
             state.defendedAgainst = attacker.getUUID();
             state.chaseOrigin = minion.position();
@@ -1403,6 +1456,7 @@ public final class LaneSystem {
         if (state.visualEntity != null && !state.visualEntity.isRemoved()) return;
         if (state.visual != null && level.getEntity(state.visual) instanceof net.minecraft.world.entity.Display.ItemDisplay display) {
             display.setPos(tower.getX(), tower.getY(), tower.getZ());
+            state.visualEntity=display;
             return;
         }
         var display = state.kind==Kind.CRYSTAL?BuildingVisuals.crystal(level,tower.position(),state.faction)

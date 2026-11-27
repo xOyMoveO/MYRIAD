@@ -185,7 +185,6 @@ public final class LuoxiaBowView {
         var mc = Minecraft.getInstance();
         if (p != mc.player && !FogOfWarClient.shouldRenderPlayer(p.getId())) return true;
         var cue = LuoxiaPoseClient.pose(p);
-        if (cue == null && !LuoxiaPoseClient.stepping(p) && !LuoxiaPoseClient.chained(p)) return false;
         var avatar = (AvatarRenderState)state;
         float partial = state.ageInTicks - (float)Math.floor(state.ageInTicks);
         var m = LuoxiaBowMotion.sample(cue, LuoxiaPoseClient.recoil(p, partial), LuoxiaPoseClient.stepping(p));
@@ -201,6 +200,8 @@ public final class LuoxiaBowView {
             stack.rotate(Axis.YP.rotationDegrees(net.minecraft.util.Mth.wrapDegrees(yaw - avatar.bodyRot)));
             stack.rotate(Axis.XP.rotationDegrees(pitch));
             stack.rotate(Axis.ZP.rotationDegrees((arm == HumanoidArm.LEFT ? -1 : 1) * m.roll()));
+            // In the avatar frame forward is -Z and up is -Y. Bow +X is the string
+            // side, so send it to +Z (back) for either hand, even at idle.
             stack.rotate(Axis.YP.rotationDegrees(-90));
             stack.rotate(Axis.XP.rotationDegrees(180));
             stack.scale(.80f, .80f, .80f);

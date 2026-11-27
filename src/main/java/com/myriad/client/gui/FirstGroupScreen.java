@@ -2,6 +2,7 @@ package com.myriad.client.gui;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.myriad.MyriadClient;
+import com.myriad.character.ability.AbilityFormulaText;
 import com.myriad.character.ability.AbilitySkill;
 import com.myriad.character.rework.FirstGroupGrowth;
 import com.myriad.character.rework.FirstGroupSkills;
@@ -390,7 +391,8 @@ public final class FirstGroupScreen extends Screen {
             String status = text("screen.myriad.g1.status", data.level(), data.skillPoints(), data.gold());
             if (font.width(status) > header.w()) status = text("screen.myriad.g1.status_compact", data.level(), data.skillPoints(), data.gold());
             textIn(g, status, header.x(), layout.statusY(), header.w(), JADE);
-            offer("vitals", header, () -> List.of(text("screen.myriad.g1.vitals", Math.round(data.health()), Math.round(data.maxHealth()), data.mana())),
+            offer("vitals", header, () -> List.of(text("screen.myriad.g1.vitals", Math.round(data.health()),
+                            Math.round(data.maxHealth()), AbilityFormulaText.amount(data.mana()))),
                     mx, my, null);
         }
         SkillChoiceTheme.divider(g, header.x(), panel.right() - (header.x() - panel.x()), layout.headerDividerY(), 0xFF52837B);

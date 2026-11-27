@@ -51,12 +51,12 @@ public final class AbilityTargeting {
         if(occlusion.getType()!=HitResult.Type.MISS&&occlusion.getLocation().distanceToSqr(at)>.12)return false;
         return !landing||canStand(p,at);
     }
-    public static boolean supported(ServerPlayer p,Vec3 at){
+    public static boolean supported(net.minecraft.world.entity.player.Player p,Vec3 at){
         if(!finite(at)||!p.level().hasChunkAt(BlockPos.containing(at))||!p.level().getWorldBorder().isWithinBounds(BlockPos.containing(at)))return false;
         var below=BlockPos.containing(at.add(0,-.08,0));var state=p.level().getBlockState(below);
         return state.getFluidState().isEmpty()&&!state.getCollisionShape(p.level(),below).isEmpty();
     }
-    public static boolean canStand(ServerPlayer p,Vec3 at){return supported(p,at)
+    public static boolean canStand(net.minecraft.world.entity.player.Player p,Vec3 at){return supported(p,at)
             &&p.level().noCollision(p,p.getBoundingBox().move(at.subtract(p.position())));}
     public static boolean clearSweep(ServerPlayer p,Vec3 step){return finite(step)
             &&p.level().hasChunkAt(BlockPos.containing(p.position().add(step)))

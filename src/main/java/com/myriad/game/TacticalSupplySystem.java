@@ -35,8 +35,8 @@ import com.myriad.registry.ModItems;
 public final class TacticalSupplySystem {
     private TacticalSupplySystem() {}
 
-    private static final int BLOOD_TOTAL = 40;
-    private static final int MANA_TOTAL = 50;
+    private static final int BLOOD_DURATION = 8 * 20;
+    private static final int MANA_DURATION = 5 * 20;
     private static final int WARD_DURATION = 120 * 20;
     private static final int TRAP_DURATION = 90 * 20;
     private static final double WARD_RADIUS = 20.0;
@@ -44,8 +44,12 @@ public final class TacticalSupplySystem {
     private static final double TRUE_SIGHT_RADIUS = 12.0;
     private static final double TRAP_RADIUS = 2.5;
 
-    private static final Map<UUID, Integer> BLOOD_REMAINING = new HashMap<>();
-    private static final Map<UUID, Integer> MANA_REMAINING = new HashMap<>();
+    private record Regeneration(long nextTick, long endTick) {
+        static Regeneration start(long now,int duration) { return new Regeneration(now+20,now+duration); }
+        Regeneration advance() { return new Regeneration(nextTick+20,endTick); }
+    }
+    private static final Map<UUID, Regeneration> BLOOD_REMAINING = new HashMap<>();
+    private static final Map<UUID, Regeneration> MANA_REMAINING = new HashMap<>();
     private static final Map<UUID, Long> TRUE_SIGHT_UNTIL = new HashMap<>();
     private static final List<Deployable> DEPLOYABLES = new ArrayList<>();
 
@@ -137,8 +141,8 @@ public final class TacticalSupplySystem {
                 player.sendSystemMessage(Component.translatable("message.myriad.supply_cannot_use"));
                 return true;
             }
-            BLOOD_REMAINING.put(player.getUUID(), BLOOD_TOTAL);
-            data.setBuff("blood_pill", 8 * 20);
+            BLOOD_REMAINING.put(player.getUUID(), Regeneration.start(player.level().getGameTime(),BLOOD_DURATION));
+            data.setBuff("blood_pill", BLOOD_DURATION);
             consume(player, stack);
             playUse(player, ParticleTypes.HEART);
             player.sendSystemMessage(Component.translatable("message.myriad.blood_pill_used"));
@@ -150,8 +154,8 @@ public final class TacticalSupplySystem {
                 player.sendSystemMessage(Component.translatable("message.myriad.supply_cannot_use"));
                 return true;
             }
-            MANA_REMAINING.put(player.getUUID(), MANA_TOTAL);
-            data.setBuff("mana_pill", 5 * 20);
+            MANA_REMAINING.put(player.getUUID(), Regeneration.start(player.level().getGameTime(),MANA_DURATION));
+            data.setBuff("mana_pill", MANA_DURATION);
             consume(player, stack);
             playUse(player, ParticleTypes.ENCHANT);
             player.sendSystemMessage(Component.translatable("message.myriad.mana_pill_used"));
@@ -216,40 +220,48 @@ public final class TacticalSupplySystem {
     }
 
     private static void tickRegeneration(ServerLevel level, long now) {
-        if (now % 20 != 0) return;
         for (ServerPlayer player : level.players()) {
-            enforcePillLimit(player);
-            UUID id = player.getUUID();
-            Integer health = BLOOD_REMAINING.get(id);
-            if (health != null) {
-                int amount = Math.min(5, health);
-                com.myriad.combat.CombatTelemetry.heal(player, amount, "blood_pill");
-                if (health <= amount || player.getHealth() >= player.getMaxHealth()) {
-                    BLOOD_REMAINING.remove(id);
-                    PlayerData data = PlayerDataProvider.get(player);
-                    if (data != null) data.setBuff("blood_pill", 0);
-                } else {
-                    BLOOD_REMAINING.put(id, health - amount);
-                    PlayerData data = PlayerDataProvider.get(player);
-                    if (data != null) data.setBuff("blood_pill", health - amount);
-                }
-            }
-            Integer mana = MANA_REMAINING.get(id);
-            if (mana != null) {
-                PlayerData data = PlayerDataProvider.get(player);
-                float max = (float) player.getAttributeValue(ModAttributes.MAX_MANA);
-                int amount = Math.min(10, mana);
-                data.setMana(Math.min(max, data.getMana() + amount));
-                data.setBuff("mana_pill", Math.max(0, mana - amount));
-                PlayerDataProvider.syncToClient(player);
-                if (mana <= amount || data.getMana() >= max) {
-                    MANA_REMAINING.remove(id);
-                    data.setBuff("mana_pill", 0);
-                }
-                else MANA_REMAINING.put(id, mana - amount);
-            }
+            if (now % 20 == 0) enforcePillLimit(player);
+            tickRegeneration(player, now);
         }
     }
+
+    static void tickRegeneration(ServerPlayer player, long now) {
+        UUID id = player.getUUID();
+        Regeneration health = BLOOD_REMAINING.get(id);
+        Regeneration mana = MANA_REMAINING.get(id);
+        if (health == null && mana == null) return;
+        PlayerData data = PlayerDataProvider.get(player);
+        boolean changed = false;
+        if (health != null) {
+            if (player.isAlive() && now >= health.nextTick() && now <= health.endTick()
+                    && player.getHealth() < player.getMaxHealth()) {
+                com.myriad.combat.CombatTelemetry.heal(player, bloodPerSecond(data.getModMaxHealth()), "blood_pill");
+                changed = true;
+            }
+            if (!player.isAlive() || now >= health.endTick() || player.getHealth() >= player.getMaxHealth()) {
+                BLOOD_REMAINING.remove(id);
+                data.setBuff("blood_pill", 0);
+                changed = true;
+            } else if (now >= health.nextTick()) BLOOD_REMAINING.put(id, health.advance());
+        }
+        if (mana != null) {
+            float max = (float) player.getAttributeValue(ModAttributes.MAX_MANA);
+            if (player.isAlive() && now >= mana.nextTick() && now <= mana.endTick() && data.getMana() < max) {
+                data.setMana(Math.min(max, data.getMana() + manaPerSecond(max)));
+                changed = true;
+            }
+            if (!player.isAlive() || now >= mana.endTick() || data.getMana() >= max) {
+                MANA_REMAINING.remove(id);
+                data.setBuff("mana_pill", 0);
+                changed = true;
+            } else if (now >= mana.nextTick()) MANA_REMAINING.put(id, mana.advance());
+        }
+        if (changed) PlayerDataProvider.syncToClient(player);
+    }
+
+    static float bloodPerSecond(float maxHealth) { return 3 + .003f * maxHealth; }
+    static float manaPerSecond(float maxMana) { return 10 + .02f * maxMana; }
 
     private static void tickWard(ServerLevel level, Deployable ward) {
         AABB area = new AABB(ward.pos, ward.pos).inflate(WARD_RADIUS);

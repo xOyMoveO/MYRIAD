@@ -22,6 +22,7 @@ public final class CombatRegressionTests {
         register("faction_identity",FactionIdentityChecks::run);
         register("training_ui",TrainingUiChecks::run);
         register("combat_feedback",CombatFeedbackChecks::run);
+        register("battle_tuning",BattleTuningChecks::run);
         register("tower_cover", TowerCoverChecks::run);
         register("match_economy", MatchEconomyChecks::run);
         register("match_assists", MatchAssistChecks::run);
@@ -148,7 +149,8 @@ public final class CombatRegressionTests {
                 paths.get(LaneSystem.Lane.TOP).clear();
                 helper.assertTrue(((List<?>) ordered.invoke(null, LaneSystem.Lane.TOP, Faction.DESTRUCTION)).size() == 4, "Fallback route must reverse without immutable-list crash");
                 paths.get(LaneSystem.Lane.TOP).putAll(saved);
-                helper.assertTrue(((Long) field(LaneSystem.class, null, "FIRST_WAVE_DELAY")) == 1400L, "First wave delay must remain 70 seconds");
+                helper.assertTrue(MatchTempo.STANDARD.firstWaveTicks() == 1400L
+                        && MatchTempo.CHERRY_V1.firstWaveTicks() == 700L, "Both map profiles retain their first wave delay");
                 helper.assertTrue(Math.abs(MatchBalance.towerScale(0, 1) - 1.30) < .0001
                         && Math.abs(MatchBalance.towerScale(0, 4) - 2.20) < .0001,
                         "Consecutive tower hits against heroes must grow by 30 percent and cap at four stacks");
@@ -536,10 +538,10 @@ public final class CombatRegressionTests {
                 && ((Number)field(state.getClass(),state,"attackDamage")).floatValue()==63,"Siege base stats must exceed ordinary minions");
         var hp=state.getClass().getDeclaredField("health");hp.setAccessible(true);hp.setFloat(state,1120);
         wave.setInt(null,5);scale.invoke(null,mob,state,200L);
-        helper.assertTrue(Math.abs(((Number)field(state.getClass(),state,"maxHealth")).floatValue()-2576)<.01
-                && Math.abs(hp.getFloat(state)-1288)<.01,"Wave 5 growth must preserve current health ratio");
+        helper.assertTrue(Math.abs(((Number)field(state.getClass(),state,"maxHealth")).floatValue()-2374.4)<.01
+                && Math.abs(hp.getFloat(state)-1187.2)<.01,"Wave 5 reduced growth preserves current health ratio");
         scale.invoke(null,mob,state,24000L);
-        helper.assertTrue(Math.abs(((Number)field(state.getClass(),state,"maxHealth")).floatValue()-5152)<.01
+        helper.assertTrue(Math.abs(((Number)field(state.getClass(),state,"maxHealth")).floatValue()-3404.8)<.01
                 && Math.abs(((Number)field(state.getClass(),state,"attackDamage")).floatValue()-110.88)<.01,"20-minute siege spike must scale health and damage");
         var second=com.myriad.registry.ModEntities.SIEGE_MINION.get().create(level,net.minecraft.world.entity.EntitySpawnReason.MOB_SUMMONED);
         level.addFreshEntity(second);

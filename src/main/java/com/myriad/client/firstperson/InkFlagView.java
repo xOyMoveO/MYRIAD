@@ -87,7 +87,8 @@ public final class InkFlagView {
         if (data == null || !enabled(mc) || busy(mc) || ClientDataHolder.cooldownTicks(slot) > 0) return;
         var resolved = FirstGroupSkills.resolve(CharacterType.XUANCHEN, slot, data.skillLevels());
         if (!(resolved instanceof AbilitySkill skill) || skill.index() > 3 || skill.index() < 2
-                || data.mana() < skill.getManaCost() || data.skillLevels().getOrDefault(skill.getId(), 0) <= 0) return;
+                || !data.noMana() && data.mana() < skill.manaCost(data.skillLevels().getOrDefault(skill.getId(),0))
+                || data.skillLevels().getOrDefault(skill.getId(), 0) <= 0) return;
         checkOwner(mc);
         MOTION.prepare(skill.index(), mc.player.tickCount, ClientDataHolder.magicBulletCooldownMax());
     }
