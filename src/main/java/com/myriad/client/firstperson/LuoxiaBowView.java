@@ -19,7 +19,6 @@ import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.ArmedModel;
 import net.minecraft.client.model.HumanoidModel;
-import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.state.ArmedEntityRenderState;
@@ -32,19 +31,20 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.PlayerModelPart;
-import net.minecraft.world.entity.player.PlayerModelType;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
-import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 /** The grip is the model origin. Both views attach the arrow nock to the deformed string serving. */
 public final class LuoxiaBowView {
     private static final ItemStack[] BOWS = new ItemStack[4];
-    private static final ModelPart[] HANDS = new ModelPart[4];
+    private static Object equipOwner, equipWorld;
+    private static int equipSlot = -1;
+    private static HumanoidArm equipArm;
+    private static double equipAt;
+    private static float initialDrop;
     private static final Map<String,List<Quad>> ARROWS = new HashMap<>();
     private static final List<Quad> FEATHER_LIGHT = List.of(
             new Quad(new Vec3(-.024, .22, .09), new Vec3(.048, .31, .09),
@@ -53,6 +53,31 @@ public final class LuoxiaBowView {
                     new Vec3(.048, .33, .09), new Vec3(.04, .31, .09), 0xFFECCA, .85f, 0, false, .03f, .16f, .10f, .24f));
     private static final Identifier ATLAS = Identifier.parse("myriad:textures/particle/vfx/luoxia_arrow_atlas.png");
     private static final float DEG = (float)Math.PI / 180f;
+    private static final List<Quad> READY_FERRULE = List.of(
+            facet(.99, 1.50, 0, 0x643F70),
+            facet(.75, 1.18, .025, 0xE4AD62),
+            facet(.35, .72, .050, 0x865B88),
+            facet(.13, .37, .075, 0xFFF1B7));
+
+    // A small gilded purple fitting. The UV is an opaque pearly texel in the existing arrow atlas.
+    private static Quad facet(double width, double height, double z, int tint) {
+        return new Quad(new Vec3(0,-height,z), new Vec3(width,0,z), new Vec3(0,height,z),
+                new Vec3(-width,0,z),tint,1,0,false,.42578125f,.42578125f,.5390625f,.5390625f);
+    }
+
+    private static void readyFerrule(LuoxiaBowPrototype.Frame frame, PoseStack stack, SubmitNodeCollector collector) {
+        if (frame.readyPulse() < 0) return;
+        var anchor = frame.readyAnchor();
+        var nock = frame.bow().transformPosition(new Vector3f(frame.serving(),0,0));
+        float scale = .0105f*(1+.42f*frame.readyPulse());
+        stack.pushPose();
+        try {
+            stack.translate(anchor.x,anchor.y,anchor.z+.004f);
+            stack.rotate(Axis.ZP.rotation((float)Math.atan2(nock.x-anchor.x,anchor.y-nock.y)));
+            stack.scale(scale,scale,scale);
+            submitMesh(READY_FERRULE,stack,collector,0xF000F0);
+        } finally { stack.popPose(); }
+    }
 
     private LuoxiaBowView() {}
 
@@ -74,60 +99,60 @@ public final class LuoxiaBowView {
         var mc = Minecraft.getInstance();
         LocalPlayer p = mc.player;
         if (p == null || mc.level == null || !ClientDataHolder.modEnabled() || !"luoxia".equals(ClientDataHolder.characterId())
-                || !p.isAlive() || p.isSpectator() || !p.getMainHandItem().is(ModItems.GUIXIA_BOW.get())
-                || mc.getCameraEntity() != p || mc.gui.screen() != null) return false;
+                || !p.isAlive() || p.isSpectator() || !p.getMainHandItem().is(ModItems.GUIXIA_BOW.get())) {
+            equipOwner = null;
+            return false;
+        }
+        if (mc.getCameraEntity() != p || mc.gui.screen() != null || !mc.options.getCameraType().isFirstPerson()
+                || event.isCanceled()) return false;
         if (event.getHand() == InteractionHand.OFF_HAND) {
             if (!p.getOffhandItem().isEmpty()) return false;
             event.setCanceled(true);
             return true;
         }
         if (!event.getItemStack().is(ModItems.GUIXIA_BOW.get())) return false;
-        var cue = LuoxiaPoseClient.pose(p);
-        boolean step = LuoxiaPoseClient.stepping(p);
-        var motion = LuoxiaBowMotion.sample(cue, LuoxiaPoseClient.recoil(p, event.getPartialTick()), step);
-        boolean left = p.getMainArm() == HumanoidArm.LEFT;
-        int side = left ? -1 : 1;
-        float lift = motion.loaded() ? .095f + motion.pull() * .025f : motion.recoil() * .09f;
-        var bow = new Matrix4f().translation(side * (.32f - lift * .64f),
-                -.36f + lift - (step ? .045f : 0), -1.10f - lift + motion.recoil() * .055f);
-        if (usesLockedAim(cue)) {
-            bow.rotateY(-net.minecraft.util.Mth.wrapDegrees(cue.yaw() - p.getYRot()) * DEG);
-            bow.rotateX(-(cue.pitch() - p.getXRot()) * DEG);
+        float partial = event.getPartialTick();
+        double now = mc.level.getGameTime() + (double)partial;
+        var hand = p.getMainArm();
+        int slot = p.getInventory().getSelectedSlot();
+        if (equipOwner != p || equipWorld != mc.level || equipSlot != slot || equipArm != hand) {
+            equipOwner = p; equipWorld = mc.level; equipSlot = slot; equipArm = hand;
+            equipAt = now; initialDrop = event.getEquipProgress();
         }
-        bow.rotateZ(side * motion.roll() * DEG).rotateY(-90 * DEG).scale(.74f);
+        double step = p.walkAnimation.position(partial)*.78;
+        double walk = mc.options.bobView().get() ? Math.min(1,p.walkAnimation.speed(partial)) : 0;
+        float yaw = p.getViewYRot(partial), pitch = p.getViewXRot(partial);
+        double yawLag = Math.clamp(net.minecraft.util.Mth.wrapDegrees(yaw-net.minecraft.util.Mth.rotLerp(partial,p.yBobO,p.yBob)),-15,15);
+        double pitchLag = Math.clamp(pitch-net.minecraft.util.Mth.lerp(partial,p.xBobO,p.xBob),-12,12);
+        var frame = LuoxiaPoseClient.FIRST_PERSON.sample(now,hand==HumanoidArm.LEFT,yaw,pitch,
+                LuoxiaPoseClient.stepping(p),step,walk,yawLag,pitchLag);
+        if (frame.loaded() || frame.releaseAge() >= 0) initialDrop = 0;
         var stack = event.getPoseStack();
         stack.pushPose();
         try {
-            stack.mulPose(bow);
-            weapon(p, motion, stack, event.getSubmitNodeCollector(), event.getPackedLight(), true);
+            stack.setIdentity();
+            stack.mulPose(new Matrix4f(mc.gameRenderer.gameRenderState().levelRenderState.cameraRenderState.viewRotationMatrix).invert());
+            stack.translate(0,-.38f*(float)Math.max(0,initialDrop-.4*(now-equipAt)),0);
+            stack.pushPose();
+            try {
+                stack.mulPose(frame.bow());
+                LuoxiaBowDeformation.submit(p,frame.draw(),frame.stringOffset(),stack,event.getSubmitNodeCollector(),event.getPackedLight());
+                var cue = LuoxiaPoseClient.pose(p);
+                if (LuoxiaPoseClient.chained(p) && (cue == null || cue.skill() != 1))
+                    submitMesh(FEATHER_LIGHT,stack,event.getSubmitNodeCollector(),0xF000F0);
+            } finally { stack.popPose(); }
+            for (int i = 0; i < frame.arrows(); i++) {
+                stack.pushPose();
+                try {
+                    stack.mulPose(frame.arrow(i));
+                    submitMesh(ARROWS.computeIfAbsent(frame.mesh(),LuoxiaGeometry::nockedArrow),stack,
+                            event.getSubmitNodeCollector(),event.getPackedLight());
+                } finally { stack.popPose(); }
+            }
+            readyFerrule(frame,stack,event.getSubmitNodeCollector());
         } finally { stack.popPose(); }
-        Vector3f grip = bow.transformPosition(new Vector3f(0, -.15f, -.045f * side));
-        hand(event, p, left, grip, new Vector3f(side * .65f, -.48f, .74f), .60f);
-        if (p.getOffhandItem().isEmpty() && cue != null) {
-            Vector3f fingers = bow.transformPosition(new Vector3f(motion.nock() + .045f + motion.recoil() * .13f, -.09f, -.045f * side));
-            hand(event, p, !left, fingers, new Vector3f(-side * .60f, -.44f, .70f), .48f);
-        }
         event.setCanceled(true);
         return true;
-    }
-
-    private static void hand(HandRenderContext event, LocalPlayer p, boolean left, Vector3f grip, Vector3f towardElbow, float size) {
-        if (FirstPersonArmVisibility.hidePlayerArms()) return;
-        boolean slim = p.getSkin().model() == PlayerModelType.SLIM;
-        int index = (slim ? 2 : 0) + (left ? 1 : 0);
-        if (HANDS[index] == null) HANDS[index] = ShuoArmModel.bake(slim, left);
-        var model = HANDS[index];
-        model.resetPose();
-        model.getChild(left ? "left_sleeve" : "right_sleeve").visible =
-                p.isModelPartShown(left ? PlayerModelPart.LEFT_SLEEVE : PlayerModelPart.RIGHT_SLEEVE);
-        var stack = event.getPoseStack();
-        stack.pushPose();
-        try {
-            stack.mulPose(new Matrix4f().translation(grip).rotate(new Quaternionf().rotationTo(
-                    new Vector3f(0, -1, 0), towardElbow.normalize())).scale(size).mul(NightDaggerRig.arm(slim, left)));
-            event.getSubmitNodeCollector().submitModelPart(model, stack, RenderTypes.entityTranslucent(p.getSkin().body().texturePath()),
-                    event.getPackedLight(), OverlayTexture.NO_OVERLAY, null);
-        } finally { stack.popPose(); }
     }
 
     private static LivingEntity avatar(ArmedEntityRenderState state) {

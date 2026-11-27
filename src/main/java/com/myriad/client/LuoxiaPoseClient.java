@@ -1,6 +1,7 @@
 package com.myriad.client;
 
 import com.myriad.network.LuoxiaBowPosePayload;
+import com.myriad.client.firstperson.LuoxiaBowPrototype;
 import com.myriad.network.LuoxiaBowPosePayload.Phase;
 import com.myriad.registry.ModItems;
 import java.util.HashMap;
@@ -16,6 +17,7 @@ public final class LuoxiaPoseClient {
     private static final Map<UUID,Sample> bows = new HashMap<>(), steps = new HashMap<>();
     private static final Map<UUID,Long> chains = new HashMap<>();
     private static ClientLevel world;
+    public static final LuoxiaBowPrototype FIRST_PERSON = new LuoxiaBowPrototype();
     private static int localToken;
     private static boolean localHeld;
     private static long earlyUntil;
@@ -23,7 +25,7 @@ public final class LuoxiaPoseClient {
     private LuoxiaPoseClient() {}
 
     public static void reset() {
-        bows.clear(); steps.clear(); chains.clear();
+        bows.clear(); steps.clear(); chains.clear(); FIRST_PERSON.reset();
         world = Minecraft.getInstance().level; localHeld = false; localToken = 0; earlyUntil = 0;
     }
 
@@ -31,6 +33,7 @@ public final class LuoxiaPoseClient {
         if (world != mc.level) reset();
         if (world == null) return;
         long now = world.getGameTime();
+        if (mc.player == null || !hasBow(mc.player.getUUID())) FIRST_PERSON.reset();
         bows.entrySet().removeIf(e -> now - e.getValue().received > 18 || !hasBow(e.getKey()));
         steps.entrySet().removeIf(e -> now - e.getValue().received > 2 || !hasBow(e.getKey()));
         chains.entrySet().removeIf(e -> now >= e.getValue() || !hasBow(e.getKey()));
@@ -42,6 +45,13 @@ public final class LuoxiaPoseClient {
                 && (player != Minecraft.getInstance().player || ClientDataHolder.modEnabled() && "luoxia".equals(ClientDataHolder.characterId()));
     }
 
+    private static void storePose(LuoxiaBowPosePayload cue, long tick) {
+        bows.put(cue.owner(), new Sample(cue, tick));
+        var mc = Minecraft.getInstance();
+        if (mc.player != null && cue.owner().equals(mc.player.getUUID()))
+            FIRST_PERSON.accept(cue, tick + (double)mc.getDeltaTracker().getGameTimeDeltaPartialTick(false));
+    }
+
     static void begin(int token, boolean predict) {
         var mc = Minecraft.getInstance();
         if (world != mc.level) reset();
@@ -51,7 +61,7 @@ public final class LuoxiaPoseClient {
         long now = world.getGameTime();
         var pose = new LuoxiaBowPosePayload(mc.player.getUUID(), token, -1, Phase.DRAW, 0, 11, 11,
                 mc.player.getYRot(), mc.player.getXRot(), now);
-        bows.put(pose.owner(), new Sample(pose, now));
+        storePose(pose, now);
     }
 
     static void letGo(boolean cancel) {
@@ -60,7 +70,10 @@ public final class LuoxiaPoseClient {
         var player = Minecraft.getInstance().player;
         if (player != null) {
             var sample = bows.get(player.getUUID());
-            if (sample != null && sample.pose.phase() == Phase.DRAW) bows.remove(player.getUUID());
+            if (sample != null && sample.pose.phase() == Phase.DRAW) {
+                bows.remove(player.getUUID());
+                FIRST_PERSON.reset();
+            }
         }
     }
 
@@ -70,7 +83,7 @@ public final class LuoxiaPoseClient {
         if (world == null || mc.player == null) return;
         if (p.phase() == Phase.RESET) {
             bows.remove(p.owner()); steps.remove(p.owner()); chains.remove(p.owner());
-            if (mc.player.getUUID().equals(p.owner())) { localHeld = false; earlyUntil = 0; }
+            if (mc.player.getUUID().equals(p.owner())) { localHeld = false; earlyUntil = 0; FIRST_PERSON.reset(); }
             return;
         }
         if (!hasBow(p.owner())) return;
@@ -87,7 +100,7 @@ public final class LuoxiaPoseClient {
                 Sample old = bows.get(p.owner());
                 if (old != null && (old.pose.skill() <= 1) == (p.skill() <= 1) && old.pose.token() == p.token()) {
                     // Arrow leaves immediately. The empty arms have a short return pose.
-                    bows.put(p.owner(), new Sample(p, now));
+                    storePose(p, now);
                 }
                 if (owner && p.skill() <= 1 && p.token() == localToken) {
                     localHeld = false;
@@ -95,10 +108,10 @@ public final class LuoxiaPoseClient {
                 }
             }
             case DRAW -> {
-                if (!owner || localHeld && p.token() == localToken) bows.put(p.owner(), new Sample(p, now));
+                if (!owner || localHeld && p.token() == localToken) storePose(p, now);
             }
             default -> {
-                bows.put(p.owner(), new Sample(p, now));
+                storePose(p, now);
                 if (p.phase() == Phase.RELEASE && p.skill() <= 1) chains.remove(p.owner());
             }
         }
