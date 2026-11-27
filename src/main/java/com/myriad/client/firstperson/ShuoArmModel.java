@@ -11,7 +11,7 @@ import net.minecraft.core.Direction;
 /** Rigid skin hand and short straight forearm. No elbow, segmented deformation or camera anchor. */
 public final class ShuoArmModel {
     public static final float CUT_Y=4;
-    public static final float SHUO_CUT_Y=5.05f;
+    public static final float SHUO_CUT_Y=-1.9f;
     private ShuoArmModel(){}
     public static ModelPart bake(boolean slim,boolean left){
         return bake(slim,left,CUT_Y);

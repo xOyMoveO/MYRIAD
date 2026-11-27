@@ -84,9 +84,9 @@ final class ShuoChecks {
         h.assertTrue(visible>.27&&visible<.38,"At the default 70-degree view only about one third of the real sheath is visible: "+visible);
         var idle=ShuoRig.frame(ShuoViewPayload.CANCEL,0,true);var held=ShuoRig.blade(idle,false);
         var grip=held.transformPosition(new Vector3f());var tip=held.transformPosition(new Vector3f(0,ShuoRig.MODEL_GRIP_TO_TIP,0));
-        h.assertTrue(grip.x>.4f&&grip.y<-.5f&&tip.y>grip.y+1.3f&&tip.y < -tip.z*slope&&tip.x>grip.x+.8f&&tip.x< -tip.z*slope*16/9,"Reference stance: low-right hilt, extended upward/right blade");
+        h.assertTrue(grip.x>.4f&&grip.y<-.5f&&tip.y>grip.y+1.4f&&tip.y < -tip.z*slope&&tip.x>grip.x&&tip.x<grip.x+.45f&&tip.x< -tip.z*slope*16/9,"Reference stance: low-right hilt, poised upright-forward blade inside frame");
         h.assertTrue(ShuoRig.MODEL_SHEATH_LENGTH>ShuoRig.MODEL_GRIP_TO_TIP-ShuoRig.MODEL_GRIP_TO_MOUTH&&ShuoRig.EXTRACT>(ShuoRig.MODEL_GRIP_TO_TIP-ShuoRig.MODEL_GRIP_TO_MOUTH)*ShuoRig.WEAPON_LENGTH,"Longer sheath houses the full blade, extraction clears its tip before the cut");
-        h.assertTrue(Math.abs(tip.z-grip.z)<.15f,"Drawn blade is not foreshortened by pointing into the screen");
+        h.assertTrue(tip.z<grip.z-.35f&&tip.z>grip.z-.80f,"Drawn blade extends naturally forward without flat sideways paste or extreme foreshortening");
         for(boolean mirror:new boolean[]{false,true}){
             var closedHand=ShuoRig.occupiedHand(sheathed,mirror);
             var fingers=closedHand.transformDirection(new Vector3f(0,1,0)).normalize();
@@ -115,6 +115,14 @@ final class ShuoChecks {
             var shaft=ShuoRig.blade(idle,mirror).transformDirection(new Vector3f(0,1,0)).normalize();
             var expectedPalm=new Vector3f(hiltAt).fma(ShuoRig.HAND_GRIP_RAISE,shaft);
             h.assertTrue(palmAt.y>hiltAt.y&&palmAt.distance(expectedPalm)<1E-6,"Grasp is raised exactly along the slanted hilt towards its guard");
+            // Both drawn sword-hand cuff and sheathed support-hand cuff must anchor past the 70-degree bottom edge.
+            float cuffLocalY=(ShuoArmModel.SHUO_CUT_Y-8f)/16f;
+            for(var pair:List.of(ShuoRig.hand(idle,false,mirror),ShuoRig.hand(sheathed,true,mirror))){
+                for(float sx:new float[]{-2.25f/16,2.25f/16})for(float sz:new float[]{-2.25f/16,2.25f/16}){
+                    var corner=pair.transformPosition(new Vector3f(sx,cuffLocalY,sz));
+                    h.assertTrue(corner.z<-.2f&&corner.y<corner.z*slope,"Idle sleeve cuff anchors cleanly below the default 70-degree bottom edge");
+                }
+            }
         }
         var motion=new ShuoMotion();h.assertTrue(motion.accept(new ShuoViewPayload(0,9,0,1),10,0,false),"Confirmed cue accepted");
         h.assertTrue(!motion.accept(new ShuoViewPayload(0,9,0,1),10,0,false),"Duplicate token ignored");
