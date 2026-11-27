@@ -72,7 +72,7 @@ final class ThunderSwordViewChecks {
         var grip = idle.getTranslation(new Vector3f());
         var tip = bladeTip(idle);
         double depth = Math.toDegrees(Math.asin(-new Vector3f(tip).sub(grip).normalize().z));
-        h.assertTrue(depth >= 25 && depth <= 45, "Idle blade depth outside +25 to +45 degrees: " + depth);
+        h.assertTrue(depth >= 42 && depth <= 48, "Idle blade depth outside +42 to +48 degrees: " + depth);
         h.assertTrue(grip.x > 0 && grip.y < 0 && grip.z < 0 && tip.z < grip.z,
                 "Right-hand idle grip is below centre and the tip points into the scene");
         for (int cut = 0; cut < 3; cut++) {
@@ -92,7 +92,7 @@ final class ThunderSwordViewChecks {
             boolean direction = switch (cut) {
                 case 0 -> delta.x < 0 && delta.y < 0;
                 case 1 -> delta.x > 0 && delta.y < 0;
-                default -> delta.x < 0 && Math.abs(delta.y) < Math.abs(delta.x) * .25;
+                default -> delta.x < 0 && Math.abs(delta.y) < Math.abs(delta.x);
             };
             h.assertTrue(direction, "Projected sweep direction for cut " + cut + ": " + delta);
             for (int frame = 0; frame <= 48; frame++) {
@@ -117,15 +117,88 @@ final class ThunderSwordViewChecks {
         h.assertTrue(Math.abs(motion.sword(101, false).m31() - (idle.m31() - .288f)) < 1e-5f,
                 "Equipment rise follows the vanilla .4 per tick rate");
         motion.attack(101.5, 40);
-        for (double tick = motion.sweepEnd() + 9; tick <= 146; tick += .25) {
-            h.assertTrue(motion.sword(tick, false).equals(idle, 1e-5f),
-                    "Completed swing must stay at rest through the long cooldown: " + tick);
-        }
+        var unequipped = new TianxingSwordPrototype();
+        unequipped.attack(101.5, 40);
+        for (double tick = motion.sweepEnd() + 9; tick <= 146; tick += .25)
+            h.assertTrue(motion.sword(tick, false).equals(unequipped.sword(tick, false), 1e-5f),
+                    "Equipment lowering must not resume during the authored recovery");
+        motion.reset();
         motion.equip(150, .5f);
         h.assertTrue(motion.sword(150, false).m31() < idle.m31() - .2f
                 && motion.sword(152, false).equals(idle, 1e-5f), "Next real equip still raises the weapon");
+        verifyFollowThrough(h, idle);
         System.out.println("[MYRIAD-TIANXING-PROTOTYPE] PASS: idle depth " + depth
                 + " degrees, three projected sweeps, interrupt continuity, bilateral mirroring and repeat sampling");
+    }
+
+    private static void verifyFollowThrough(GameTestHelper h, Matrix4f idle) {
+        var motion = new TianxingSwordPrototype();
+        double cadence = 20 / .7; // Base attack interval of the actual sword.
+        for (int cut = 0; cut < 3; cut++) {
+            double start = cut * cadence;
+            var entry = motion.sword(start, false);
+            motion.attack(start, cadence);
+            h.assertTrue(motion.cut() == cut && motion.sword(start, false).equals(entry, 1e-4f),
+                    "The actual cooldown must preserve chain order and entry pose");
+            var from = motion.sword(motion.sweepStart(), false);
+            var to = motion.sword(motion.sweepEnd(), false);
+            if (cut == 1) {
+                h.assertTrue(from.m32() < -.5f, "Backhand must begin outside the near-camera grip pose");
+            }
+            if (cut > 0) {
+                assertGuardAndHalfBladeVisible(h, from);
+                assertGuardAndHalfBladeVisible(h, to);
+            }
+            if (cut == 2) {
+                var delta = projectedTip(to).sub(projectedTip(from));
+                double tilt = Math.toDegrees(Math.atan(Math.abs(delta.y / delta.x)));
+                h.assertTrue(tilt >= 10 && tilt <= 15, "Projected sweep inclination: " + tilt);
+                // In the recorded camera, sample the moment the tip crosses the centre line.
+                // A foreshortened blade here used to disappear into a short silver streak.
+                var crossing = from;
+                for (int i = 1; i <= 64; i++) {
+                    var t = motion.sweepStart() + (motion.sweepEnd() - motion.sweepStart()) * i / 64.0;
+                    var pose = motion.sword(t, false);
+                    if (screenPoint(pose, 1.40625f).x <= 0) {
+                        crossing = pose;
+                        break;
+                    }
+                }
+                h.assertTrue(screenPoint(crossing, 1.40625f).x <= 0
+                                && screenPoint(crossing, .171875f).distance(screenPoint(crossing, 1.40625f)) > .18f,
+                        "Third cut should show a readable blade while crossing the target");
+            }
+            for (double t = motion.sweepEnd(); t < motion.settledAt(); t += .1) {
+                var returning = motion.sword(t, false);
+                var root = screenPoint(returning, .171875f);
+                var tip = screenPoint(returning, 1.40625f);
+                var segment = tip.sub(root, new Vector3f());
+                float nearest = Math.clamp(-root.dot(segment) / segment.lengthSquared(), 0, 1);
+                // In this fixture the third cut's return must also clear the target's face.
+                float clearance = cut == 2 ? .10f : .01f;
+                h.assertTrue(root.fma(nearest, segment).length() > clearance,
+                        "Recovery brings the blade across the reticle: cut=" + cut + " tick=" + t);
+            }
+            h.assertTrue(motion.sword(motion.settledAt(), false).equals(idle, 1e-5f),
+                    "A single attack must return to ready when the chain is not continued");
+            if (cut < 2) h.assertTrue(!motion.sword(start + cadence, false).equals(idle, 1e-3f),
+                    "A ready follow-up must keep its authored preparation through normal cooldown");
+        }
+    }
+
+    /** Centre-origin screen coordinates in units of viewport height under the 70-degree hand FOV. */
+    private static Vector3f screenPoint(Matrix4f pose, float height) {
+        var point = pose.transformPosition(new Vector3f(0, height, 0));
+        float denominator = (float) (-2 * point.z * Math.tan(Math.toRadians(35)));
+        return new Vector3f(point.x / denominator, point.y / denominator, 0);
+    }
+
+    private static void assertGuardAndHalfBladeVisible(GameTestHelper h, Matrix4f pose) {
+        for (float y : new float[]{.15234f, (.171875f + 1.40625f) * .5f}) {
+            var point = screenPoint(pose, y);
+            h.assertTrue(Math.abs(point.x) < 8f / 9 && Math.abs(point.y) < .5f,
+                    "Guard and proximal half-blade should stay visible in a 16:9 viewport: " + point);
+        }
     }
 
     private static void assertMirror(GameTestHelper h, Vector3f right, Vector3f left) {

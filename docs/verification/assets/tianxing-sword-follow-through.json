@@ -165,35 +165,44 @@
       },
       "heldInputsAtEnd": 0,
       "air": {
+        "fixedCamera": {
+          "samples": 157,
+          "x": 0.5,
+          "y": 65,
+          "z": 0.5,
+          "yaw": 0,
+          "pitch": 0
+        },
         "nativeClicks": [
           {
-            "t": 0.8624,
+            "t": 0.943,
             "strength": 1.0,
-            "clientTick": 652,
+            "clientTick": 287,
             "route": "native_keyboard_or_mouse_handler"
           },
           {
-            "t": 2.4811,
+            "t": 2.5577,
             "strength": 1.0,
-            "clientTick": 685,
+            "clientTick": 319,
             "route": "native_keyboard_or_mouse_handler"
           },
           {
-            "t": 4.0796,
+            "t": 4.1746,
             "strength": 1.0,
-            "clientTick": 717,
+            "clientTick": 351,
             "route": "native_keyboard_or_mouse_handler"
           }
         ],
         "damageReceipts": 0,
+        "heldInputsAtEnd": 0,
         "rawVideo": {
           "codec_name": "h264",
           "width": 1708,
           "height": 1016,
-          "avg_frame_rate": "318000/5489",
-          "duration": "9.143333",
-          "nb_frames": "530",
-          "sha256": "215d29bbb058ee6ccf346e35b1d87e6a080c403cc154ddd5808d7e1f7b892eee"
+          "avg_frame_rate": "145200/2513",
+          "duration": "8.373333",
+          "nb_frames": "484",
+          "sha256": "b098a6c1c04e4b984aaa4897dffff09fbc74a01fa9d65f15d1b19e48b4d6f2b1"
         }
       }
     },
