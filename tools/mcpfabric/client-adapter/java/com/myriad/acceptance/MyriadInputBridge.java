@@ -109,9 +109,14 @@ public final class MyriadInputBridge implements ClientModInitializer {
         ClientMc.player();
         if (mc.gui.screen() != null) Gates.uiControl();
         int duration = c.optInt("holdTicks", 1);
-        if (duration < 1 || duration > 20) throw RpcException.badRequest("holdTicks must be 1..20");
-        if (c.optInt("captureFrames", 0) > 0) startCapture(c);
         String kind = c.getString("kind");
+        boolean trainingDraw = kind.equals("mouse") && c.getInt("button") == 0 && mc.gui.screen() == null
+                && mc.player != null && mc.options.getCameraType().isFirstPerson() && mc.getCameraEntity() == mc.player
+                && ClientDataHolder.isTraining() && "luoxia".equals(ClientDataHolder.characterId())
+                && mc.player.getMainHandItem().is(com.myriad.registry.ModItems.GUIXIA_BOW.get());
+        int maximumHold = trainingDraw ? 50 : 20;
+        if (duration < 1 || duration > maximumHold) throw RpcException.badRequest("holdTicks must be 1.." + maximumHold);
+        if (c.optInt("captureFrames", 0) > 0) startCapture(c);
         if (kind.equals("scroll")) {
             var screen = mc.gui.screen();
             if (screen == null) throw RpcException.badRequest("GUI scroll requires an open screen");

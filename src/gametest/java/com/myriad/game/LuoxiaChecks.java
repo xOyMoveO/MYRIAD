@@ -30,6 +30,7 @@ import net.minecraft.world.phys.Vec3;
 
 final class LuoxiaChecks {
     static void run(GameTestHelper h) {
+        LuoxiaBowPrototypeChecks.verify(h);
         var role = CharacterType.LUOXIA;
         var graph = FirstGroupSkills.candidates(role.getId());
         h.assertTrue(graph.size() == 8 && FirstGroupGrowth.health("luoxia", 20) == 2000, "Complete archer roster and health budget");
