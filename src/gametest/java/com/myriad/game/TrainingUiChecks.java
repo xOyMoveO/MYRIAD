@@ -166,6 +166,17 @@ final class TrainingUiChecks {
         for(int rank=0;rank<5;rank++)PlayerDataProvider.buyEquipment(player,"g1_attribute_wisdom");
         PlayerDataProvider.buyEquipment(player,"g1_attribute_defense");
         h.assertTrue(data.firstGroupAttribute("wisdom")==5&&data.firstGroupAttribute("defense")==1,"Purchases continue above fifteen total points");
+        data.setFirstGroupAttribute("strength", 0);
+        data.setGold(800);
+        var first = new com.myriad.network.ProgressAction(1, data.getCharacterId(), id, 0, 360);
+        first.handle(player);
+        first.handle(player);
+        h.assertTrue(data.getGold() == 440 && data.firstGroupAttribute("strength") == 1, "Duplicate receipt charges once");
+        new com.myriad.network.ProgressAction(2, data.getCharacterId(), id, 0, 360).handle(player);
+        h.assertTrue(data.getGold() == 440 && data.firstGroupAttribute("strength") == 1,
+                "Reject a stale quote even when the wallet can pay 432");
+        new com.myriad.network.ProgressAction(3, data.getCharacterId(), id, 1, 432).handle(player);
+        h.assertTrue(data.getGold() == 8 && data.firstGroupAttribute("strength") == 2, "Explicit new price may settle");
         for(String key:com.myriad.character.rework.FirstGroupGrowth.ATTRIBUTES)data.setFirstGroupAttribute(key,0);
         com.myriad.character.rework.FirstGroupGrowth.apply(player,data);data.setGold(originalGold);TrainingMode.setNoGoldCost(free);
         System.out.println("[MYRIAD-ATTRIBUTE-ROWS] PASS: double-click purchase, exact payment/synced rank, insufficient gold, and counts above the old limits");

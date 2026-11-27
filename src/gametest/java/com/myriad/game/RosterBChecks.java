@@ -54,11 +54,11 @@ final class RosterBChecks {
                 receive(h,s.actor,new NetworkSetup.ChooseCharacterPayload(role));var d=PlayerDataProvider.get(s.actor);
                 int scenarioLevel = index < 2 ? (role.equals("yunsheng") && index == 0 ? 4 : 1) : 20;
                 d.setLevel(scenarioLevel);d.refundAllSkillPointsForTraining();
-                receive(h,s.actor,new NetworkSetup.UpgradeSkillPayload(node(s).getId()));
+                ShuoPilotChecks.learn(h, s.actor, node(s).getId());
                 s.actor.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(0);d.setMana(700);s.mana=d.getMana();
                 if(index<2){
-                    if(role.equals("lingyuan")&&index==1)receive(h,s.actor,new NetworkSetup.UpgradeSkillPayload(FirstGroupSkills.node(role,3).getId()));
-                    if(role.equals("yunsheng")&&index==0)receive(h,s.actor,new NetworkSetup.UpgradeSkillPayload(FirstGroupSkills.node(role,7).getId()));
+                    if(role.equals("lingyuan")&&index==1)ShuoPilotChecks.learn(h, s.actor, FirstGroupSkills.node(role,3).getId());
+                    if(role.equals("yunsheng")&&index==0)ShuoPilotChecks.learn(h, s.actor, FirstGroupSkills.node(role,7).getId());
                     if(role.equals("yunsheng")&&index==1)s.actor.setHealth(100);
                     continue;
                 }
@@ -166,10 +166,10 @@ final class RosterBChecks {
             near(h,d.getModMaxHealth(),FirstGroupGrowth.health(role,1),"Formal level-one health "+role);
             for(var skill:FirstGroupSkills.candidates(role)){
                 d.setLevel(1);d.refundAllSkillPointsForTraining();
-                if(skill.isUltimate()){receive(h,p,new NetworkSetup.UpgradeSkillPayload(skill.getId()));h.assertTrue(d.skillLevel(skill.getId())==0&&d.getSkillPoints()==1,"Level-one ultimate input rejected without spending "+skill.getId());}
-                d.setLevel(20);d.refundAllSkillPointsForTraining();receive(h,p,new NetworkSetup.UpgradeSkillPayload(skill.getId()));
+                if(skill.isUltimate()){ShuoPilotChecks.learn(h, p, skill.getId());h.assertTrue(d.skillLevel(skill.getId())==0&&d.getSkillPoints()==1,"Level-one ultimate input rejected without spending "+skill.getId());}
+                d.setLevel(20);d.refundAllSkillPointsForTraining();ShuoPilotChecks.learn(h, p, skill.getId());
                 h.assertTrue(d.skillLevel(skill.getId())==(skill.isPassive()?5:1)&&d.getSkillPoints()==(skill.isPassive()?20:19),"Every real candidate learns through registered input: "+skill.getId());
-                int other=FirstGroupSkills.opposite(skill.index());if(other>=0){receive(h,p,new NetworkSetup.UpgradeSkillPayload(FirstGroupSkills.node(role,other).getId()));h.assertTrue(d.skillLevel(FirstGroupSkills.node(role,other).getId())==0&&d.getSkillPoints()==(skill.isPassive()?20:19),"Opposite branch receiver rejects without spending: "+skill.getId());}
+                int other=FirstGroupSkills.opposite(skill.index());if(other>=0){ShuoPilotChecks.learn(h, p, FirstGroupSkills.node(role,other).getId());h.assertTrue(d.skillLevel(FirstGroupSkills.node(role,other).getId())==0&&d.getSkillPoints()==(skill.isPassive()?20:19),"Opposite branch receiver rejects without spending: "+skill.getId());}
             }
             FirstGroupGrowth.initialize(p,d);d.setGold(2000);
             for(String key:FirstGroupGrowth.ATTRIBUTES)receive(h,p,new NetworkSetup.CraftEquipPayload("g1_attribute_"+key));

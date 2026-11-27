@@ -1,4 +1,7 @@
 {
+  "message.myriad.quote_changed": "Price changed to %s gold. Confirm again.",
+  "screen.myriad.g1.wait_server": "Waiting for server",
+  "screen.myriad.g1.interval": "Confirm again shortly",
   "screen.myriad.hover.amount_heal": "Healing %s",
   "screen.myriad.hover.amount_shield": "Shield %s",
   "screen.myriad.hover.passive_offer": "Rank %s on choice",

@@ -45,8 +45,20 @@ public final class FirstGroupScreen extends Screen {
     private final List<Action> actions = new ArrayList<>();
     private TooltipTarget tooltip, nextTooltip;
     private SkillChoiceTooltipLayout tooltipLayout;
-    private Object submittedSnapshot;
-    private long submittedAt;
+    private static final SkillChoiceInteraction.SubmissionGate PROGRESS = new SkillChoiceInteraction.SubmissionGate();
+    private NetworkSetup.PlayerDataPayload displayedSnapshot;
+    private Object supplySnapshot;
+    private long supplySubmitted;
+
+    public static SkillChoiceInteraction.SubmissionGate progressGate() {
+        PROGRESS.connect(net.minecraft.client.Minecraft.getInstance().getConnection());
+        return PROGRESS;
+    }
+
+    @Override public void tick() {
+        super.tick();
+        if (!minecraft.isWindowActive()) selection.clearPair();
+    }
 
     private enum ActionKind { CLOSE, PAGE, ITEM, CONFIRM, SUPPLY }
     private record Action(Box box, String id, ActionKind kind, boolean content) {}
@@ -65,6 +77,7 @@ public final class FirstGroupScreen extends Screen {
         actions.clear();
         draggingContent = activationHeld = false;
         lastClicked = "";
+        selection.clearPair();
         clearTooltip();
         labelWidth = Math.max(font.width(text("screen.myriad.g1.one_short")),
                 font.width(text("screen.myriad.g1.both_short")));
@@ -94,16 +107,17 @@ public final class FirstGroupScreen extends Screen {
         keyboardTooltip = "";
     }
 
-    private boolean pending() {
-        if (submittedSnapshot != null && (ClientDataHolder.get() != submittedSnapshot
-                || System.nanoTime() - submittedAt > 1_500_000_000L)) submittedSnapshot = null;
-        return submittedSnapshot != null;
-    }
+    private boolean pending() { return progressGate().pending(); }
 
     private String error(String id) {
         var data = ClientDataHolder.get();
         if (data == null) return "screen.myriad.g1.loading";
-        if (pending()) return "screen.myriad.g1.processing";
+        if (!TacticalSupplySystem.isSupply(id)) {
+            if (pending()) return "screen.myriad.g1.wait_server";
+            if (progressGate().cooling(System.nanoTime())) return "screen.myriad.g1.interval";
+        } else if (supplySnapshot == data && System.nanoTime() - supplySubmitted < 1_500_000_000L) {
+            return "screen.myriad.g1.processing";
+        }
         if (id.startsWith(ATTRIBUTE_PREFIX)) {
             String key = id.substring(ATTRIBUTE_PREFIX.length());
             if (!FirstGroupGrowth.ATTRIBUTES.contains(key)) return "message.myriad.g1.invalid_skill";
@@ -120,12 +134,19 @@ public final class FirstGroupScreen extends Screen {
 
     private void submit(String id) {
         if (error(id) != null) return;
-        submittedSnapshot = ClientDataHolder.get();
-        submittedAt = System.nanoTime();
-        if (id.startsWith(ATTRIBUTE_PREFIX) || TacticalSupplySystem.isSupply(id)) {
+        var data = displayedSnapshot;
+        if (data == null) return;
+        if (TacticalSupplySystem.isSupply(id)) {
+            supplySnapshot = data;
+            supplySubmitted = System.nanoTime();
             Packets.sendToServer(new NetworkSetup.ShopBuyPayload(id));
         } else {
-            Packets.sendToServer(new NetworkSetup.UpgradeSkillPayload(id));
+            long sequence = progressGate().begin(System.nanoTime());
+            if (sequence == 0) return;
+            boolean attribute = id.startsWith(ATTRIBUTE_PREFIX);
+            int previous = attribute ? data.buffs().getOrDefault(id, 0) : data.skillLevels().getOrDefault(id, 0);
+            long quote = attribute && !(data.training() && data.noGoldCost()) ? FirstGroupGrowth.price(previous) : 0;
+            Packets.sendToServer(new com.myriad.network.ProgressAction(sequence, data.characterId(), id, previous, quote));
         }
         actions.clear();
     }
@@ -147,6 +168,7 @@ public final class FirstGroupScreen extends Screen {
                 String previous = selection.selected();
                 boolean buy = selection.select(action.id, twice, error(action.id) == null);
                 if (!action.id.equals(previous)) clearTooltip();
+                if (keyboard) selection.clearPair();
                 if (keyboard && page == ATTRIBUTES) keyboardTooltip = action.id + ":tile";
                 if (buy) submit(action.id);
             }
@@ -171,22 +193,31 @@ public final class FirstGroupScreen extends Screen {
                 && tooltip != null && !tooltip.anchor.contains(x, y);
         if (insideTooltip && !layout.close().contains(x, y)) {
             lastClicked = "";
+            selection.clearPair();
             return true;
         }
         int maximum = maximum(layout);
         if (maximum > 0 && layout.verticalTrack().contains(x, y)) {
             lastClicked = "";
+            selection.clearPair();
             draggingContent = true;
             return startDrag(layout.verticalThumb(maximum, scroll), y);
         }
         for (var action : actions) {
             if (!action.box.contains(x, y) || action.content && !layout.canHit(action.box, x, y)) continue;
             focused = action.id;
-            boolean sameActionTwice = SkillChoiceInteraction.sameActionTwice(lastClicked, action.id, twice);
+            boolean sameActionTwice;
+            if (action.kind == ActionKind.ITEM) {
+                sameActionTwice = selection.pair(action.id, System.nanoTime());
+            } else {
+                selection.clearPair();
+                sameActionTwice = SkillChoiceInteraction.sameActionTwice(lastClicked, action.id, twice);
+            }
             lastClicked = action.id;
             return perform(action, sameActionTwice, false);
         }
         lastClicked = "";
+        selection.clearPair();
         return super.mouseClicked(event, twice);
     }
 
@@ -251,6 +282,7 @@ public final class FirstGroupScreen extends Screen {
     @Override public boolean keyPressed(KeyEvent event) {
         if (MyriadClient.KEY_INFO.matches(event)) return closeFromBinding();
         if (event.key() == InputConstants.KEY_TAB && !actions.isEmpty()) {
+            selection.clearPair();
             var ids = actions.stream().map(Action::id).toList();
             Action action = actions.get(SkillChoiceInteraction.stepFocus(ids, focused, event.hasShiftDown()));
             focused = action.id;
@@ -333,6 +365,7 @@ public final class FirstGroupScreen extends Screen {
         actions.clear();
         nextTooltip = null;
         var data = page == SKILLS ? ClientDataHolder.currentPlayerSnapshot(minecraft) : ClientDataHolder.get();
+        displayedSnapshot = data;
         if (data != null && !FirstGroupSkills.active(data.characterId())) {
             onClose();
             return;
@@ -611,7 +644,7 @@ public final class FirstGroupScreen extends Screen {
             wrapped(g, selected, nameBox, 2, GOLD);
         }
         button(g, new Action(confirm, "confirm", ActionKind.CONFIRM, false),
-                pending() ? text("screen.myriad.g1.processing") : label, reason == null, true, layout, mx, my);
+                pending() ? text("screen.myriad.g1.wait_server") : label, reason == null, true, layout, mx, my);
     }
 
     private List<TextLine> wrapLines(List<String> description, int width) {

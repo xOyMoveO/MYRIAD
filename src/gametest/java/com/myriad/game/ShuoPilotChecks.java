@@ -111,11 +111,11 @@ final class ShuoPilotChecks {
             var skill = FirstGroupSkills.node("shuo", 4);
             h.assertTrue("shuo".equals(data.getCharacterId()) && data.getSkillPoints() == 1,
                     "Registered choose-character receiver selects Shuo and grants exactly one initial point");
-            receive(h, player, new NetworkSetup.UpgradeSkillPayload(skill.getId()));
+            ShuoPilotChecks.learn(h, player, skill.getId());
             h.assertTrue(data.skillLevel(skill.getId()) == 1 && data.getSkillPoints() == 0,
                     "Registered upgrade receiver learns rank one and spends the initial point");
-            receive(h, player, new NetworkSetup.UpgradeSkillPayload(skill.getId()));
-            receive(h, player, new NetworkSetup.UpgradeSkillPayload("shuo_duanliu"));
+            ShuoPilotChecks.learn(h, player, skill.getId());
+            ShuoPilotChecks.learn(h, player, "shuo_duanliu");
             h.assertTrue(data.skillLevel(skill.getId()) == 1 && data.skillLevel("shuo_duanliu") == 0,
                     "Repeat and opposite-branch requests cannot bypass points or branch rules");
             player.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(100);
@@ -216,6 +216,13 @@ final class ShuoPilotChecks {
             if (file != null) try { java.nio.file.Files.deleteIfExists(file); }
                 catch (java.io.IOException error) { throw new IllegalStateException(error); }
         }
+    }
+
+    private static long progressSequence;
+    static void learn(GameTestHelper h, ServerPlayer player, String id) {
+        var data = PlayerDataProvider.get(player);
+        receive(h, player, new com.myriad.network.ProgressAction(++progressSequence, data.getCharacterId(),
+                id, data.skillLevel(id), 0));
     }
 
     static void receive(GameTestHelper h, ServerPlayer player, CustomPacketPayload payload) {

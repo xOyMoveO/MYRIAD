@@ -1,4 +1,7 @@
 {
+  "message.myriad.quote_changed": "价格已更新为 %s 金，请重新确认",
+  "screen.myriad.g1.wait_server": "等待服务器",
+  "screen.myriad.g1.interval": "请稍后重新确认",
   "screen.myriad.hover.amount_heal": "治疗量 %s",
   "screen.myriad.hover.amount_shield": "护盾值 %s",
   "screen.myriad.hover.passive_offer": "选择后获得 %s 阶",
