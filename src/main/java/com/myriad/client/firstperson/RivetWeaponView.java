@@ -47,6 +47,7 @@ public final class RivetWeaponView {
         e.setCanceled(true);return true;
     }
     private static void arm(HandRenderContext e,RivetWeaponMotion.Pose pose,boolean slim,boolean left){
+        if (FirstPersonArmVisibility.hidePlayerArms()) return;
         var mc=Minecraft.getInstance();int index=(slim?2:0)+(left?1:0);
         if(ARMS[index]==null)ARMS[index]=RivetArmModel.bake(slim,left);
         var arm=ARMS[index];arm.resetPose();arm.setPos(0,0,0);arm.setRotation(0,0,0);arm.visible=true;

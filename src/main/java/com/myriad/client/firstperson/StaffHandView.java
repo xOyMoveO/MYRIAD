@@ -126,6 +126,7 @@ public final class StaffHandView {
 
     private static void drawArm(HandRenderContext event, LocalPlayer player, StaffHandMotion.Pose pose,
                                 boolean mirrored, boolean offHand, float equip) {
+        if (FirstPersonArmVisibility.hidePlayerArms()) return;
         boolean slim = player.getSkin().model() == PlayerModelType.SLIM;
         if (slim && slimArms == null) slimArms = NightDaggerArmModel.bake(true);
         if (!slim && wideArms == null) wideArms = NightDaggerArmModel.bake(false);

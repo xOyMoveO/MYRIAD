@@ -81,6 +81,7 @@ tasks.withType(ProcessResources).configureEach {
     inputs.property 'mod_license', project.mod_license
     filesMatching('fabric.mod.json') { expand version: project.version, mod_license: project.mod_license }
 }
+tasks.named('jar') { archiveClassifier.set('no-arms') }
 tasks.named('processResources') { from('LICENSE') }
 tasks.named('sourcesJar') { from('LICENSE') }
 

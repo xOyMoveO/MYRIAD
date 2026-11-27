@@ -112,6 +112,7 @@ public final class LuoxiaBowView {
     }
 
     private static void hand(HandRenderContext event, LocalPlayer p, boolean left, Vector3f grip, Vector3f towardElbow, float size) {
+        if (FirstPersonArmVisibility.hidePlayerArms()) return;
         boolean slim = p.getSkin().model() == PlayerModelType.SLIM;
         int index = (slim ? 2 : 0) + (left ? 1 : 0);
         if (HANDS[index] == null) HANDS[index] = ShuoArmModel.bake(slim, left);

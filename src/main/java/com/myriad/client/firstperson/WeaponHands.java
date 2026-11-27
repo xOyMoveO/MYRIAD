@@ -18,6 +18,7 @@ final class WeaponHands {
         draw(context, left, palm, new Vector3f(left ? -.87f : .87f, -.78f, -.12f), 0);
     }
     static void draw(HandRenderContext context, boolean left, Vector3f palm, Vector3f shoulder, float roll) {
+        if (FirstPersonArmVisibility.hidePlayerArms()) return;
         var player=Minecraft.getInstance().player;
         boolean slim=player.getSkin().model()==PlayerModelType.SLIM;
         int index=(left?1:0)+(slim?2:0);

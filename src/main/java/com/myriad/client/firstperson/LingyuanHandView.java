@@ -106,6 +106,7 @@ public final class LingyuanHandView {
 
     private static void drawArm(HandRenderContext event, LocalPlayer player, LingyuanHandMotion.Pose pose,
                                 boolean left, boolean off, Matrix4f sword) {
+        if (FirstPersonArmVisibility.hidePlayerArms()) return;
         boolean slim=player.getSkin().model()==PlayerModelType.SLIM, armLeft=left!=off;
         if(slim && slimArms==null)slimArms=NightDaggerArmModel.bake(true);
         if(!slim && wideArms==null)wideArms=NightDaggerArmModel.bake(false);
