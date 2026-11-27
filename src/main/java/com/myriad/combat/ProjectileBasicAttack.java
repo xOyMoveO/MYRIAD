@@ -2,6 +2,7 @@ package com.myriad.combat;
 
 import com.myriad.game.VisionSystem;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
@@ -40,6 +41,12 @@ public final class ProjectileBasicAttack {
                     Math.clamp(impact.y, original.minY, original.maxY),
                     Math.clamp(impact.z, original.minZ, original.maxZ));
             return reaches(impact, originalPoint, remaining);
+        }
+
+        public Optional<Vec3> contact(AABB original, double padding, double remaining) {
+            AABB expanded = original.inflate(padding);
+            var entry = expanded.contains(from) ? Optional.of(from) : expanded.clip(from, end);
+            return entry.filter(at -> reaches(at, original, remaining));
         }
 
         public void showWindIntercept() {

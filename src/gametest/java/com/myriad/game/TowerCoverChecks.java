@@ -1,5 +1,6 @@
 package com.myriad.game;
 
+import com.myriad.combat.DamageCalc;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -18,7 +19,9 @@ final class TowerCoverChecks {
             var match = GameManager.get();
             var invader = suite.players.getFirst();
             var defender = suite.opponent(invader);
-            var tower = suite.units("TOWER", match.factionOf(defender)).getFirst();
+            var towers = suite.units("TOWER", match.factionOf(defender));
+            var tower = towers.stream().filter(t -> t.blockPosition().equals(
+                    LaneSystem.towerPoint(match.factionOf(defender), LaneSystem.Lane.MID, 1))).findFirst().orElseThrow();
             // Move one generated tower within range of the fixture's configured brush.
             tower.setPos(336.5, 64, 43.5);
             var victim = new Vec3(336.5, 64, 52.5);
@@ -55,6 +58,7 @@ final class TowerCoverChecks {
                 helper.assertTrue(TowerSight.visibleBodyPoint(tower, invader) != null, "target is visible over " + partial);
             }
             level.setBlockAndUpdate(wall, Blocks.AIR.defaultBlockState());
+            verifyFeedback(helper, suite, tower, invader, defender, start);
             helper.succeed();
         } catch (Exception failure) {
             throw new IllegalStateException(failure);
@@ -62,6 +66,37 @@ final class TowerCoverChecks {
             GameManager.get().resetToLobby(suite.server, false);
             suite.removePlayers();
         }
+    }
+
+    private static void verifyFeedback(GameTestHelper h, ArenaFixtureChecks.Suite suite,
+            net.minecraft.world.entity.Mob tower, net.minecraft.server.level.ServerPlayer invader,
+            net.minecraft.server.level.ServerPlayer defender, long now) throws ReflectiveOperationException {
+        var units = LaneSystem.class.getDeclaredField("UNITS");
+        units.setAccessible(true);
+        var state = ((java.util.Map<?, ?>) units.get(null)).get(tower.getUUID());
+        var field = state.getClass().getDeclaredField("lastTowerHitFeedback");
+        field.setAccessible(true);
+        var visual = state.getClass().getDeclaredField("visualEntity");
+        visual.setAccessible(true);
+        var display = (net.minecraft.world.entity.Display.ItemDisplay) visual.get(state);
+        var normal = display.getBrightnessOverride();
+        float before = LaneSystem.health(tower);
+        DamageCalc.dealBasicDamage(defender, tower, 100, DamageCalc.Kind.TRUE);
+        h.assertTrue(LaneSystem.health(tower) == before && field.getLong(state) == Long.MIN_VALUE,
+                "A friendly hit triggers neither tower damage nor feedback");
+        DamageCalc.dealBasicDamage(invader, tower, 100, DamageCalc.Kind.TRUE);
+        float after = LaneSystem.health(tower);
+        h.assertTrue(after < before && field.getLong(state) == now
+                && new net.minecraft.util.Brightness(15,15).equals(display.getBrightnessOverride()),
+                "A legal hit both reduces actual tower HP and starts the flash");
+        suite.clock(now + 1);
+        DamageCalc.dealBasicDamage(invader, tower, 100, DamageCalc.Kind.TRUE);
+        h.assertTrue(LaneSystem.health(tower) < after && field.getLong(state) == now,
+                "Feedback limit does not suppress damage");
+        suite.clock(now + 4);
+        LaneSystem.tick(suite.server.overworld());
+        h.assertTrue(java.util.Objects.equals(normal, display.getBrightnessOverride()),
+                "The tower returns to normal light after four ticks");
     }
 
     private static void fillColumn(ServerLevel level, BlockPos base, Block block) {

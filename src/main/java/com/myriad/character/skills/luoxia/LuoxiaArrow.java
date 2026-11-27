@@ -2,11 +2,9 @@ package com.myriad.character.skills.luoxia;
 
 import com.myriad.character.ability.AbilityRuntime;
 import com.myriad.character.ability.AbilityRuntime.Cast;
-import com.myriad.character.ability.AbilityTargeting;
 import com.myriad.character.ability.ActionTime;
 import com.myriad.combat.ProjectileBasicAttack;
 import com.myriad.combat.SkillTargets;
-import com.myriad.combat.WindWallSystem;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -83,7 +81,8 @@ final class LuoxiaArrow {
         UUID clock = UUID.randomUUID();
         int id = c.newVisualInstance();
         Vec3 direction = aim.normalize();
-        double radius = shape == Shape.LANCE ? .19 : .09;
+        double radius = (shape == Shape.LANCE ? .19 : .09) * com.myriad.combat.HeroProjectileTuning.ENTITY_PADDING;
+        double speed=velocity*com.myriad.combat.HeroProjectileTuning.SPEED;
 
         class Flight {
             Vec3 pos = muzzle(c);
@@ -100,39 +99,33 @@ final class LuoxiaArrow {
                 if (age >= 120) { finish(); return false; }
                 if (c.now() <= last) return true;
                 last = c.now();
-                double distance = Math.min(remaining, velocity * AbilityRuntime.projectileRate(c.player, clock, pos, c.now()));
+                double distance = Math.min(remaining, speed * AbilityRuntime.projectileRate(c.player, clock, pos, c.now()));
                 Vec3 raw = pos.add(direction.scale(distance));
                 if (!c.player.level().hasChunkAt(BlockPos.containing(raw))
                         || !c.player.level().getWorldBorder().isWithinBounds(BlockPos.containing(raw))) {
                     finish();
                     return false;
                 }
-                var segment = basic ? ProjectileBasicAttack.clip(c.player, pos, raw) : null;
-                if (segment != null) segment.showWindIntercept();
-                Vec3 end = segment == null ? clip(c, pos, raw) : segment.end();
+                var segment = ProjectileBasicAttack.clip(c.player, pos, raw);
+                Vec3 end = segment.end();
                 var hits = new ArrayList<Contact>();
-                if (segment != null) {
+                if (basic) {
                     var candidates = segment.candidates(radius, t -> !struck.contains(t.getUUID()));
                     var baselineQuery = new AABB(pos, end).inflate(radius);
                     for (var target : candidates) {
                         var bounds = target.getBoundingBox();
                         if (!baselineQuery.intersects(bounds)) continue;
-                        Vec3 at = bounds.contains(pos) ? pos : bounds.inflate(radius).clip(pos, end).orElse(null);
-                        if (at != null && segment.reaches(at, bounds, remaining)) hits.add(new Contact(target, at));
+                        segment.contact(bounds, radius, remaining).ifPresent(at -> hits.add(new Contact(target, at)));
                     }
                     if (hits.isEmpty()) {
                         var assisted = ProjectileBasicAttack.firstAssistedHit(segment, candidates, radius, remaining);
                         if (assisted != null) hits.add(new Contact(assisted.target(), assisted.point()));
                     }
                 } else {
-                    Vec3 wall = WindWallSystem.interceptProjectile(c.player, pos, end);
-                    if (wall != null) end = wall;
                     for (var target : c.player.level().getEntitiesOfClass(LivingEntity.class, new AABB(pos, end).inflate(radius),
                             t -> !t.isSpectator() && !(t instanceof Player p && p.isCreative()) && !struck.contains(t.getUUID())
                                     && SkillTargets.enemy(c.player, t))) {
-                        var bounds = target.getBoundingBox();
-                        if (bounds.contains(pos)) hits.add(new Contact(target, pos));
-                        else AbilityTargeting.unobstructedHit(c.player, bounds, pos, end, radius)
+                        segment.contact(target.getBoundingBox(), radius, remaining)
                                 .ifPresent(contact -> hits.add(new Contact(target, contact)));
                     }
                 }
@@ -147,7 +140,8 @@ final class LuoxiaArrow {
                 }
                 LuoxiaVfx.wake(c, pos, end, shape, lane);
                 remaining -= pos.distanceTo(end);
-                if ((segment != null ? segment.blocked() : end.distanceToSqr(raw) > 1E-8) || remaining <= 1E-6) {
+                if (segment.blocked() || remaining <= 1E-6) {
+                    segment.showWindIntercept();
                     finish();
                     return false;
                 }

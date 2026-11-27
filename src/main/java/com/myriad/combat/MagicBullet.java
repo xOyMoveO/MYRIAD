@@ -29,17 +29,18 @@ import com.myriad.registry.ModAttributes;
 /**
  * 法师普攻魔法弹：手持初始武器右键发射。
  * 发射时快照法术伤害：保留零购买基线，额外法强按角色系数成长（寒泽 60%，其余 50%）。
- * 射程 15 格、飞行速度 30 格/秒，
+ * 射程 15 格、飞行速度 39 格/秒，
  * 发射间隔 = 1 / 攻速 秒（攻速 1.0 → 每秒 1 发，攻速 0.5 → 每 2 秒 1 发）。
  * 每个法师角色的魔法弹特效不同：墨尘 = 黑白粒子螺旋向前。
  */
 public final class MagicBullet {
     /** 飞行速度（格/刻） */
-    private static final double SPEED = 1.5; // 30 blocks/second at 20 TPS
+    private static final double SPEED = 1.5 * HeroProjectileTuning.SPEED;
     /** 射程（格） */
     private static final double MAX_RANGE = 15.0;
     /** 命中判定半径（格） */
-    private static final double HIT_RADIUS = 1.05;
+    private static final double BASE_HIT_RADIUS = 1.05;
+    private static final double HIT_RADIUS = BASE_HIT_RADIUS * HeroProjectileTuning.ENTITY_PADDING;
     private static final double STANDARD_SPELL_RATIO = 0.5;
     private static final DustParticleOptions YUNSHENG_ORB = new DustParticleOptions(0x75F2E5, 1.45F);
     private static final DustParticleOptions YUNSHENG_GLOW = new DustParticleOptions(0xEDFFF9, .8F);
@@ -170,7 +171,7 @@ public final class MagicBullet {
     /** 推进单颗魔法弹；返回 true 表示已消耗（命中、撞墙或射程耗尽） */
     private static boolean tickOne(ServerLevel level, ServerPlayer caster, Bullet b) {
         long now=level.getGameTime();if(b.lastTick==now)return false;b.lastTick=now;
-        if(++b.age>2*Math.ceil(maxRange(b.characterId)/SPEED))return true;
+        if(++b.age>4*Math.ceil(maxRange(b.characterId)/SPEED))return true;
         if (b.age == 1) {
             var muzzle = ProjectileBasicAttack.clip(caster, b.launchEye, b.pos);
             if (muzzle.blocked()) {
@@ -183,17 +184,12 @@ public final class MagicBullet {
         double step = Math.min(SPEED * AbilityRuntime.projectileRate(caster, b.flight, b.pos, now), remaining);
         var segment = ProjectileBasicAttack.clip(caster, b.pos, b.pos.add(b.dir.scale(step)));
         Vec3 next = segment.end();
-        // A wind wall intercepted the whole mage step before any entity check in the original path.
-        if (segment.windBlocked()) {
-            segment.showWindIntercept();
-            return true;
-        }
         var hit = findFirstEnemy(segment, remaining);
         if (hit != null) {
             LivingEntity target = hit.target();
             DamageCalc.dealBasicDamage(caster, target, b.rawDamageAtLaunch, DamageCalc.Kind.MAGIC);
             if (b.visualId>0) {
-                Vec3 at = target.getBoundingBox().inflate(HIT_RADIUS).clip(b.pos, next).orElse(hit.point());
+                Vec3 at = hit.point();
                 MagicBulletVisuals.sample(caster,b.visualTheme,b.visualId,b.pos,at);
                 MagicBulletVisuals.impact(caster,b.visualTheme,at,b.dir);
                 level.playSound(null,target.getX(),target.getY(),target.getZ(),
@@ -219,6 +215,7 @@ public final class MagicBullet {
             return true;
         }
         if (segment.blocked()) {
+            segment.showWindIntercept();
             if (b.visualId > 0) MagicBulletVisuals.sample(caster, b.visualTheme, b.visualId, b.pos, next);
             return true;
         }
@@ -268,19 +265,24 @@ public final class MagicBullet {
         if (lenSqr == 0) return null;
         ProjectileBasicAttack.Hit best = null;
         double bestT = Double.MAX_VALUE;
-        // The original query padding and the center-sphere radius both exceed the capped assist padding.
-        // Keep both tests, including the original order by center projection.
+        // Keep the spherical hit shape and compare the entry points along the swept path.
         for (LivingEntity e : segment.candidates(HIT_RADIUS, target -> !(target instanceof ArmorStand)
                 && !(target instanceof Mannequin))) {
             var bounds = e.getBoundingBox();
             Vec3 center = bounds.getCenter();
             double t = center.subtract(from).dot(delta) / lenSqr;
-            if (t < 0 || t > 1 || t >= bestT) continue;
             Vec3 closest = from.add(delta.scale(t));
-            double radius = HIT_RADIUS + Math.max(e.getBbWidth(), e.getBbHeight()) * 0.3;
-            if (closest.distanceToSqr(center) <= radius * radius && segment.reaches(closest, bounds, remaining)) {
-                bestT = t;
-                best = new ProjectileBasicAttack.Hit(e, closest);
+            double radius = (BASE_HIT_RADIUS + Math.max(e.getBbWidth(), e.getBbHeight()) * 0.3)
+                    * HeroProjectileTuning.ENTITY_PADDING;
+            double depthSquared = radius * radius - closest.distanceToSqr(center);
+            if (depthSquared < 0) continue;
+            double halfChord = Math.sqrt(depthSquared / lenSqr);
+            double entry = Math.max(0, t - halfChord);
+            if (t + halfChord < 0 || entry > 1 || entry >= bestT) continue;
+            Vec3 contact = from.add(delta.scale(entry));
+            if (segment.reaches(contact, bounds, remaining)) {
+                bestT = entry;
+                best = new ProjectileBasicAttack.Hit(e, contact);
             }
         }
         return best;

@@ -28,19 +28,21 @@ public final class PaperCraneSkill extends AbilitySkill {
     double bend=c.player.getRandom().nextBoolean()?1:-1;int visual=c.newVisualInstance();
     var flight=java.util.UUID.randomUUID();var progress=new ActionTime.Progress(c.now());
     Runnable finish=()->{ActionTime.clearTarget(flight);AbilityVisuals.finishFlight(c,visual);};
-    c.whileActive(24,age->{
+    double duration=12/com.myriad.combat.HeroProjectileTuning.SPEED;
+    int timeout=(int)Math.ceil(4*duration);
+    c.whileActive(timeout,age->{
         if(!target.isAlive()||target.level()!=c.player.level()||target.distanceToSqr(c.player)>256||!c.player.hasLineOfSight(target)){
             finish.run();return false;
         }
-        progress.advance(c.now(),AbilityRuntime.projectileRate(c.player,flight,last[0],c.now()),12);
-        double u=Math.min(1,progress.completed()/12);
+        progress.advance(c.now(),AbilityRuntime.projectileRate(c.player,flight,last[0],c.now()),duration);
+        double u=Math.min(1,progress.completed()/duration);
         Vec3 end=target.position().add(0,target.getBbHeight()*.6,0),f=end.subtract(start).normalize(),side=AbilityMeshBuilder.side(f);
         Vec3 at=start.lerp(end,u).add(side.scale(bend*Math.sin(Math.PI*u)*1.5)).add(0,Math.sin(Math.PI*u)*1.1,0);
         var block=c.player.level().clip(new net.minecraft.world.level.ClipContext(last[0],at,net.minecraft.world.level.ClipContext.Block.COLLIDER,net.minecraft.world.level.ClipContext.Fluid.NONE,c.player));
         if(block.getType()!=net.minecraft.world.phys.HitResult.Type.MISS||com.myriad.combat.WindWallSystem.interceptProjectile(c.player,last[0],at)!=null){
             finish.run();AbilityVisuals.dissipate(c,at);return false;
         }
-        AbilityVisuals.flight(c,last[0],at,age,false,visual);last[0]=at;if(u<1){if(age>=24){finish.run();AbilityVisuals.dissipate(c,at);return false;}return true;}
+        AbilityVisuals.flight(c,last[0],at,age,false,visual);last[0]=at;if(u<1){if(age>=timeout){finish.run();AbilityVisuals.dissipate(c,at);return false;}return true;}
         finish.run();
         if(hostile){c.damage(target,DAMAGE.value(c),DAMAGE.kind());c.slow(target,.25f,20);}
         else {c.heal(target,HEAL.value(c));if(target instanceof net.minecraft.server.level.ServerPlayer ally){
