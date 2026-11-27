@@ -135,6 +135,7 @@ public final class FlameDaoView {
         AttackTrailRenderer.submit(event,FlameSkillHandVfx.build(f,now,left));
     }
     private static void arm(HandRenderContext event,org.joml.Matrix4f hand,boolean slim,boolean left){
+        if (FirstPersonArmVisibility.hidePlayerArms()) return;
         var mc=Minecraft.getInstance();int index=slim?1:0;
         if(ARMS[index]==null)ARMS[index]=NightDaggerArmModel.bake(slim);
         var model=ARMS[index].getChild(left?"left_arm":"right_arm");

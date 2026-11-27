@@ -70,7 +70,9 @@ public final class ShuoView {
         } finally {stack.popPose();}
         e.setCanceled(true);return true;
     }
-    private static void arm(HandRenderContext e,Matrix4f hand,boolean slim,boolean left){var mc=Minecraft.getInstance();int i=(slim?2:0)+(left?1:0);
+    private static void arm(HandRenderContext e,Matrix4f hand,boolean slim,boolean left){
+        if (FirstPersonArmVisibility.hidePlayerArms()) return;
+        var mc=Minecraft.getInstance();int i=(slim?2:0)+(left?1:0);
         if(ARMS[i]==null)ARMS[i]=ShuoArmModel.bakeForShuo(slim,left);var model=ARMS[i];
         model.resetPose();model.setPos(0,0,0);model.setRotation(0,0,0);model.visible=true;
         model.getChild(left?"left_sleeve":"right_sleeve").visible=mc.player.isModelPartShown(left?PlayerModelPart.LEFT_SLEEVE:PlayerModelPart.RIGHT_SLEEVE);

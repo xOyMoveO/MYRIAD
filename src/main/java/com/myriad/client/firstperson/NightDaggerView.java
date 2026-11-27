@@ -140,6 +140,7 @@ public final class NightDaggerView {
         return skill.action()<0&&MOTION.hasPose(now)?MOTION.sample(now):skill.main();
     }
     private static void submitArm(HandRenderContext event,PoseStack stack,Minecraft mc,boolean slim,boolean left) {
+        if (FirstPersonArmVisibility.hidePlayerArms()) return;
         // Private baked parts: third-person rendering and the vanilla AvatarRenderer are never mutated.
         if (slim && slimRoot==null) slimRoot=NightDaggerArmModel.bake(true);
         if (!slim && normalRoot==null) normalRoot=NightDaggerArmModel.bake(false);

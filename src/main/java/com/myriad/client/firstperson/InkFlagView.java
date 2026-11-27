@@ -134,6 +134,7 @@ public final class InkFlagView {
 
     private static void drawArm(HandRenderContext event, Minecraft mc, InkHandMotion.Pose pose,
                                 boolean off, boolean mainLeft, float equip) {
+        if (FirstPersonArmVisibility.hidePlayerArms()) return;
         boolean left = mainLeft != off;
         boolean slim = mc.player.getSkin().model() == PlayerModelType.SLIM;
         if (slim && slimArms == null) slimArms = NightDaggerArmModel.bake(true);

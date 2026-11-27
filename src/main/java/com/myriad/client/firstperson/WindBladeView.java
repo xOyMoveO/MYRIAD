@@ -152,6 +152,7 @@ public final class WindBladeView {
 
     private static void submitArm(HandRenderContext event, Minecraft mc, WindHandMotion.Pose hands,
                                   boolean off, boolean mainLeft, float equip, Matrix4f weapon) {
+        if (FirstPersonArmVisibility.hidePlayerArms()) return;
         boolean left=mainLeft!=off;
         boolean slim = mc.player.getSkin().model() == PlayerModelType.SLIM;
         if (slim && slimArms == null) slimArms = NightDaggerArmModel.bake(true);

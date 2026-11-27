@@ -117,6 +117,7 @@ public final class ThunderSwordView {
         event.setCanceled(true);return true;
     }
     private static void submitArm(HandRenderContext event,PoseStack stack,Minecraft mc,boolean slim,boolean left){
+        if (FirstPersonArmVisibility.hidePlayerArms()) return;
         // Private copies of the tested vanilla skin mesh: never mutate shared third-person player parts.
         if(slim&&slimRoot==null)slimRoot=NightDaggerArmModel.bake(true);
         if(!slim&&wideRoot==null)wideRoot=NightDaggerArmModel.bake(false);

@@ -15,7 +15,7 @@ properties = dict(
     for line in (root / "gradle.properties").read_text().splitlines()
     if "=" in line and not line.lstrip().startswith("#")
 )
-filename = f"{properties['mod_id']}-{properties['mod_version']}.jar"
+filename = f"{properties['mod_id']}-{properties['mod_version']}-no-arms.jar"
 jar = root / "build/libs" / filename
 binaries = sorted(p.name for p in jar.parent.glob("*.jar") if not p.name.endswith("-sources.jar"))
 if binaries != [filename]:

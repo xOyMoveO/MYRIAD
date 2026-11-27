@@ -105,6 +105,7 @@ public final class WarSpiritHandView {
     }
 
     private static void drawArm(HandRenderContext event,WarSpiritHandMotion.Pose pose,Matrix4f item,boolean left,boolean off) {
+        if (FirstPersonArmVisibility.hidePlayerArms()) return;
         boolean slim=owner.getSkin().model()==PlayerModelType.SLIM, armLeft=left!=off;
         if(slim && slimArms==null)slimArms=NightDaggerArmModel.bake(true);
         if(!slim && wideArms==null)wideArms=NightDaggerArmModel.bake(false);
