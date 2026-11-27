@@ -60,14 +60,14 @@ final class ShuoChecks {
             for(boolean off:new boolean[]{false,true}){
                 boolean left=off?!mirror:mirror;var hand=ShuoRig.hand(f,off,mirror).mul(NightDaggerRig.arm(slim,left));
                 var palm=hand.transformPosition(new Vector3f((slim?.5f:1)/16*(left?1:-1),.5f,0));
-                var grip=(off?scabbard:blade).transformPosition(new Vector3f(0,(off?.12f:ShuoRig.HAND_GRIP_RAISE)/ShuoRig.WEAPON_LENGTH,0));
+                var grip=(off?scabbard:blade).transformPosition(new Vector3f(0,(off?ShuoRig.SUPPORT_GRIP_OFFSET:ShuoRig.HAND_GRIP_RAISE)/ShuoRig.WEAPON_LENGTH,0));
                 h.assertTrue(palm.distance(grip)<1E-6,"Skin palm remains exactly on its raised hilt grasp through every pose");
             }
             if(action==ShuoViewPayload.CANCEL&&!drawn){
                 var throat=blade.transformPosition(new Vector3f(0,ShuoRig.MODEL_GRIP_TO_MOUTH,0));
                 h.assertTrue(throat.distance(scabbard.transformPosition(new Vector3f()))<1E-6,"Closed blade root exactly meets sheath throat");
                 var supportPalm=ShuoRig.hand(f,true,mirror).transformPosition(new Vector3f());
-                h.assertTrue(f.palm().x<-.28&&f.mouth().y<-.25&&supportPalm.y<f.mouth().y&&!ShuoRig.showMainHand(f,false),
+                h.assertTrue(f.palm().x<-.18&&f.mouth().y<-.25&&supportPalm.y<f.mouth().y&&!ShuoRig.showMainHand(f,false),
                         "Sheathed hilt stays beside the crosshair, with the free support palm below the low sheath mouth");
             }poses++;
         }
@@ -80,7 +80,7 @@ final class ShuoChecks {
         var mouth=sheathTransform.transformPosition(new Vector3f());var tail=sheathTransform.transformPosition(new Vector3f(0,ShuoRig.MODEL_SHEATH_LENGTH,0));
         float slope=(float)Math.tan(Math.toRadians(35));float m=mouth.y-mouth.z*slope,t=tail.y-tail.z*slope;
         float visible=m/(m-t);
-        h.assertTrue(sheathed.sheathAxis().y<-.95&&sheathed.sheathAxis().x<-.1&&sheathed.mouth().x<-.35,"Scabbard is near-vertical, gently tilted and low-left");
+        h.assertTrue(sheathed.sheathAxis().y<-.95&&sheathed.sheathAxis().x<-.1&&sheathed.mouth().x<-.22,"Scabbard is near-vertical, gently tilted and low-left clear of the HUD");
         h.assertTrue(visible>.27&&visible<.38,"At the default 70-degree view only about one third of the real sheath is visible: "+visible);
         var idle=ShuoRig.frame(ShuoViewPayload.CANCEL,0,true);var held=ShuoRig.blade(idle,false);
         var grip=held.transformPosition(new Vector3f());var tip=held.transformPosition(new Vector3f(0,ShuoRig.MODEL_GRIP_TO_TIP,0));
@@ -105,7 +105,7 @@ final class ShuoChecks {
             h.assertTrue(axis.dot(before.transformDirection(new Vector3f(0,1,0)).normalize())>.9999f,"Turning the edge never tips or shortens the blade shaft");
         }
         var hand=ShuoRig.hand(idle,false,false);
-        h.assertTrue(Math.abs(hand.getScale(new Vector3f()).y-.74f)<1E-6,"The wider wrist preserves the original length scale of the skin hand");
+        h.assertTrue(Math.abs(hand.getScale(new Vector3f()).y-ShuoRig.ARM_LENGTH)<1E-6,"Skin hand preserves its un-squished length scale");
         for(boolean mirror:new boolean[]{false,true}){
             var fingers=ShuoRig.hand(idle,false,mirror).transformDirection(new Vector3f(0,1,0)).normalize();
             h.assertTrue(fingers.z<-.6f&&fingers.y>.5f&&(mirror?fingers.x:-fingers.x)>.3f,

@@ -10,14 +10,15 @@ import static com.myriad.network.ShuoViewPayload.*;
 public final class ShuoRig {
     public static final float WEAPON_LENGTH=1.55f,WEAPON_WIDTH=1.14f,MODEL_GRIP_TO_MOUTH=14f/64,MODEL_GRIP_TO_TIP=73.8f/64;
     public static final float MODEL_SHEATH_LENGTH=63.25f/64;
-    public static final float HAND_GRIP_RAISE=.11f;
+    public static final float HAND_GRIP_RAISE=.11f,SUPPORT_GRIP_OFFSET=.275f;
     public static final float GRIP_TO_MOUTH=MODEL_GRIP_TO_MOUTH*WEAPON_LENGTH,
         EXTRACT=(MODEL_GRIP_TO_TIP-MODEL_GRIP_TO_MOUTH+.07f)*WEAPON_LENGTH;
-    private static final Vector3f READY=v(.46f,-.64f,-1.20f),READY_AXIS=v(.16f,.925f,-.345f).normalize();
-    private static final float MAIN_WIDTH=1.04f,SUPPORT_WIDTH=.88f,ARM_LENGTH=.74f;
+    private static final Vector3f READY=v(.46f,-.71f,-1.15f),READY_AXIS=v(.16f,.925f,-.345f).normalize();
+    public static final float ARM_LENGTH=1.06f;
+    private static final float MAIN_WIDTH=1.00f,SUPPORT_WIDTH=.86f;
     // Grip frame is independent of the user's 180-degree item-facing correction.
     // Rotating the item must not flip the skin hand or alter its grip anchor.
-    private static final Vector3f READY_EDGE=v(-.34f,0,-.94f).normalize(),SHEATH_EDGE=v(.20f,0,-.98f).normalize();
+    private static final Vector3f READY_EDGE=v(-.58f,0,-.815f).normalize(),SHEATH_EDGE=v(.20f,0,-.98f).normalize();
     private ShuoRig(){}
     public record Frame(Vector3f palm,Vector3f axis,Vector3f edge,Vector3f mouth,Vector3f sheathAxis,float flash,int action,float slashProgress){}
     public static boolean showSupportHand(Frame f,boolean drawn){
@@ -33,7 +34,7 @@ public final class ShuoRig {
     private static Vector3f mix(Vector3f a,Vector3f b,double t){return new Vector3f(a).lerp(b,ease(t));}
     public static Frame frame(int action,double p,boolean drawn){
         // Mouth at lower-left; the long +Y sheath axis points down, so its lower 2/3 leaves the view.
-        var mouth=v(-.355f,-.27f,-1.12f);var sheath=v(-.13f,-.984f,.12f).normalize();
+        var mouth=v(-.245f,-.255f,-1.12f);var sheath=v(-.11f,-.986f,.12f).normalize();
         var closed=new Vector3f(mouth).fma(-GRIP_TO_MOUTH,sheath);
         var ready=new Vector3f(READY);var readyAxis=new Vector3f(READY_AXIS);
         Vector3f palm=drawn?new Vector3f(ready):new Vector3f(closed),axis=drawn?new Vector3f(readyAxis):new Vector3f(sheath),edge=drawn?new Vector3f(READY_EDGE):new Vector3f(SHEATH_EDGE);
@@ -129,13 +130,13 @@ public final class ShuoRig {
         // While the hilt is docked the arm reaches in from the lower outer side.
         // Rotate about the real palm so drawing the blade can release this wrist pose continuously.
         var palm=normal.getTranslation(new Vector3f());
-        var closed=basis(new Vector3f(),v(-.58f,.80f,-.14f),v(.80f,.58f,0),mirror);
+        var closed=basis(new Vector3f(),v(-.62f,.78f,-.06f),v(.78f,.62f,0),mirror);
         var rotation=normal.getUnnormalizedRotation(new Quaternionf()).slerp(closed.getNormalizedRotation(new Quaternionf()),weight);
         return new Matrix4f().translation(palm).rotate(rotation).scale(MAIN_WIDTH,ARM_LENGTH,MAIN_WIDTH);
     }
     public static Matrix4f hand(Frame f,boolean off,boolean mirror){
         // Item-only scale: never stretch or bloat the player's fist/skin with the weapon.
-        if(off)return basis(new Vector3f(f.mouth).fma(.12f,f.sheathAxis),v(.36f,.56f,-.74f),v(.13f,.98f,-.12f),mirror).scale(SUPPORT_WIDTH,ARM_LENGTH,SUPPORT_WIDTH);
+        if(off)return basis(new Vector3f(f.mouth).fma(SUPPORT_GRIP_OFFSET,f.sheathAxis),v(.04f,.66f,-.75f),v(.11f,.986f,-.12f),mirror).scale(SUPPORT_WIDTH,ARM_LENGTH,SUPPORT_WIDTH);
             // Lift the grasp towards the guard. Skin +Y is wrist-to-fingers,
             // not the blade shaft: permute the grip axes so the forearm reaches
             // forwards from the camera, with a small natural upward wrist tilt.
@@ -144,7 +145,7 @@ public final class ShuoRig {
                 .rotateZ(-(float)Math.PI/2).rotateY(-(float)Math.PI/2).rotateX(.22f);
         float atRest=ease(1-f.palm.distance(READY)/.28f)*ease((f.axis.dot(READY_AXIS)-.7f)/.3f);
         if(atRest>0){
-            var resting=basis(new Vector3f(),v(-.33f,.57f,-.75f),READY_AXIS,mirror);
+            var resting=basis(new Vector3f(),v(-.32f,.60f,-.73f),READY_AXIS,mirror);
             var rotation=hand.getNormalizedRotation(new Quaternionf()).slerp(resting.getNormalizedRotation(new Quaternionf()),atRest);
             hand.translationRotate(hand.getTranslation(new Vector3f()),rotation);
         }
