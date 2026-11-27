@@ -4,6 +4,7 @@ import static com.myriad.client.CombatHudLayout.GAP;
 import static com.myriad.client.CombatHudLayout.SLOT;
 import static com.myriad.client.CombatHudLayout.SLOT_STEP;
 
+import com.myriad.character.ability.AbilityFormulaText;
 import com.myriad.client.CombatHudLayout.Bounds;
 import com.myriad.client.CombatHudLayout.Layout;
 import com.myriad.client.CombatHudSkin.Slice;
@@ -58,7 +59,26 @@ public final class CombatHudOverlay {
         gui.pose().scale(layout.scale());
         drawPanel(gui, font, layout, panel.state(), panel.roleRows(), panel.controls(), skin);
         gui.pose().popMatrix();
+        drawBlinkLanding(gui, panel.state());
         return layout;
+    }
+
+    private static void drawBlinkLanding(GuiGraphicsExtractor gui, Snapshot state) {
+        if (state.character() != com.myriad.character.CharacterType.TIANXING || state.control().root() > 0
+                || state.control().charge() > 0 || state.activeSlots().get(0).status() != SkillStatus.READY
+                || ClientDataHolder.placementType() != 0 || ClientDataHolder.isChanneling()) return;
+        var mc = Minecraft.getInstance();
+        if (mc.player == null || mc.gui.screen() != null) return;
+        var landing = com.myriad.character.skills.tianxing.rework.ThunderBlinkSkill.landing(mc.player);
+        if (landing == null) return;
+        var camera = mc.gameRenderer.mainCamera();
+        if (landing.subtract(camera.position()).dot(new net.minecraft.world.phys.Vec3(camera.forwardVector())) <= 0) return;
+        var point = mc.gameRenderer.projectPointToScreen(landing);
+        int x = (int) ((point.x + 1) * .5 * gui.guiWidth());
+        int y = (int) ((1 - point.y) * .5 * gui.guiHeight());
+        if (x < 5 || y < 3 || x >= gui.guiWidth() - 5 || y >= gui.guiHeight() - 3) return;
+        gui.fill(x - 4, y - 1, x + 5, y + 2, 0xC1244458);
+        gui.fill(x - 3, y, x + 4, y + 1, 0xE1AEEDFF);
     }
 
     public static Bounds activeBounds(int width, int height) {
@@ -147,7 +167,7 @@ public final class CombatHudOverlay {
 
         drawHealth(gui, font, state, x, right, skin);
         var mana = state.unlimitedMana() ? label("mana_infinite")
-                : label("mana", state.mana(), Math.round(state.maxMana()));
+                : label("mana", AbilityFormulaText.amount(state.mana()), Math.round(state.maxMana()));
         int levelX = right - font.width(level) - 2;
         int badgeRight = levelX - 3;
         int badgeWidth = state.skillPoints() > 0 ? font.width("+" + state.skillPoints()) + 4 : 0;

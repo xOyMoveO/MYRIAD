@@ -1,6 +1,8 @@
 package com.myriad.game;
 
 import com.myriad.character.CharacterType;
+import com.myriad.character.SkillSystem;
+import com.myriad.character.ability.AbilityRuntime;
 import com.myriad.character.rework.FirstGroupGrowth;
 import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.player.LevelSystem;
@@ -36,6 +38,7 @@ final class BattleTuningChecks {
         p.connection.handleAcceptPlayerLoad(new net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket());
         try {
             verifyRanksAndMana(h, p);
+            verifyExactCost(h, p);
             verifySupplies(h, p);
             h.succeed();
         } finally {
@@ -43,6 +46,30 @@ final class BattleTuningChecks {
             p.discard();
             TrainingMode.setEnabled(training);
             ModState.setEnabled(enabled);
+        }
+    }
+
+    private static void verifyExactCost(GameTestHelper h, ServerPlayer p) {
+        boolean unlimited = TrainingMode.isNoMana(), noCooldown = TrainingMode.isNoCooldown();
+        TrainingMode.setNoMana(false);
+        TrainingMode.setNoCooldown(false);
+        try {
+            PlayerDataProvider.chooseCharacter(p, CharacterType.KEHENG);
+            var data = PlayerDataProvider.get(p);
+            var skill = FirstGroupSkills.node("keheng", 2);
+            data.setSkillLevel(skill.getId(), 2);
+            data.setMana(37.999F);
+            SkillSystem.cast(p, CharacterType.SLOT_Q);
+            h.assertTrue(data.getMana() == 37.999F && data.getCooldown(skill.getId()) == 0,
+                    "A fraction below the rank cost rejects without payment or cooldown");
+            data.setMana(38);
+            SkillSystem.cast(p, CharacterType.SLOT_Q);
+            h.assertTrue(data.getMana() == 0 && data.getCooldown(skill.getId()) > 0,
+                    "Exact rank cost succeeds and spends only the discounted amount");
+        } finally {
+            AbilityRuntime.clear(p);
+            TrainingMode.setNoMana(unlimited);
+            TrainingMode.setNoCooldown(noCooldown);
         }
     }
 

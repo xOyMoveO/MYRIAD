@@ -44,7 +44,7 @@ final class AbilityContractChecks {
                 }else if(i==16||i==22){
                     var c=AbilityRuntime.context(p,f.skill);f.cast=c;
                     f.flight=c.actionProjectile(i==22?3:15,i==22?.5:1.5,.8,false,false,(target,back)->c.damage(target,50,DamageCalc.Kind.PHYSICAL));
-                    ActionTime.apply(f.flight,p.getUUID(),"flight",i==22?.1:.5,p.level().getGameTime()+50);
+                    ActionTime.apply(f.flight,p.getUUID(),"flight",i==22?.02:.5,p.level().getGameTime()+50);
                     // Actor and independent projectile rates are separate objects.
                     ActionTime.apply(p.getUUID(),p.getUUID(),"actor",.1,p.level().getGameTime()+50);
                 }else{
@@ -152,9 +152,13 @@ final class AbilityContractChecks {
                         h.assertTrue(fixtures.get(15).target.getHealth()<1000,"Existing SkillSystem dagger entry still hits at default rate");
                         h.assertTrue(fixtures.get(21).realtime==0,"Full cleanup cancels independently scheduled warnings too");
                     }
+                    if(elapsed==20) {
+                        h.assertTrue(ActionTime.multiplier(fixtures.get(22).flight,h.getLevel().getGameTime())==.02,
+                                "The flight remains active through four normal flight windows");
+                    }
                     if(elapsed==22){
                         h.assertTrue(fixtures.get(22).target.getHealth()==1000&&ActionTime.multiplier(fixtures.get(22).flight,h.getLevel().getGameTime())==1,
-                                "Flight safety lifetime ends at twice original real lifetime, clears rates and never catches up damage");
+                                "Flight safety lifetime clears its rate without replaying damage");
                         h.assertTrue(fixtures.get(23).target.getHealth()<1000,"Committed ground warning survives later stun and completes independently");
                         done[0]=true;fixtures.forEach(AbilityContractChecks::cleanup);
                         System.out.println("[MYRIAD-ABILITY-CONTRACT] PASS: real input + deferred commit, partial progress, source min/expiry, unpaid cancellation, resource/branch recheck, passive exactly once, root/stun/silence/forced movement, real timers/CD, dash/projectile/Thunder Arc and lifecycle cleanup");

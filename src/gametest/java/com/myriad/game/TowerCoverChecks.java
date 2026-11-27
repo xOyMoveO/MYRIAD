@@ -59,6 +59,7 @@ final class TowerCoverChecks {
             }
             level.setBlockAndUpdate(wall, Blocks.AIR.defaultBlockState());
             verifyFeedback(helper, suite, tower, invader, defender, start);
+            verifyMinionDefense(helper, suite, invader, defender);
             helper.succeed();
         } catch (Exception failure) {
             throw new IllegalStateException(failure);
@@ -71,9 +72,7 @@ final class TowerCoverChecks {
     private static void verifyFeedback(GameTestHelper h, ArenaFixtureChecks.Suite suite,
             net.minecraft.world.entity.Mob tower, net.minecraft.server.level.ServerPlayer invader,
             net.minecraft.server.level.ServerPlayer defender, long now) throws ReflectiveOperationException {
-        var units = LaneSystem.class.getDeclaredField("UNITS");
-        units.setAccessible(true);
-        var state = ((java.util.Map<?, ?>) units.get(null)).get(tower.getUUID());
+        var state = unitState(tower);
         var field = state.getClass().getDeclaredField("lastTowerHitFeedback");
         field.setAccessible(true);
         var visual = state.getClass().getDeclaredField("visualEntity");
@@ -97,6 +96,42 @@ final class TowerCoverChecks {
         LaneSystem.tick(suite.server.overworld());
         h.assertTrue(java.util.Objects.equals(normal, display.getBrightnessOverride()),
                 "The tower returns to normal light after four ticks");
+    }
+
+    private static void verifyMinionDefense(GameTestHelper h, ArenaFixtureChecks.Suite suite,
+            net.minecraft.server.level.ServerPlayer attacker, net.minecraft.server.level.ServerPlayer victim) throws Exception {
+        long wave = GameManager.get().getMatchStartTime() + GameManager.combatTempo().firstWaveTicks();
+        suite.clock(wave);
+        LaneSystem.tick(suite.server.overworld());
+        var faction = GameManager.get().factionOf(victim);
+        var ranged = suite.units("RANGED", faction).getFirst();
+        var melee = suite.units("MELEE", faction).getFirst();
+        var start = new Vec3(336.5, 64, 64.5);
+        melee.setPos(start);
+        ranged.setPos(start.add(.1, 0, 0));
+        attacker.setPos(start.add(0, 0, 8.4));
+        victim.setPos(attacker.position().add(1, 0, 0));
+        var rangedState = unitState(ranged);
+        var meleeState = unitState(melee);
+        var defended = rangedState.getClass().getDeclaredField("defendedAgainst");
+        defended.setAccessible(true);
+        float victimHealth = victim.getHealth();
+        DamageCalc.dealBasicDamage(attacker, victim, 30, DamageCalc.Kind.TRUE);
+        h.assertTrue(victim.getHealth() < victimHealth && attacker.getUUID().equals(defended.get(rangedState))
+                && defended.get(meleeState) == null, "One real hit at 8.4 blocks draws ranged minions only");
+        attacker.setPos(start.add(0, 0, 9));
+        suite.clock(wave + 1);
+        LaneSystem.tick(suite.server.overworld());
+        var chase = rangedState.getClass().getDeclaredField("chaseTarget");
+        chase.setAccessible(true);
+        h.assertTrue(defended.get(rangedState) == null && !attacker.getUUID().equals(chase.get(rangedState)),
+                "Crossing 8.8 blocks drops the defense lock without reacquiring on ordinary scan");
+    }
+
+    private static Object unitState(net.minecraft.world.entity.Mob unit) throws ReflectiveOperationException {
+        var units = LaneSystem.class.getDeclaredField("UNITS");
+        units.setAccessible(true);
+        return ((java.util.Map<?, ?>) units.get(null)).get(unit.getUUID());
     }
 
     private static void fillColumn(ServerLevel level, BlockPos base, Block block) {
