@@ -16,7 +16,7 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class SealedBoundarySkill extends AbilitySkill {
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.spellPower(MAGIC, 170, 65, 1.1f);
+            AbilityDamageFormula.spellPower(MAGIC, 170, 74.75f, 1.1f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

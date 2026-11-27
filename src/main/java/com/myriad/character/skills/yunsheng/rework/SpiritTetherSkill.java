@@ -9,7 +9,7 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 /** Independent reusable branch. */
 public final class SpiritTetherSkill extends AbilitySkill {
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.spellPower(MAGIC, 35, 12, .3f).segment("skill.myriad.damage.segment.tether", 2);
+            AbilityDamageFormula.spellPower(MAGIC, 35, 15, .3f).segment("skill.myriad.damage.segment.tether", 2);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

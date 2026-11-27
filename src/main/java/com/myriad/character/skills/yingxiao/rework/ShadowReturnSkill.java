@@ -17,7 +17,7 @@ import java.util.List;
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class ShadowReturnSkill extends AbilitySkill {
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.physicalFromSpell(55, 18, .65f, .5f);
+            AbilityDamageFormula.physicalFromSpell(55, 22.5f, .65f, .5f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

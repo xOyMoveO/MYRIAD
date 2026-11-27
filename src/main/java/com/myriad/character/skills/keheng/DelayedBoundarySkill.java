@@ -5,7 +5,7 @@ import com.myriad.character.ability.*;
 import com.myriad.combat.DamageCalc;
 import java.util.List;
 public final class DelayedBoundarySkill extends KehengSkill {
-    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 80, 18, .45f);
+    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 80, 22.5f, .45f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

@@ -8,9 +8,13 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 
 /** Independent branch; no gameplay switches in the batch registry. */
 public final class FrostShieldSkill extends AbilitySkill {
+    private static final SupportAmount SHIELD = new SupportAmount("shield", 150, 50, .65f);
+
+    @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(SHIELD); }
+
     public FrostShieldSkill(Definition definition){super(definition);}
 
-@Override public void release(Cast c){StaffHandCues.release(c);c.shield(c.player,c.value(150,40,.65f),80);for(var t:c.enemies(c.player.position(),3))c.slow(t,.25f,30);}
+@Override public void release(Cast c){StaffHandCues.release(c);c.shield(c.player,SHIELD.value(c),80);for(var t:c.enemies(c.player.position(),3))c.slow(t,.25f,30);}
 @Override public void present(Cast c){AbilityVisuals.seal(c,c.player.position(),3,false);}
 }
 

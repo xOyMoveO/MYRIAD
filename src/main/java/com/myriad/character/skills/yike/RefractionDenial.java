@@ -8,7 +8,7 @@ import java.util.List;
 
 /** A committed warning is independent of the character's later controls. */
 public final class RefractionDenial extends AbilitySkill {
-    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 70, 18, .35f);
+    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 70, 22.5f, .35f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

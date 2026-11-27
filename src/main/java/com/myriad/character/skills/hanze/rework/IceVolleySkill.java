@@ -11,7 +11,7 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 /** Independent branch; no gameplay switches in the batch registry. */
 public final class IceVolleySkill extends AbilitySkill {
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.spellPower(MAGIC, 25, 8, .2f).segment("skill.myriad.damage.segment.projectile", 3);
+            AbilityDamageFormula.spellPower(MAGIC, 25, 10, .2f).segment("skill.myriad.damage.segment.projectile", 3);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

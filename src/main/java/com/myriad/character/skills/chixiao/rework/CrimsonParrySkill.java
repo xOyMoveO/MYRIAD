@@ -8,7 +8,7 @@ import java.util.List;
 /** Independent reusable branch. */
 public final class CrimsonParrySkill extends AbilitySkill {
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.physicalFromSpell(110, 25, .75f, .5f);
+            AbilityDamageFormula.physicalFromSpell(110, 31.25f, .75f, .5f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

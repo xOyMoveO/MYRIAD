@@ -15,7 +15,7 @@ import java.util.List;
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class SpiritWindMarkSkill extends AbilitySkill {
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.physicalFromSpell(25, 10, .25f, .5f);
+            AbilityDamageFormula.physicalFromSpell(25, 13.5f, .25f, .5f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

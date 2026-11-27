@@ -2,9 +2,9 @@ package com.myriad.character.skills.shuo;
 import com.myriad.character.ability.*;
 import java.util.*;
 public final class WuShengSkill extends AbilitySkill {
-    private static final AbilityDamageFormula DRAWN = AbilityDamageFormula.physicalFromSpell(240, 80, 1.20f, .80f)
+    private static final AbilityDamageFormula DRAWN = AbilityDamageFormula.physicalFromSpell(240, 92, 1.20f, .80f)
             .segment("skill.myriad.damage.empty_break", 1);
-    private static final AbilityDamageFormula SHEATHED = AbilityDamageFormula.physicalFromSpell(320, 100, 1.60f, .80f)
+    private static final AbilityDamageFormula SHEATHED = AbilityDamageFormula.physicalFromSpell(320, 125, 1.60f, .80f)
             .segment("skill.myriad.damage.delayed_cut", 1);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {

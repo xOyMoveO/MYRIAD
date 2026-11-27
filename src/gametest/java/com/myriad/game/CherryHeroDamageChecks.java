@@ -286,7 +286,7 @@ final class CherryHeroDamageChecks {
         var d = PlayerDataProvider.get(p);
         var skill = FirstGroupSkills.node(d.getCharacterId(), index);
         PlayerDataProvider.upgradeSkill(p, skill.getId());
-        h.assertTrue(d.skillLevel(skill.getId()) == 1, "Legal first rank: " + skill.getId());
+        h.assertTrue(d.skillLevel(skill.getId()) == (skill.isPassive() ? FirstGroupSkills.passiveRank(d.getLevel()) : 1), "Legal first purchase or passive selection: " + skill.getId());
     }
 
     private static void fire(Trial t, int tick) {
@@ -354,8 +354,8 @@ final class CherryHeroDamageChecks {
             case MOBILE_SHOT -> new double[]{(111.5+11*w)*.55};
             case EDGE -> new double[]{attack+52+6*s};
             case GUARD_DRAW -> new double[]{attack+70+7.5*s};
-            case ARMOR_MARK -> new double[]{111.5+11*w,80.5+7*w,284.5+23*w+46+4*w};
-            case ECHO -> new double[]{95+10*w,93.5+9*w,370.5+27*w+57.5+5*w};
+            case ARMOR_MARK -> new double[]{111.5+11*w,80.5+7*w,284.5+23*w+58+4*w};
+            case ECHO -> new double[]{95+10*w,93.5+9*w,370.5+27*w+71.9+5*w};
             case WALL_HAMMER -> new double[]{90+75.0/14*s,35+15.0/7*s,attack+30+3.75*s};
             case WALL_CHARGE -> new double[]{170+9*s,45+3*s};
             case YIKE_DENIAL -> new double[]{80.5+7*w};

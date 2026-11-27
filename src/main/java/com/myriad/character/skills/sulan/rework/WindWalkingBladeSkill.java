@@ -15,7 +15,7 @@ import java.util.List;
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class WindWalkingBladeSkill extends AbilitySkill {
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.physicalFromSpell(35, 12, .35f, .25f).segment("skill.myriad.damage.segment.bonus_basic", 1);
+            AbilityDamageFormula.physicalFromSpell(35, 14.4f, .35f, .25f).segment("skill.myriad.damage.segment.bonus_basic", 1);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

@@ -141,7 +141,7 @@ final class RosterBChecks {
         if(s.role.equals("yunsheng")&&s.index==0&&Set.of(1,6).contains(age)){if(age==6)ModShieldSystem.consume(s.actor,10);var skill=FirstGroupSkills.node(s.role,7);d.setCooldown(skill.getId(),0);receive(h,s.actor,new NetworkSetup.CastSkillPayload(3,0,0));}
         if(age==100&&s.role.equals("hanze")&&s.index==0)h.assertTrue(d.getBuff("g1_stun")==0&&PlayerDataProvider.get(s.target).getBuff("g1_root")>0,"Four distinct actual basics trigger the frost passive root");
         if(age==20&&s.role.equals("lingyuan")&&s.index==1)near(h,ModShieldSystem.sourceValue(s.actor,node(s).getId()+"/"+s.actor.getUUID()),45,"Three actual casts + basic consume resonance and grant exact passive shield");
-        if(age==7&&s.role.equals("yunsheng")&&s.index==0)near(h,ModShieldSystem.sourceValue(s.actor,node(s).getId()+"/"+s.actor.getUUID()),60,"Two separated actual shelter casts trigger exact echo shield");
+        if(age==7&&s.role.equals("yunsheng")&&s.index==0)near(h,ModShieldSystem.sourceValue(s.actor,node(s).getId()+"/"+s.actor.getUUID()),63,"Two separated actual shelter casts trigger exact echo shield");
         if(age==2&&s.role.equals("hanze")&&s.index==1)near(h,ModShieldSystem.value(s.actor),65,"An effective hit triggers exact rime shield");
     }
     private static void basic(Scene s){

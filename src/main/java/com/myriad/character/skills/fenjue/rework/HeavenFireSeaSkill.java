@@ -15,9 +15,9 @@ import java.util.List;
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class HeavenFireSeaSkill extends AbilitySkill {
     private static final AbilityDamageFormula LANDING =
-            AbilityDamageFormula.physicalFromSpell(140, 60, 1, .8f / (1 + 4 * .2f)).segment("skill.myriad.damage.segment.landing", 1);
+            AbilityDamageFormula.physicalFromSpell(140, 69, 1, .8f / (1 + 4 * .2f)).segment("skill.myriad.damage.segment.landing", 1);
     private static final AbilityDamageFormula PULSE =
-            AbilityDamageFormula.physicalFromSpell(30, 12, .2f, .8f * .2f / (1 + 4 * .2f)).segment("skill.myriad.damage.segment.pulse", 4);
+            AbilityDamageFormula.physicalFromSpell(30, 13.8f, .2f, .8f * .2f / (1 + 4 * .2f)).segment("skill.myriad.damage.segment.pulse", 4);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(LANDING, PULSE);

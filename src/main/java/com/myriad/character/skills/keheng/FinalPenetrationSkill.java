@@ -5,7 +5,7 @@ import com.myriad.character.ability.*;
 import com.myriad.combat.DamageCalc;
 import java.util.List;
 public final class FinalPenetrationSkill extends KehengSkill {
-    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 330, 100, 1.35f);
+    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 330, 125, 1.35f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

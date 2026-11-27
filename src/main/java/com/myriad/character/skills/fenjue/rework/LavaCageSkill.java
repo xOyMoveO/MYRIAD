@@ -15,7 +15,7 @@ import java.util.List;
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class LavaCageSkill extends AbilitySkill {
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.physicalFromSpell(25, 9, .2f, .5f / 4).segment("skill.myriad.damage.segment.pulse", 4);
+            AbilityDamageFormula.physicalFromSpell(25, 11.25f, .2f, .5f / 4).segment("skill.myriad.damage.segment.pulse", 4);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

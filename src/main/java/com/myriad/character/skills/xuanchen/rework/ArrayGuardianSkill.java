@@ -13,9 +13,13 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class ArrayGuardianSkill extends AbilitySkill {
+    private static final SupportAmount SHIELD = new SupportAmount("shield", 40, 18, .25f);
+
+    @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(SHIELD); }
+
     public ArrayGuardianSkill(Definition definition){super(definition);}
     @Override public void onCast(Cast released){Cast c=AbilityRuntime.context(released.player,this);var m=c.memory();if(m.cooldown>c.now())return;m.cooldown=c.now()+240;
  var ally=c.allies(c.player.position(),8).stream().filter(p->p!=c.player).min(Comparator.comparingDouble(p->p.getHealth()/p.getMaxHealth())).orElse(c.player);
- c.shield(ally,c.value(40,15,.25f),40,()->InkVisuals.deliver(c,ally,.48));}
+ c.shield(ally,SHIELD.value(c),40,()->InkVisuals.deliver(c,ally,.48));}
     @Override public void release(Cast cast){} // Passive: event hooks above own the effect.
 }

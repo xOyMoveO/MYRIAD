@@ -6,7 +6,7 @@ import java.util.List;
 
 /** Paid on legal confirmation; an interrupted charge never refunds the ultimate. */
 public final class DistantBombardment extends AbilitySkill {
-    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 250, 85, 1.15f);
+    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 250, 106.25f, 1.15f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

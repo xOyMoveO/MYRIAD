@@ -15,7 +15,7 @@ import java.util.List;
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class FlameBurstSkill extends AbilitySkill {
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.physicalFromSpell(110, 25, 1.1f, .5f);
+            AbilityDamageFormula.physicalFromSpell(110, 31.25f, 1.1f, .5f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

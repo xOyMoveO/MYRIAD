@@ -8,6 +8,10 @@ import java.util.*;
 
 /** Grounded time is cumulative inside the station; damage exhaustion owns the ten-second lock. */
 public final class StationArmor extends RivetSkill {
+    private static final SupportAmount SHIELD = new SupportAmount("shield", 68, 21.6f, .4f);
+
+    @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(SHIELD); }
+
     private static final class State {
         long last = Long.MIN_VALUE, outside = -1, brokenUntil;
         int grounded;
@@ -36,7 +40,7 @@ public final class StationArmor extends RivetSkill {
         state.outside = -1;
         if (c.player.onGround()) state.grounded++;
         if (state.grounded < 40 || c.now() < state.brokenUntil) return;
-        float full = c.value(68, 18, .4f);
+        float full = SHIELD.value(c);
         if (!state.initialized || state.fullRecovery) {
             ModShieldSystem.grant(c.player, source(c.player), full, Integer.MAX_VALUE);
             state.initialized = true;

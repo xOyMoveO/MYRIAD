@@ -6,7 +6,7 @@ import com.myriad.combat.DamageCalc;
 import net.minecraft.server.level.ServerPlayer;
 import java.util.*;
 public final class EngravedEchoSkill extends KehengSkill {
-    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 50, 12, .25f);
+    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 50, 14.4f, .25f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

@@ -5,7 +5,7 @@ import com.myriad.character.ability.*;
 import com.myriad.combat.DamageCalc;
 import java.util.List;
 public final class BeyondOneSecondSkill extends KehengSkill {
-    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 24, 8, .12f)
+    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 24, 9.2f, .12f)
             .segment("skill.myriad.damage.per_pulse", 6);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
