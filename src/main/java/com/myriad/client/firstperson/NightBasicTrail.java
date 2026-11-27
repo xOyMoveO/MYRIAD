@@ -13,7 +13,9 @@ public final class NightBasicTrail {
     public static List<Quad> mesh(NightDaggerMotion motion,double now,boolean left){
         if(motion.progress(now)<0)return List.of();
         int cut=motion.index();double from=cut==0?.16:cut==1?.30:.34,to=cut==0?.46:cut==1?.70:.66;
-        var samples=AttackTrailMesh.samples(now,motion.started(),motion.duration(),from,to,t->{
+        var samples=AttackTrailMesh.samples(now,motion.started(),motion.duration(),
+                (motion.tickAt(from)-motion.started())/motion.duration(),
+                (motion.tickAt(to)-motion.started())/motion.duration(),t->{
             var p=motion.sample(t);var m=NightDaggerRig.wrist(p,left).mul(NightDaggerRig.blade(left,p.grip()));
             return AttackTrailMesh.slice(m,new Vector3f(.02f,.18f,0),new Vector3f(.06375f,.5925f,0),t);
         });

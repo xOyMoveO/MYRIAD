@@ -32,9 +32,41 @@ public final class ShuoRig {
     private static Vector3f v(float x,float y,float z){return new Vector3f(x,y,z);}
     public static float ease(double x){float t=(float)Math.clamp(x,0,1);return t*t*(3-2*t);}
     private static Vector3f mix(Vector3f a,Vector3f b,double t){return new Vector3f(a).lerp(b,ease(t));}
+    // Radius fitted to the exported curved edge, in camera blocks at its fixed display scale.
+    // Rotation about this centre starts tangent to the throat and feeds the curved tip through it.
+    private static final float DRAW_RADIUS = (MODEL_GRIP_TO_TIP-MODEL_GRIP_TO_MOUTH)*WEAPON_LENGTH
+            / (float)Math.toRadians(7.5);
+    private static final Vector3f DOCK=v(-.245f,-.255f,-1.12f);
+    private static final Vector3f SHEATH_PULL=v(-.18f,-.17f,.36f);
+    private record Passage(Vector3f palm,Vector3f axis,Vector3f edge) {}
+    private static Passage passage(Vector3f mouth,Vector3f sheath,float distance) {
+        var across=new Vector3f(SHEATH_EDGE).fma(-SHEATH_EDGE.dot(sheath),sheath).normalize().negate();
+        float sin=distance/DRAW_RADIUS, cos=(float)Math.sqrt(1-sin*sin);
+        var axis=new Vector3f(sheath).mul(cos).fma(-sin,across);
+        var edge=new Vector3f(across).mul(-cos).fma(-sin,sheath);
+        var root=new Vector3f(mouth).fma(-distance,sheath).fma(distance*sin/(1+cos),across);
+        return new Passage(root.fma(-GRIP_TO_MOUTH,axis),axis,edge);
+    }
+
+    static Frame guided(int action,float fraction) {
+        var mouth=new Vector3f(DOCK).fma(fraction,SHEATH_PULL);
+        var shaft=v(-.11f,-.986f,.12f).normalize();
+        var blade=passage(mouth,shaft,EXTRACT*fraction);
+        return new Frame(blade.palm,blade.axis,blade.edge,mouth,shaft,0,action,-1);
+    }
+    static float guidedFraction(Frame frame) {
+        return Math.clamp(new Vector3f(frame.mouth).sub(DOCK).dot(SHEATH_PULL)/SHEATH_PULL.lengthSquared(),0,1);
+    }
+
     public static Frame frame(int action,double p,boolean drawn){
         // Mouth at lower-left; the long +Y sheath axis points down, so its lower 2/3 leaves the view.
-        var mouth=v(-.245f,-.255f,-1.12f);var sheath=v(-.11f,-.986f,.12f).normalize();
+        var mouth=new Vector3f(DOCK);var sheath=v(-.11f,-.986f,.12f).normalize();
+        boolean drawing=!drawn && (action==DRAW || action==FLASH || action==CUT_LEFT ||
+                action==CUT_RIGHT || action==CUT_DOWN || action==MOON_FIRST);
+        float pull=action==SHEATHE?1-ease((p-.28)/.72):drawing?ease(p/.32):drawn?1:0;
+        mouth.fma(pull,SHEATH_PULL);
+        var exit=passage(mouth,sheath,EXTRACT);
+        if ((drawing && p<=.32) || (action==SHEATHE && p>=.28)) return guided(action,pull);
         var closed=new Vector3f(mouth).fma(-GRIP_TO_MOUTH,sheath);
         var ready=new Vector3f(READY);var readyAxis=new Vector3f(READY_AXIS);
         Vector3f palm=drawn?new Vector3f(ready):new Vector3f(closed),axis=drawn?new Vector3f(readyAxis):new Vector3f(sheath),edge=drawn?new Vector3f(READY_EDGE):new Vector3f(SHEATH_EDGE);
@@ -42,10 +74,11 @@ public final class ShuoRig {
         if(action==CHARGE){
             mouth.y+=.035f*ease(p);palm=drawn?mix(ready,v(.28f,-.42f,-1.02f),p):new Vector3f(mouth).fma(-GRIP_TO_MOUTH-.045f*ease(p),sheath);
         }else if(action==SHEATHE){
-            var extended=new Vector3f(closed).fma(-EXTRACT,sheath);
-            palm=p<.28?mix(ready,extended,p/.28):mix(extended,closed,(p-.28)/.72);
-            axis=p<.28?mix(readyAxis,sheath,p/.28).normalize():new Vector3f(sheath);
-            edge=mix(READY_EDGE,SHEATH_EDGE,p/.28);
+            // Turn beside the mouth first. Approach the opening only after the tip points down it.
+            var beside=new Vector3f(exit.palm).add(.34f,.10f,-.30f);
+            palm=p<.19?mix(ready,beside,p/.19):mix(beside,exit.palm,(p-.19)/.09);
+            axis=mix(readyAxis,exit.axis,p/.19).normalize();
+            edge=mix(READY_EDGE,exit.edge,p/.19);
         }else if(action==GUARD||action==COUNTER){
             float g=ease(p/.18)*(1-ease((p-.82)/.18));
             if(!drawn){
@@ -59,52 +92,61 @@ public final class ShuoRig {
             // A short anticipation, committed cut, then a separate relaxed recovery.
             // Actual item +X is reversed by blade(), so -edge follows the cutting direction.
             boolean rise=action==BASIC_RISE;
-            var begin=rise?v(-.42f,-.62f,-1.42f):v(-.45f,-.22f,-1.48f);
-            var end=rise?v(.48f,-.14f,-1.44f):v(.56f,-.34f,-1.48f);
-            var beginAxis=rise?v(-.67f,.23f,-.40f).normalize():v(-.62f,.58f,-.38f).normalize();
-            var endAxis=rise?v(.45f,.76f,-.36f).normalize():v(.70f,.28f,-.36f).normalize();
+            // In the sweep the outer third passes through the sight line while the hilt stays below it.
+            var begin=rise?v(-.42f,-.62f,-1.42f):v(-.43f,-.32f,-1.42f);
+            var end=rise?v(.48f,-.14f,-1.44f):v(-.03f,-.35f,-1.60f);
+            var beginAxis=rise?v(-.67f,.23f,-.40f).normalize():v(-.38f,.19f,-.90f).normalize();
+            var endAxis=rise?v(.45f,.76f,-.36f).normalize():v(.54f,.22f,-.815f).normalize();
             var cutEdge=new Vector3f(begin).sub(end).normalize();
             if(p<.18){palm=mix(ready,begin,p/.18);axis=mix(readyAxis,beginAxis,p/.18).normalize();edge=mix(READY_EDGE,cutEdge,p/.18);}
             else if(p<.60){double t=(p-.18)/.42;palm=mix(begin,end,t);axis=mix(beginAxis,endAxis,t).normalize();edge=new Vector3f(cutEdge);}
-            else {double t=(p-.60)/.40;palm=mix(end,ready,t);axis=mix(endAxis,readyAxis,t).normalize();edge=mix(cutEdge,READY_EDGE,t);}
+            else {
+                double t=(p-.60)/.40;
+                var coast=rise?v(.55f,-.09f,-1.51f):v(.045f,-.39f,-1.65f);
+                var low=v(.46f,-.77f,-1.36f);
+                palm=t<.20?mix(end,coast,t/.20):t<.64?mix(coast,low,(t-.20)/.44):mix(low,ready,(t-.64)/.36);
+                double uncoil=rise?t:(t-.20)/.80;
+                axis=mix(endAxis,readyAxis,uncoil).normalize();edge=mix(cutEdge,READY_EDGE,uncoil);
+            }
             slashProgress=(float)((p-.18)/.52);flash=slashProgress>0&&slashProgress<1?(float)Math.sin(Math.PI*slashProgress):0;
         }else if(moonCut(action)){
             var left=v(-.31f,-.36f,-1.24f);var right=v(.52f,-.35f,-1.22f);
             var leftAxis=v(-.75f,.38f,-.42f).normalize();var rightAxis=v(.75f,.50f,-.45f).normalize();
             boolean finish=action==MOON_THIRD, wide=action==RETURNING_MOON;
             boolean extracting=action==MOON_FIRST&&!drawn;
-            var from=extracting?new Vector3f(closed).fma(-EXTRACT,sheath):action==MOON_SECOND?left:finish?right:ready;
+            var from=extracting?exit.palm:action==MOON_SECOND?left:finish?right:ready;
             var to=finish?v(.16f,-.60f,-1.22f):action==MOON_SECOND?right:wide?v(-.48f,-.50f,-1.30f):left;
-            var startAxis=extracting?sheath:action==MOON_SECOND?leftAxis:finish?rightAxis:readyAxis;
+            var startAxis=extracting?exit.axis:action==MOON_SECOND?leftAxis:finish?rightAxis:readyAxis;
             var endAxis=finish?v(-.22f,-.62f,-.75f).normalize():action==MOON_SECOND?rightAxis:leftAxis;
             double clear=extracting?.32:0;
-            if(p<clear){
-                palm=mix(closed,from,p/clear);
-            }else{
-                double sweep=ease((p-clear)/(.60-clear));
-                palm=mix(from,to,sweep);axis=mix(startAxis,endAxis,sweep).normalize();
-                var cutEdge=new Vector3f(from).sub(to).normalize();
-                edge=extracting?mix(SHEATH_EDGE,cutEdge,(p-clear)/.14):cutEdge;
-                flash=p<.65?(float)Math.sin(Math.PI*(p-clear)/(.65-clear)):0;
-            }
+            double sweep=ease((p-clear)/(.60-clear));
+            palm=mix(from,to,sweep);axis=mix(startAxis,endAxis,sweep).normalize();
+            var cutEdge=new Vector3f(from).sub(to).normalize();
+            edge=extracting?mix(exit.edge,cutEdge,(p-clear)/.14):cutEdge;
+            flash=p<.65?(float)Math.sin(Math.PI*(p-clear)/(.65-clear)):0;
         }else if(action==PURSUIT){
             palm=mix(ready,v(.44f,-.62f,-1.12f),.8);axis=v(.36f,.78f,-.50f).normalize();
         }else if(action==DRAW||action==FLASH||action==CUT_LEFT||action==CUT_RIGHT||action==CUT_DOWN){
             double extract=drawn?0:.32;
-            if(p<extract){palm=new Vector3f(closed).fma(-EXTRACT*ease(p/extract),sheath);axis=new Vector3f(sheath);}
-            else {
-                double t=(p-extract)/(1-extract);boolean reverse=action==CUT_RIGHT;
-                var launch=drawn?new Vector3f(ready):new Vector3f(closed).fma(-EXTRACT,sheath);
-                var finish=action==CUT_DOWN?v(-.12f,-.64f,-1.06f):v(reverse?.46f:-.34f,-.50f,-1.14f);
-                var bladeEnd=action==CUT_DOWN?v(-.15f,-.65f,-.75f):v(reverse?.70f:-.70f,-.30f,-.65f);
-                if(t<.52){
-                    palm=mix(launch,finish,t/.52);axis=mix(drawn?readyAxis:sheath,bladeEnd,t/.52).normalize();
-                    edge=new Vector3f(finish).sub(launch).normalize();
-                }else {palm=mix(finish,ready,(t-.52)/.48);axis=mix(bladeEnd,readyAxis,(t-.52)/.48).normalize();
-                    edge=mix(new Vector3f(finish).sub(launch).normalize(),READY_EDGE,(t-.52)/.48);}
-                flash=t<.66?(float)Math.sin(Math.PI*Math.clamp(t/.66,0,1)):0;
-                if(action==DRAW)slashProgress=(float)Math.clamp(t/.66,0,1);
-            }
+            double t=(p-extract)/(1-extract);boolean reverse=action==CUT_RIGHT;
+            var launch=drawn?new Vector3f(ready):exit.palm;
+            var finish=action==CUT_DOWN?v(-.12f,-.64f,-1.06f):v(reverse?.46f:-.34f,-.50f,-1.14f);
+            var bladeEnd=action==CUT_DOWN?v(-.15f,-.65f,-.75f):v(reverse?.70f:-.70f,-.30f,-.65f);
+            if(t<.52){
+                palm=mix(launch,finish,t/.52);axis=mix(drawn?readyAxis:exit.axis,bladeEnd,t/.52).normalize();
+                edge=mix(drawn?READY_EDGE:exit.edge,new Vector3f(finish).sub(launch).normalize(),t/.22);
+            }else {
+                double returning=(t-.52)/.48;
+                if (action==DRAW) {
+                    var coast=v(-.43f,-.59f,-1.26f);
+                    var low=v(.09f,-.78f,-1.31f);
+                    palm=returning<.22?mix(finish,coast,returning/.22):returning<.67?
+                            mix(coast,low,(returning-.22)/.45):mix(low,ready,(returning-.67)/.33);
+                } else palm=mix(finish,ready,returning);
+                axis=mix(bladeEnd,readyAxis,(t-.52)/.48).normalize();
+                edge=mix(new Vector3f(finish).sub(launch).normalize(),READY_EDGE,(t-.52)/.48);}
+            flash=t<.66?(float)Math.sin(Math.PI*Math.clamp(t/.66,0,1)):0;
+            if(action==DRAW)slashProgress=(float)Math.clamp(t/.66,0,1);
         }else if(action==RETREAT){palm.add(0,-.06f*(float)Math.sin(Math.PI*p),.04f);}
         return new Frame(palm,axis,edge,mouth,sheath,Math.max(0,flash),action,slashProgress);
     }
@@ -120,6 +162,10 @@ public final class ShuoRig {
     }
     // Turn both fitted items about their own long axis: shaft and anchors stay
     // fixed, and the curved blade still slides into the matching hollow sheath.
+    static float occupiedOffset(Frame f,boolean mirror) {
+        float docked=ease((f.axis().dot(f.sheathAxis())-.25f)/.72f);
+        return (mirror?-1:1)*-2*f.mouth().x*docked;
+    }
     public static Matrix4f blade(Frame f,boolean mirror){return basis(f.palm,f.axis,f.edge,mirror).rotateY((float)Math.PI).scale(WEAPON_WIDTH,WEAPON_LENGTH,WEAPON_WIDTH);}
     public static Matrix4f sheath(Frame f,boolean mirror){return basis(f.mouth,f.sheathAxis,SHEATH_EDGE,mirror).rotateY((float)Math.PI).scale(WEAPON_WIDTH,WEAPON_LENGTH,WEAPON_WIDTH);}
     public static Matrix4f occupiedHand(Frame f,boolean mirror){

@@ -45,7 +45,7 @@ final class WindHandMotion {
     private static final Pose DOMAIN_READY = free(pose(.36, -.55, -1.27, -.85, -.05, -.52), -.23, -.46, -1.29, .75, 0);
     private static final Pose DOMAIN_OPEN = free(pose(.69, -.37, -1.36, .88, .14, -.45), -.70, -.36, -1.44, .45, 0);
 
-    static final double CUT_FROM = .36, HIT = .98, CUT_TO = 2.65;
+    static final double CUT_FROM = .36, HIT = MeleeStrokeTiming.HIT, CUT_TO = 2.65;
     private static final int PREPARE = -1;
     private static final double SETTLE = 4;
     private record Gesture(int ability, int signal, double start, double end, Pose entry,
@@ -73,7 +73,7 @@ final class WindHandMotion {
         combo = now - attack > recovery + 23 ? 0 : (combo + 1) % CUT_START.length;
         attack = now;
         // Leave a little follow-through when the next recovered click arrives at the expected cadence.
-        recovery = Math.clamp(delay + 2.5, 5.5, 20);
+        recovery = MeleeStrokeTiming.recovery(delay);
     }
 
     void prepare(int ability, double now) {
@@ -164,7 +164,14 @@ final class WindHandMotion {
         double age = now - attack;
         if (age < CUT_FROM) return move(attackEntry, CUT_START[combo], age, CUT_FROM);
         if (age < CUT_TO) return swing(combo, age);
-        return move(CUT_END[combo], IDLE, age - CUT_TO, recovery - CUT_TO);
+        Pose end = CUT_END[combo];
+        double returning = (age - CUT_TO) / (recovery - CUT_TO);
+        Pose low = pose(combo == 1 ? .61 : -.18, -.69, -1.41,
+                combo == 1 ? .56 : -.46, -.16, -.82);
+        Pose coast = end.mix(CUT_CONTACT[combo], -.12);
+        if (returning < .14) return move(end, coast, returning, .14);
+        if (returning < .40) return move(coast, low, returning - .14, .26);
+        return move(low, IDLE, returning - .40, .60);
     }
 
     private Pose skillPose(double now) {

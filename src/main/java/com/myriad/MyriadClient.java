@@ -118,6 +118,15 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
         com.myriad.client.firstperson.FlameDaoView.onAttack(event);
         com.myriad.client.firstperson.ShuoView.onAttack(event);
         com.myriad.client.firstperson.WindBladeView.onAttack(event);
+        var mc = Minecraft.getInstance();
+        if (event.isCanceled() || !event.shouldSwingHand() || mc.player == null || mc.level == null
+                || !mc.options.getCameraType().isFirstPerson() || mc.getCameraEntity() != mc.player
+                || mc.player.getAttackStrengthScale(.5f) < 1 || !event.isMeleeAssist()
+                && mc.hitResult != null && mc.hitResult.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) return;
+        com.myriad.client.firstperson.LingyuanHandView.attack(mc);
+        com.myriad.client.firstperson.WarSpiritHandView.attack(mc);
+        com.myriad.client.firstperson.KehengView.attack(mc);
+        com.myriad.client.firstperson.RivetWeaponView.attack(mc);
     }
 
     /**
@@ -322,6 +331,25 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
 
     /** 远程恢复期间隐藏第一人称专属武器；原版近战不隐藏。 */
     public static void onRenderHand(com.myriad.client.platform.HandRenderContext event) {
+        var mc = Minecraft.getInstance();
+        float prep = event.getHand() == net.minecraft.world.InteractionHand.MAIN_HAND
+                ? com.myriad.client.MeleeAttackBuffer.preparation(mc, event.getPartialTick()) : 0;
+        if (prep == 0) {
+            renderWeaponHand(event);
+            return;
+        }
+        var stack = event.getPoseStack();
+        stack.pushPose();
+        try {
+            double side = mc.player.getMainArm() == net.minecraft.world.entity.HumanoidArm.LEFT ? -1 : 1;
+            stack.translate(side * .025 * prep, .065 * prep, .055 * prep);
+            renderWeaponHand(event);
+        } finally {
+            stack.popPose();
+        }
+    }
+
+    private static void renderWeaponHand(com.myriad.client.platform.HandRenderContext event) {
         if (com.myriad.client.firstperson.LuoxiaBowView.first(event)) return;
         if (com.myriad.client.firstperson.RivetWeaponView.render(event)) return;
         if (com.myriad.client.firstperson.YikeWeaponView.render(event)) return;

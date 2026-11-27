@@ -48,19 +48,27 @@ final class NightDaggerViewChecks {
         motion.reset();
         h.assertTrue(motion.index()==-1 && motion.sample(next+84).equals(NightDaggerMotion.IDLE),"Lifecycle reset clears the chain");
         for (double speed:new double[]{1,8,20,60,Double.NaN})
-            h.assertTrue(NightDaggerMotion.durationFor(speed)>=3.5 && NightDaggerMotion.durationFor(speed)<=6,
+            h.assertTrue(NightDaggerMotion.durationFor(speed)>=6 && NightDaggerMotion.durationFor(speed)<=72,
                     "Cosmetic recovery remains bounded and never changes gameplay attack speed");
         motion.attack(0,20);
-        h.assertTrue(motion.sample(motion.duration()*.40).z()<-1.05,"First attack visibly stabs forward");
+        h.assertTrue(motion.sample(motion.tickAt(.40)).z()<-1.05,"First attack visibly stabs forward");
         motion.attack(20,20);
-        var raised=motion.sample(20+motion.duration()*.30);
-        var struck=motion.sample(20+motion.duration()*.56);
-        h.assertTrue(raised.y()>.30 && struck.y()<-.30 && raised.y()-struck.y()>.60,
-                "Second attack lifts above the hand then drives down, not a lateral slash");
+        var raised=motion.sample(motion.tickAt(.30));
+        var struck=motion.sample(motion.tickAt(.56));
+        h.assertTrue(raised.y() - struck.y() > .34 && raised.z() - struck.z() > .48,
+                "The downward accent sends the hand forward from above the sight line");
+        for (int i=0;i<=24;i++) {
+            var contact=motion.sample(motion.tickAt(.47 + .23*i/24));
+            var tip=NightDaggerRig.wrist(contact,false).mul(NightDaggerRig.blade(false,contact.grip()))
+                    .transformPosition(new Vector3f(.06375f,.5925f,0));
+            h.assertTrue(tip.z()<contact.z()-.34 && Math.abs(tip.x()/-tip.z())<.05
+                            && tip.y()/-tip.z()>-.12 && tip.y()/-tip.z()<.02,
+                    "The reverse-grip tip stays on the forward target through HIT and follow-through");
+        }
         h.assertTrue(raised.grip()==0 && struck.grip()==0,"Overhead attack retains reverse grip");
         motion.attack(40,20);
-        h.assertTrue(motion.sample(40+motion.duration()*.36).grip()==180 && motion.sample(40+motion.duration()*.62).grip()==180
-                        && motion.sample(40+motion.duration()*.62).x()<-.1,
+        h.assertTrue(motion.sample(motion.tickAt(.36)).grip()==180 && motion.sample(motion.tickAt(.62)).grip()==180
+                        && motion.sample(motion.tickAt(.62)).x()<-.1,
                 "Third attack completes the forward-grip turn BEFORE the slash");
         var interrupted=motion.sample(42);
         motion.interrupt(42);

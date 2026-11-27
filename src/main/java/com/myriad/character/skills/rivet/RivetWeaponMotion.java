@@ -12,12 +12,30 @@ public final class RivetWeaponMotion {
     }
     public static final Pose IDLE=new Pose(.56,-.56,-1.28,-16,-84,-28);
     private static final Pose LIFT=new Pose(.64,-.42,-1.35,-2,-92,-43);
+    private static final Pose BASIC_HIT=new Pose(.33,-.53,-1.50,-64,-64,-11);
+    private static final Pose BASIC_FOLLOW=new Pose(.29,-.65,-1.58,-78,-60,0);
+    private static final Pose BASIC_LOW=new Pose(.40,-.72,-1.40,-62,-69,0);
     private static final Pose STRIKE=new Pose(.53,-.56,-1.15,-65,-55,-5);
     private static final Pose FOLLOW=new Pose(.51,-.61,-1.17,-78,-50,8);
     private static final int NONE=0,HAMMER_READY=1,HAMMER_SWING=2,ANCHOR=3,BRACE=4,TOW=5,
             TOW_RELEASE=6,PROTOCOL=7,CHARGE_READY=8,CHARGE_RUN=9,RHYTHM=10;
     private int action,variant=-1;private long newest=Long.MIN_VALUE;private double start=-100,received=-100,progress;
     private double impact=-100;
+    private double basicStart=Double.NEGATIVE_INFINITY,basicDuration=10;
+    private Pose basicEntry=IDLE;
+    public void basic(double now,double duration) {
+        basicEntry=stroke(now); basicDuration=duration; basicStart=now;
+    }
+    private Pose stroke(double now) {
+        double age=now-basicStart;
+        if (age<0 || age>=basicDuration) return IDLE;
+        if (age<.38) return basicEntry.blend(LIFT,smooth(age/.38));
+        double hit=com.myriad.client.firstperson.MeleeStrokeTiming.HIT;
+        if (age<hit) return LIFT.blend(BASIC_HIT,falling((age-.38)/(hit-.38)));
+        if (age<2.9) return BASIC_HIT.blend(BASIC_FOLLOW,smooth((age-hit)/(2.9-hit)));
+        double t=(age-2.9)/(basicDuration-2.9);
+        return t<.45 ? BASIC_FOLLOW.blend(BASIC_LOW,smooth(t/.45)) : BASIC_LOW.blend(IDLE,smooth((t-.45)/.55));
+    }
     private static double smooth(double value){double t=Math.clamp(value,0,1);return t*t*(3-2*t);}
     private static double falling(double value){double t=Math.clamp(value,0,1);return t*t;}
     private static Pose basicStroke(double progress){
@@ -31,7 +49,7 @@ public final class RivetWeaponMotion {
         if(age<4)return STRIKE.blend(FOLLOW,smooth((age-2.6)/1.4));
         return FOLLOW.blend(IDLE,smooth((age-4)/6.5));
     }
-    public void reset(){action=NONE;variant=-1;newest=Long.MIN_VALUE;start=received=impact=-100;progress=0;}
+    public void reset(){basicStart=Double.NEGATIVE_INFINITY;action=NONE;variant=-1;newest=Long.MIN_VALUE;start=received=impact=-100;progress=0;}
     public void accept(AbilityVfxPayload p,double now){
         if(!p.valid())return;
         if(p.kind()==CANCEL){if(p.angle()==0||p.theme()==RivetVfx.THEME&&p.variant()==variant)reset();return;}
@@ -54,7 +72,8 @@ public final class RivetWeaponMotion {
     private static boolean continuous(int action){return action==HAMMER_READY||action==CHARGE_READY||action==TOW||action==CHARGE_RUN;}
     public Pose sample(double now,double basic,boolean rhythmReady){
         Pose idle=IDLE;
-        if(basic>0&&basic<1){
+        if (now>=basicStart && now<basicStart+basicDuration) idle=stroke(now);
+        else if(basic>0&&basic<1){
             // The vanilla attack still owns its attack/cooldown. Only its visible palm is reshaped.
             idle=basicStroke(basic);
         }

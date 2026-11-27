@@ -15,7 +15,9 @@ public final class FlameBasicTrail {
     }
     public static List<Quad> mesh(FlameDaoMotion motion,double now,boolean left,float equip){
         if(motion.frame(now).cut()<0)return List.of();
-        var samples=AttackTrailMesh.samples(now,motion.started(),motion.duration(),.20,.65,t->{
+        var samples=AttackTrailMesh.samples(now,motion.started(),motion.duration(),
+                (motion.tickAt(.20)-motion.started())/motion.duration(),
+                (motion.tickAt(.65)-motion.started())/motion.duration(),t->{
             var f=motion.frame(t);var m=FlameDaoRig.wrist(f.pose(),equip,left).mul(FlameDaoRig.blade(f,left));
             return AttackTrailMesh.slice(m,new Vector3f(0,.35f,0),new Vector3f(.05f,1.390625f,0),t);
         });

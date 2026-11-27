@@ -60,9 +60,21 @@ public final class WarSpiritHandMotion {
     public Pose pose(double now) {
         double time=Math.max(0,now-at);
         if (clip!=null) {
+            if (phase == BASIC && war) {
+                Pose ready = WAR_READY[combo];
+                if (time < .36) return start.toward(ready,smooth(time/.36));
+                if (time < clip.hit) return ready.toward(clip.contact,smooth((time-.36)/(clip.hit-.36)));
+            }
             if (time<clip.hit) return start.toward(clip.contact,smooth(time/clip.hit));
             if (time<clip.sweep) return clip.contact.toward(clip.follow,smooth((time-clip.hit)/(clip.sweep-clip.hit)));
-            return clip.follow.toward(idle,smooth((time-clip.sweep)/(clip.duration-clip.sweep)));
+            double returning = (time-clip.sweep)/(clip.duration-clip.sweep);
+            if (phase == BASIC && war) {
+                Pose low = combo == 1 ? p(.73,-.74,-1.28,.56,.25,-.79,-.55)
+                        : p(-.20,-.86,-1.29,-.65,-.22,-.73,-.65);
+                if (returning < .44) return clip.follow.toward(low,smooth(returning/.44));
+                return low.toward(idle,smooth((returning-.44)/.56));
+            }
+            return clip.follow.toward(idle,smooth(returning));
         }
         if (now>=expires) return target.toward(idle,smooth((now-expires)/3));
         return start.toward(target,smooth(time/(phase==STOP?2.7:1.6)));
@@ -78,7 +90,8 @@ public final class WarSpiritHandMotion {
             lastBasic=now;
             Clip form=(war?WAR_BASIC:SPIRIT_BASIC)[combo];
             double speed=Math.clamp(value/8,.62,1);
-            play(0,signal,now,new Clip(form.contact,form.follow,form.hit*speed,form.sweep*speed,form.duration*speed));
+            play(0,signal,now,new Clip(form.contact,form.follow,war ? MeleeStrokeTiming.HIT : form.hit*speed,
+                    war ? 2.8 : form.sweep*speed, war ? MeleeStrokeTiming.recovery(value) : form.duration*speed));
             return;
         }
         if (signal==FOLLOW && !war && clip!=null && skill!=variant && now<at+clip.duration) return;
@@ -154,6 +167,15 @@ public final class WarSpiritHandMotion {
     private static final Clip SPIRIT_TUG = beat(two(p(.58,-.65,-.92,.18,.97,-.13,-.14),-.36,-.57,-1.12,.64),
             two(p(.63,-.70,-.81,.30,.94,.12,.27),-.39,-.71,-.85,.85));
 
+    double basicStart(double now) {
+        return war && phase == BASIC && clip != null && now < at+clip.duration ? at : Double.NaN;
+    }
+
+    private static final Pose[] WAR_READY = {
+        p(.68,-.25,-1.18,.55,.73,-.42,-.22),
+        p(-.32,-.77,-1.09,-.87,.01,-.49,-.77),
+        p(.70,-.64,-1.22,.81,.10,-.57,-.42)
+    };
     private static final Clip[] WAR_BASIC = {
             cut(p(.45,-.48,-1.05,-.37,.53,-.77,-.64),p(-.32,-.77,-1.07,-.87,.01,-.49,-.77)),
             cut(p(.08,-.66,-1.11,-.31,.13,-.94,-.66),p(.68,-.43,-1.06,.50,.73,-.46,-.75)),

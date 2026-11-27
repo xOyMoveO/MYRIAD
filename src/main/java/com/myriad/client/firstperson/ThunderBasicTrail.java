@@ -15,7 +15,9 @@ public final class ThunderBasicTrail {
     }
     public static List<Quad> mesh(ThunderSwordMotion motion,double now,boolean left,float equip){
         if(motion.progress(now)<0)return List.of();
-        var samples=AttackTrailMesh.samples(now,motion.started(),motion.duration(),.22,.62,t->{
+        var samples=AttackTrailMesh.samples(now,motion.started(),motion.duration(),
+                (motion.tickAt(.22)-motion.started())/motion.duration(),
+                (motion.tickAt(.62)-motion.started())/motion.duration(),t->{
             var f=motion.frame(t);var m=ThunderSwordRig.wrist(f.pose(),equip,left).mul(ThunderSwordRig.blade(f,left));
             return AttackTrailMesh.slice(m,new Vector3f(0,.40f,0),new Vector3f(0,1.40625f,0),t);
         });

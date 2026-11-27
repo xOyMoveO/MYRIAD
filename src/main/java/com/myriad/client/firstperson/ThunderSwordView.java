@@ -85,6 +85,7 @@ public final class ThunderSwordView {
         boolean left=mc.player.getMainArm()==HumanoidArm.LEFT;
         boolean slim=mc.player.getSkin().model()==PlayerModelType.SLIM;
         var frame=MOTION.frame(now);boolean gesture=skill.action()>=0;
+        if (!gesture && frame.cut()>=0) event.holdEquipped();
         var wrist=gesture?ThunderSkillRig.main(skill,left):ThunderSwordRig.wrist(frame.pose(),event.getEquipProgress(),left);
         var blade=gesture?ThunderSkillRig.blade(skill,left):ThunderSwordRig.blade(frame,left);
         var off=showOff&&mc.player.getOffhandItem().isEmpty()?ThunderSkillRig.off(skill,left):null;

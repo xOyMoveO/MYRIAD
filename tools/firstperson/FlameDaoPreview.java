@@ -198,6 +198,6 @@ public final class FlameDaoPreview {
         }
         g.dispose();ImageIO.write(sheet,"png",out.resolve("fenjue_three_cuts.png").toFile());
         NightDaggerPreview.gif(frames,out.resolve("fenjue_three_cuts.gif"));
-        System.out.println("[MYRIAD-FLAME-PREVIEW] PASS: real 423-cube item/UV and skin arm; central-clear idle; 1206 actual-mesh near-plane scans; 84-frame three-cut GIF. Offline only.");
+        System.out.println("[MYRIAD-FLAME-PREVIEW] PASS: current item mesh/UV and skin arm; central-clear idle; 1206 actual-mesh near-plane scans; 84-frame three-cut GIF. Offline only.");
     }
 }

@@ -1,16 +1,23 @@
 package com.myriad.client.firstperson;
+
 import com.myriad.character.ability.AbilityVfxGeometry.Quad;
-import com.myriad.character.skills.shuo.ShuoSlashMesh;
 import com.myriad.network.ShuoViewPayload;
 import java.util.List;
-import net.minecraft.world.phys.Vec3;
-/** Basic only; skills no longer reuse the old camera overlay. */
+import org.joml.Vector3f;
+
 public final class ShuoTrail {
-    private ShuoTrail(){}
-    public static List<Quad> build(ShuoRig.Frame f,boolean mirror){
-        if(!ShuoViewPayload.basicAction(f.action()))return List.of();double side=mirror?-1:1;
-        if(f.action()==ShuoViewPayload.BASIC_RISE)return ShuoSlashMesh.build(new Vec3(-.04*side,-.30,-1.55),new Vec3(-.87*side,-.49,0),new Vec3(-.49*side,.87,-.10),1.12,.67,f.slashProgress(),false);
-        if(f.action()==ShuoViewPayload.BASIC_SWEEP)return ShuoSlashMesh.build(new Vec3(.02*side,-.30,-1.55),new Vec3(-side,.06,0),new Vec3(.06*side,1,-.10),1.20,.48,f.slashProgress(),false);
-        return ShuoSlashMesh.build(new Vec3(-.10*side,-.32,-1.55),new Vec3(side,-.24,0),new Vec3(.24*side,1,-.10),1.12,.67,f.slashProgress(),false);
+    private ShuoTrail() {}
+    public static List<Quad> build(ShuoMotion motion,double now,boolean drawn,boolean mirror,boolean occupied) {
+        int action=motion.action(now);
+        if (!ShuoViewPayload.basicAction(action)) return List.of();
+        double from=action==ShuoViewPayload.DRAW ? (motion.fromDrawn()?.03:.32) : .18;
+        float currentOffset=occupied?ShuoRig.occupiedOffset(motion.frame(now,drawn),mirror):0;
+        return MeleeBladeLight.swept(now,motion.started(),motion.strokeAge(from),MeleeStrokeTiming.END_OF_CUT,
+                MeleeBladeLight.MOON,new Vector3f(0,ShuoRig.MODEL_GRIP_TO_MOUTH,0),
+                new Vector3f(0,ShuoRig.MODEL_GRIP_TO_TIP,0),t->{
+                    var frame=motion.frame(t,drawn);
+                    var blade=ShuoRig.blade(frame,mirror);
+                    return occupied?blade.translateLocal(ShuoRig.occupiedOffset(frame,mirror)-currentOffset,0,0):blade;
+                });
     }
 }

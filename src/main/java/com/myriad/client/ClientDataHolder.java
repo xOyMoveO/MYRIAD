@@ -73,6 +73,7 @@ public final class ClientDataHolder {
         InputFeedback.clear();
         TeamSignalClient.reset(); ControlStatusOverlay.reset(); EnemyHealthBars.resetConnection(); DeathRecapStore.clear();
         com.myriad.client.firstperson.NightDaggerView.reset();
+        com.myriad.client.firstperson.KehengView.reset();
         com.myriad.client.firstperson.FlameDaoView.reset();
         com.myriad.client.firstperson.ShuoView.reset();
         SkillChargeClient.reset();

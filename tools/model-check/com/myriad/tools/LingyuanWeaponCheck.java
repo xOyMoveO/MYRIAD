@@ -16,7 +16,8 @@ public final class LingyuanWeaponCheck {
         Path assets=Path.of(args[0]),art=Path.of(args[1]);
         var json=JsonParser.parseString(Files.readString(assets.resolve("models/item/lingyuan_sword.json"))).getAsJsonObject();
         var spec=JsonParser.parseString(Files.readString(art.resolve("lingyuan_returning_jian.spec.json"))).getAsJsonObject();
-        require(json.getAsJsonArray("elements").size()==122,"Every authored cuboid contributes at least one visible face");
+        int authored = spec.getAsJsonArray("parts").size();
+        require(authored > 0 && json.getAsJsonArray("elements").size()==authored,"Every authored cuboid contributes at least one visible face");
         try(var reader=Files.newBufferedReader(assets.resolve("models/item/lingyuan_sword.json"))){
             var model=CuboidModel.fromStream(reader);require(model.geometry()!=null,"Real cuboid model parser accepts the weapon");
             for(var context:List.of(ItemDisplayContext.FIRST_PERSON_RIGHT_HAND,ItemDisplayContext.FIRST_PERSON_LEFT_HAND,
@@ -61,6 +62,6 @@ public final class LingyuanWeaponCheck {
             }
         }
         require(source.isEmpty()&&Math.abs(tip-27.3)<3E-6,"Visible blade tip stays at the authored first-person trail anchor");
-        System.out.println("[MYRIAD-LINGYUAN-HELD] PASS: actual Minecraft model parser, 122 source cuboids / "+faces+" faces, opaque UVs, 7 display contexts, original grip and tip");
+        System.out.println("[MYRIAD-LINGYUAN-HELD] PASS: actual Minecraft model parser, "+authored+" source cuboids / "+faces+" faces, opaque UVs, 7 display contexts, original grip and tip");
     }
 }

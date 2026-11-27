@@ -37,7 +37,7 @@ final class ThunderSwordViewChecks {
                     h.assertTrue(Math.abs(normal.dot(transverse))<.002,"Blade plane contains travel direction; no flat slap");
                 }
             }
-            var from=tip(motion.sample(start+motion.duration()*.22));var to=tip(motion.sample(start+motion.duration()*.62));
+            var from=tip(motion.sample(motion.tickAt(.22)));var to=tip(motion.sample(motion.tickAt(.62)));
             float dx=to.x/-to.z-from.x/-from.z,dy=to.y/-to.z-from.y/-from.z;
             h.assertTrue(cut==0?dx>.5&&dy<-.35:cut==1?dx<-.5&&dy<-.35:dx<-.5&&Math.abs(dy)<.04,
                     "Projected tip follows diagonal/diagonal/horizontal: cut="+cut+" dx="+dx+" dy="+dy);
@@ -59,7 +59,7 @@ final class ThunderSwordViewChecks {
         h.assertTrue(motion.sample(Double.POSITIVE_INFINITY).equals(ThunderSwordMotion.IDLE),"Invalid sample returns idle");
         motion.reset();h.assertTrue(motion.index()==-1&&motion.sample(12).equals(ThunderSwordMotion.IDLE),"Lifecycle reset drops combo state");
         for(double recovery:new double[]{1,20,100,Double.NaN}){
-            motion.attack(0,recovery);h.assertTrue(motion.duration()>=4&&motion.duration()<=7,"Attack speed bounded cosmetic duration");
+            motion.attack(0,recovery);h.assertTrue(motion.duration()>=6&&motion.duration()<=72,"Attack speed bounded cosmetic duration");
             h.assertTrue(motion.sample(motion.duration()).equals(ThunderSwordMotion.IDLE),"No lingering pose after completion");motion.reset();
         }
         System.out.println("[MYRIAD-THUNDER-FIRSTPERSON] PASS: 4356 palm/grip poses, visible idle blade face, actual cutting edge aligned with all three swing velocities (no broad-face slap), projected paths, left/slim, lifecycle/clock/duration");

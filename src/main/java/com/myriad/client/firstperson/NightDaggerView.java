@@ -73,7 +73,8 @@ public final class NightDaggerView {
         checkOwner(mc);
         if(SKILL.active(mc.player.tickCount))return;
         double now=mc.player.tickCount;
-        MOTION.attack(now,mc.player.getCurrentItemAttackStrengthDelay(),mainPose(SKILL.sample(now),now));
+        // Native attack input runs before this player tick. The first visible partial tick follows it.
+        MOTION.attack(now,now+1,mc.player.getCurrentItemAttackStrengthDelay(),mainPose(SKILL.sample(now),now));
     }
     public static boolean render(HandRenderContext event) {
         Minecraft mc=Minecraft.getInstance();

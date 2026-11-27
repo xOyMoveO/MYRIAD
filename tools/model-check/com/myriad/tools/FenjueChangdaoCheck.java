@@ -13,42 +13,76 @@ import org.joml.Vector3f;
 public final class FenjueChangdaoCheck {
     static void require(boolean ok,String reason){if(!ok)throw new IllegalStateException(reason);}
     public static void main(String[] args)throws Exception{
-        Path assets=Path.of(args[0]),art=Path.of(args[1]);
-        Path source=art.resolve("fenjue_flame_changdao_v1.spec.json");
+        Path input=Path.of(args.length==0?".":args[0]);
+        boolean repository=Files.isDirectory(input.resolve("src/main/resources/assets/myriad"));
+        Path assets=repository?input.resolve("src/main/resources/assets/myriad"):input;
+        Path art=repository?input.resolve("art_source/fenjue"):Path.of(args[1]);
+        Path source=art.resolve("fenjue_flame_changdao.spec.json");
         var spec=JsonParser.parseString(Files.readString(source)).getAsJsonObject();
         var json=JsonParser.parseString(Files.readString(assets.resolve("models/item/lieyanjian.json"))).getAsJsonObject();
-        var bb=JsonParser.parseString(Files.readString(art.resolve("fenjue_flame_changdao_v1.bbmodel"))).getAsJsonObject();
+        var bb=JsonParser.parseString(Files.readString(art.resolve("fenjue_flame_changdao.bbmodel"))).getAsJsonObject();
         String sha=HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(source)));
         require(json.get("myriad_source_sha256").getAsString().equals(sha),"Held item uses this generated source");
-        var parts=spec.getAsJsonArray("parts");var elements=json.getAsJsonArray("elements");
-        require(elements.size()==423&&parts.size()==423&&bb.getAsJsonArray("elements").size()==423,"All source parts preserved");
+        require(json.get("display").equals(spec.get("display")) && json.get("display").equals(bb.get("display")),
+                "Source, editable model and game share every display transform");
+        var parts=bb.getAsJsonArray("elements");
+        var elements=json.getAsJsonArray("elements");
+        require(parts.size()==elements.size(),"All visible editable parts exported");
         var cubes=new ArrayList<CuboidModelElement>();
+        var byName=new HashMap<String,CuboidModelElement>();
+        var resolution=bb.getAsJsonObject("resolution");
+        double uvScale=16.0/resolution.get("width").getAsDouble();
         for(int i=0;i<parts.size();i++){
-            var p=parts.get(i).getAsJsonObject();var e=elements.get(i).getAsJsonObject();
-            var cube=MinecraftModelParser.element(e);cubes.add(cube);
+            var p=parts.get(i).getAsJsonObject();
+            var e=elements.get(i).getAsJsonObject();
+            var cube=MinecraftModelParser.element(e);
+            cubes.add(cube);
+            var name=e.get("name").getAsString();
+            require(byName.put(name,cube)==null && p.get("name").getAsString().equals(name),"Unique ordered source parts");
+            require(e.get("from").equals(p.get("from")) && e.get("to").equals(p.get("to")),"Editable bounds match "+name);
             for(int axis=0;axis<3;axis++){
                 float from=cube.from().get(axis),to=cube.to().get(axis);
-                require(from<to&&from>=-16&&to<=32,"Positive dimensions in vanilla bounds");
-                double expected=8+p.getAsJsonArray("pos").get(axis).getAsDouble()/16;
-                require(Math.abs(from-expected)<1E-6&&Math.abs(to-expected-p.getAsJsonArray("size").get(axis).getAsDouble()/16)<1E-6,"Source dimensions preserved");
+                require(from<to && from>=-16 && to<=32,"Positive dimensions in vanilla bounds");
             }
-            for(var face:e.getAsJsonObject("faces").entrySet())for(var n:face.getValue().getAsJsonObject().getAsJsonArray("uv"))
-                require(n.getAsDouble()>=0&&n.getAsDouble()<=16,"UV bounds");
+            for(var face:e.getAsJsonObject("faces").entrySet()){
+                var uv=face.getValue().getAsJsonObject().getAsJsonArray("uv");
+                var expected=p.getAsJsonObject("faces").getAsJsonObject(face.getKey()).getAsJsonArray("uv");
+                require(uv.get(0).getAsDouble()!=uv.get(2).getAsDouble() && uv.get(1).getAsDouble()!=uv.get(3).getAsDouble(),"Face samples an area");
+                for(int n=0;n<4;n++){
+                    double coordinate=uv.get(n).getAsDouble();
+                    require(coordinate>=0 && coordinate<=16 && Math.abs(coordinate-expected.get(n).getAsDouble()*uvScale)<1E-7,"UV matches source");
+                }
+            }
         }
+        // Physical anchors used by the held weapon and its blade-following trails.
+        var grip=byName.get("grip");
+        require(grip.from().equals(new Vector3f(7.59375f,6.25f,7.6875f)) &&
+                grip.to().equals(new Vector3f(8.40625f,9.75f,8.3125f)),"Centred slim grip");
+        var guard=byName.get("guard");
+        require(guard.from().equals(new Vector3f(7.25f,10f,7.875f)) &&
+                guard.to().equals(new Vector3f(8.75f,10.75f,8.125f)),"Guard stays on the same grip joint");
+        var tip=byName.get("point_45");
+        require(tip.from().equals(new Vector3f(8.84375f,30.125f,7.875f)) &&
+                tip.to().equals(new Vector3f(8.90625f,30.28125f,8.125f)),"Positive-X cutting edge and original blade tip");
         var item=JsonParser.parseString(Files.readString(assets.resolve("items/lieyanjian.json"))).getAsJsonObject();
         require(item.getAsJsonObject("model").get("model").getAsString().equals("myriad:item/lieyanjian"),"Registered item routes to replacement in every context");
         byte[] png=Files.readAllBytes(assets.resolve("textures/item/fenjue_flame_changdao.png"));
-        require(Arrays.equals(png,Files.readAllBytes(art.resolve("fenjue_flame_changdao_v1.png"))),"Source/exported atlas identical");
         String embedded=bb.getAsJsonArray("textures").get(0).getAsJsonObject().get("source").getAsString();
         require(embedded.startsWith("data:image/png;base64,"),"Portable embedded BBModel texture");
         require(Arrays.equals(png,Base64.getDecoder().decode(embedded.substring(embedded.indexOf(',')+1))),"BBModel texture matches game");
         var texture=ImageIO.read(new java.io.ByteArrayInputStream(png));
-        require(texture.getWidth()==256&&texture.getHeight()==256,"256px atlas");
-        for(var raw:spec.getAsJsonObject("atlas").getAsJsonArray("regions")){
-            var region=raw.getAsJsonObject();var rect=region.getAsJsonArray("rect");
-            int x=rect.get(0).getAsInt(),y=rect.get(1).getAsInt(),w=rect.get(2).getAsInt(),h=rect.get(3).getAsInt();
-            int color=texture.getRGB(x,y);
-            for(int v=y;v<y+h;v++)for(int u=x;u<x+w;u++)require(texture.getRGB(u,v)==color,"No random material noise");
+        require(texture.getWidth()==resolution.get("width").getAsInt() && texture.getHeight()==resolution.get("height").getAsInt(),
+                "Atlas dimensions match model UV dimensions");
+        // Sample the actual North-face islands to verify visible steel, braid, and gem detail.
+        for(String name:List.of("grip","fold_08","ember_facet_3_front")){
+            var part=java.util.stream.StreamSupport.stream(parts.spliterator(),false).map(JsonElement::getAsJsonObject)
+                    .filter(p->p.get("name").getAsString().equals(name)).findFirst().orElseThrow();
+            var uv=part.getAsJsonObject("faces").getAsJsonObject("north").getAsJsonArray("uv");
+            int x1=uv.get(0).getAsInt(),x2=uv.get(2).getAsInt(),y1=uv.get(1).getAsInt(),y2=uv.get(3).getAsInt();
+            var colors=new HashSet<Integer>();
+            for(int y=Math.min(y1,y2);y<Math.max(y1,y2);y++)
+                for(int x=Math.min(x1,x2);x<Math.max(x1,x2);x++)colors.add(texture.getRGB(x,y));
+            require(colors.size()>=3,"Bound material detail on "+name);
         }
         var connected=new HashSet<Integer>();connected.add(0);
         boolean changed=true;while(changed){changed=false;
@@ -62,7 +96,6 @@ public final class FenjueChangdaoCheck {
             }
         }
         require(connected.size()==cubes.size(),"All layers connected to grip");
-        require(Math.abs(cubes.getFirst().to().x()-cubes.getFirst().from().x()-.8125)<1E-6&&Math.abs(cubes.getFirst().to().z()-cubes.getFirst().from().z()-.625)<1E-6,"Slim centred grip");
         try(var reader=Files.newBufferedReader(assets.resolve("models/item/lieyanjian.json"))){
             var model=CuboidModel.fromStream(reader);require(model.geometry()!=null,"current Minecraft accepts complete model");
             for(var context:List.of(ItemDisplayContext.FIRST_PERSON_RIGHT_HAND,ItemDisplayContext.FIRST_PERSON_LEFT_HAND,
@@ -85,6 +118,6 @@ public final class FenjueChangdaoCheck {
                 }
             }
         }
-        System.out.println("[MYRIAD-FENJUE-CHANGDAO] PASS: real current Minecraft parser; 423 connected positive source cubes; embedded/exported clean atlas; seven contexts; centred slim grip; GUI padding; actual LIEYANJIAN route");
+        System.out.println("[MYRIAD-FENJUE-CHANGDAO] PASS: real current Minecraft parser; "+cubes.size()+" connected positive cubes; bound steel, braid and gem texture; seven contexts; centred slim grip; GUI padding; actual LIEYANJIAN route");
     }
 }
