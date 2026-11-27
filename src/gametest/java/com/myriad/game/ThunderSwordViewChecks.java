@@ -5,9 +5,10 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-/** Pure renderer math on the server: palm attachment and the three camera-space cuts. */
+/** Server-side math checks for the prototype and for the rig still used by skill gestures. */
 final class ThunderSwordViewChecks {
     static void verify(GameTestHelper h){
+        verifyPrototype(h);
         h.assertTrue(ThunderSwordRig.allowed(true,"tianxing",true,true),"Own living Tianxing sword view is enabled");
         h.assertTrue(!ThunderSwordRig.allowed(false,"tianxing",true,true)&&!ThunderSwordRig.allowed(true,"yingxiao",true,true)
                 &&!ThunderSwordRig.allowed(true,"tianxing",false,true)&&!ThunderSwordRig.allowed(true,"tianxing",true,false),"Mod/role/camera-life/item gates restore ordinary rendering");
@@ -62,7 +63,83 @@ final class ThunderSwordViewChecks {
             motion.attack(0,recovery);h.assertTrue(motion.duration()>=6&&motion.duration()<=72,"Attack speed bounded cosmetic duration");
             h.assertTrue(motion.sample(motion.duration()).equals(ThunderSwordMotion.IDLE),"No lingering pose after completion");motion.reset();
         }
-        System.out.println("[MYRIAD-THUNDER-FIRSTPERSON] PASS: 4356 palm/grip poses, visible idle blade face, actual cutting edge aligned with all three swing velocities (no broad-face slap), projected paths, left/slim, lifecycle/clock/duration");
+        System.out.println("[MYRIAD-THUNDER-FIRSTPERSON] PASS: legacy rig attachment and motion compatibility");
+    }
+
+    private static void verifyPrototype(GameTestHelper h) {
+        var motion = new TianxingSwordPrototype();
+        var idle = motion.sword(0, false);
+        var grip = idle.getTranslation(new Vector3f());
+        var tip = bladeTip(idle);
+        double depth = Math.toDegrees(Math.asin(-new Vector3f(tip).sub(grip).normalize().z));
+        h.assertTrue(depth >= 25 && depth <= 45, "Idle blade depth outside +25 to +45 degrees: " + depth);
+        h.assertTrue(grip.x > 0 && grip.y < 0 && grip.z < 0 && tip.z < grip.z,
+                "Right-hand idle grip is below centre and the tip points into the scene");
+        for (int cut = 0; cut < 3; cut++) {
+            double start = cut * 7;
+            var entry = motion.sword(start, false);
+            motion.attack(start, 7);
+            h.assertTrue(motion.cut() == cut, "Submitted attacks must advance in authored order");
+            h.assertTrue(motion.sword(start, false).equals(entry, 1e-4f),
+                    "New swing must inherit the pose displayed at interruption");
+            double begin = motion.sweepStart();
+            double end = motion.sweepEnd();
+            h.assertTrue(begin >= start && end > begin, "Sweep interval must follow input");
+            var first = projectedTip(motion.sword(begin, false));
+            var last = projectedTip(motion.sword(end, false));
+            var delta = last.sub(first, new Vector3f());
+            h.assertTrue(first.x * last.x < 0, "Each cut crosses the screen centre line: " + cut);
+            boolean direction = switch (cut) {
+                case 0 -> delta.x < 0 && delta.y < 0;
+                case 1 -> delta.x > 0 && delta.y < 0;
+                default -> delta.x < 0 && Math.abs(delta.y) < Math.abs(delta.x) * .25;
+            };
+            h.assertTrue(direction, "Projected sweep direction for cut " + cut + ": " + delta);
+            for (int frame = 0; frame <= 48; frame++) {
+                double tick = begin + (end - begin) * frame / 48;
+                var right = motion.sword(tick, false);
+                var left = motion.sword(tick, true);
+                h.assertTrue(right.isFinite() && left.isFinite() && right.determinant() > 0 && left.determinant() > 0,
+                        "Both hands must have finite, positive-handed transforms");
+                assertMirror(h, right.getTranslation(new Vector3f()), left.getTranslation(new Vector3f()));
+                assertMirror(h, bladeTip(right), bladeTip(left));
+                h.assertTrue(right.equals(motion.sword(tick, false), 1e-6f),
+                        "Sampling either hand must leave the current frame unchanged");
+            }
+        }
+        motion.reset();
+        h.assertTrue(motion.sword(0, false).equals(idle, 1e-5f), "Reset must discard the last swing");
+        // Equip begins on the first visible frame of a changed weapon, advances only toward
+        // rest, and can never resume after an attack (even for a long item-swap recovery).
+        motion.equip(100, 1);
+        h.assertTrue(Math.abs(motion.sword(100, false).m31() - (idle.m31() - .48f)) < 1e-5f,
+                "Actual equipment change inherits the drawn item's lowering");
+        h.assertTrue(Math.abs(motion.sword(101, false).m31() - (idle.m31() - .288f)) < 1e-5f,
+                "Equipment rise follows the vanilla .4 per tick rate");
+        motion.attack(101.5, 40);
+        for (double tick = motion.sweepEnd() + 9; tick <= 146; tick += .25) {
+            h.assertTrue(motion.sword(tick, false).equals(idle, 1e-5f),
+                    "Completed swing must stay at rest through the long cooldown: " + tick);
+        }
+        motion.equip(150, .5f);
+        h.assertTrue(motion.sword(150, false).m31() < idle.m31() - .2f
+                && motion.sword(152, false).equals(idle, 1e-5f), "Next real equip still raises the weapon");
+        System.out.println("[MYRIAD-TIANXING-PROTOTYPE] PASS: idle depth " + depth
+                + " degrees, three projected sweeps, interrupt continuity, bilateral mirroring and repeat sampling");
+    }
+
+    private static void assertMirror(GameTestHelper h, Vector3f right, Vector3f left) {
+        h.assertTrue(right.z < 0 && left.distance(-right.x, right.y, right.z) < 1e-4f,
+                "Mirrored camera-space sample: right=" + right + ", left=" + left);
+    }
+
+    private static Vector3f bladeTip(Matrix4f sword) {
+        return sword.transformPosition(new Vector3f(0, 1.40625f, 0));
+    }
+
+    private static Vector3f projectedTip(Matrix4f sword) {
+        var tip = bladeTip(sword);
+        return tip.div(-tip.z);
     }
     private static Vector3f tip(ThunderSwordMotion.Pose p){
         return ThunderSwordRig.wrist(p,0,false).mul(ThunderSwordRig.blade(false)).transformPosition(new Vector3f(0,1.40625f,0));
