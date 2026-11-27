@@ -13,7 +13,7 @@ final class WindHandMotion {
         }
     }
     private static final Vec3 HIDDEN = new Vec3(-.65, -1.27, -.9);
-    static final Pose IDLE = pose(.477, -.451, -.937, .54, .81, -.20);
+    static final Pose IDLE = pose(.495, -.475, -.970, .10, .93, -.35);
     private static final Pose DOWN_RIGHT = pose(.49, -.51, -1.12, .28, -.41, -.87);
     private static final Pose CUT_1_READY = pose(.60, -.30, -1.32, .44, .43, -.82);
     private static final Pose CUT_1_END = pose(-.30, -.55, -1.45, -.53, -.34, -.79);

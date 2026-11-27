@@ -14,7 +14,7 @@ final class WindHandRig {
     private static final Vec3 RIGHT = new Vec3(1, 0, 0);
     private static final Vec3 UP = new Vec3(0, 1, 0);
     private static final double BLADE_SCALE = .82;
-    private static final double IDLE_ROLL = -.18;
+    private static final double IDLE_ROLL = .02;
 
     private WindHandRig() {}
 
@@ -81,14 +81,15 @@ final class WindHandRig {
 
     static Matrix4f arm(WindHandMotion.Pose pose, boolean off, boolean slim, float equip, Matrix4f weapon) {
         Vec3 grip = palm(off ? pose.free() : pose.grip(), equip);
-        Vec3 shoulder = new Vec3(off ? -.83 : .84, -.78, -.16);
+        Vec3 shoulder = off ? new Vec3(-.83, -.78, -.16) : new Vec3(.63, -.88, -.16);
         Vec3 axis = grip.subtract(shoulder).normalize();
         Vec3 across = across(RIGHT, axis);
         Vec3 transverse = axis.cross(across);
         double wristRoll = off ? Math.toRadians(134) * pose.palmUp() : .53 *
                 weapon.transformDirection(new Vector3f(1, 0, 0)).normalize().dot(vector(transverse));
         across = across.scale(Math.cos(wristRoll)).add(transverse.scale(Math.sin(wristRoll)));
-        return basis(grip, across, axis).scale(.71f, .99f, .71f).mul(NightDaggerRig.arm(slim, off));
+        float width = off ? .71f : .75f;
+        return basis(grip, across, axis).scale(width, .99f, width).mul(NightDaggerRig.arm(slim, off));
     }
 
     static Vec3 palm(Vec3 grip, float equip) {
