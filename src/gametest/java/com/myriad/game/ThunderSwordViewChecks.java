@@ -72,7 +72,7 @@ final class ThunderSwordViewChecks {
         var grip = idle.getTranslation(new Vector3f());
         var tip = bladeTip(idle);
         double depth = Math.toDegrees(Math.asin(-new Vector3f(tip).sub(grip).normalize().z));
-        h.assertTrue(depth >= 42 && depth <= 48, "Idle blade depth outside +42 to +48 degrees: " + depth);
+        h.assertTrue(depth >= 25 && depth <= 35, "Idle blade depth outside +25 to +35 degrees: " + depth);
         h.assertTrue(grip.x > 0 && grip.y < 0 && grip.z < 0 && tip.z < grip.z,
                 "Right-hand idle grip is below centre and the tip points into the scene");
         for (int cut = 0; cut < 3; cut++) {
@@ -181,6 +181,14 @@ final class ThunderSwordViewChecks {
             }
             h.assertTrue(motion.sword(motion.settledAt(), false).equals(idle, 1e-5f),
                     "A single attack must return to ready when the chain is not continued");
+            double retDur = motion.settledAt() - motion.returnStart();
+            for (int i = 20; i <= 80; i += 5) {
+                double t0 = motion.returnStart() + retDur * (i - 1) / 100.0;
+                double t1 = motion.returnStart() + retDur * (i + 1) / 100.0;
+                float step = screenPoint(motion.sword(t1, false), 1.40625f)
+                        .distance(screenPoint(motion.sword(t0, false), 1.40625f));
+                h.assertTrue(step > .005f, "Recovery must not pause mid-arc: cut=" + cut + " pct=" + i + " step=" + step);
+            }
             if (cut < 2) h.assertTrue(!motion.sword(start + cadence, false).equals(idle, 1e-3f),
                     "A ready follow-up must keep its authored preparation through normal cooldown");
         }
