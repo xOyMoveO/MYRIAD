@@ -317,9 +317,9 @@ def build_parts(source):
     for i, y in enumerate(range(-25, 26, 10)):
         box(f"braid_welt_{i}", (-7, y, -5.5), (7, y + 1.5, 5.5), "wrap", "grip")
     for name, y, Y in [("heel", -32, -28), ("throat", 28, 32)]:
-        box(name, (-8, y, -6), (8, Y, 6), "bronze", "grip")
+        box(name, (-8, y + 1, -6), (8, Y, 6), "bronze", "grip")
         box(name + "_fillet", (-8.5, y, -6.5), (8.5, y + 1, 6.5), "gold", name)
-    box("pommel", (-8, -42, -6), (8, -32, 6), "bronze", "grip")
+    box("pommel", (-8, -40, -6), (8, -32, 6), "bronze", "grip")
     box("pommel_lip", (-8.5, -42, -6.5), (8.5, -40, 6.5), "gold", "pommel")
     box("coal_socket", (-5, -52, -3), (5, -42, 3), "iron", "pommel")
     for side in (-1, 1):
@@ -333,7 +333,7 @@ def build_parts(source):
         y = min(w[2] for w in sections)
         Y = max(w[3] for w in sections)
         for side in (-1, 1):
-            a, b = sorted([side * x, side * X])
+            a, b = sorted([side * max(12, x), side * X])
             label = f"quillon_{'left' if side<0 else 'right'}_{i}"
             box(label, (a, y, -2.5), (b, Y - 1.5, 2.5), "bronze", "guard")
             box(label + "_lip", (a, Y - 1.5, -3), (b, Y, 3), "gold", label)
@@ -379,7 +379,7 @@ def build_parts(source):
         # silhouette open and give the base more depth than the fading tip.
         profile = [
             (0, 3, -3.5, 2, 1.5),
-            (3, 6, -4, 1.5, 2),
+            (3, 6, -4, 1.5, 1.5),
             (6, 9, -7, 0, 2),
             (9, 12, -7, -0.5, 1.5),
             (12, 15, -5.5, -2, 1.5),
