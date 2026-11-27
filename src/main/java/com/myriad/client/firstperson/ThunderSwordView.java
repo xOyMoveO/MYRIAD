@@ -203,8 +203,8 @@ public final class ThunderSwordView {
         float prep = MeleeAttackBuffer.preparation(mc, partial);
         stack.translate(dx * weight, dy * weight + .028 * prep, .007 * breath * weight + .026 * prep);
         stack.mulPose(new Matrix4f().rotationXYZ(
-                (float)(DEG * (.55*breath - .19*pitch) * weight),
-                (float)(DEG * .25*yaw * weight),
+                (float)(DEG * (.55*breath - .28*pitch) * weight),
+                (float)(DEG * .39*yaw * weight),
                 (float)(side * DEG * (.92*walkWeight*Math.sin(step) + 4*prep) * weight)));
     }
 }

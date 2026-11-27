@@ -10,35 +10,63 @@ public final class TianxingSwordPrototype {
     private record Pose(Vector3f grip, Quaternionf rotation) {
         Pose toward(Pose other, double amount) {
             float t = (float) Math.clamp(amount, 0, 1);
-            return new Pose(new Vector3f(grip).lerp(other.grip, t),
-                    new Quaternionf(rotation).slerp(other.rotation, t));
+            var blend = new Quaternionf(rotation).slerp(other.rotation, t);
+            // Blending roll must never lift a low recovery path across the crosshair.
+            // Interpolate the shaft explicitly, then retain the twist of the quaternion blend.
+            var axis = rotation.transformPositiveY(new Vector3f())
+                    .lerp(other.rotation.transformPositiveY(new Vector3f()), t).normalize();
+            var adjust = new Quaternionf().rotationTo(blend.transformPositiveY(new Vector3f()), axis);
+            return new Pose(new Vector3f(grip).lerp(other.grip, t), adjust.mul(blend));
         }
     }
 
     private static final Vector3f SHOULDER = new Vector3f(.66f, -.87f, -.22f);
-    private static final Vector3f CENTRE = new Vector3f(.13f, -.27f, -1.02f);
     private static final Vector3f FORWARD = new Vector3f(0, 0, -1);
-    private static final Pose REST = new Pose(new Vector3f(.64f, -.50f, -.94f),
-            orientation(new Vector3f(-.30f, .73f, -.61f), new Vector3f(.95f, .18f, -.14f)));
     private static final float SCALE = .90f;
+    private static Vector3f v(float x, float y, float z) { return new Vector3f(x, y, z); }
 
-    private record Cut(float slope, float fromDegrees, float toDegrees) {
+    private static Pose guard(Vector3f grip, Vector3f shaft, Vector3f edge) {
+        return new Pose(grip, orientation(shaft, edge));
+    }
+
+    private static final Pose REST = guard(v(.80f,-.49f,-1.11f), v(-.24f,.665f,-.708f), v(.95f,.18f,-.14f));
+    private static final Pose LEFT_GUARD = guard(v(-.69f,-.67f,-1.42f), v(-.78f,.05f,-.62f), v(-.24f,-.95f,.16f));
+    private static final Pose RIGHT_GUARD = guard(v(.51f,-.53f,-1.31f), v(.83f,-.23f,-.51f), v(.18f,-.97f,.14f));
+    private static final Pose LOW_LEFT = guard(v(-.52f,-.69f,-1.43f), v(-.77f,-.17f,-.61f), v(-.25f,.95f,.10f));
+    private static final Pose LOW_CENTRE = guard(v(-.06f,-.81f,-1.36f), v(.28f,.21f,-.94f), v(.88f,.30f,.22f));
+    private static final Pose LOW_RIGHT = guard(v(.68f,-.69f,-1.35f), v(.57f,.16f,-.81f), v(.86f,.28f,.41f));
+
+    // Projected screen slope and tilt into depth specify this weapon's cutting plane.
+    // The three grip anchors define a curved shoulder orbit independent of the wrist's turn.
+    private record Cut(float slopeDegrees, float depthDegrees, float fromDegrees, float toDegrees,
+                       Vector3f initial, Vector3f control, Vector3f finish) {
         Pose pose(double fraction) {
-            // The projected radial basis defines both the stroke plane and its cutting tangent.
-            var lateral = new Vector3f(1, slope, 0).normalize();
-            var normal = new Vector3f(FORWARD).cross(lateral);
-            float theta = (float) Math.toRadians(fromDegrees + (toDegrees - fromDegrees) * fraction);
-            var arm = new Vector3f(CENTRE).sub(SHOULDER).rotateAxis(theta * .68f, normal.x, normal.y, normal.z);
-            var grip = arm.add(SHOULDER);
-            var shaft = new Vector3f(FORWARD).rotateAxis(theta, normal.x, normal.y, normal.z);
-            var edge = new Vector3f(lateral).rotateAxis(theta, normal.x, normal.y, normal.z)
+            float t = (float)fraction;
+            double slope = Math.toRadians(slopeDegrees), depth = Math.toRadians(depthDegrees);
+            var across = v((float)Math.cos(slope), (float)Math.sin(slope), 0);
+            var up = v(-across.y, across.x, 0).mul((float)Math.cos(depth)).fma((float)Math.sin(depth), FORWARD);
+            float theta = (float)Math.toRadians(fromDegrees + (toDegrees - fromDegrees) * t);
+            var shaft = new Vector3f(up).mul((float)Math.cos(theta)).fma((float)Math.sin(theta), across);
+            var tangent = new Vector3f(across).mul((float)Math.cos(theta)).fma(-(float)Math.sin(theta), up)
                     .mul(Math.signum(toDegrees - fromDegrees));
-            return new Pose(grip, orientation(shaft, edge));
+            float a = (1-t)*(1-t), b = 2*t*(1-t), c = t*t;
+            var r0 = new Vector3f(initial).sub(SHOULDER);
+            var r1 = new Vector3f(control).sub(SHOULDER);
+            var r2 = new Vector3f(finish).sub(SHOULDER);
+            float radius = a*r0.length() + b*r1.length() + c*r2.length();
+            var grip = r0.normalize().mul(a).fma(b, r1.normalize()).fma(c, r2.normalize())
+                    .normalize(radius).add(SHOULDER);
+            return new Pose(grip, orientation(shaft, tangent));
         }
     }
 
     private static final Cut[] CUTS = {
-            new Cut(.63f, 67, -74), new Cut(-.63f, -66, 74), new Cut(0, 72, -80)
+            new Cut(31, 65, 64, -68,
+                    v(.54f,-.38f,-1.26f), v(.14f,-.32f,-1.64f), v(-.53f,-.62f,-1.48f)),
+            new Cut(-34, 51, -66, 66,
+                    v(-.82f,-.76f,-1.48f), v(.02f,-.31f,-1.64f), v(.46f,-.49f,-1.38f)),
+            new Cut(12, 41, 63, -60,
+                    v(.62f,-.40f,-1.30f), v(.06f,-1.15f,-1.82f), v(-.40f,-.70f,-1.35f))
     };
     private static Quaternionf orientation(Vector3f shaft, Vector3f edge) {
         var y = new Vector3f(shaft).normalize();
@@ -58,7 +86,7 @@ public final class TianxingSwordPrototype {
         equippedAt = now;
         initialEquipDrop = Float.isFinite(vanillaDrop) ? Math.clamp(vanillaDrop, 0, 1) : 0;
     }
-    private double start, windup, swing, chainUntil;
+    private double start, windup, swing, chainUntil, guardUntil;
     private Pose entry = REST;
     private Vector3f entryVelocity = new Vector3f();
     private Vector3f angularVelocity = new Vector3f();
@@ -66,8 +94,10 @@ public final class TianxingSwordPrototype {
     public int cut() { return cut; }
     public double sweepStart() { return start + windup; }
     public double sweepEnd() { return sweepStart() + swing; }
+    public double returnStart() { return guardUntil; }
+    public double settledAt() { return guardUntil + (cut == 1 ? 12 : 17); }
     public void reset() { cut = -1; initialEquipDrop = 0; }
-    boolean active(double now) { return cut >= 0 && now >= start && now < sweepEnd() + 9; }
+    boolean active(double now) { return cut >= 0 && now >= start && now < settledAt(); }
 
     public void attack(double now, double cooldownTicks) {
         if (!Double.isFinite(now) || cut >= 0 && start == now) return;
@@ -87,8 +117,10 @@ public final class TianxingSwordPrototype {
         start = now;
         double cadence = Double.isFinite(cooldownTicks) ? Math.clamp(cooldownTicks, 1, 72) : 12;
         double compression = Math.min(1, cadence / 4.0);
-        windup = (chained ? .85 : 1.22) * compression;
-        swing = 2.85 * compression;
+        windup = (cut == 1 ? 2.1 : 1.7) * compression;
+        swing = (cut == 2 ? 5.2 : 4.4) * compression;
+        // The opposite guard survives the next legal press at the real attack cadence.
+        guardUntil = cut == 2 ? sweepEnd() + 5.5 : Math.max(sweepEnd() + 7, start + cadence + 4);
         chainUntil = now + Math.max(16, cadence + 12);
     }
 
@@ -109,15 +141,33 @@ public final class TianxingSwordPrototype {
         }
         if (now <= sweepEnd()) {
             double u = (now - sweepStart()) / swing;
-            double split = .68;
+            double split = .58;
             double phase = u < split ? u*u / split : 1 - (1-u)*(1-u) / (1-split);
             return stroke.pose(phase);
         }
         double release = now - sweepEnd();
-        // A short underdamped overshoot at the wrist, followed by a critically damped return.
-        double extra = .050 * Math.exp(-1.05 * release) * Math.sin(2.1 * release);
-        double d = release * 1.07;
-        return stroke.pose(1 + extra).toward(REST, 1 - (1 + d) * Math.exp(-d));
+        var sideGuard = cut == 0 ? LEFT_GUARD : cut == 1 ? RIGHT_GUARD : LOW_LEFT;
+        if (now < guardUntil) {
+            double duration = cut == 2 ? 5.5 : 7;
+            double overshoot = .033 * Math.exp(-.56 * release) * Math.sin(1.1 * release);
+            return stroke.pose(1 + overshoot).toward(sideGuard, ease(release / duration));
+        }
+
+        // When the player stops linking attacks, bring the grip along the bottom first.
+        // In particular, leave the third stroke below the target until it reaches the right side.
+        double elapsed = now - guardUntil;
+        if (cut == 1) {
+            if (elapsed < 4) return RIGHT_GUARD.toward(LOW_RIGHT, ease(elapsed / 4));
+            return LOW_RIGHT.toward(REST, ease((elapsed - 4) / 8));
+        }
+        if (elapsed < 5) return sideGuard.toward(LOW_CENTRE, ease(elapsed / 5));
+        if (elapsed < 10) return LOW_CENTRE.toward(LOW_RIGHT, ease((elapsed - 5) / 5));
+        return LOW_RIGHT.toward(REST, ease((elapsed - 10) / 7));
+    }
+
+    private static double ease(double u) {
+        double t = Math.clamp(u, 0, 1);
+        return t*t*(3 - 2*t);
     }
 
     /** Model (8,8,8) is the actual grip and becomes the origin under display context NONE. */
@@ -139,6 +189,6 @@ public final class TianxingSwordPrototype {
     double microWeight(double now) {
         if (!active(now)) return 1;
         if (now < sweepStart()) return Math.pow(1 - (now - start) / windup, 2);
-        return Math.clamp((now - sweepEnd()) / 4, 0, 1);
+        return ease((now - sweepEnd()) / 5.5);
     }
 }
