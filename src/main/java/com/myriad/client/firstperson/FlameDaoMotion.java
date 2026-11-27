@@ -16,15 +16,15 @@ public final class FlameDaoMotion {
         // Right shoulder -> lower left; the wrist leads a forward descending arc.
         {new Key(0,IDLE),k(.20,.48,.01,-1.48,-10,8,18),
                 k(.42,.12,-.24,-1.68,-42,0,64),k(.65,-.40,-.56,-1.49,-67,-8,128),
-                k(.79,-.28,-.51,-1.44,-58,-5,118),new Key(1,IDLE)},
+                k(.70,-.46,-.64,-1.52,-69,-9,132),k(.86,.04,-.85,-1.32,-50,-4,90),new Key(1,IDLE)},
         // Low left -> upper right. A rising return cut, not a second downward slap.
         {new Key(0,IDLE),k(.20,-.39,-.56,-1.48,-67,-8,128),
                 k(.42,.08,-.25,-1.68,-42,0,64),k(.65,.49,.02,-1.49,-10,8,18),
-                k(.79,.50,-.02,-1.43,-8,6,23),new Key(1,IDLE)},
+                k(.70,.57,.09,-1.51,-7,10,14),k(.86,.64,-.60,-1.33,-35,5,28),new Key(1,IDLE)},
         // Mid-height right -> left, followed by a visible controlled return to low guard.
         {new Key(0,IDLE),k(.20,.53,-.29,-1.50,-70,0,-5),
                 k(.42,.08,-.29,-1.72,-82,0,64),k(.65,-.43,-.29,-1.50,-70,0,135),
-                k(.79,-.30,-.33,-1.44,-62,0,125),new Key(1,IDLE)}
+                k(.70,-.52,-.30,-1.53,-73,0,141),k(.86,-.03,-.81,-1.35,-52,0,101),new Key(1,IDLE)}
     };
     private int cut=-1;
     private double start=Double.NEGATIVE_INFINITY,duration,entryRight,entryLeft,anchorRight,anchorLeft;
@@ -40,8 +40,8 @@ public final class FlameDaoMotion {
         if(!Double.isFinite(tick)||tick==start)return false;
         cut=cut<0||tick<start||tick-start>duration+28?0:(cut+1)%3;
         entry=previous;start=tick;entryRight=right;entryLeft=left;
-        duration=Double.isFinite(recoveryTicks)?Math.clamp(recoveryTicks*.32,4,7.5):6.4;
-        var anchor=frame(start+duration*.30);
+        duration=MeleeStrokeTiming.recovery(recoveryTicks);
+        var anchor=frame(tickAt(.30));
         anchorRight=FlameDaoRig.target(anchor,false);anchorLeft=FlameDaoRig.target(anchor,true);
         return true;
     }
@@ -52,7 +52,7 @@ public final class FlameDaoMotion {
     }
     public Pose sample(double tick){
         if(!Double.isFinite(tick)||cut<0||tick<start||tick>=start+duration)return IDLE;
-        double t=(tick-start)/duration;var keys=CUTS[cut];
+        double t=path(tick);var keys=CUTS[cut];
         for(int i=1;i<keys.length;i++)if(t<=keys[i].t){
             double span=keys[i].t-keys[i-1].t,u=(t-keys[i-1].t)/span;
             double a=2*u*u*u-3*u*u+1,b=u*u*u-2*u*u+u,c=-2*u*u*u+3*u*u,d=u*u*u-u*u;
@@ -67,11 +67,13 @@ public final class FlameDaoMotion {
         var p=sample(tick);
         if(!Double.isFinite(tick)||cut<0||tick<start||tick>=start+duration)
             return new Frame(p,p,p,-1,-1,0,0,0,0);
-        double t=(tick-start)/duration,at=start+Math.clamp(t,.205,.645)*duration;
-        return new Frame(p,sample(at-duration*.002),sample(at+duration*.002),t,cut,
+        double t=path(tick),at=tickAt(Math.clamp(t,.205,.645));
+        return new Frame(p,sample(at-.006),sample(at+.006),t,cut,
                 entryRight,entryLeft,anchorRight,anchorLeft);
     }
     public int index(){return cut;}
+    public double tickAt(double path) { return start + MeleeStrokeTiming.age(path, .42, .65, duration); }
+    private double path(double tick) { return MeleeStrokeTiming.path(tick-start, .42, .65, duration); }
     public double duration(){return duration;}
     public double started(){return start;}
     public void reset(){cut=-1;start=Double.NEGATIVE_INFINITY;duration=0;entry=IDLE;entryRight=entryLeft=anchorRight=anchorLeft=0;}

@@ -63,6 +63,7 @@ final class LingyuanHandMotion {
     }
 
     void reset() { clip = null; combo = -1; lastBasic = Double.NEGATIVE_INFINITY; }
+    double basicStart(double now) { return active(now) && clip.phase == BASIC ? clip.start : Double.NaN; }
     int combo() { return combo; }
     private static boolean held(int phase) { return phase == AIM || phase == DASH || phase == GATHER || phase == CHOP; }
 
@@ -91,6 +92,8 @@ final class LingyuanHandMotion {
         Move move = phase == BASIC ? BASIC_MOVES[combo] : phase == FINISH ? DASH_END : phase == IMPACT ? LAND :
                 switch (skill) { case 3 -> SHEATHE_GUARD; case 4 -> volley((int)value); case 5 -> STAMP;
                     case 6 -> RAIN; default -> null; };
+        if (phase == BASIC) move = new Move(move.ready, move.beat, move.follow,
+                MeleeStrokeTiming.HIT, MeleeStrokeTiming.END_OF_CUT, MeleeStrokeTiming.recovery(value));
         if (move != null) clip = new Clip(skill,phase,now,now+move.length,from,now,0,0,move);
     }
 
@@ -130,7 +133,14 @@ final class LingyuanHandMotion {
             return clip.from.mix(m.ready,t).mix(m.ready.mix(m.beat,t),t);
         }
         if (age < m.drift) return ease(m.beat,m.follow,(age-m.peak)/(m.drift-m.peak));
-        return ease(m.follow,IDLE,(age-m.drift)/(m.length-m.drift));
+        double returning = (age-m.drift)/(m.length-m.drift);
+        if (clip.phase == BASIC) {
+            Pose low = combo == 1 ? sword(.72,-.67,-1.37,.60,.24,-.76)
+                    : sword(-.20,-.80,-1.37,-.52,-.16,-.84);
+            if (returning < .40) return ease(m.follow,low,returning/.40);
+            return ease(low,IDLE,(returning-.40)/.60);
+        }
+        return ease(m.follow,IDLE,returning);
     }
 
     double edgeWeight(double now) {

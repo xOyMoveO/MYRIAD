@@ -160,13 +160,17 @@ public final class MyriadInputBridge implements ClientModInitializer {
             };
             key = new Held(null, null, -1, nativeButton, tick + duration);
         } else throw RpcException.badRequest("kind must be key, mouse or scroll");
+        float strength = mc.player.getAttackStrengthScale(.5f);
         inputWorld = mc.level;
         held.add(key);
         try { dispatch(key, InputConstants.PRESS); }
         catch (Exception error) { release(key); throw error; }
         JsonObject result = new JsonObject();
         result.addProperty("heldInputs", held.size());
-        if (McpFabric.config().enableVision) result = state();
+        if (McpFabric.config().enableVision) {
+            result = state();
+            result.addProperty("meleeStrengthBeforeInput", strength);
+        }
         result.addProperty("inputRoute", "native_keyboard_or_mouse_handler");
         if (capture != null) result.addProperty("captureId", capture.id);
         return result;
@@ -245,6 +249,9 @@ public final class MyriadInputBridge implements ClientModInitializer {
             o.addProperty("yaw", mc.player.getYRot()); o.addProperty("pitch", mc.player.getXRot());
             o.addProperty("camera", mc.options.getCameraType().name());
             o.addProperty("fov", mc.options.fov().get());
+            o.addProperty("meleeStrength", mc.player.getAttackStrengthScale(.5f));
+            o.addProperty("meleeCadence", mc.player.getCurrentItemAttackStrengthDelay());
+            o.addProperty("aimedTarget", mc.crosshairPickEntity == null ? -1 : mc.crosshairPickEntity.getId());
             o.addProperty("mainArm", mc.player.getMainArm().name());
             o.addProperty("mainItem", net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(mc.player.getMainHandItem().getItem()).toString());
             o.addProperty("offhandEmpty", mc.player.getOffhandItem().isEmpty());

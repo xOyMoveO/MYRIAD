@@ -133,6 +133,8 @@ public final class WindBladeView {
         if (!event.getItemStack().is(ModItems.FENGREN.get())) return false;
 
         PoseStack stack = event.getPoseStack();
+        if (!MOTION.hasSkill(now) && MOTION.combo()>=0 && now<MOTION.attackStart()+MOTION.recovery())
+            event.holdEquipped();
         float equip = event.getEquipProgress();
         Matrix4f weapon = WindHandRig.weapon(MOTION, now, equip);
         submitArm(event, mc, hands, false, left, equip, weapon);

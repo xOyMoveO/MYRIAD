@@ -292,8 +292,12 @@ public final class AbilityRuntime {
             var receipt=SOURCE.get();if(receipt!=null&&receipt.skill.equals(source))receipt.confirmed=true;
         }
         if(!valid(p)||damage<=0||!direct||target instanceof DefenseTowerEntity)return;
-        if(basic)com.myriad.character.skills.keheng.KehengBasic.contact(p,target);
-        if(basic){p.removeEffect(MobEffects.INVISIBILITY);PlayerDataProvider.get(p).setStealthBonus(false);}
+        if (basic) {
+            com.myriad.character.skills.keheng.KehengBasic.contact(p,target);
+            com.myriad.character.skills.rivet.RivetVfx.basicContact(p);
+            p.removeEffect(MobEffects.INVISIBILITY);
+            PlayerDataProvider.get(p).setStealthBonus(false);
+        }
         var passive=passive(p);if(passive!=null)passive.onHit(new Hit(p,target,damage,basic,source,direct,
                 kind==2?DamageCalc.Kind.TRUE:kind==1?DamageCalc.Kind.MAGIC:DamageCalc.Kind.PHYSICAL));
         var data=PlayerDataProvider.get(p);

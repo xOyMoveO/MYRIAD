@@ -12,7 +12,8 @@ public final class HandRenderContext {
     private final PoseStack pose;
     private final SubmitNodeCollector collector;
     private final int light;
-    private final float partialTick, equipProgress, swingProgress;
+    private final float partialTick, swingProgress;
+    private float equipProgress;
     private boolean canceled;
     public HandRenderContext(InteractionHand hand, ItemStack item, PoseStack pose,
             SubmitNodeCollector collector, int light, float partialTick, float equipProgress, float swingProgress) {
@@ -25,6 +26,8 @@ public final class HandRenderContext {
     public SubmitNodeCollector getSubmitNodeCollector() { return collector; }
     public int getPackedLight() { return light; }
     public float getPartialTick() { return partialTick; }
+    /** Suppress vanilla cooldown lowering when an authored stroke already moves the grip. */
+    public void holdEquipped() { equipProgress = 0; }
     public float getEquipProgress() { return equipProgress; }
     public float getSwingProgress() { return swingProgress; }
     public boolean isCanceled() { return canceled; }

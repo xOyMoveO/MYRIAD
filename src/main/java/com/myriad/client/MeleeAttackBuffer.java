@@ -23,6 +23,10 @@ public final class MeleeAttackBuffer {
     private static ItemStack weapon;
     private static int slot;
     private static String role;
+    private static double raisedAt, loweredAt = Double.NEGATIVE_INFINITY;
+    private static LocalPlayer raisedOwner;
+    private static ItemStack raisedWeapon;
+    private static String raisedRole;
     private static boolean freshPress;
     private static boolean suppressMining;
 
@@ -87,6 +91,11 @@ public final class MeleeAttackBuffer {
                     slot = owner.getInventory().getSelectedSlot();
                     weapon = owner.getMainHandItem();
                     role = ClientDataHolder.characterId();
+                    raisedAt = owner.tickCount;
+                    loweredAt = Double.POSITIVE_INFINITY;
+                    raisedOwner = owner;
+                    raisedRole = role;
+                    raisedWeapon = weapon;
                 }
                 if (window.pending()) suppressMining = mc.options.keyAttack.isDown();
                 break;
@@ -117,10 +126,25 @@ public final class MeleeAttackBuffer {
     }
 
     private static void clearPending() {
+        if (owner != null) loweredAt = owner.tickCount;
         window.clear(); owner = null; world = null; weapon = null; role = null;
     }
 
+    /** A short lift on reservation, released by either submission or cancellation. */
+    public static float preparation(Minecraft mc, float partial) {
+        if (raisedOwner == null || raisedOwner != mc.player || raisedOwner.getMainHandItem() != raisedWeapon
+                || !raisedRole.equals(ClientDataHolder.characterId()) || mc.gui.screen() != null
+                || !ClientDataHolder.canFight()) return 0;
+        double now = raisedOwner.tickCount + partial;
+        double rise = Math.clamp((Math.min(now, loweredAt) - raisedAt) / .8, 0, 1);
+        double fall = Math.clamp((now - loweredAt) / .85, 0, 1);
+        if (fall >= 1) raisedOwner = null;
+        return (float) (rise * (1 - fall * fall * (3 - 2 * fall)));
+    }
+
     public static void reset() {
+        raisedOwner = null;
+        raisedWeapon = null;
         clearPending(); freshPress = false; suppressMining = false;
     }
 }

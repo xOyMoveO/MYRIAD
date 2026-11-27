@@ -135,6 +135,7 @@ final class ShuoChecks {
         var previous=motion.frame(6,true);motion.accept(new ShuoViewPayload(ShuoViewPayload.SHEATHE,8,6,2),6,0,true);
         var next=motion.frame(6,true);h.assertTrue(previous.palm().distance(next.palm())<1E-6&&previous.mouth().distance(next.mouth())<1E-6,"Changing from cut to resheath starts at the real existing hand pose, not a snapped idle");
         ShuoSlashChecks.verify(h);
+        ShuoScabbardChecks.verify(h);
         ShuoWorldVfxChecks.verify(h);
         ShuoBladeFollowChecks.verify(h);
         ShuoBrightnessChecks.verify(h);

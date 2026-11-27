@@ -73,12 +73,20 @@ public final class WarSpiritHandView {
         if(ClientDataHolder.buffTicks("g1_stun")>0)motion().abort(owner.tickCount);
     }
 
+    public static void attack(Minecraft mc) {
+        if (!(available(mc) == WAR)) return;
+        attach(mc, WAR);
+        DAO.cue(0, com.myriad.character.ability.WarSpiritHandCues.BASIC, mc.player.tickCount, 9,
+                mc.player.getCurrentItemAttackStrengthDelay());
+    }
+
     public static void receive(AbilityVfxPayload cue) {
         var mc=Minecraft.getInstance();int id=available(mc);
         if(id==0 || cue.theme()!=id || cue.owner()!=mc.player.getId())return;
         attach(mc,id);
         if(cue.started()<newest)return;
         newest=cue.started();
+        if (id == WAR && (int)cue.angle() == com.myriad.character.ability.WarSpiritHandCues.BASIC) return; // Local input already owns the basic.
         motion().cue(cue.variant(),(int)cue.angle(),owner.tickCount,cue.life(),cue.radius());
     }
 
@@ -88,6 +96,7 @@ public final class WarSpiritHandView {
         attach(mc,id);
         if(event.getHand()!=InteractionHand.MAIN_HAND || !correct(event.getItemStack(),id))return false;
         double now=owner.tickCount+event.getPartialTick();
+        if (id==WAR && Double.isFinite(DAO.basicStart(now))) event.holdEquipped();
         float equip=event.getEquipProgress();
         boolean left=owner.getMainArm()==HumanoidArm.LEFT;
         var pose=motion().pose(now);
@@ -98,6 +107,9 @@ public final class WarSpiritHandView {
             ClientItemRenderer.submit(owner,event.getItemStack(),ItemDisplayContext.NONE,stack,
                     event.getSubmitNodeCollector(),event.getPackedLight());
         } finally {stack.popPose();}
+        if (id==WAR) AttackTrailRenderer.submit(event,MeleeBladeLight.swept(now,DAO.basicStart(now),.36,2.8,
+                MeleeBladeLight.COPPER,new org.joml.Vector3f(0,.30f,0),new org.joml.Vector3f(0,1.474f,0),
+                at->WarSpiritHandRig.item(DAO,at,true,left,equip)));
         drawArm(event,pose,item,left,false);
         if(owner.getOffhandItem().isEmpty() && pose.palm().y> -1.10)drawArm(event,pose,item,left,true);
         event.setCanceled(true);

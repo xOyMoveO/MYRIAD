@@ -63,6 +63,8 @@ public final class WeaponBodyPose {
         if(p.move().accent()){t.accent=p;return;}
         if(p.move()==Move.FOLLOW){t.field=p;return;}
         if(p.move()==Move.CLOSE_FIELD || p.move()==Move.DROP_FIELD)t.field=null;
+        if (actor==Minecraft.getInstance().player && actor.getMainHandItem().is(ModItems.HENGKE.get())
+                && p.move()!=Move.RAPIER) KehengView.clearStroke();
         t.previous=action(t,level.getGameTime());
         t.action=p;
     }
@@ -115,6 +117,14 @@ public final class WeaponBodyPose {
         if(t==null || t.action==null || t.action.move()!=Move.LINE_READY && t.action.move()!=Move.LINE
                 || frame(t.action,actor.level().getGameTime())==IDLE)return 0;
         return (float)Math.toRadians(Math.clamp(Mth.wrapDegrees(t.action.yaw()-actor.getYRot()),-80,80));
+    }
+    static Pose firstPersonRapier(LivingEntity actor,float partial) {
+        var track=tracks.get(actor.getId());
+        if (track!=null && valid(track) && track.action!=null && track.action.move()==Move.RAPIER) {
+            double now=actor.level().getGameTime()+partial;
+            return frame(track.accent,now).plus(frame(track.field,now));
+        }
+        return sample(actor,partial);
     }
     public static Pose sample(LivingEntity actor,float partial){
         double now=actor.level().getGameTime()+partial;

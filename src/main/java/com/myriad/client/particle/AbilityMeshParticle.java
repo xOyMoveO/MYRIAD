@@ -70,6 +70,7 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
         var mc=Minecraft.getInstance();
         if(!p.valid())return;
         com.myriad.client.firstperson.RivetWeaponView.receive(p);
+        if (com.myriad.character.skills.rivet.RivetVfx.basicContact(p)) return;
         if(p.kind()==AbilityVfxGeometry.CANCEL){
             com.myriad.client.firstperson.ShuoHeldLight.receive(p);
             if(p.angle()==0){

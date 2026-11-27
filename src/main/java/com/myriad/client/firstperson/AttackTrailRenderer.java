@@ -12,7 +12,8 @@ import com.myriad.client.platform.HandRenderContext;
 /** Bounded local translucent/fullbright geometry using the already packaged authored pixel atlases. */
 public final class AttackTrailRenderer {
     private static final Map<Integer,Identifier> IDS=Map.ofEntries(Map.entry(0,Identifier.fromNamespaceAndPath("minecraft","textures/particle/glow.png")),Map.entry(50,id("night_gray_blade")),Map.entry(52,id("night_gray_wake")),
-            Map.entry(57,id("thunder_pixel_slash")),Map.entry(58,id("thunder_pixel_bolt")),Map.entry(64,id("fenjue_pixel_slash")),Map.entry(68,id("fenjue_pixel_stream")),Map.entry(71,id("fenjue_hd_fire")),Map.entry(75,id("shuo_basic_hd")),Map.entry(77,id("shuo_stream_hd")),
+            Map.entry(44,id("lingyuan_pixel_slash")),Map.entry(45,id("lingyuan_pixel_stream")),
+            Map.entry(144,id("war_hd_edge")),Map.entry(146,id("war_hd_ribbon")),Map.entry(57,id("thunder_pixel_slash")),Map.entry(58,id("thunder_pixel_bolt")),Map.entry(64,id("fenjue_pixel_slash")),Map.entry(68,id("fenjue_pixel_stream")),Map.entry(71,id("fenjue_hd_fire")),Map.entry(75,id("shuo_basic_hd")),Map.entry(77,id("shuo_stream_hd")),
             Map.entry(com.myriad.character.ability.AbilityVfxMaterials.WIND_HD_CUT,id("wind_hd_cut")),
             Map.entry(com.myriad.character.ability.AbilityVfxMaterials.WIND_HD_FLOW,id("wind_hd_flow")),
             Map.entry(com.myriad.character.ability.AbilityVfxMaterials.WIND_HD_NEEDLE,id("wind_hd_needle")),

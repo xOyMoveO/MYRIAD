@@ -111,6 +111,7 @@ public final class FlameDaoView {
         boolean left=mc.player.getMainArm()==HumanoidArm.LEFT,slim=mc.player.getSkin().model()==PlayerModelType.SLIM;
         boolean slash=SLASH.active(now),step=STEP.active(now);
         var frame=step?STEP.frame(now):slash?SLASH.frame(now):MOTION.frame(now);
+        if (!step && !slash && frame.cut()>=0) event.holdEquipped();
         arm(event,FlameDaoRig.hand(frame.pose(),event.getEquipProgress(),left),slim,left);
         var stack=event.getPoseStack();stack.pushPose();
         try{

@@ -68,12 +68,20 @@ public final class LingyuanHandView {
         if(ClientDataHolder.buffTicks("g1_stun")>0)MOTION.abort(mc.player.tickCount);
     }
 
+    public static void attack(Minecraft mc) {
+        if (!(eligible(mc))) return;
+        attach(mc);
+        MOTION.cue(0, com.myriad.character.skills.lingyuan.rework.LingyuanHandCues.BASIC, mc.player.tickCount, 9,
+                mc.player.getCurrentItemAttackStrengthDelay());
+    }
+
     public static void receive(AbilityVfxPayload cue) {
         var mc=Minecraft.getInstance();
         if(!eligible(mc) || cue.owner()!=mc.player.getId())return;
         attach(mc);
         if(cue.started()<newest)return;
         newest=cue.started();
+        if ((int)cue.angle() == com.myriad.character.skills.lingyuan.rework.LingyuanHandCues.BASIC) return; // Local input already owns the basic.
         MOTION.cue(cue.variant(),(int)cue.angle(),mc.player.tickCount,cue.life(),cue.radius());
     }
 
@@ -90,6 +98,7 @@ public final class LingyuanHandView {
         }
         if(!event.getItemStack().is(ModItems.LINGYUAN_SWORD.get()))return false;
         boolean left=mc.player.getMainArm()==HumanoidArm.LEFT;
+        if (Double.isFinite(MOTION.basicStart(now))) event.holdEquipped();
         var sword=LingyuanHandRig.sword(MOTION,now,left,event.getEquipProgress());
         drawArm(event,mc.player,pose,left,false,sword);
         var stack=event.getPoseStack();
@@ -99,6 +108,9 @@ public final class LingyuanHandView {
             ClientItemRenderer.submit(mc.player,event.getItemStack(),ItemDisplayContext.NONE,stack,
                     event.getSubmitNodeCollector(),event.getPackedLight());
         } finally { stack.popPose(); }
+        AttackTrailRenderer.submit(event,MeleeBladeLight.swept(now,MOTION.basicStart(now),.32,2.35,
+                MeleeBladeLight.SILVER,new org.joml.Vector3f(0,.26f,0),new org.joml.Vector3f(0,1.20625f,0),
+                at->LingyuanHandRig.sword(MOTION,at,left,event.getEquipProgress())));
         if(off)drawArm(event,mc.player,pose,left,true,sword);
         event.setCanceled(true);
         return true;

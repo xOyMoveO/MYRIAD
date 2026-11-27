@@ -46,7 +46,7 @@ public final class ShuoView {
         if(!e.isAttack()||e.isCanceled()||!e.shouldSwingHand()||!enabled(mc)||menu(mc)||ClientDataHolder.isChanneling()
             ||ClientDataHolder.buffTicks("g1_stun")>0||ClientDataHolder.buffTicks("g1_shuo_sheathing")>0||mc.player.getAttackStrengthScale(.5f)<1
             ||!e.isMeleeAssist()&&mc.hitResult!=null&&mc.hitResult.getType()==HitResult.Type.BLOCK)return;
-        check(mc);MOTION.basic(mc.player.tickCount,drawn()||predictedDrawn);
+        check(mc);MOTION.basic(mc.player.tickCount,drawn()||predictedDrawn,mc.player.getCurrentItemAttackStrengthDelay());
     }
     public static boolean render(HandRenderContext e){var mc=Minecraft.getInstance();if(!enabled(mc)){reset();return false;}
         if(e.isCanceled()||menu(mc))return false;check(mc);
@@ -58,14 +58,13 @@ public final class ShuoView {
         try {
         if(!free){
             // Keep the closed pair on the weapon side when the other hand carries a real item.
-            float closed=ShuoRig.ease((-.10f-f.palm().x)/.10f);
-            stack.translate((mirror?-1:1)*-2*f.palm().x*closed,0,0);
+            stack.translate(ShuoRig.occupiedOffset(f,mirror),0,0);
         }
         if(free && ShuoRig.showSupportHand(f,held))arm(e,ShuoRig.hand(f,true,mirror),slim,!mirror);
         if(!free || ShuoRig.showMainHand(f,held))arm(e,free?ShuoRig.hand(f,false,mirror):ShuoRig.occupiedHand(f,mirror),slim,mirror);
-        if(free || !held) item(e,ShuoRig.sheath(f,mirror),ModItems.SHUO_SCABBARD.get().getDefaultInstance());
+        if(free || ShuoRig.showSupportHand(f,held)) item(e,ShuoRig.sheath(f,mirror),ModItems.SHUO_SCABBARD.get().getDefaultInstance());
         item(e,ShuoRig.blade(f,mirror),e.getItemStack());
-        AttackTrailRenderer.submit(e,ShuoTrail.build(f,mirror));
+        AttackTrailRenderer.submit(e,ShuoTrail.build(MOTION,now,held,mirror,!free));
         AttackTrailRenderer.submit(e,ShuoSkillTrail.build(MOTION,now,mirror));
         } finally {stack.popPose();}
         e.setCanceled(true);return true;

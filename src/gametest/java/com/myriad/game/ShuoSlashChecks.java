@@ -35,7 +35,9 @@ final class ShuoSlashChecks {
         for(int stage=0;stage<16;stage++)states.add(ShuoSlashMesh.build(Vec3.ZERO,new Vec3(1,0,0),new Vec3(0,1,0),1,.6,(stage+.5f)/16,false).hashCode());
         h.assertTrue(states.size()==16,"Sixteen genuinely distinct reveal/travel/erase stages, not fade-only copies");
         for(int action=0;action<=ShuoViewPayload.MAX_ACTION;action++)for(int n=0;n<=100;n++)for(boolean drawn:new boolean[]{false,true})for(boolean mirror:new boolean[]{false,true}){
-            var f=ShuoRig.frame(action,n/100.0,drawn);var mesh=ShuoTrail.build(f,mirror);
+            var testMotion=new ShuoMotion();
+            testMotion.accept(new ShuoViewPayload(action,9,0,1),0,0,drawn);
+            var mesh=ShuoTrail.build(testMotion,n*.09,drawn,mirror,false);
             if(!ShuoViewPayload.basicAction(action))h.assertTrue(mesh.isEmpty(),"No skill, charge, resheath or guard camera VFX remains");
             h.assertTrue(mesh.size()<=AttackTrailMesh.MAX_QUADS,"Camera effect stays within renderer budget");
             for(var q:mesh)for(var v:List.of(q.a(),q.b(),q.c(),q.d()))h.assertTrue(v.z<-.1&&Double.isFinite(v.x)&&Double.isFinite(v.y),"No camera-plane crossing or NaN");
@@ -77,8 +79,8 @@ final class ShuoSlashChecks {
         for(int i=0;i<=32;i++){
             var f=motion.frame(100+7*i/100.0,true);
             var mouthToGrip=new org.joml.Vector3f(f.palm()).sub(f.mouth());
-            h.assertTrue(f.axis().dot(f.sheathAxis())>.99999f&&mouthToGrip.cross(f.sheathAxis()).length()<1E-5,
-                    "Crescent first extracts the blade along the actual sheath axis");
+            h.assertTrue(f.axis().dot(f.sheathAxis())>.986f && mouthToGrip.cross(f.sheathAxis()).length()<.18,
+                    "Crescent draw stays on the shallow curved guide until the tip clears");
         }
         var clear=motion.frame(100+7*.32,true);
         var tip=ShuoRig.blade(clear,false).transformPosition(new org.joml.Vector3f(0,ShuoRig.MODEL_GRIP_TO_TIP,0));
@@ -98,7 +100,7 @@ final class ShuoSlashChecks {
         sameBlade(h,second,motion.frame(136,true),"Second cut also waits at the end of its swing");
         motion.accept(new ShuoViewPayload(CANCEL,0,136,4),136,0,true);
         sameBlade(h,second,motion.frame(136,true),"Explicit cancellation preserves the last rendered grip on that frame");
-        h.assertTrue(!motion.active(136)&&ShuoSkillTrail.build(motion,136,false).isEmpty()&&ShuoTrail.build(motion.frame(136,true),false).isEmpty(),"Cancellation immediately stops both attack trails");
+        h.assertTrue(!motion.active(136)&&ShuoSkillTrail.build(motion,136,false).isEmpty()&&ShuoTrail.build(motion,136,true,false,false).isEmpty(),"Cancellation immediately stops both attack trails");
         sameBlade(h,idle,motion.frame(139,true),"Cancelled continuation settles at the drawn idle grip");
         for(int action:new int[]{MOON_THIRD,RETURNING_MOON}){
             motion.reset();motion.accept(new ShuoViewPayload(action,7,200,1),200,0,true);

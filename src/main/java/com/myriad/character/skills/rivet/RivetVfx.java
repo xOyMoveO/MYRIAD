@@ -35,6 +35,16 @@ public final class RivetVfx {
                 &&(viewer==c.player||VisionSystem.canSeePosition(viewer,from)))Packets.sendToPlayer(viewer,p);
     }
     private static void action(Cast c,int kind,Vec3 from,Vec3 to,double radius,double stage,int life){AbilityVisuals.emit(c,kind,from,to,radius,stage,life,false);}
+    private static final int BASIC_CONTACT=6;
+    public static boolean basicContact(AbilityVfxPayload p) {
+        return p.theme()==THEME && p.personal() && p.kind()==BURST && p.angle()==BASIC_CONTACT;
+    }
+    public static void basicContact(ServerPlayer p) {
+        if (!"rivet".equals(com.myriad.player.PlayerDataProvider.get(p).getCharacterId())) return;
+        var at=p.position();
+        com.myriad.network.Packets.sendToPlayer(p,new AbilityVfxPayload(p.getId(),-1,THEME,0,BURST,
+                at,at,0,BASIC_CONTACT,3,p.level().getGameTime(),true));
+    }
     public static void hammerWindup(Cast c){
         RivetAudio.play(c.player,"hammer_lift");
         c.whileActive(2400,age->{if(!AbilityRuntime.preparingSkill(c.player).equals(c.skill.getId()))return false;

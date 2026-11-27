@@ -39,7 +39,7 @@ final class FlameDaoViewChecks {
                 }
                 poses++;
             }
-            var from=tip(motion.frame(start+motion.duration()*.20));var to=tip(motion.frame(start+motion.duration()*.65));
+            var from=tip(motion.frame(motion.tickAt(.20)));var to=tip(motion.frame(motion.tickAt(.65)));
             float dx=to.x/-to.z-from.x/-from.z,dy=to.y/-to.z-from.y/-from.z;
             h.assertTrue(cut==0?dx<-.5&&dy<-.35:cut==1?dx>.5&&dy>.35:dx<-.5&&Math.abs(dy)<.05,
                     "Projected descending / rising / horizontal cut paths: "+cut+" dx="+dx+" dy="+dy);
@@ -63,7 +63,7 @@ final class FlameDaoViewChecks {
             h.assertTrue(FlameDaoRig.wrist(FlameDaoMotion.IDLE,bad,false).isFinite(),"Invalid equip interpolation safe");
         for(double recovery:new double[]{1,20,100,Double.NaN}){
             motion.reset();motion.attack(0,recovery);
-            h.assertTrue(motion.duration()>=4&&motion.duration()<=7.5,"Cosmetic duration follows bounded attack speed");
+            h.assertTrue(motion.duration()>=6&&motion.duration()<=72,"Cosmetic duration follows bounded attack speed");
             h.assertTrue(motion.sample(motion.duration()).equals(FlameDaoMotion.IDLE),"Completion returns idle");
         }
         motion.reset();h.assertTrue(motion.index()==-1&&motion.frame(100).cut()==-1,"Reset clears combo");

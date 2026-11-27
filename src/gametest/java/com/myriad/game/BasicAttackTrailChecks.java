@@ -14,14 +14,18 @@ final class BasicAttackTrailChecks {
         int meshes=0;
         for(int cut=0;cut<3;cut++){
             double start=cut*22;night.attack(start,20);thunder.attack(start,20);flame.attack(start,20);
-            h.assertTrue(Math.abs(night.duration()-5.4)<1E-6&&Math.abs(thunder.duration()-6)<1E-6&&Math.abs(flame.duration()-6.4)<1E-6,
-                    "All three base-speed cosmetic attacks are much faster; no gameplay timer changed");
+            h.assertTrue(Math.abs(night.tickAt(cut==0?.40:cut==1?.47:.49)-start-MeleeStrokeTiming.HIT)<1E-6
+                    && Math.abs(thunder.tickAt(.44)-start-MeleeStrokeTiming.HIT)<1E-6
+                    && Math.abs(flame.tickAt(.42)-start-MeleeStrokeTiming.HIT)<1E-6,
+                    "HIT falls within the submission tick for all three weapons and cuts");
+            h.assertTrue(thunder.duration()>20 && flame.duration()>20 && night.duration()>20,
+                    "A just-recovered press can enter directly from the preceding recovery");
             for(int role=0;role<3;role++){
                 double duration=role==0?night.duration():role==1?thunder.duration():flame.duration();
                 var materials=role==0?Set.of(0,50,52):role==1?Set.of(0,57,58):Set.of(0,64,68);int visible=0;
                 float peakTipAlpha=0;
                 for(int step=0;step<=100;step++)for(boolean left:new boolean[]{false,true}){
-                    double at=start+duration*step/100;
+                    double at=start+(step==100 ? duration : step*.045);
                     var quads=role==0?NightBasicTrail.mesh(night,at,left):role==1?ThunderBasicTrail.mesh(thunder,at,left):FlameBasicTrail.mesh(flame,at,left);
                     h.assertTrue(quads.size()<=AttackTrailMesh.MAX_QUADS,"Strict local trail budget");
                     if(!quads.isEmpty())visible++;
@@ -39,11 +43,11 @@ final class BasicAttackTrailChecks {
             }
         }
         // Equip animation moves the current weapon and every swept slice by the same amount.
-        double at=44+thunder.duration()*.42;
+        double at=thunder.tickAt(.42);
         var a=ThunderBasicTrail.mesh(thunder,at,false,0);var b=ThunderBasicTrail.mesh(thunder,at,false,1);
         h.assertTrue(!a.isEmpty()&&a.size()==b.size(),"Equip test is inside the real cutting phase");
         for(int i=0;i<a.size();i++)h.assertTrue(Math.abs(a.get(i).a().y-b.get(i).a().y-.48)<1E-5,"Equip progress cannot detach thunder trail");
-        at=44+flame.duration()*.42;a=FlameBasicTrail.mesh(flame,at,false,0);b=FlameBasicTrail.mesh(flame,at,false,1);
+        at=flame.tickAt(.42);a=FlameBasicTrail.mesh(flame,at,false,0);b=FlameBasicTrail.mesh(flame,at,false,1);
         h.assertTrue(!a.isEmpty()&&a.size()==b.size(),"Flame equip phase has geometry");
         for(int i=0;i<a.size();i++)h.assertTrue(Math.abs(a.get(i).a().y-b.get(i).a().y-.48)<1E-5,"Equip progress cannot detach flame trail");
         night.reset();thunder.reset();flame.reset();
