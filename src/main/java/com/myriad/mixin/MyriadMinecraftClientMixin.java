@@ -17,6 +17,7 @@ public abstract class MyriadMinecraftClientMixin {
 
     @Inject(method="handleKeybinds", at=@At("TAIL"))
     private void myriad$consumeMeleePress(CallbackInfo ci) {
+        com.myriad.client.LuoxiaInput.afterKeybinds();
         var mc = (Minecraft)(Object)this;
         if (!com.myriad.client.MeleeAttackBuffer.ready(mc) || missTime > 0) return;
         pick(1.0f);
@@ -24,6 +25,16 @@ public abstract class MyriadMinecraftClientMixin {
         else com.myriad.client.InputFeedback.show(com.myriad.combat.InputFailure.ATTACK_TARGET);
     }
 
+
+    @Inject(method="setScreenAndShow", at=@At("HEAD"))
+    private void myriad$cancelBowForScreen(net.minecraft.client.gui.screens.Screen screen, CallbackInfo ci) {
+        if (screen != null) com.myriad.client.LuoxiaInput.menuOpened((Minecraft)(Object)this);
+    }
+
+    @Inject(method="startUseItem", at=@At("HEAD"), cancellable=true)
+    private void myriad$bowUse(CallbackInfo ci) {
+        if (com.myriad.client.LuoxiaInput.consumesUse()) ci.cancel();
+    }
 
     @Inject(method="startAttack",at=@At("HEAD"),cancellable=true)
     private void myriad$authoritativeAttack(CallbackInfoReturnable<Boolean> cir) {

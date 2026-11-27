@@ -9,6 +9,10 @@ import java.util.*;
 
 /** Rolling horizontal path length, rather than net displacement or stance transitions. */
 public final class SteadyBarrier extends AbilitySkill {
+    private static final SupportAmount SHIELD = new SupportAmount("shield", 65, 18, .25f);
+
+    @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(SHIELD); }
+
     private record Step(long time,double distance){}
     private static final class State {Vec3 position;long last=Long.MIN_VALUE,started,ready;final Deque<Step> path=new ArrayDeque<>();}
     private static final Map<UUID,State> STATES=new HashMap<>();
@@ -25,7 +29,7 @@ public final class SteadyBarrier extends AbilitySkill {
     @Override public void onCast(AbilityRuntime.Cast cast){
         if(!cast.committed()||cast.skill.isPassive()||!ready(cast.player))return;
         var c=AbilityRuntime.context(cast.player,this);var s=sample(c.player);s.ready=c.now()+240;
-        c.shield(c.player,c.value(65,15,.25f),50);WeaponPosePayload.play(c.player, Move.BARRIER, 6);
+        c.shield(c.player,SHIELD.value(c),50);WeaponPosePayload.play(c.player, Move.BARRIER, 6);
         YikeVfx.target(c,"barrier",c.player,.7f,50);YikeAudio.play(c.player,"barrier",c.player.position(),.4f,1);
     }
     public static void clear(ServerPlayer p){STATES.remove(p.getUUID());com.myriad.player.ModShieldSystem.removeSource(p,"yike_steady_barrier/"+p.getUUID());}

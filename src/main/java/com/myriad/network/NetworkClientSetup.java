@@ -168,6 +168,11 @@ final class NetworkClientSetup {
         ClientPlayNetworking.registerGlobalReceiver(FrostViewPayload.TYPE,
                 (payload, context) -> com.myriad.client.HanzeFrostView.start(
                 payload.durationTicks()));
+        ClientPlayNetworking.registerGlobalReceiver(ProgressAction.Receipt.TYPE, (receipt, context) -> {
+            var gate = com.myriad.client.gui.FirstGroupScreen.progressGate();
+            if (gate.receive(receipt.sequence()) && receipt.applied())
+                com.myriad.client.UiFeedback.receive(1);
+        });
         ClientPlayNetworking.registerGlobalReceiver(UiFeedbackPayload.TYPE,
                 (payload, context) -> com.myriad.client.UiFeedback.receive(payload.kind()));
         ClientPlayNetworking.registerGlobalReceiver(TeamListPayload.TYPE,

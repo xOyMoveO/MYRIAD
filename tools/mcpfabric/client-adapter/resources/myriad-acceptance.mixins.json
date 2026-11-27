@@ -7,6 +7,8 @@
     "NativeKeyboardCounterMixin",
     "NativeMouseCounterMixin",
     "ShuoPresentationMixin",
+    "LuoxiaPresentationMixin",
+    "BowInputDeliveryMixin",
     "MeleeReceiptMixin",
     "DummyDamageMixin",
     "BufferedMeleeMixin",

@@ -56,11 +56,11 @@ public final class TrainingActions {
             if (level < data.getLevel()) {
                 AbilityRuntime.clear(player);
                 data.setLevel(level);
-                data.refundAllSkillPointsForTraining();
+                data.resetForTrainingLevel();
                 data.clearSkillCooldowns();
             } else {
                 data.setLevel(level);
-                int spent = data.getSkillLevels().values().stream().mapToInt(rank -> Math.max(0, rank)).sum();
+                int spent = data.spentSkillPoints();
                 data.setSkillPoints(Math.max(0, level - spent));
             }
             data.setXp(0);

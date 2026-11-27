@@ -2,8 +2,8 @@ package com.myriad.character.skills.shuo;
 import com.myriad.character.ability.*;
 import java.util.List;
 public final class YiShanSkill extends AbilitySkill {
-    private static final AbilityDamageFormula SHEATHED = AbilityDamageFormula.physicalFromSpell(95, 20, .80f, .50f);
-    private static final AbilityDamageFormula TAILWIND = AbilityDamageFormula.physicalFromSpell(65, 15, .55f, .50f)
+    private static final AbilityDamageFormula SHEATHED = AbilityDamageFormula.physicalFromSpell(95, 25, .80f, .50f);
+    private static final AbilityDamageFormula TAILWIND = AbilityDamageFormula.physicalFromSpell(65, 20.25f, .55f, .50f)
             .segment("skill.myriad.damage.tailwind", 1);
     private static final AbilityDamageFormula DASH = SHEATHED.scaled(.60f)
             .segment("skill.myriad.damage.dash_hit", 1);

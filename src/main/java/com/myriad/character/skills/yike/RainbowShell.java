@@ -8,7 +8,7 @@ import java.util.List;
 
 /** The shell is paid at the muzzle, never when the Q input begins. */
 public final class RainbowShell extends AbilitySkill {
-    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 95, 18, .55f);
+    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 95, 22.5f, .55f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

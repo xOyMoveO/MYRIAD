@@ -24,7 +24,7 @@ public record SkillHoverDetails(String name, String group, String rank, boolean 
         String costs, List<String> metrics, String condition, String usual) {
     private static final String PREFIX = "screen.myriad.hover.";
     private static final String[] GROUPS = {"passive", "regular", "main", "ultimate"};
-    private record Metric(Integer damage, List<List<String>> values) {}
+    private record Metric(Integer damage, Integer support, List<List<String>> values) {}
     private static final Map<String, List<Metric>> METRICS = readMetrics();
 
     private static Map<String, List<Metric>> readMetrics() {
@@ -46,6 +46,12 @@ public record SkillHoverDetails(String name, String group, String rank, boolean 
 
     private static String seconds(int ticks) { return AbilityFormulaText.amount(ticks / 20.0); }
 
+    public static String passiveStatus(int rank, int level) {
+        if (rank == 0) return label("passive_offer", FirstGroupSkills.passiveRank(level));
+        if (rank >= 5) return label("max", rank);
+        return label("passive_next", rank, rank * 3 + 1);
+    }
+
     public static SkillHoverDetails describe(AbilitySkill skill, PlayerDataPayload data) {
         String id = skill.getId();
         String prefix = "skill.myriad." + id + ".hover.";
@@ -54,9 +60,11 @@ public record SkillHoverDetails(String name, String group, String rank, boolean 
         int opposite = FirstGroupSkills.opposite(skill.index());
         boolean locked = opposite >= 0 && ranks.getOrDefault(FirstGroupSkills.node(skill.role(), opposite).getId(), 0) > 0;
         boolean preview = !skill.baseAvailable() && paid == 0;
-        int rank = preview ? 1 : paid;
+        boolean automatic = skill.isPassive() && !data.buffs().containsKey("g1_legacy_skill_budget");
+        int rank = preview ? (automatic ? FirstGroupSkills.passiveRank(data.level()) : 1) : paid;
         String status;
         if (locked) status = label("locked");
+        else if (automatic) status = passiveStatus(paid, data.level());
         else if (paid >= skill.maxRank()) status = label("max", paid);
         else if (skill.baseAvailable()) status = text("screen.myriad.rivet.anchor_rank", paid, skill.maxRank());
         else status = preview ? label("preview") : label("rank", paid, skill.maxRank());
@@ -100,17 +108,41 @@ public record SkillHoverDetails(String name, String group, String rank, boolean 
                     String value;
                     if (metric.damage != null) {
                         value = SkillTooltipDescriptions.hoverDamage(skill, metric.damage, rank, data);
+                    } else if (metric.support != null) {
+                        continue; // All support amounts are rendered from the combat definition below.
                     } else {
                         var args = metric.values.stream().map(values -> values.get(Math.clamp(rank - 1, 0, values.size() - 1))).toArray();
                         value = text("skill.myriad." + metricId + ".hover.stat" + index, args);
                     }
                     if (!value.isEmpty()) rows.add(value);
                 }
+                double power = data.attrs().getOrDefault(ModAttributes.SPELL_POWER.value().getDescriptionId(),
+                        com.myriad.character.rework.FirstGroupGrowth.baselineSpellPower());
+                for (var amount : skill.supportAmounts()) {
+                    if (skill.getId().equals("shuo_qiaofan") && variant.equals("drawn")) continue;
+                    rows.add(SkillTooltipDescriptions.supportLine(amount, rank, power));
+                }
+                for (int i = 0; i < skill.damageFormulas().size(); i++) {
+                    final int index = i;
+                    if (fields.stream().anyMatch(metric -> java.util.Objects.equals(metric.damage, index))) continue;
+                    if (shuo && !combatFormSegment(skill.getId(), i, variant)) continue;
+                    String line = SkillTooltipDescriptions.hoverDamage(skill, i, rank, data);
+                    if (!line.isEmpty()) rows.add(line);
+                }
             }
             metrics = rows;
         }
         return new SkillHoverDetails(SkillTooltipDescriptions.abilityName(skill), group, status, locked, summary,
                 costs, metrics, condition, summary.equals(normal) ? "" : normal);
+    }
+
+    private static boolean combatFormSegment(String id, int index, String variant) {
+        boolean drawn = variant.equals("drawn");
+        return switch (id) {
+            case "shuo_nadao" -> drawn;
+            case "shuo_qiaofan", "shuo_yishan", "shuo_duanliu", "shuo_wusheng", "shuo_canyue" -> drawn == (index == 0);
+            default -> true;
+        };
     }
 
     private static String mana(AbilitySkill skill, PlayerDataPayload data) {

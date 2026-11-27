@@ -38,7 +38,7 @@ final class SecondGroupChecks {
    CharacterType.applyInitialAttributes(p,CharacterType.HANZE);FirstGroupGrowth.initialize(p,data);
    data.setSkillLevel("g2_hanze_n2",5);var shield=AbilityRuntime.context(p,FirstGroupSkills.byId("g2_hanze_n2"));
    ModShieldSystem.clearFor(p);shield.skill.release(shield);
-   float expected=shield.value(150,40,.65f);
+   float expected=shield.value(150,50,.65f);
    h.assertTrue(Math.abs(ModShieldSystem.value(p)-expected)<.01,"Frost shield is its exact formula, not four-times or vanilla absorption");
    shield.skill.release(shield);h.assertTrue(Math.abs(ModShieldSystem.value(p)-expected)<.01,"Repeated same-source frost shield does not stack");
    ModShieldSystem.clearFor(p);

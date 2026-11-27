@@ -10,9 +10,9 @@ import java.util.List;
 
 /** The broad hammer hits several enemies; only the nearest aim-line contact is pushed. */
 public final class ImpactHammer extends RivetSkill {
-    private static final AbilityDamageFormula DIRECT = AbilityDamageFormula.physicalFromSpell(75, 20, .50f, 5f / 14)
+    private static final AbilityDamageFormula DIRECT = AbilityDamageFormula.physicalFromSpell(75, 25, .50f, 5f / 14)
             .segment("skill.myriad.damage.direct_hit", 1);
-    private static final AbilityDamageFormula WALL = AbilityDamageFormula.physicalFromSpell(29, 8, .20f, 1f / 7)
+    private static final AbilityDamageFormula WALL = AbilityDamageFormula.physicalFromSpell(29, 10, .20f, 1f / 7)
             .segment("skill.myriad.damage.wall_collision", 1);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {

@@ -117,7 +117,7 @@ final class CherryFirstTenDamageChecks {
                 FirstGroupGrowth.apply(trial.caster, data);
                 if (skill != null && !trial.controlOnly) {
                     PlayerDataProvider.upgradeSkill(trial.caster, skill.getId());
-                    helper.assertTrue(data.skillLevel(skill.getId()) == 1, "Legal first rank for " + skill.getId());
+                    helper.assertTrue(data.skillLevel(skill.getId()) == (skill.isPassive() ? FirstGroupSkills.passiveRank(level) : 1), "Legal first purchase or passive selection for " + skill.getId());
                 }
                 if (passive) primePassive(trial);
                 trials.add(trial);

@@ -34,7 +34,8 @@ final class ShuoChecks {
         p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(100);return p;
     }
     static net.minecraft.world.entity.animal.pig.Pig target(GameTestHelper h,Vec3 at){
-        var t=h.spawn(EntityTypes.PIG,new BlockPos(35,140,5));t.setPos(at);t.setNoAi(true);t.setNoGravity(true);
+        CombatChunks.prepare(h.getLevel(), BlockPos.containing(at));
+        var t=h.spawn(EntityTypes.PIG,h.relativeVec(at));t.setPos(at);t.setNoAi(true);t.setNoGravity(true);
         t.getAttribute(Attributes.MAX_HEALTH).setBaseValue(1000);t.setHealth(1000);return t;
     }
     /** Explicit incoming stage isolates mock-player spawn invulnerability, not an online PVP test. */

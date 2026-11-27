@@ -7,8 +7,12 @@ import java.util.List;
 
 /** Independent reusable branch. */
 public final class WarBladeSkill extends AbilitySkill {
+    private static final SupportAmount SHIELD = new SupportAmount("shield", 230, 87.5f, .7f);
+
+    @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(SHIELD); }
+
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.physicalFromSpell(45, 20, .3f, .8f / 3).segment("skill.myriad.damage.segment.bonus_basic", 3);
+            AbilityDamageFormula.physicalFromSpell(45, 23, .3f, .8f / 3).segment("skill.myriad.damage.segment.bonus_basic", 3);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);
@@ -17,7 +21,7 @@ public final class WarBladeSkill extends AbilitySkill {
  public WarBladeSkill(Definition definition){super(definition);}
 
 @Override public void release(Cast c){
-    c.shield(c.player,c.value(230,70,.7f),120);
+    c.shield(c.player,SHIELD.value(c),120);
     var m=c.memory();m.until=c.now()+120;m.count=3;c.buff(getId()+"_ready",120);
     long until=m.until;
     AbilityVisuals.following(c,AbilityVfxGeometry.SEAL,c.player,.62,m.count,7);

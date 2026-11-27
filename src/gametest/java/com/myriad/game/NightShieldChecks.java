@@ -37,7 +37,7 @@ final class NightShieldChecks {
                 AbilityRuntime.clear(p);ModShieldSystem.clearFor(p);resetRanks(d);d.setSkillLevel(skill.getId(),rank);d.setMana(700);d.setCooldown(skill.getId(),0);
                 p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(30+rank*40);
                 var context=AbilityRuntime.context(p,skill);
-                float expected=context.value(180,70,.9f)*1.7f;
+                float expected=306 + 148.75f * (rank - 1) + 1.53f * context.totalSpellPower;
                 // The slow modifier and a beneficial haste use different sources.
                 AbilityRuntime.context(p,FirstGroupSkills.node("yingxiao",2)).slow(p,.4f,60);
                 AbilityRuntime.context(p,FirstGroupSkills.node("yingxiao",3)).haste(.1f,60);
@@ -56,8 +56,8 @@ final class NightShieldChecks {
                 h.assertTrue(p.hasEffect(MobEffects.POISON)&&p.hasEffect(MobEffects.REGENERATION),"DoT and unrelated positive buffs are not erased");
                 h.assertTrue(Math.abs(ModShieldSystem.value(p)-50-expected)<.001,"Exact x1.7 full shield formula at every rank/strength; no multiplication of other shields");
                 h.assertTrue(Math.abs(d.getMana()-(mana-150))<.01&&d.getCooldown(skill.getId())==skill.getCooldownTicks(rank),"One normal mana payment and unchanged rank cooldown");
-                h.assertTrue(AbilityFormulaText.evaluate(skill.description(),rank,context.totalSpellPower)
-                        .contains(String.format(java.util.Locale.ROOT,"%.1f",expected)),"Tooltip resolves the updated actual shield amount");
+                h.assertTrue(skill.evaluatedDescription(rank,context.totalSpellPower,0)
+                        .contains(AbilityFormulaText.amount(expected)),"Tooltip resolves the updated actual shield amount");
                 // A second, invalid request cannot cleanse for free while on cooldown.
                 AbilityRuntime.clear(p);d.setBuff("g1_stun",40);double remainingMana=d.getMana();float shield=ModShieldSystem.value(p);
                 SkillSystem.cast(p,CharacterType.SLOT_R);

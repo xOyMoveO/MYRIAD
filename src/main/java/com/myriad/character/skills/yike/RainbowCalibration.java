@@ -10,7 +10,7 @@ import java.util.*;
 
 /** One paid cast can mark each hero only once, even after the third mark clears the stack. */
 public final class RainbowCalibration extends AbilitySkill {
-    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 40, 10, .20f);
+    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 40, 12, .20f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

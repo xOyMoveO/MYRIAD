@@ -76,17 +76,33 @@ public final class FirstGroupSkills {
         return switch(slot){case 0->node(role.getId(),2);case 1->node(role.getId(),3);
             case 2->selected(role.getId(),4,ranks);case 3->selected(role.getId(),6,ranks);default->null;};
     }
-    public static String learnError(String role,Map<String,Integer> ranks,int points,int level,String id){
+    public static int passiveRank(int level) {
+        return 1 + (Math.clamp(level, 1, 13) - 1) / 3;
+    }
+
+    public static int spentPoints(Map<String,Integer> ranks, boolean automatic) {
+        return ranks.entrySet().stream().filter(entry -> {
+            var node = byId(entry.getKey());
+            return !automatic || node == null || !node.isPassive();
+        }).mapToInt(entry -> Math.max(0, entry.getValue())).sum();
+    }
+
+    public static String learnError(String role,Map<String,Integer> ranks,int points,int level,String id) {
+        return learnError(role, ranks, points, level, id, true);
+    }
+
+    public static String learnError(String role,Map<String,Integer> ranks,int points,int level,String id, boolean automatic){
         AbilitySkill n=byId(id);if(n==null||!n.role().equals(role))return "message.myriad.g1.invalid_skill";
-        if(points<=0)return "message.myriad.no_skill_points";
         int current=ranks.getOrDefault(id,0);
         if(current>=n.maxRank())return "message.myriad.skill_max";
         int other=opposite(n.index());
         if(other>=0&&ranks.getOrDefault(node(role,other).getId(),0)>0)return "message.myriad.g1.branch_locked";
+        if(automatic && n.isPassive()) return current == 0 ? null : "message.myriad.passive_selected";
+        if(points<=0)return "message.myriad.no_skill_points";
         // One point per level; ultimates keep the established 4/8/12 unlock cadence.
         int gate=n.isUltimate()?new int[]{4,8,12}[Math.min(current,2)]:current+1;
         if(level<gate)return "message.myriad.g1.level_gate";
-        int spent=candidates(role).stream().mapToInt(s->Math.max(0,ranks.getOrDefault(s.getId(),0))).sum();
+        int spent=spentPoints(ranks, automatic);
         return spent>=Math.min(20,Math.max(1,level))?"message.myriad.no_skill_points":null;
     }
 }

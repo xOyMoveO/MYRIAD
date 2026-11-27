@@ -11,7 +11,7 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 /** Independent branch; no gameplay switches in the batch registry. */
 public final class GlacierLanceSkill extends AbilitySkill {
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.spellPower(MAGIC, 85, 22, .55f);
+            AbilityDamageFormula.spellPower(MAGIC, 85, 27.5f, .55f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

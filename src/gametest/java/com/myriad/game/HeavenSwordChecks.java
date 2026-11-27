@@ -53,9 +53,9 @@ final class HeavenSwordChecks {
                     if(elapsed==25)h.assertTrue(SkillChargeSystem.active(success.player),"Chop keeps the movement lock after the charging phase");
                     if(elapsed==30||elapsed==38){
                         for(int i=0;i<success.targets.size();i++){
-                            double expected=i<3?380:1000;
+                            double expected=i<3?330:1000;
                             h.assertTrue(Math.abs(success.targets.get(i).getHealth()-expected)<.05,
-                                    "Rank3 / S100: exactly one 620 hit inside 15x3, no damage behind/beyond/outside; target="+i+", hp="+success.targets.get(i).getHealth());
+                                    "Rank3 / S100: exactly one 670 hit inside 15x3, no damage behind/beyond/outside; target="+i+", hp="+success.targets.get(i).getHealth());
                         }
                         h.assertTrue(success.tower.getHealth()==1000,"Skill never damages a defense building");
                         h.assertTrue(!AbilityRuntime.channeling(success.player)&&!SkillChargeSystem.active(success.player)
@@ -68,7 +68,7 @@ final class HeavenSwordChecks {
                             h.assertTrue(!SkillChargeSystem.active(fixture.player),"Interrupt/reset releases stationary lock");
                         }
                         done[0]=true;fixtures.forEach(HeavenSwordChecks::cleanup);
-                        System.out.println("[MYRIAD-HEAVEN-SWORD] PASS: real 24+6 ticks, 15x3 body rectangle, locked aim, 620 once, no tower damage, charge/chop interrupt, reset, edge-forward sword, curved painted swipe layers, 3 CC0 recorded sweeps, full/reduced geometry and culling");
+                        System.out.println("[MYRIAD-HEAVEN-SWORD] PASS: real 24+6 ticks, 15x3 body rectangle, locked aim, 670 once, no tower damage, charge/chop interrupt, reset, edge-forward sword, curved painted swipe layers, 3 CC0 recorded sweeps, full/reduced geometry and culling");
                     }
                 }catch(Throwable failure){done[0]=true;fixtures.forEach(HeavenSwordChecks::cleanup);throw failure;}
             });
@@ -127,7 +127,7 @@ final class HeavenSwordChecks {
         double furthest=down.stream().filter(q->q.material()==AbilityVfxMaterials.LINGYUAN_PIXEL_MODEL)
                 .flatMap(q->java.util.stream.Stream.of(q.a(),q.b(),q.c(),q.d())).mapToDouble(v->v.z).max().orElseThrow();
         h.assertTrue(highest>15&&furthest>14.8&&furthest<15.2,"17m silhouette rises behind caster then physically swings to the 15m impact endpoint");
-        h.assertTrue(AbilityFormulaText.evaluate(FirstGroupSkills.byId("g2_lingyuan_ub").description(),3,100).contains("620魔法伤害"),"Current tooltip calculates the actual 620 damage");
+        h.assertTrue(AbilityFormulaText.evaluate(FirstGroupSkills.byId("g2_lingyuan_ub").description(),3,100).contains("670魔法伤害"),"Current tooltip calculates the actual 670 damage");
         exportPreview();
     }
     private static void edgeOrientation(GameTestHelper h){

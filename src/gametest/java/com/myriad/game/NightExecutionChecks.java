@@ -56,7 +56,11 @@ final class NightExecutionChecks {
                     if(elapsed==16){
                         h.assertTrue(fixtures.stream().allMatch(f->f.targetCues.isEmpty()),"Other players never receive the caster's first-person hand cue");
                         var f=fixtures.getFirst();
-                        h.assertTrue(f.player.position().distanceTo(f.origin)>3&&!AbilityRuntime.moving(f.player),"At 0.8 seconds the hero instantly relocates, not an eight-tick dash");
+                        h.assertTrue(f.player.position().distanceTo(f.origin)>3&&!AbilityRuntime.moving(f.player),"At tick 16 the caster blinks behind the target; offset=" + f.player.position().subtract(f.origin)
+                                + " target=" + f.target.position().subtract(f.origin) + " facing=" + f.target.getYRot()
+                                + " cues=" + f.cues.stream().map(NightSkillViewPayload::action).toList()
+                                + " alive=" + f.target.isAlive() + " visible=" + f.player.hasLineOfSight(f.target)
+                                + " charge=" + SkillChargeSystem.active(f.player));
                         h.assertTrue(AbilityTargeting.canStand(f.player,f.player.position()),"Actual arrival is supported and collision-free");
                         var rear=f.player.position().subtract(f.target.position()).multiply(1,0,1).normalize();
                         var facing=f.target.getLookAngle().multiply(1,0,1).normalize();
@@ -83,6 +87,7 @@ final class NightExecutionChecks {
     }
     private static Fixture fixture(GameTestHelper h,int i){
         var level=h.getLevel();var floor=h.absolutePos(new BlockPos(60,70+i*7,20));var saved=new HashMap<BlockPos,BlockState>();
+        CombatChunks.prepare(level, floor);
         for(int x=-3;x<=3;x++)for(int z=-2;z<=9;z++)for(int y=0;y<=3;y++){
             var at=floor.offset(x,y,z);saved.put(at,level.getBlockState(at));level.setBlockAndUpdate(at,(y==0?Blocks.STONE:Blocks.AIR).defaultBlockState());
         }

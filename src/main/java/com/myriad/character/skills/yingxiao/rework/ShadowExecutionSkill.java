@@ -14,7 +14,7 @@ import java.util.List;
 /** Lock one hero, 0.8-second interruptible windup, supported behind-target blink and one stab. */
 public final class ShadowExecutionSkill extends AbilitySkill {
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.physicalFromSpell(180, 70, 1.3f, .8f);
+            AbilityDamageFormula.physicalFromSpell(180, 87.5f, 1.3f, .8f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

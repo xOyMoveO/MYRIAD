@@ -41,8 +41,8 @@ final class ThunderThirdStrikeChecks {
                 hit(p,main);hit(p,main);h.assertTrue(main.getHealth()==1000,"No bonus on first two successful basics");hit(p,main);
                 float expected=4*(.06f+.02f*(rank-1))*strength;
                 h.assertTrue(Math.abs(1000-main.getHealth()-expected)<.001,"Exactly 4x old true damage at rank="+rank+" S="+strength+" actual="+(1000-main.getHealth()));
-                int splashes=0;float splash=20+8*(rank-1)+.2f*strength;
-                for(int i=1;i<4;i++){float loss=1000-targets.get(i).getHealth();if(loss>0){splashes++;h.assertTrue(Math.abs(loss-splash)<.001,"Lightning splash is unchanged and not critical");}}
+                int splashes=0;float splash=20+9.6f*(rank-1)+.2f*strength;
+                for(int i=1;i<4;i++){float loss=1000-targets.get(i).getHealth();if(loss>0){splashes++;h.assertTrue(Math.abs(loss-splash)<.001,"Lightning splash has its fixed rank growth and cannot crit");}}
                 h.assertTrue(splashes==2&&AbilityRuntime.context(p,skill).memory().count==0,"Exactly two splashes, no recursive passive stacks: splashes="+splashes+" count="+AbilityRuntime.context(p,skill).memory().count);
                 String value=Math.abs(expected-Math.rint(expected))<.001?String.format(Locale.ROOT,"%.0f",expected):String.format(Locale.ROOT,"%.1f",expected);
                 h.assertTrue(AbilityFormulaText.evaluate(skill.description(),rank,strength).startsWith("同一目标第三次成功普攻追加"+value+"真实伤害"),"Tooltip resolves current true damage");

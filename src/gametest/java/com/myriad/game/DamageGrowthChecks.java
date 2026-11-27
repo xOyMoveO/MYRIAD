@@ -71,6 +71,9 @@ final class DamageGrowthChecks {
         try {
             FirstTenDamageFormulaChecks.verify(helper);
             LastFiveDamageFormulaChecks.run(helper);
+            var healer = player(helper);
+            try { SupportGrowthChecks.verify(helper, healer); }
+            finally { AbilityRuntime.clear(healer); healer.discard(); }
             for (CharacterType mage : MAGES) {
                 double baseline = mage == CharacterType.HANZE ? 78 : 65;
                 double ratio = mage == CharacterType.HANZE ? .60 : .50;

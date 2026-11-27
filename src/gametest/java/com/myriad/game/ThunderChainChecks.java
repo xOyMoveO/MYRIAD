@@ -55,7 +55,7 @@ final class ThunderChainChecks {
                             for(var t:f.excluded)h.assertTrue(Math.abs(t.getHealth()-1000)<.02,"Friends, towers, outside radius, second-hop and blocked targets are untouched: case="+i+" hp="+t.getHealth());
                         }
                         var skill=FirstGroupSkills.node("tianxing",3);
-                        h.assertTrue(skill.displayName().equals("雷电劫")&&Math.abs(skill.damageFormulas().get(1).value(5, 80, 100, 1, 0) - 55.65) < .02,"Current UI resolves both main and 35% chain formulas");
+                        h.assertTrue(skill.displayName().equals("雷电劫")&&Math.abs(skill.damageFormulas().get(1).value(5, 80, 100, 1, 0) - 61.95) < .02,"Current UI resolves both main and 35% chain formulas");
                         done[0]=true;fixtures.forEach(f->cleanup(h,f));
                         System.out.println("[MYRIAD-THUNDER-CHAIN] PASS: actual W, 6-tick windup, ranks/S, all 4-block secondaries incl. vertical/boundary, lethal primary, no piercing/recursion, allies/buildings/LOS/range exclusions, wall and stun");
                     }
@@ -90,7 +90,7 @@ final class ThunderChainChecks {
         for(int y=0;y<3;y++)block(h,blocks,BlockPos.containing(contact.add(-2,y,-1)));
         if(index==3)for(int x=-1;x<=1;x++)for(int y=0;y<3;y++)block(h,blocks,BlockPos.containing(origin.add(x,y,2)));
         if(index==2)primary.setHealth(10);
-        return new Fixture(caster,primary,chained,excluded,players,blocks,79.5f+18*(rank-1)+7.5f*strength);
+        return new Fixture(caster,primary,chained,excluded,players,blocks,79.5f+22.5f*(rank-1)+7.5f*strength);
     }
     private static ServerPlayer player(GameTestHelper h,Vec3 at,Faction faction,List<ServerPlayer> list,boolean add){
         var p=(ServerPlayer)h.makeMockServerPlayer(GameType.SURVIVAL);

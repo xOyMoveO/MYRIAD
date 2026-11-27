@@ -53,7 +53,7 @@ final class KehengChecks {
                     case 0->{learn(f,2,1);SkillSystem.cast(f.p,0);h.assertTrue(d.getMana()==660&&d.getCooldown("keheng_chizhen")==140,"Q charges at the normal accepted-cast boundary");}
                     case 1->{learn(f,2,5);f.t.getAttribute(ModAttributes.TENACITY).setBaseValue(60);SkillSystem.cast(f.p,0);}
                     case 2->{learn(f,2,1);SkillSystem.cast(f.p,0);d.setBuff("g1_stun",2);}
-                    case 3->{learn(f,3,2);learn(f,1,5);SkillSystem.cast(f.p,1);h.assertTrue(d.getMana()==655&&Math.abs(ModShieldSystem.value(f.p)-193.5)<.05,"W and actual field entry grant independent rank-2 W/rank-5 passive shields");}
+                    case 3->{learn(f,3,2);learn(f,1,5);SkillSystem.cast(f.p,1);h.assertTrue(d.getMana()==655&&Math.abs(ModShieldSystem.value(f.p)-208)<.05,"W and actual field entry grant independent rank-2 W/rank-5 passive shields");}
                     case 4->{learn(f,4,7);point(f,2);SkillSystem.cast(f.p,2);AbilityRuntime.confirm(f.p);d.setBuff("g1_stun",100);}
                     case 5->{learn(f,6,3);point(f,2);SkillSystem.cast(f.p,3);AbilityRuntime.confirm(f.p);}
                     case 6->{learn(f,5,7);SkillSystem.cast(f.p,2);}
@@ -115,7 +115,7 @@ final class KehengChecks {
                             h.assertTrue(PlayerDataProvider.get(fixtures.get(24).p).getBuff("g1_keheng_marks")==0,"Invulnerability gives no mark");
                             h.assertTrue(AbilityRuntime.channeling(fixtures.get(29).t),"A retained Tianxing unfinished windup stays active under real rank-5 needle slow");
                         }
-                        if(age==10){var f=fixtures.get(4);hp(h,f,9798.5f,"Rank-7 boundary opens once after its real warning despite caster stun");rate(h,f.t,.5,"Rank-7 fixed field publishes 0.50");
+                        if(age==10){var f=fixtures.get(4);hp(h,f,9771.5f,"Rank-7 boundary opens once after its real warning despite caster stun");rate(h,f.t,.5,"Rank-7 fixed field publishes 0.50");
                             f.p.setPos(f.origin.add(0,0,-8));
                             var counter=net.minecraft.world.entity.LivingEntity.class.getDeclaredField("attackStrengthTicker");counter.setAccessible(true);counter.setInt(f.t,10);
                             var echo=fixtures.get(26);point(echo,2);SkillSystem.cast(echo.p,2);AbilityRuntime.confirm(echo.p);hp(h,fixtures.get(5),10000,"Dome has no immediate opening hit");
@@ -135,8 +135,8 @@ final class KehengChecks {
                             var ticker=net.minecraft.world.entity.LivingEntity.class.getDeclaredField("attackStrengthTicker");ticker.setAccessible(true);
                             h.assertTrue(ticker.getInt(fixtures.get(4).t)==12,"Vanilla melee recovery preserves progress at mu0.5; ticker="+ticker.getInt(fixtures.get(4).t)+" rate="+ActionTime.multiplier(fixtures.get(4).t.getUUID(),h.getLevel().getGameTime()));
                             var f=fixtures.get(27);f.p.setPos(f.origin.add(0,0,-8));}
-                        if(age==16){fixtures.get(27).p.setPos(fixtures.get(27).origin);hp(h,fixtures.get(9),9429.5f,"Rank-3 penetration completes exactly once for 570.5");
-                            hp(h,fixtures.get(10),10000,"Hard control cancels penetration");hp(h,fixtures.get(11),9429.5f,"Penetration keeps its starting direction after camera turn");
+                        if(age==16){fixtures.get(27).p.setPos(fixtures.get(27).origin);hp(h,fixtures.get(9),9379.5f,"Rank-3 penetration completes exactly once for 620.5");
+                            hp(h,fixtures.get(10),10000,"Hard control cancels penetration");hp(h,fixtures.get(11),9379.5f,"Penetration keeps its starting direction after camera turn");
                             hp(h,fixtures.get(12),10000,"Walking out of the three-block-wide corridor dodges");hp(h,fixtures.get(13),10000,"Solid wall truncates corridor damage");
                             var f=fixtures.get(15);point(f,2);SkillSystem.cast(f.p,2);AbilityRuntime.confirm(f.p);
                             h.assertTrue(fixtures.get(21).p.getZ()<fixtures.get(21).origin.z+.5,"W respects a wall on its first swept step");}
@@ -144,22 +144,22 @@ final class KehengChecks {
                         if(age==18){rate(h,fixtures.get(1).t,1,"60% tenacity shortens Q to ten real ticks after impact");
                             var f=fixtures.get(19);f.t.setPos(f.origin.add(0,0,8));KehengTimeFields.refreshActor(f.t);rate(h,f.t,1,"Leaving the field restores next-tick action speed");
                             rate(h,fixtures.get(18).t,1,"Center-wall occlusion blocks field slow independently of caster visibility");}
-                        if(age==23)hp(h,fixtures.get(5),9956.4f,"First dome pulse lands 0.5s after opening");
+                        if(age==23)hp(h,fixtures.get(5),9954f,"First dome pulse lands 0.5s after opening");
                         if(age==25){rate(h,fixtures.get(16).t,.5,"Fixed 0.75s cleanse immunity expires without deleting field");var f=fixtures.get(15);SkillSystem.cast(f.p,3);}
-                        if(age==42){hp(h,fixtures.get(15),8481.5f,"S230 real Q231 + field291.5 + penetration840.5 + one echo155.5 =1518.5; no hidden multiplier");}
-                        if(age==36){h.assertTrue(Math.abs(ModShieldSystem.value(fixtures.get(27).p)-144)<.05,"Re-entering own field does not stack or refresh Constant Step source shield");}
+                        if(age==42){hp(h,fixtures.get(15),8382.3f,"S230 real Q243.6 + field318.5 + penetration890.5 + one echo165.1 =1617.7; no hidden multiplier");}
+                        if(age==36){h.assertTrue(Math.abs(ModShieldSystem.value(fixtures.get(27).p)-156)<.05,"Re-entering own field does not stack or refresh Constant Step source shield");}
                         if(age==40){hp(h,fixtures.get(7),10000,"Manual following-field cancellation has no ending hit");hp(h,fixtures.get(8),10000,"Hard-control following cancellation has no ending hit");
                             var f=fixtures.get(14);AbilityRuntime.clear(f.p);}
                         if(age==44)h.assertTrue(PlayerDataProvider.get(fixtures.get(26).p).getBuff("g1_keheng_marks")==0,"Third distinct cast clears echo stacks");
                         if(age==51)h.assertTrue(ModShieldSystem.value(fixtures.get(27).p)==0,"Re-entry does not extend the original two-second shield");
                         if(age==55){hp(h,fixtures.get(17),9895,"External root permits natural following-field ending damage");}
-                        if(age==73){hp(h,fixtures.get(5),9738.4f,"Dome performs exactly six 43.6 damage real-time pulses");
+                        if(age==73){hp(h,fixtures.get(5),9724f,"Dome performs exactly six 46 damage real-time pulses");
                             hp(h,fixtures.get(14),10000-(24+.12f*30)*2,"Lifecycle clearing cancels unspent dome pulses");}
-                        if(age==74){hp(h,fixtures.get(6),9787,"Rank-7 following field naturally expires for 213 once");
+                        if(age==74){hp(h,fixtures.get(6),9760,"Rank-7 following field naturally expires for 240 once");
                         }
                         if(age==75){var f=fixtures.get(25);PlayerDataProvider.get(f.p).setCooldown("keheng_chizhen",0);f.p.setXRot(0);SkillSystem.cast(f.p,0);}
                         if(age==86)h.assertTrue(PlayerDataProvider.get(fixtures.get(25).p).getBuff("g1_keheng_marks")==0,"The second hit does not renew the first hit's fixed four-second window");
-                        if(age==94){hp(h,fixtures.get(26),9540.4f,"Multi-pulse dome adds one mark across all six jumps, including after three-stack clear");
+                        if(age==94){hp(h,fixtures.get(26),9530.8f,"Multi-pulse dome adds one mark across all six jumps, including after three-stack clear");
                             h.assertTrue(PlayerDataProvider.get(fixtures.get(26).p).getBuff("g1_keheng_marks")==0,"Remaining jumps never re-enter a cleared passive window");
                         }
                         if(age==150){

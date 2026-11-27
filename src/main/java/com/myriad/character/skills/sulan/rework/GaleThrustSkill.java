@@ -15,7 +15,7 @@ import java.util.List;
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class GaleThrustSkill extends AbilitySkill {
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.physicalFromSpell(50, 15, .6f, .5f);
+            AbilityDamageFormula.physicalFromSpell(50, 18.75f, .6f, .5f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

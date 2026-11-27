@@ -5,7 +5,7 @@ import com.myriad.character.ability.*;
 import com.myriad.combat.DamageCalc;
 import java.util.List;
 public final class FollowingSecondSkill extends KehengSkill {
-    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 90, 18, .5f);
+    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 90, 22.5f, .5f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

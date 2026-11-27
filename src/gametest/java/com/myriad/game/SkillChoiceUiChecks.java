@@ -193,6 +193,21 @@ final class SkillChoiceUiChecks {
 
     private static void verifyActivation(GameTestHelper h) {
         var clicks = new SkillChoiceInteraction();
+        h.assertTrue(!clicks.pair("a", 0) && clicks.pair("a", 350_000_000L), "Inclusive 350ms pair");
+        h.assertTrue(!clicks.pair("a", 350_000_001L) && !clicks.pair("b", 350_000_002L),
+                "Disjoint pairs and different targets");
+        clicks.clearPair();
+        h.assertTrue(!clicks.pair("b", 400_000_000L), "Focus loss drops half a pair");
+        var gate = new SkillChoiceInteraction.SubmissionGate();
+        var connection = new Object();
+        gate.connect(connection);
+        long first = gate.begin(0);
+        h.assertTrue(first > 0 && !gate.receive(first + 1) && gate.begin(2_000_000_000L) == 0,
+                "Unrelated or delayed snapshot cannot authorize a second submit");
+        h.assertTrue(gate.receive(first) && !gate.receive(first), "One receipt per action");
+        gate.connect(connection);
+        h.assertTrue(gate.begin(999_999_999L) == 0 && gate.begin(1_000_000_000L) == first + 1,
+                "Reopening preserves the real-time one-second boundary");
         h.assertTrue(!SkillChoiceInteraction.sameActionTwice("skill-a", "confirm", true)
                 && SkillChoiceInteraction.sameActionTwice("confirm", "confirm", true),
                 "A quick selection followed by the explicit button is two distinct actions");

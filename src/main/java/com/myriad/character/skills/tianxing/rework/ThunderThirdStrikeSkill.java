@@ -18,7 +18,7 @@ public final class ThunderThirdStrikeSkill extends AbilitySkill {
     private static final AbilityDamageFormula STRIKE =
             AbilityDamageFormula.spellPower(TRUE, 0, 0, .24f).withScaleGrowth(.08f).segment("skill.myriad.damage.segment.primary", 1);
     private static final AbilityDamageFormula SPLASH =
-            AbilityDamageFormula.spellPower(MAGIC, 20, 8, .2f).segment("skill.myriad.damage.segment.splash", 1);
+            AbilityDamageFormula.spellPower(MAGIC, 20, 9.6f, .2f).segment("skill.myriad.damage.segment.splash", 1);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(STRIKE, SPLASH);

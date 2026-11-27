@@ -11,7 +11,7 @@ import static com.myriad.network.ThunderSkillViewPayload.*;
 /** Interruptible blade wipe, followed by one 120-degree / eight-block thunder judgment. */
 public final class ThunderJudgmentSkill extends AbilitySkill {
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.physicalFromSpell(200, 80, 1.5f, .8f);
+            AbilityDamageFormula.physicalFromSpell(200, 92, 1.5f, .8f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

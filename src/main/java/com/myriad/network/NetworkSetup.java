@@ -1315,6 +1315,8 @@ public final class NetworkSetup {
         PayloadTypeRegistry.clientboundPlay().register(MagicBulletCooldownPayload.TYPE, MagicBulletCooldownPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(ZhouTianChannelPayload.TYPE, ZhouTianChannelPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(FrostViewPayload.TYPE, FrostViewPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(ProgressAction.Receipt.TYPE, ProgressAction.Receipt.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(ProgressAction.TYPE, ProgressAction.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(UiFeedbackPayload.TYPE, UiFeedbackPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(ConfirmPlacementPayload.TYPE, ConfirmPlacementPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(CancelPlacementPayload.TYPE, CancelPlacementPayload.STREAM_CODEC);
@@ -1419,10 +1421,12 @@ public final class NetworkSetup {
             ServerPlayer player = context.player();
             PlayerDataProvider.trainAction(player, payload.action(), payload.value());
         });
+        ServerPlayNetworking.registerGlobalReceiver(ProgressAction.TYPE, (payload, context) -> payload.handle(context.player()));
         ServerPlayNetworking.registerGlobalReceiver(UpgradeSkillPayload.TYPE,
                 (payload, context) -> {
             ServerPlayer player = context.player();
-            PlayerDataProvider.upgradeSkill(player, payload.skillId());
+            if (!com.myriad.character.rework.FirstGroupSkills.active(PlayerDataProvider.get(player).getCharacterId()))
+                PlayerDataProvider.upgradeSkill(player, payload.skillId());
         });
         ServerPlayNetworking.registerGlobalReceiver(SelectArenaPayload.TYPE,
                 (payload, context) -> {
@@ -1464,7 +1468,7 @@ public final class NetworkSetup {
             ServerPlayer player = context.player();
             if (com.myriad.game.TacticalSupplySystem.isSupply(payload.equipId())) {
                 PlayerDataProvider.buySupply(player, payload.equipId());
-            } else {
+            } else if (!payload.equipId().startsWith(ProgressAction.ATTRIBUTE)) {
                 PlayerDataProvider.buyEquipment(player, payload.equipId());
             }
         });

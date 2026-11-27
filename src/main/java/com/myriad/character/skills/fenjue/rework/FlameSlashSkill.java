@@ -13,7 +13,7 @@ import java.util.List;
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class FlameSlashSkill extends AbilitySkill {
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.purchased(com.myriad.combat.DamageCalc.Kind.PHYSICAL, 104, 13.5f, .5f).scaled(.5f).segment("skill.myriad.damage.segment.sweep", 2);
+            AbilityDamageFormula.purchased(com.myriad.combat.DamageCalc.Kind.PHYSICAL, 104, 16.875f, .5f).scaled(.5f).segment("skill.myriad.damage.segment.sweep", 2);
 
     @Override public String singleTargetTotalKey() { return "skill.myriad.damage.stable_total"; }
 

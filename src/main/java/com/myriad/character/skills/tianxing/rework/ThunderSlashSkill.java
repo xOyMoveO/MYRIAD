@@ -10,7 +10,7 @@ import static com.myriad.network.ThunderSkillViewPayload.*;
 /** Stable M-B branch, now a charged travelling sword wave, not an instantaneous lance ray. */
 public final class ThunderSlashSkill extends AbilitySkill {
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.spellPower(MAGIC, 95, 24, .95f);
+            AbilityDamageFormula.spellPower(MAGIC, 95, 30, .95f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

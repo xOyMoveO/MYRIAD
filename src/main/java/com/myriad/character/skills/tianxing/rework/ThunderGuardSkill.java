@@ -16,7 +16,7 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class ThunderGuardSkill extends AbilitySkill {
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.spellPower(MAGIC, 20, 8, .15f).segment("skill.myriad.damage.segment.pulse", 4);
+            AbilityDamageFormula.spellPower(MAGIC, 20, 10, .15f).segment("skill.myriad.damage.segment.pulse", 4);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

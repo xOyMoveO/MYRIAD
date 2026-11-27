@@ -5,7 +5,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemUseAnimation;
 
-/** Use is started by the verified primary-attack controller, never the vanilla right-click projectile. */
+/** Use is started by the shared attack/use controller, never the vanilla right-click projectile. */
 public final class GuixiaBowItem extends Item {
     public GuixiaBowItem(Properties properties) {
         super(properties.stacksTo(1).component(net.minecraft.core.component.DataComponents.USE_EFFECTS,

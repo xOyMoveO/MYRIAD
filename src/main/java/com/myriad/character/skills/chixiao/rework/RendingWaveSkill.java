@@ -8,7 +8,7 @@ import java.util.List;
 /** Independent reusable branch. */
 public final class RendingWaveSkill extends AbilitySkill {
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.physicalFromSpell(85, 22, .55f, .5f);
+            AbilityDamageFormula.physicalFromSpell(85, 27.5f, .55f, .5f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

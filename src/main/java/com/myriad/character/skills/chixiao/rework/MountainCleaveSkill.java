@@ -14,7 +14,7 @@ import static com.myriad.combat.DamageCalc.Kind.PHYSICAL;
 /** Independent reusable branch. */
 public final class MountainCleaveSkill extends AbilitySkill {
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.purchased(PHYSICAL, 98, 20.75f, .5f);
+            AbilityDamageFormula.purchased(PHYSICAL, 98, 28.0125f, .5f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

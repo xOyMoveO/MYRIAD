@@ -133,7 +133,7 @@ final class AttributeGrowthChecks {
         try {
             helper.assertTrue(player.hasLineOfSight(target), "The isolated Cleave target is visible in the fixture lane");
             int[][] builds = {{1, 0, 0, 0}, {1, 1, 0, 0}, {1, 0, 1, 0}, {1, 3, 0, 20}, {3, 5, 9, 21}};
-            float[] damage = {98f, 105.5f, 98f, 120.5f, 177f};
+            float[] damage = {98f, 105.5f, 98f, 120.5f, 191.525f};
             for (int index = 0; index < builds.length; index++) {
                 int[] build = builds[index];
                 AbilityRuntime.clear(player);
