@@ -8,7 +8,7 @@ public final class ThunderSwordMotion {
                     mix(pitch,b.pitch,t),mix(yaw,b.yaw,t),mix(roll,b.roll,t));
         }
     }
-    public static final Pose IDLE=new Pose(.48,-.465,-1.08,-18,-6,55);
+    public static final Pose IDLE=new Pose(.48,-.475,-1.08,-18,-6,56);
     /** Neighbouring centre-line poses define actual blade travel, not a guessed wrist roll. */
     public record Frame(Pose pose,Pose before,Pose after,double cuttingWeight,int cut){}
     private record Key(double t,Pose pose){}

@@ -9,7 +9,7 @@ public final class ThunderSwordRig {
     private static final float DEG=(float)(Math.PI/180);
     public static final float VIEW_SCALE=.74f;
     public static final float BLADE_SCALE=1.35f;
-    static double restTurn(boolean left){return (left?166:14)*DEG;}
+    static double restTurn(boolean left){return (left?186:-6)*DEG;}
     private ThunderSwordRig(){}
     public static boolean allowed(boolean mod,String role,boolean ownLivingFirstPerson,boolean mainSword){
         return mod&&"tianxing".equals(role)&&ownLivingFirstPerson&&mainSword;
@@ -25,7 +25,7 @@ public final class ThunderSwordRig {
                 .rotateZ(side*(float)p.roll()*DEG).scale(VIEW_SCALE);
     }
     public static Matrix4f arm(boolean slim,boolean left){
-        return new Matrix4f().scaling(1.22f,1.35f,1.22f).mul(NightDaggerRig.arm(slim,left));
+        return new Matrix4f().scaling(1.18f,1.35f,1.18f).mul(NightDaggerRig.arm(slim,left));
     }
     public static Matrix4f hand(ThunderSwordMotion.Pose p,float equip,boolean left){
         return handAt(palm(p,equip,left),left);
@@ -36,7 +36,7 @@ public final class ThunderSwordRig {
                 .rotate(new Quaternionf().rotationTo(0,1,0,axis.x,axis.y,axis.z)).scale(VIEW_SCALE);
     }
     public static Vector3f forearmEnd(boolean left){
-        return new Vector3f(left?-.85f:.85f,-1.48f,-.70f);
+        return new Vector3f(left?-.62f:.62f,-1.48f,-.74f);
     }
     public static Matrix4f blade(boolean left){
         var p=ThunderSwordMotion.IDLE;
