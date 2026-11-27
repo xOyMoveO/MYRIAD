@@ -46,6 +46,12 @@ public record SkillHoverDetails(String name, String group, String rank, boolean 
 
     private static String seconds(int ticks) { return AbilityFormulaText.amount(ticks / 20.0); }
 
+    public static String passiveStatus(int rank, int level) {
+        if (rank == 0) return label("passive_offer", FirstGroupSkills.passiveRank(level));
+        if (rank >= 5) return label("max", rank);
+        return label("passive_next", rank, rank * 3 + 1);
+    }
+
     public static SkillHoverDetails describe(AbilitySkill skill, PlayerDataPayload data) {
         String id = skill.getId();
         String prefix = "skill.myriad." + id + ".hover.";
@@ -54,9 +60,11 @@ public record SkillHoverDetails(String name, String group, String rank, boolean 
         int opposite = FirstGroupSkills.opposite(skill.index());
         boolean locked = opposite >= 0 && ranks.getOrDefault(FirstGroupSkills.node(skill.role(), opposite).getId(), 0) > 0;
         boolean preview = !skill.baseAvailable() && paid == 0;
-        int rank = preview ? 1 : paid;
+        boolean automatic = skill.isPassive() && !data.buffs().containsKey("g1_legacy_skill_budget");
+        int rank = preview ? (automatic ? FirstGroupSkills.passiveRank(data.level()) : 1) : paid;
         String status;
         if (locked) status = label("locked");
+        else if (automatic) status = passiveStatus(paid, data.level());
         else if (paid >= skill.maxRank()) status = label("max", paid);
         else if (skill.baseAvailable()) status = text("screen.myriad.rivet.anchor_rank", paid, skill.maxRank());
         else status = preview ? label("preview") : label("rank", paid, skill.maxRank());

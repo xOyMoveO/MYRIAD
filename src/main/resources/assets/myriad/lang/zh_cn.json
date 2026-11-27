@@ -1,4 +1,8 @@
 {
+  "screen.myriad.hover.passive_offer": "选择后获得 %s 阶",
+  "screen.myriad.hover.passive_next": "%s/5 · 下次英雄等级 %s",
+  "screen.myriad.hover.choose_passive": "选择被动",
+  "message.myriad.passive_selected": "此被动已选定",
   "subtitles.myriad.yingxiao_throw": "夜影掷出飞匕",
   "subtitles.myriad.yingxiao_hit": "飞匕点刺",
   "subtitles.myriad.yingxiao_block": "横风截住飞匕",

@@ -115,7 +115,7 @@ public final class FirstGroupScreen extends Screen {
             return !(data.training() && data.noGoldCost()) && data.gold() < TacticalSupplySystem.supplyPrice(id)
                     ? "message.myriad.equip_no_gold" : null;
         }
-        return FirstGroupSkills.learnError(data.characterId(), data.skillLevels(), data.skillPoints(), data.level(), id);
+        return FirstGroupSkills.learnError(data.characterId(), data.skillLevels(), data.skillPoints(), data.level(), id, !data.buffs().containsKey("g1_legacy_skill_budget"));
     }
 
     private void submit(String id) {
@@ -447,7 +447,8 @@ public final class FirstGroupScreen extends Screen {
                 if (textWidth > 0) {
                     if (b.h() >= 35) wrapped(g, SkillTooltipDescriptions.abilityName(skill), new Box(start, b.y() + 1, textWidth, b.h() - 11), 2, locked ? MUTED : GOLD);
                     else textIn(g, SkillTooltipDescriptions.abilityName(skill), start, b.y() + 4, textWidth, locked ? MUTED : GOLD);
-                    textIn(g, locked ? text("screen.myriad.g1.locked") : rank + "/" + skill.maxRank(),
+                    textIn(g, locked ? text("screen.myriad.g1.locked") : skill.isPassive() && !data.buffs().containsKey("g1_legacy_skill_budget")
+                            ? SkillHoverDetails.passiveStatus(rank, data.level()) : rank + "/" + skill.maxRank(),
                             start, b.bottom() - 11, textWidth, locked ? MUTED : JADE);
                 }
                 if (layout.canHit(icon, mx, my)) hoveredSkill = skill;
@@ -579,6 +580,8 @@ public final class FirstGroupScreen extends Screen {
             int rank = ClientDataHolder.get().skillLevels().getOrDefault(id, 0);
             name = SkillTooltipDescriptions.abilityName(skill);
             if (rank >= skill.maxRank()) label = text("screen.myriad.g1.maxed");
+            else if (skill.isPassive() && !ClientDataHolder.get().buffs().containsKey("g1_legacy_skill_budget"))
+                label = rank == 0 ? text("screen.myriad.hover.choose_passive") : SkillHoverDetails.passiveStatus(rank, ClientDataHolder.get().level());
             else if (skill.baseAvailable()) label = text("screen.myriad.hover.reinforce");
             else label = text(rank == 0 ? "screen.myriad.g1.learn" : "screen.myriad.g1.rank_up");
             if (reason != null) hint = switch (reason) {

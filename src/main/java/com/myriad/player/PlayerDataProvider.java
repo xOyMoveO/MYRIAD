@@ -288,8 +288,9 @@ public final class PlayerDataProvider {
         }
         com.myriad.character.ability.AbilityRuntime.clear(player);
         data.setCharacterId(type.getId());
-        // 开局/切角即获得 1 个技能点（至少 1 点，不叠加）
-        data.setSkillPoints(Math.max(1, data.getSkillPoints()));
+        // Selecting the same hero again must not mint an already spent opening point.
+        if (com.myriad.character.rework.FirstGroupSkills.active(type.getId())) data.ensureLevelRewards(data.getLevel());
+        else data.setSkillPoints(Math.max(1, data.getSkillPoints()));
         player.sendSystemMessage(Component.translatable("message.myriad.character_set",
                 Component.translatable(type.nameKey())));
         applyChosenCharacter(player, data);
@@ -331,10 +332,14 @@ public final class PlayerDataProvider {
             if (!TrainingGround.canFight(player) && (GameManager.get() == null
                     || !GameManager.get().preparationFor(player))) return;
             String error = com.myriad.character.rework.FirstGroupSkills.learnError(
-                    data.getCharacterId(), data.getSkillLevels(), data.getSkillPoints(), data.getLevel(), skillId);
+                    data.getCharacterId(), data.getSkillLevels(), data.getSkillPoints(), data.getLevel(), skillId, data.automaticPassives());
             if (error != null) { player.sendSystemMessage(Component.translatable(error)); return; }
-            data.setSkillLevel(skillId, data.skillLevel(skillId) + 1);
-            data.setSkillPoints(data.getSkillPoints() - 1);
+            if (data.automaticPassives() && com.myriad.character.rework.FirstGroupSkills.byId(skillId).isPassive()) {
+                data.setSkillLevel(skillId, com.myriad.character.rework.FirstGroupSkills.passiveRank(data.getLevel()));
+            } else {
+                data.setSkillLevel(skillId, data.skillLevel(skillId) + 1);
+                data.setSkillPoints(data.getSkillPoints() - 1);
+            }
             syncToClient(player);
             return;
         }

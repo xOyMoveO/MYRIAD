@@ -102,7 +102,7 @@ public final class FirstGroupGrowth {
         if(FirstGroupSkills.SECOND_GROUP.contains(d.getCharacterId())&&SecondGroupMigration.RETIRED.stream().anyMatch(k->d.getBuff(k)>0))
             SecondGroupMigration.clearLegacy(p,d);
         // One-time migration only: old skill ranks cannot unlock new mutually exclusive branches.
-        if(d.getSkillLevels().keySet().stream().anyMatch(id->{var n=FirstGroupSkills.byId(id);return n==null||!n.role().equals(d.getCharacterId());})){
+        if(d.automaticPassives() && d.getSkillLevels().keySet().stream().anyMatch(id->{var n=FirstGroupSkills.byId(id);return n==null||!n.role().equals(d.getCharacterId());})){
             d.refundAllSkillPointsForTraining();com.myriad.character.ability.AbilityRuntime.clear(p);p.removeEffect(net.minecraft.world.effect.MobEffects.INVISIBILITY);
             com.myriad.character.rework.SecondGroupMigration.clearLegacy(p,d);
         }

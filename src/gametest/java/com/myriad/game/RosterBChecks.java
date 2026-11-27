@@ -51,7 +51,9 @@ final class RosterBChecks {
                 }
                 s.origin=Vec3.atBottomCenterOf(floor.above());
                 s.actor=player(h,s.origin,s.packets,false);s.target=player(h,s.origin.add(0,0,role.equals("sulan")&&index==6?12:3),new ArrayList<>(),true);scenes.add(s);
-                receive(h,s.actor,new NetworkSetup.ChooseCharacterPayload(role));var d=PlayerDataProvider.get(s.actor);d.setLevel(20);d.refundAllSkillPointsForTraining();
+                receive(h,s.actor,new NetworkSetup.ChooseCharacterPayload(role));var d=PlayerDataProvider.get(s.actor);
+                int scenarioLevel = index < 2 ? (role.equals("yunsheng") && index == 0 ? 4 : 1) : 20;
+                d.setLevel(scenarioLevel);d.refundAllSkillPointsForTraining();
                 receive(h,s.actor,new NetworkSetup.UpgradeSkillPayload(node(s).getId()));
                 s.actor.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(0);d.setMana(700);s.mana=d.getMana();
                 if(index<2){
@@ -139,7 +141,7 @@ final class RosterBChecks {
         if(s.role.equals("yunsheng")&&s.index==0&&Set.of(1,6).contains(age)){if(age==6)ModShieldSystem.consume(s.actor,10);var skill=FirstGroupSkills.node(s.role,7);d.setCooldown(skill.getId(),0);receive(h,s.actor,new NetworkSetup.CastSkillPayload(3,0,0));}
         if(age==100&&s.role.equals("hanze")&&s.index==0)h.assertTrue(d.getBuff("g1_stun")==0&&PlayerDataProvider.get(s.target).getBuff("g1_root")>0,"Four distinct actual basics trigger the frost passive root");
         if(age==20&&s.role.equals("lingyuan")&&s.index==1)near(h,ModShieldSystem.sourceValue(s.actor,node(s).getId()+"/"+s.actor.getUUID()),45,"Three actual casts + basic consume resonance and grant exact passive shield");
-        if(age==7&&s.role.equals("yunsheng")&&s.index==0)near(h,ModShieldSystem.sourceValue(s.actor,node(s).getId()+"/"+s.actor.getUUID()),45,"Two separated actual shelter casts trigger exact echo shield");
+        if(age==7&&s.role.equals("yunsheng")&&s.index==0)near(h,ModShieldSystem.sourceValue(s.actor,node(s).getId()+"/"+s.actor.getUUID()),60,"Two separated actual shelter casts trigger exact echo shield");
         if(age==2&&s.role.equals("hanze")&&s.index==1)near(h,ModShieldSystem.value(s.actor),65,"An effective hit triggers exact rime shield");
     }
     private static void basic(Scene s){
@@ -166,8 +168,8 @@ final class RosterBChecks {
                 d.setLevel(1);d.refundAllSkillPointsForTraining();
                 if(skill.isUltimate()){receive(h,p,new NetworkSetup.UpgradeSkillPayload(skill.getId()));h.assertTrue(d.skillLevel(skill.getId())==0&&d.getSkillPoints()==1,"Level-one ultimate input rejected without spending "+skill.getId());}
                 d.setLevel(20);d.refundAllSkillPointsForTraining();receive(h,p,new NetworkSetup.UpgradeSkillPayload(skill.getId()));
-                h.assertTrue(d.skillLevel(skill.getId())==1&&d.getSkillPoints()==19,"Every real candidate learns through registered input: "+skill.getId());
-                int other=FirstGroupSkills.opposite(skill.index());if(other>=0){receive(h,p,new NetworkSetup.UpgradeSkillPayload(FirstGroupSkills.node(role,other).getId()));h.assertTrue(d.skillLevel(FirstGroupSkills.node(role,other).getId())==0&&d.getSkillPoints()==19,"Opposite branch receiver rejects without spending: "+skill.getId());}
+                h.assertTrue(d.skillLevel(skill.getId())==(skill.isPassive()?5:1)&&d.getSkillPoints()==(skill.isPassive()?20:19),"Every real candidate learns through registered input: "+skill.getId());
+                int other=FirstGroupSkills.opposite(skill.index());if(other>=0){receive(h,p,new NetworkSetup.UpgradeSkillPayload(FirstGroupSkills.node(role,other).getId()));h.assertTrue(d.skillLevel(FirstGroupSkills.node(role,other).getId())==0&&d.getSkillPoints()==(skill.isPassive()?20:19),"Opposite branch receiver rejects without spending: "+skill.getId());}
             }
             FirstGroupGrowth.initialize(p,d);d.setGold(2000);
             for(String key:FirstGroupGrowth.ATTRIBUTES)receive(h,p,new NetworkSetup.CraftEquipPayload("g1_attribute_"+key));

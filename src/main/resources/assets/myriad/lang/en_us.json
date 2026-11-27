@@ -1,4 +1,8 @@
 {
+  "screen.myriad.hover.passive_offer": "Rank %s on choice",
+  "screen.myriad.hover.passive_next": "%s/5 · Next at hero level %s",
+  "screen.myriad.hover.choose_passive": "Choose passive",
+  "message.myriad.passive_selected": "Passive selected",
   "subtitles.myriad.yingxiao_throw": "Night Shadow throws a dagger",
   "subtitles.myriad.yingxiao_hit": "Dagger strikes",
   "subtitles.myriad.yingxiao_block": "Wind catches a dagger",

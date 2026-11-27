@@ -63,7 +63,7 @@ final class RosterAChecks {
                 // Learn both passive alternatives separately, through the same registered receiver.
                 if(index==2)for(int passive=0;passive<2;passive++){
                     var node=FirstGroupSkills.node(role,passive);receive(h,p,new NetworkSetup.UpgradeSkillPayload(node.getId()));
-                    h.assertTrue(d.skillLevel(node.getId())==1,"Registered passive learning: "+node.getId());
+                    h.assertTrue(d.skillLevel(node.getId())==5,"Registered passive learning: "+node.getId());
                     String opposite=FirstGroupSkills.node(role,1-passive).getId();int points=d.getSkillPoints();
                     receive(h,p,new NetworkSetup.UpgradeSkillPayload(opposite));
                     h.assertTrue(d.skillLevel(opposite)==0&&d.getSkillPoints()==points,"Mutually exclusive passive request spends nothing");
@@ -153,7 +153,7 @@ final class RosterAChecks {
         }
         // Exact baseline S=30/rank-one expectations for the A-group roles without a prior dedicated suite.
         var expected=Map.ofEntries(Map.entry("g1_xuanchen_n1",61.5),Map.entry("g1_xuanchen_ua",216.0),Map.entry("g1_xuanchen_ub",203.0),
-                Map.entry("g2_qingluo_n2",63.5),Map.entry("g2_chixiao_n1",93.0),Map.entry("g2_chixiao_n2",62.0),
+                Map.entry("g2_qingluo_n2",63.5),Map.entry("g2_chixiao_n1",98.0),Map.entry("g2_chixiao_n2",62.0),
                 Map.entry("g2_chixiao_ma",132.5),Map.entry("g2_chixiao_mb",101.5),Map.entry("g2_chixiao_ua",195.5));
         if(expected.containsKey(id))h.assertTrue(Math.abs(10000-f.minEnemy-expected.get(id))<.02,"Exact baseline damage: "+id);
         var shields=Map.of("g1_xuanchen_n2",108.0,"g1_xuanchen_mb",70.5,"g2_qingluo_ma",90.5,"g2_qingluo_mb",171.0,"g2_qingluo_ub",219.5,"g2_chixiao_ub",251.0);
@@ -170,7 +170,7 @@ final class RosterAChecks {
     private static void preparePassives(GameTestHelper h,List<Fixture> fixtures){
         for(var f:fixtures)if(Set.of("xuanchen","qingluo","chixiao").contains(f.skill.role())&&f.skill.index()<4
                 ||f.skill.getId().equals("shuo_qiaofan")||f.skill.getId().equals("g1_tianxing_n2")||f.skill.getId().equals("g1_fenjue_n2")){
-            var p=f.actor.player;var d=PlayerDataProvider.get(p);AbilityRuntime.clear(p);d.refundAllSkillPointsForTraining();
+            var p=f.actor.player;var d=PlayerDataProvider.get(p);AbilityRuntime.clear(p);d.setLevel(1);d.refundAllSkillPointsForTraining();
             p.setPos(f.origin);p.setYRot(0);p.setXRot(0);p.setHealth(1000);p.damageCooldownTime=0;f.ally.player.setHealth(1000);f.enemy.player.setHealth(10000);
             ModShieldSystem.clearFor(p);ModShieldSystem.clearFor(f.ally.player);f.enemy.player.damageCooldownTime=0;
             var passive=FirstGroupSkills.node(f.skill.role(),f.skill.index()-2);receive(h,p,new NetworkSetup.UpgradeSkillPayload(passive.getId()));

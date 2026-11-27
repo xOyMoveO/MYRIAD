@@ -163,6 +163,12 @@ final class FirstTenDamageFormulaChecks {
     private static void verifyLearning(GameTestHelper helper, CharacterType role, AbilitySkill skill) {
         Map<String, Integer> ranks = new HashMap<>();
         for (int rank = 1; rank <= skill.maxRank(); rank++) {
+            if (skill.isPassive() && rank > 1) {
+                helper.assertTrue(FirstGroupSkills.learnError(role.getId(), ranks, 20, 20, skill.getId()) != null,
+                        "Already selected passive cannot be raised manually");
+                ranks.put(skill.getId(), rank);
+                continue;
+            }
             int level = skill.isUltimate() ? 4 * rank : rank;
             helper.assertTrue(FirstGroupSkills.learnError(role.getId(), ranks, 20, level, skill.getId()) == null,
                     "Can learn " + skill.getId() + " at rank " + rank + " / level " + level);
