@@ -1,0 +1,660 @@
+{
+  "prototypeSourceCommit": "64dddd0e17b304ae62a092ec9a6e90d61d707904",
+  "minecraft": "26.3",
+  "loader": "0.20.1",
+  "old": {
+    "jarSha256": "f4ae4f0b83f04fe9e7ce00b49362f5930ce9a143762668d49aed830876b85d8e",
+    "adapterSha256": "3986878f4ea74a81edc59c6311a47d6ac43b8ffc926ffe9ec89949e247b7c67a",
+    "scene": {
+      "character": "rivet",
+      "dimension": "myriad:training_ground",
+      "mainArm": "RIGHT",
+      "mainItem": "myriad:rivet_hammer",
+      "offhandEmpty": true,
+      "camera": "FIRST_PERSON",
+      "fov": 70,
+      "yaw": 0.0,
+      "pitch": 0.0,
+      "x": 0.5,
+      "y": 65.0,
+      "z": 0.5
+    },
+    "clicks": [
+      {
+        "t": 6.83,
+        "strength": 1.0,
+        "clientTick": 419,
+        "route": "native_keyboard_or_mouse_handler"
+      },
+      {
+        "t": 8.1629,
+        "strength": 0.96250004,
+        "clientTick": 446,
+        "route": "native_keyboard_or_mouse_handler"
+      },
+      {
+        "t": 9.8782,
+        "strength": 1.0,
+        "clientTick": 480,
+        "route": "native_keyboard_or_mouse_handler"
+      }
+    ],
+    "serverReceipts": [
+      {
+        "serverTick": 378,
+        "target": 4,
+        "type": "melee_accepted",
+        "clientTick": 420
+      },
+      {
+        "serverTick": 407,
+        "target": 4,
+        "type": "melee_accepted",
+        "clientTick": 449
+      },
+      {
+        "serverTick": 439,
+        "target": 4,
+        "type": "melee_accepted",
+        "clientTick": 481
+      }
+    ],
+    "damage": [
+      {
+        "serverTick": 378,
+        "target": 4,
+        "damage": 67.93365,
+        "type": "training_damage",
+        "clientTick": 420
+      },
+      {
+        "serverTick": 407,
+        "target": 4,
+        "damage": 67.75197,
+        "type": "training_damage",
+        "clientTick": 449
+      },
+      {
+        "serverTick": 439,
+        "target": 4,
+        "damage": 65.62307,
+        "type": "training_damage",
+        "clientTick": 481
+      }
+    ],
+    "rawWindow": {
+      "width": 1708,
+      "height": 1016,
+      "avg_frame_rate": "197000/3401",
+      "duration": "16.996667",
+      "nb_frames": "985",
+      "sha256": "78fed44d5df5e7126357ff1b3ec1dc236972fabdc794139089eaf33447654d22"
+    },
+    "heldInputsAtEnd": 0
+  },
+  "standard": {
+    "jarSha256": "c31e1694138ed382efd0d6b95f842877f867eb65e65a71be2cacb9ae1dac4160",
+    "adapterSha256": "ce201e4866f465b4dc5bcb0aacb9b52b087c675993c99dbf819a881216d88193",
+    "scene": {
+      "character": "rivet",
+      "dimension": "myriad:training_ground",
+      "mainArm": "RIGHT",
+      "mainItem": "myriad:rivet_hammer",
+      "offhandEmpty": true,
+      "camera": "FIRST_PERSON",
+      "fov": 70,
+      "yaw": 0.0,
+      "pitch": 0.0,
+      "x": 0.5,
+      "y": 65.0,
+      "z": 0.5
+    },
+    "clicks": [
+      {
+        "t": 6.8439,
+        "strength": 1.0,
+        "clientTick": 413,
+        "route": "native_keyboard_or_mouse_handler"
+      },
+      {
+        "t": 8.2104,
+        "strength": 0.96250004,
+        "clientTick": 440,
+        "route": "native_keyboard_or_mouse_handler"
+      },
+      {
+        "t": 9.9429,
+        "strength": 1.0,
+        "clientTick": 475,
+        "route": "native_keyboard_or_mouse_handler"
+      }
+    ],
+    "serverReceipts": [
+      {
+        "serverTick": 381,
+        "target": 4,
+        "type": "melee_accepted",
+        "clientTick": 414
+      },
+      {
+        "serverTick": 410,
+        "target": 4,
+        "type": "melee_accepted",
+        "clientTick": 443
+      },
+      {
+        "serverTick": 443,
+        "target": 4,
+        "type": "melee_accepted",
+        "clientTick": 476
+      }
+    ],
+    "damage": [
+      {
+        "serverTick": 381,
+        "target": 4,
+        "damage": 66.4779,
+        "type": "training_damage",
+        "clientTick": 414
+      },
+      {
+        "serverTick": 410,
+        "target": 4,
+        "damage": 67.62419,
+        "type": "training_damage",
+        "clientTick": 443
+      },
+      {
+        "serverTick": 443,
+        "target": 4,
+        "damage": 68.20455,
+        "type": "training_damage",
+        "clientTick": 476
+      }
+    ],
+    "rawWindow": {
+      "width": 1708,
+      "height": 1016,
+      "avg_frame_rate": "557400/9673",
+      "duration": "16.116667",
+      "nb_frames": "929",
+      "sha256": "aebfe46aea26cb89ef08a10d3e1fa56e21a3e354d2e353a24bdcc471a4ecbaf6"
+    },
+    "heldInputsAtEnd": 0,
+    "cameraStrength": 1.0,
+    "confirmedContact": [
+      {
+        "owner": 1,
+        "serverTick": 381,
+        "type": "rivet_basic_contact",
+        "clientTick": 414
+      },
+      {
+        "owner": 1,
+        "serverTick": 410,
+        "type": "rivet_basic_contact",
+        "clientTick": 443
+      },
+      {
+        "owner": 1,
+        "serverTick": 443,
+        "type": "rivet_basic_contact",
+        "clientTick": 476
+      }
+    ],
+    "appliedHitstop": [
+      {
+        "serverTick": 381,
+        "impactLevelTick": 384.2200020313263,
+        "type": "rivet_hammer_hitstop",
+        "clientTick": 417
+      },
+      {
+        "serverTick": 410,
+        "impactLevelTick": 413.03000206947326,
+        "type": "rivet_hammer_hitstop",
+        "clientTick": 446
+      },
+      {
+        "serverTick": 443,
+        "impactLevelTick": 447.09000206947326,
+        "type": "rivet_hammer_hitstop",
+        "clientTick": 480
+      }
+    ],
+    "air": {
+      "clicks": [
+        {
+          "t": 0.8765,
+          "strength": 1.0,
+          "clientTick": 643,
+          "route": "native_keyboard_or_mouse_handler"
+        },
+        {
+          "t": 2.4766,
+          "strength": 1.0,
+          "clientTick": 675,
+          "route": "native_keyboard_or_mouse_handler"
+        },
+        {
+          "t": 4.095,
+          "strength": 1.0,
+          "clientTick": 707,
+          "route": "native_keyboard_or_mouse_handler"
+        }
+      ],
+      "fixedCameraChecks": 119,
+      "appliedHitstop": 0,
+      "damageReceipts": 0,
+      "rawWindow": {
+        "width": 1708,
+        "height": 1016,
+        "avg_frame_rate": "109000/1891",
+        "duration": "9.441667",
+        "nb_frames": "545",
+        "sha256": "5ed5308731ff1beaad69c2cfada6f09281b92ed4665980c47f0655f10d2b76b3"
+      }
+    }
+  },
+  "disabled": {
+    "jarSha256": "c31e1694138ed382efd0d6b95f842877f867eb65e65a71be2cacb9ae1dac4160",
+    "adapterSha256": "ce201e4866f465b4dc5bcb0aacb9b52b087c675993c99dbf819a881216d88193",
+    "scene": {
+      "character": "rivet",
+      "dimension": "myriad:training_ground",
+      "mainArm": "RIGHT",
+      "mainItem": "myriad:rivet_hammer",
+      "offhandEmpty": true,
+      "camera": "FIRST_PERSON",
+      "fov": 70,
+      "yaw": 0.0,
+      "pitch": 0.0,
+      "x": 0.5,
+      "y": 65.0,
+      "z": 0.5
+    },
+    "clicks": [
+      {
+        "t": 6.8384,
+        "strength": 1.0,
+        "clientTick": 434,
+        "route": "native_keyboard_or_mouse_handler"
+      },
+      {
+        "t": 8.2064,
+        "strength": 0.96250004,
+        "clientTick": 461,
+        "route": "native_keyboard_or_mouse_handler"
+      },
+      {
+        "t": 9.9219,
+        "strength": 1.0,
+        "clientTick": 495,
+        "route": "native_keyboard_or_mouse_handler"
+      }
+    ],
+    "serverReceipts": [
+      {
+        "serverTick": 382,
+        "target": 5,
+        "type": "melee_accepted",
+        "clientTick": 435
+      },
+      {
+        "serverTick": 411,
+        "target": 5,
+        "type": "melee_accepted",
+        "clientTick": 464
+      },
+      {
+        "serverTick": 443,
+        "target": 5,
+        "type": "melee_accepted",
+        "clientTick": 496
+      }
+    ],
+    "damage": [
+      {
+        "serverTick": 382,
+        "target": 5,
+        "damage": 66.153946,
+        "type": "training_damage",
+        "clientTick": 435
+      },
+      {
+        "serverTick": 411,
+        "target": 5,
+        "damage": 67.29551,
+        "type": "training_damage",
+        "clientTick": 464
+      },
+      {
+        "serverTick": 443,
+        "target": 5,
+        "damage": 63.26701,
+        "type": "training_damage",
+        "clientTick": 496
+      }
+    ],
+    "rawWindow": {
+      "width": 1708,
+      "height": 1016,
+      "avg_frame_rate": "142950/2473",
+      "duration": "16.486667",
+      "nb_frames": "953",
+      "sha256": "8e6fd160bc5dddac3c8621d5111b7fb50cc1525deac493c8ad623ba8de846016"
+    },
+    "heldInputsAtEnd": 0,
+    "cameraStrength": 0.0,
+    "confirmedContact": [
+      {
+        "owner": 1,
+        "serverTick": 382,
+        "type": "rivet_basic_contact",
+        "clientTick": 435
+      },
+      {
+        "owner": 1,
+        "serverTick": 411,
+        "type": "rivet_basic_contact",
+        "clientTick": 464
+      },
+      {
+        "owner": 1,
+        "serverTick": 443,
+        "type": "rivet_basic_contact",
+        "clientTick": 496
+      }
+    ],
+    "appliedHitstop": [
+      {
+        "serverTick": 382,
+        "impactLevelTick": 385.42000195980074,
+        "type": "rivet_hammer_hitstop",
+        "clientTick": 438
+      },
+      {
+        "serverTick": 411,
+        "impactLevelTick": 413.97000188827514,
+        "type": "rivet_hammer_hitstop",
+        "clientTick": 466
+      },
+      {
+        "serverTick": 443,
+        "impactLevelTick": 447.3300019598007,
+        "type": "rivet_hammer_hitstop",
+        "clientTick": 500
+      }
+    ]
+  },
+  "historicalRightHand": {
+    "source": "九人近战与归霞弓.mp4",
+    "startSeconds": 32.3,
+    "endSeconds": 36.2,
+    "fps": 20,
+    "sha256": "e5d6edf4cc0794305fba74584326fec683a0990922545b5cda0efa333e9f742d"
+  },
+  "comparison": {
+    "width": 1920,
+    "height": 680,
+    "avg_frame_rate": "60/1",
+    "duration": "24.050000",
+    "nb_frames": "1443",
+    "sha256": "03a8ffcea7c7e53c2d4e1b948e02e248ed66a857169e327d7425912ba5ba6d5f"
+  },
+  "cameraMeasurements": {
+    "unit": "degrees; frame positions in pixels at 854 x 480",
+    "method": "PTS of original window capture, crop title bar, downsample viewport; track static scenery on both sides using pyramidal optical flow with forward/back consistency; fit RANSAC similarity transformation against a pre-click reference. Screen-positive angle is clockwise. HUD displacement from normalized template match; crosshair is a 15x15 HUD glyph, accepted at normalized correlation >=0.70.",
+    "sources": {
+      "standard-raw": {
+        "shots": [
+          {
+            "index": 1,
+            "click": 6.8439,
+            "measured": 71,
+            "minmax": [
+              -0.0003,
+              0.0044
+            ],
+            "peak_t": 6.655,
+            "peak_age": -0.1889,
+            "peak_inliers": [
+              196,
+              205
+            ],
+            "peak_res_p50": 0.044,
+            "hud_offsets": {
+              "(0, 0)": 71
+            },
+            "crosshair_offsets": {
+              "(-1, -1)": 62
+            },
+            "cross_good": 62
+          },
+          {
+            "index": 2,
+            "click": 8.2104,
+            "measured": 72,
+            "minmax": [
+              -0.0024,
+              0.0007
+            ],
+            "peak_t": 8.0483,
+            "peak_age": -0.1621,
+            "peak_inliers": [
+              220,
+              180
+            ],
+            "peak_res_p50": 0.025,
+            "hud_offsets": {
+              "(0, 0)": 72
+            },
+            "crosshair_offsets": {
+              "(-1, -1)": 64
+            },
+            "cross_good": 64
+          },
+          {
+            "index": 3,
+            "click": 9.9429,
+            "measured": 71,
+            "minmax": [
+              -0.7178,
+              0.0007
+            ],
+            "peak_t": 10.2517,
+            "peak_age": 0.3088,
+            "peak_inliers": [
+              169,
+              113
+            ],
+            "peak_res_p50": 0.102,
+            "hud_offsets": {
+              "(0, 0)": 71
+            },
+            "crosshair_offsets": {
+              "(-1, -1)": 57
+            },
+            "cross_good": 57
+          }
+        ],
+        "calibration_known_clockwise_0.72_degrees": {
+          "angle_deg": 0.7197,
+          "inliers": [
+            188,
+            216
+          ],
+          "residual_p50_px": 0.049,
+          "center_dx_px": 0.003,
+          "center_dy_px": -0.004
+        }
+      },
+      "disabled-raw": {
+        "shots": [
+          {
+            "index": 1,
+            "click": 6.8384,
+            "measured": 72,
+            "minmax": [
+              -0.0001,
+              0.0043
+            ],
+            "peak_t": 6.6567,
+            "peak_age": -0.1817,
+            "peak_inliers": [
+              194,
+              188
+            ],
+            "peak_res_p50": 0.033,
+            "hud_offsets": {
+              "(0, 0)": 72
+            },
+            "crosshair_offsets": {
+              "(-1, -1)": 63
+            },
+            "cross_good": 63
+          },
+          {
+            "index": 2,
+            "click": 8.2064,
+            "measured": 72,
+            "minmax": [
+              -0.0034,
+              0.0006
+            ],
+            "peak_t": 8.235,
+            "peak_age": 0.0286,
+            "peak_inliers": [
+              218,
+              180
+            ],
+            "peak_res_p50": 0.035,
+            "hud_offsets": {
+              "(0, 0)": 72
+            },
+            "crosshair_offsets": {
+              "(-1, -1)": 63
+            },
+            "cross_good": 63
+          },
+          {
+            "index": 3,
+            "click": 9.9219,
+            "measured": 71,
+            "minmax": [
+              -0.0039,
+              0.0005
+            ],
+            "peak_t": 9.75,
+            "peak_age": -0.1719,
+            "peak_inliers": [
+              197,
+              208
+            ],
+            "peak_res_p50": 0.036,
+            "hud_offsets": {
+              "(0, 0)": 71
+            },
+            "crosshair_offsets": {
+              "(-1, -1)": 57
+            },
+            "cross_good": 57
+          }
+        ],
+        "calibration_known_clockwise_0.72_degrees": {
+          "angle_deg": 0.7198,
+          "inliers": [
+            187,
+            215
+          ],
+          "residual_p50_px": 0.046,
+          "center_dx_px": 0.003,
+          "center_dy_px": -0.004
+        }
+      },
+      "standard-air": {
+        "shots": [
+          {
+            "index": 1,
+            "click": 0.8765,
+            "measured": 72,
+            "minmax": [
+              -0.0049,
+              0.0012
+            ],
+            "peak_t": 0.675,
+            "peak_age": -0.2015,
+            "peak_inliers": [
+              196,
+              192
+            ],
+            "peak_res_p50": 0.033,
+            "hud_offsets": {
+              "(0, 0)": 72
+            },
+            "crosshair_offsets": {
+              "(-1, -1)": 2
+            },
+            "cross_good": 2
+          },
+          {
+            "index": 2,
+            "click": 2.4766,
+            "measured": 71,
+            "minmax": [
+              -0.0025,
+              0.0009
+            ],
+            "peak_t": 2.3033,
+            "peak_age": -0.1733,
+            "peak_inliers": [
+              210,
+              179
+            ],
+            "peak_res_p50": 0.025,
+            "hud_offsets": {
+              "(0, 0)": 71
+            },
+            "crosshair_offsets": {
+              "(-1, -1)": 1
+            },
+            "cross_good": 1
+          },
+          {
+            "index": 3,
+            "click": 4.095,
+            "measured": 72,
+            "minmax": [
+              -0.0031,
+              0.001
+            ],
+            "peak_t": 4.005,
+            "peak_age": -0.09,
+            "peak_inliers": [
+              196,
+              203
+            ],
+            "peak_res_p50": 0.027,
+            "hud_offsets": {
+              "(0, 0)": 72
+            },
+            "crosshair_offsets": {
+              "(-1, -1)": 4
+            },
+            "cross_good": 4
+          }
+        ],
+        "calibration_known_clockwise_0.72_degrees": {
+          "angle_deg": 0.7196,
+          "inliers": [
+            186,
+            203
+          ],
+          "residual_p50_px": 0.046,
+          "center_dx_px": 0.004,
+          "center_dy_px": -0.003
+        }
+      }
+    }
+  }
+}

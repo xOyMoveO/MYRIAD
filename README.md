@@ -48,6 +48,8 @@
 
 天刑采用右下竖直前指的纯无手第一人称待机姿态，连续挥剑时从上一刀的换侧守势接招，收剑沿画面下缘连续回位。[天刑实机说明](docs/verification/tianxing-sword-prototype.md)
 
+铆钉重砸命中时有轻微镜头滚转，落霞的满弓提示位于弦扣旁。客户端启动参数 `-Dmyriad.rivetCameraStrength=0` 可关闭重砸的镜头滚转，锤身仍保留命中顿挫。[铆钉实机对照](docs/verification/rivet-hammer-prototype.md) · [落霞实机对照](docs/verification/luoxia-bow-prototype.md)
+
 客户端与服务端使用同一版本的万象和上表列出的 Fabric API，万象网络协议为 32。每个实例安装一份发行包。自行构建见[开发与构建](#开发与构建)。
 
 1. 新建一个独立的 Minecraft 26.3 Fabric 实例；服务器也使用独立目录和新世界。

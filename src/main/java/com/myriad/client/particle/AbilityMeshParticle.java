@@ -175,6 +175,13 @@ public final class AbilityMeshParticle extends SingleQuadParticle {
                 &&!(recipe.theme()==12&&recipe.anchor()<0)&&!com.myriad.character.skills.rivet.RivetVfx.stationary(recipe))return;
         if(recipe.anchor()!=mc.player.getId()&&level.getEntity(recipe.anchor()) instanceof net.minecraft.world.entity.player.Player
                 &&!FogOfWarClient.shouldRenderPlayer(recipe.anchor()))return;
+        // The local bow's serving already signals a full draw. Keep the remote/world flash for other cameras.
+        if (recipe.theme() == 14 && mc.player != null
+                && com.myriad.client.firstperson.LuoxiaBowPrototype.replacesWorldCharge(recipe, mc.player.getId(),
+                        mc.options.getCameraType().isFirstPerson() && mc.getCameraEntity() == mc.player
+                        && mc.player.isAlive() && !mc.player.isSpectator() && ClientDataHolder.modEnabled()
+                        && "luoxia".equals(ClientDataHolder.characterId())
+                        && mc.player.getMainHandItem().is(com.myriad.registry.ModItems.GUIXIA_BOW.get()))) return;
         double distance=camera.position().distanceTo(recipe.from());
         boolean reduced=mc.options.particles().get()!=net.minecraft.server.level.ParticleStatus.ALL||distance>32;
         boolean thunderModel=com.myriad.character.skills.tianxing.rework.ThunderVfxGeometry.usesProjectileModel(recipe);

@@ -13,6 +13,8 @@
     "DummyDamageMixin",
     "BufferedMeleeMixin",
     "AbilityPresentationMixin",
+    "RivetHammerContactMixin",
+    "LuoxiaBowPoseMixin",
     "SoundPresentationMixin"
   ],
   "injectors": {
