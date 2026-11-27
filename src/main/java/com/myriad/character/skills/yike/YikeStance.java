@@ -104,7 +104,7 @@ public final class YikeStance {
         var q = YikeRework.q(c.player);
         return q != null && c.skill == q && c.data.skillLevel(q.getId()) > 0
                 && s.shots > 0 && nextShotTicks(c.player) <= (s.fired && !c.accepted() ? 5 : 0)
-                && (TrainingMode.isNoMana(c.player) || c.data.getMana() >= 35);
+                && (TrainingMode.isNoMana(c.player) || c.data.getMana() >= q.manaCost(c.rank));
     }
 
     /** Q owns mana payment; this consumes exactly one shell for the same committed cast. */
@@ -118,7 +118,7 @@ public final class YikeStance {
         s.shots--;
         s.nextShot = c.now() + (s.mobile ? 27 : 22);
         if (s.shots == 0) exit(c.player, "empty");
-        else if (!TrainingMode.isNoMana(c.player) && c.data.getMana() < 35) exit(c.player, "mana");
+        else if (!canAffordShot(c.player, s)) exit(c.player, "mana");
     }
 
     /** W calls this only after its legal ground warning has actually been committed. */
@@ -152,11 +152,17 @@ public final class YikeStance {
             exit(p, "control");
             return false;
         }
-        if (!TrainingMode.isNoMana(p) && PlayerDataProvider.get(p).getMana() < 35) {
+        if (!canAffordShot(p, s)) {
             exit(p, "mana");
             return false;
         }
         return true;
+    }
+
+    private static boolean canAffordShot(ServerPlayer p, State state) {
+        var data = PlayerDataProvider.get(p);
+        int rank = data.skillLevel(state.q.getId());
+        return TrainingMode.isNoMana(p) || data.getMana() >= state.q.manaCost(rank);
     }
 
     /** Preserve the strongest self movement limit, rather than multiplying .7 by Q/W's .5. */

@@ -62,6 +62,16 @@ public final class FirstGroupGrowth {
         return 30.0;
     }
 
+    public static double maxMana(CharacterType role, int level) {
+        int perLevel = switch (role) {
+            case YINGXIAO, LINGYUAN, LUOXIA, SHUO -> 24;
+            case TIANXING, RIVET, CHIXIAO, HANZE -> 28;
+            case FENJUE, XUANCHEN, YIKE -> 32;
+            case SULAN, QINGLUO, YUNSHENG, KEHENG -> 36;
+        };
+        return 700 + perLevel * (Math.clamp(level, 1, 20) - 1);
+    }
+
     public static double health(String role,int level){
         int[] pair=switch(role){
             case "rivet"->new int[]{700,110};
@@ -112,7 +122,8 @@ public final class FirstGroupGrowth {
         base(p,ModAttributes.SPELL_POWER,baselineSpellPower());
         base(p,ModAttributes.ATTACK_SPEED,.70);base(p,Attributes.MOVEMENT_SPEED,.10);
         base(p,ModAttributes.PHYSICAL_DEFENSE,45);base(p,ModAttributes.MAGIC_RESISTANCE,45);
-        base(p,ModAttributes.MAX_MANA,700);base(p,ModAttributes.MANA_REGEN,4);base(p,ModAttributes.HEALTH_REGEN,2);
+        base(p,ModAttributes.MAX_MANA,maxMana(role,d.getLevel()));base(p,ModAttributes.MANA_REGEN,4);base(p,ModAttributes.HEALTH_REGEN,2);
+        d.setMana((float)Math.min(d.getMana(),p.getAttributeValue(ModAttributes.MAX_MANA)));
         base(p,ModAttributes.CRIT_DAMAGE,150);
         apply(p,d);
     }

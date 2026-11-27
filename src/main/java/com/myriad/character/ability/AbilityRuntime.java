@@ -118,7 +118,7 @@ public final class AbilityRuntime {
     private static InputFailure resourceFailure(Cast cast) {
         if (!TrainingMode.isNoCooldown(cast.player) && !cast.skill.cooldownReady(cast)) return InputFailure.COOLDOWN;
         if (!preparationFor(cast.player, cast.skill) && !TrainingMode.isNoMana(cast.player)
-                && cast.data.getMana() < cast.skill.manaCost(cast)) return InputFailure.MANA;
+                && cast.data.getMana() < cast.skill.manaCost(cast.rank)) return InputFailure.MANA;
         return null;
     }
 
@@ -341,7 +341,7 @@ public final class AbilityRuntime {
             if(failure == null && !skill.canRelease(this)) failure = skill.releaseRejection(this);
             if(failure != null){failure.send(player);cancelCast();return false;}
             committed=true;phase=Phase.COMMITTED;owner.preparing=null;
-            if(!noMana)data.spendMana(skill.manaCost(this));
+            if(!noMana)data.spendMana(skill.manaCost(rank));
             if(!noCd&&skill.cooldownTicks(this)>0){double reduction=Math.clamp(player.getAttributeValue(ModAttributes.COOLDOWN_REDUCTION),0,ModAttributes.MAX_COOLDOWN_REDUCTION);
                 data.setCooldown(skill.getId(),Math.max(1,(int)(skill.cooldownTicks(this)*(1-reduction/100))));}
             player.removeEffect(MobEffects.INVISIBILITY);data.setStealthBonus(false);

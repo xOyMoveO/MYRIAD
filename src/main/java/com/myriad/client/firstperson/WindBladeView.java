@@ -101,7 +101,7 @@ public final class WindBladeView {
         var data = ClientDataHolder.get();
         if (data == null || !enabled(mc) || busy(mc) || ClientDataHolder.cooldownTicks(slot) > 0) return;
         var resolved = FirstGroupSkills.resolve(CharacterType.SULAN, slot, data.skillLevels());
-        if (!(resolved instanceof AbilitySkill skill) || data.mana() < skill.getManaCost()
+        if (!(resolved instanceof AbilitySkill skill) || !data.noMana() && data.mana() < skill.manaCost(data.skillLevels().getOrDefault(skill.getId(),0))
                 || data.skillLevels().getOrDefault(skill.getId(), 0) <= 0) return;
         if (skill.index() == 3 && (mc.hitResult == null || mc.hitResult.getType() != HitResult.Type.ENTITY)) return;
         checkOwner(mc);

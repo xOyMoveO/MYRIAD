@@ -199,7 +199,8 @@ final class YikeChecks {
                     h.assertTrue(Math.abs(loss(fixtures.get(22))-65)<.1,"Left attack is exactly A physical, free, and right-click emits nothing");
                     h.assertTrue(Math.abs(loss(fixtures.get(23)))<.1,"Artillery cannot add basic attacks");
                     h.assertTrue(Math.abs(loss(fixtures.get(31))-130)<.1,"Local basic recovery preserves work and rejects early repeat input");
-                    h.assertTrue(Math.abs(loss(fixtures.get(26))-2193/1.5)<.2&&PlayerDataProvider.get(fixtures.get(26).p).getMana()==295,"Actual S230 five-shell + heavy chain: two passives, MR50, 405 total mana");
+                    h.assertTrue(Math.abs(loss(fixtures.get(26))-2193/1.5)<.2&&PlayerDataProvider.get(fixtures.get(26).p).getMana()==367,
+                            "Actual S230 five-shell + heavy chain: two passives, MR50, 333 total mana");
                     h.assertTrue(RainbowCalibration.count(fixtures.get(27).p,fixtures.get(27).target.getUUID())==0&&ModShieldSystem.value(fixtures.get(27).target)<10000-200,"Fully absorbed paid hits still trigger three-mark proc");
                     h.assertTrue(Math.abs(loss(fixtures.get(37))-111.5)<.1,"Repeated input packets never create extra or queued Q shells");
                     h.assertTrue(Math.abs(loss(fixtures.get(47))-155)<.1&&!PrismaticBeam.active(fixtures.get(47).p),"Turning off gameplay stops future beam jumps");

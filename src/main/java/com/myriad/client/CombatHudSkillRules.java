@@ -21,8 +21,12 @@ public final class CombatHudSkillRules {
     }
 
     public static boolean enoughMana(Skill skill, int mana, boolean unlimited, boolean freePreparation, int recastTicks) {
-        // Present registered forms use ability definition costs. Recasts and preparation anchor are free.
-        return unlimited || freePreparation || recastTicks > 0 || mana >= skill.getManaCost();
+        return enoughMana(skill,1,mana,unlimited,freePreparation,recastTicks);
+    }
+
+    public static boolean enoughMana(Skill skill,int rank,float mana,boolean unlimited,boolean freePreparation,int recastTicks) {
+        float cost=skill instanceof AbilitySkill ability?ability.manaCost(rank):skill.getManaCost();
+        return unlimited || freePreparation || recastTicks > 0 || mana >= cost;
     }
 
     public static int blockingCooldown(int baseCooldown, boolean noCooldown, int recastTicks,

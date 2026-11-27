@@ -30,10 +30,10 @@ public final class KehengVisuals {
     public static void field(AbilityRuntime.Cast c,Vec3 at,double radius,boolean moving,long elapsed,int instance){
         send(c,recipe(c,SEAL,at.add(0,.04,0),at.add(0,1,0),radius,Math.min(100,elapsed),5,moving?c.player.getId():-1,instance));
     }
-    public static void corridor(AbilityRuntime.Cast c,Vec3 at,Vec3 end,int instance){
-        send(c,recipe(c,CHARGE,at.add(0,.04,0),end.add(0,.04,0),1.5,0,5,-1,instance));
+    public static void corridor(AbilityRuntime.Cast c,Vec3 at,Vec3 end,double halfWidth,int instance){
+        send(c,recipe(c,CHARGE,at.add(0,.04,0),end.add(0,.04,0),halfWidth,0,5,-1,instance));
     }
-    public static void penetrate(AbilityRuntime.Cast c,Vec3 from,Vec3 to){AbilityVisuals.emit(c,BEAM,from,to,1.5,0,6,false);}
+    public static void penetrate(AbilityRuntime.Cast c,Vec3 from,Vec3 to,double halfWidth){AbilityVisuals.emit(c,BEAM,from,to,halfWidth,0,6,false);}
     public static void impact(AbilityRuntime.Cast c,Vec3 at){AbilityVisuals.emit(c,BURST,at,at.add(c.player.getLookAngle()),.55,0,5,false);}
     public static void mark(AbilityRuntime.Cast c,LivingEntity target,int stacks,long remaining){
         var at=target.position().add(0,stacks==3?.9:0,0);

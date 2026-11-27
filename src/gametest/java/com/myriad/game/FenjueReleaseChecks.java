@@ -38,7 +38,8 @@ final class FenjueReleaseChecks {
             for(int i=0;i<5;i++){
                 var f=fixture(h,i);fixtures.add(f);var d=PlayerDataProvider.get(f.p);var skill=FirstGroupSkills.node("fenjue",step(i)?3:5);
                 SkillSystem.cast(f.p,skill.slot());
-                h.assertTrue(d.getMana()==700-skill.getManaCost()&&d.getCooldown(skill.getId())==skill.getCooldownTicks(step(i)?1:7),"Normal one-time mana/CD: "+i);
+                int rank = step(i) ? 1 : 7;
+                h.assertTrue(d.getMana()==700-skill.manaCost(rank)&&d.getCooldown(skill.getId())==skill.getCooldownTicks(rank),"Normal one-time mana/CD for the learned rank: "+i);
                 if(step(i)){
                     h.assertTrue(f.p.position().equals(f.origin),"Flame Step starts with motion, never a teleport");
                     h.assertTrue(Math.abs(f.p.getDeltaMovement().length()-8.0/6)<1E-6,"Eight blocks over original six guided ticks");

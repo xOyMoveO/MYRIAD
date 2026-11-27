@@ -37,7 +37,7 @@ public final class NetworkSetup {
             int xp,
             int xpToNext,
             int gold,
-            int mana,
+            float mana,
             int carrying,
             int factionId,
             int guardianScore,
@@ -88,7 +88,7 @@ public final class NetworkSetup {
             buf.writeInt(payload.xp());
             buf.writeInt(payload.xpToNext());
             buf.writeInt(payload.gold());
-            buf.writeInt(payload.mana());
+            buf.writeFloat(payload.mana());
             buf.writeInt(payload.carrying());
             buf.writeInt(payload.factionId());
             buf.writeInt(payload.guardianScore());
@@ -135,7 +135,7 @@ public final class NetworkSetup {
                     buf.readInt(),
                     buf.readInt(),
                     buf.readInt(),
-                    buf.readInt(),
+                    buf.readFloat(),
                     buf.readInt(),
                     buf.readInt(),
                     buf.readInt(),

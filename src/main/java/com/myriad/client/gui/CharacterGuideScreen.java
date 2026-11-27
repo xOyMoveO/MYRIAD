@@ -46,7 +46,7 @@ public final class CharacterGuideScreen extends Screen {
                         Component.translatable("screen.myriad.choose." + labels[ability.index()]),
                         com.myriad.client.SkillTooltipDescriptions.abilityName(ability), ability.maxRank()));
                 paragraphs.add(Component.literal(String.join("\n", com.myriad.client.SkillTooltipDescriptions.previewLines(ability, rank))));
-                if (!ability.isPassive()) paragraphs.add(Component.translatable("hero.guide.resource", ability.getManaCost(), ability.getCooldownTicks(rank) / 20.0));
+                if (!ability.isPassive()) paragraphs.add(Component.translatable("hero.guide.resource", ability.manaCost(rank), ability.getCooldownTicks(rank) / 20.0));
             }
         }else{
         paragraphs.add(Component.translatable("hero.guide.controls"));

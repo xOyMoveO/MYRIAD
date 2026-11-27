@@ -168,7 +168,7 @@ public final class PlayerDataProvider {
                 data.getXp(),
                 xpToNext,
                 data.getGold(),
-                (int) data.getMana(),
+                data.getMana(),
                 data.getCarrying(),
                 NetworkSetup.factionId(data.getFaction()),
                 showMatch ? manager.getGuardianScore() : 0,

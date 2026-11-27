@@ -34,6 +34,7 @@ final class KehengChecks {
                 var f=fixtures.get(i);var d=PlayerDataProvider.get(f.p);
                 switch(i){
                     case 30,31,32,33,34,35,36,37->{
+                        if (i == 31) f.t.setPos(f.origin.add(0,0,2.4));
                         h.getLevel().addNewPlayer(f.p);
                         learn(f,4,7);point(f,2);SkillSystem.cast(f.p,2);AbilityRuntime.confirm(f.p);
                         var yd=PlayerDataProvider.get(f.t);yd.setCharacterId("yike");
@@ -53,15 +54,15 @@ final class KehengChecks {
                     case 0->{learn(f,2,1);SkillSystem.cast(f.p,0);h.assertTrue(d.getMana()==660&&d.getCooldown("keheng_chizhen")==140,"Q charges at the normal accepted-cast boundary");}
                     case 1->{learn(f,2,5);f.t.getAttribute(ModAttributes.TENACITY).setBaseValue(60);SkillSystem.cast(f.p,0);}
                     case 2->{learn(f,2,1);SkillSystem.cast(f.p,0);d.setBuff("g1_stun",2);}
-                    case 3->{learn(f,3,2);learn(f,1,5);SkillSystem.cast(f.p,1);h.assertTrue(d.getMana()==655&&Math.abs(ModShieldSystem.value(f.p)-208)<.05,"W and actual field entry grant independent rank-2 W/rank-5 passive shields");}
+                    case 3->{learn(f,3,2);learn(f,1,5);SkillSystem.cast(f.p,1);h.assertTrue(d.getMana()==657.25f&&Math.abs(ModShieldSystem.value(f.p)-208)<.05,"W pays rank-2 mana and grants a shield independent of rank-5 field entry");}
                     case 4->{learn(f,4,7);point(f,2);SkillSystem.cast(f.p,2);AbilityRuntime.confirm(f.p);d.setBuff("g1_stun",100);}
                     case 5->{learn(f,6,3);point(f,2);SkillSystem.cast(f.p,3);AbilityRuntime.confirm(f.p);}
                     case 6->{learn(f,5,7);SkillSystem.cast(f.p,2);}
                     case 7->{learn(f,5,1);SkillSystem.cast(f.p,2);}
                     case 8->{learn(f,5,1);SkillSystem.cast(f.p,2);}
-                    case 9->{learn(f,7,3);SkillSystem.cast(f.p,3);}
+                    case 9->{f.t.setPos(f.origin.add(0,0,13.9));learn(f,7,3);SkillSystem.cast(f.p,3);}
                     case 10->{learn(f,7,3);SkillSystem.cast(f.p,3);d.setBuff("g1_stun",5);}
-                    case 11->{learn(f,7,3);SkillSystem.cast(f.p,3);f.p.setYRot(90);}
+                    case 11->{f.t.setPos(f.origin.add(1.7,0,2));learn(f,7,3);SkillSystem.cast(f.p,3);f.p.setYRot(90);}
                     case 12->{learn(f,7,3);SkillSystem.cast(f.p,3);f.t.setPos(f.origin.add(2,0,2));}
                     case 13->{wall(f,h,0,1,1);wall(f,h,0,2,1);wall(f,h,0,3,1);learn(f,7,3);SkillSystem.cast(f.p,3);}
                     case 14->{learn(f,6,1);point(f,2);SkillSystem.cast(f.p,3);AbilityRuntime.confirm(f.p);}
@@ -101,6 +102,12 @@ final class KehengChecks {
                         fixtures.get(4).t.doTick();
                         if(age==2){var f=fixtures.get(29);var d=PlayerDataProvider.get(f.t);d.setCharacterId("tianxing");d.setSkillLevel(FirstGroupSkills.node("tianxing",3).getId(),1);f.t.setYRot(180);SkillSystem.cast(f.t,1);}
                         if(age==3)hp(h,fixtures.get(0),10000,"Q does not hit before its four action ticks finish");
+                        if(age==3){
+                            var inside=fixtures.get(11);rate(h,inside.t,.60,"Expanded corridor slows actors at 1.7 blocks off center");
+                            h.assertTrue(AbilityRuntime.projectileRate(inside.t,UUID.randomUUID(),inside.t.getEyePosition(),h.getLevel().getGameTime())==.40,
+                                    "The same expanded corridor preserves the old flight multiplier");
+                            rate(h,fixtures.get(12).t,1,"Outside the expanded corridor");
+                        }
                         if(age==8){hp(h,fixtures.get(0),9905,"Real Q swept projectile hits once for 95 at S30");rate(h,fixtures.get(0).t,.85,"Q applies action slow to actor");
                             hp(h,fixtures.get(2),10000,"Stun cancels an already paid Q windup without firing");rate(h,fixtures.get(20).t,1,"Control immune actor is not action slowed");
                             hp(h,fixtures.get(20),9905,"Control immunity does not remove legal skill damage");
@@ -137,7 +144,7 @@ final class KehengChecks {
                             var f=fixtures.get(27);f.p.setPos(f.origin.add(0,0,-8));}
                         if(age==16){fixtures.get(27).p.setPos(fixtures.get(27).origin);hp(h,fixtures.get(9),9379.5f,"Rank-3 penetration completes exactly once for 620.5");
                             hp(h,fixtures.get(10),10000,"Hard control cancels penetration");hp(h,fixtures.get(11),9379.5f,"Penetration keeps its starting direction after camera turn");
-                            hp(h,fixtures.get(12),10000,"Walking out of the three-block-wide corridor dodges");hp(h,fixtures.get(13),10000,"Solid wall truncates corridor damage");
+                            hp(h,fixtures.get(12),10000,"Walking out of the 3.6-block-wide corridor dodges");hp(h,fixtures.get(13),10000,"Solid wall truncates corridor damage");
                             var f=fixtures.get(15);point(f,2);SkillSystem.cast(f.p,2);AbilityRuntime.confirm(f.p);
                             h.assertTrue(fixtures.get(21).p.getZ()<fixtures.get(21).origin.z+.5,"W respects a wall on its first swept step");}
                         if(age==20){var f=fixtures.get(26);point(f,2);SkillSystem.cast(f.p,3);AbilityRuntime.confirm(f.p);}

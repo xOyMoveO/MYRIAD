@@ -91,7 +91,7 @@ public record SkillHoverDetails(String name, String group, String rank, boolean 
         List<String> metrics;
         if (artillery) {
             summary = label("mode" + yike.mode());
-            costs = mana(skill, data) + " · " + label("next_shot", seconds(yike.nextShot()));
+            costs = mana(skill, data, rank, preview) + " · " + label("next_shot", seconds(yike.nextShot()));
             metrics = List.of(label("shells", yike.shells()));
         } else {
             String metricId = shuo ? id + "." + variant : id;
@@ -99,7 +99,7 @@ public record SkillHoverDetails(String name, String group, String rank, boolean 
             if (recast > 0) {
                 costs = label("second") + " · " + label("recast_time", seconds(recast));
             } else if (!skill.isPassive()) {
-                costs = mana(skill, data) + " · " + cooldown(skill, data, rank, preview, assigned);
+                costs = mana(skill, data, rank, preview) + " · " + cooldown(skill, data, rank, preview, assigned);
             }
             if (recast == 0 || shuo) {
                 var fields = METRICS.getOrDefault(metricId, List.of());
@@ -145,9 +145,10 @@ public record SkillHoverDetails(String name, String group, String rank, boolean 
         };
     }
 
-    private static String mana(AbilitySkill skill, PlayerDataPayload data) {
-        if (skill.getManaCost() == 0) return label("free");
-        String cost = label("mana", AbilityFormulaText.amount(skill.getManaCost()));
+    private static String mana(AbilitySkill skill, PlayerDataPayload data,int rank,boolean preview) {
+        if (skill.manaCost(rank) == 0) return label("free");
+        String cost = label("mana", AbilityFormulaText.amount(skill.manaCost(rank)));
+        if (!preview && rank<skill.maxRank()) cost += " → " + AbilityFormulaText.amount(skill.manaCost(rank+1));
         if (data.training() && data.noMana()) return cost + " · " + label("train_mana");
         if (CombatHudSkillRules.freePreparation(skill, data.combatPreparing())) return cost + " · " + label("prep_mana");
         return cost;

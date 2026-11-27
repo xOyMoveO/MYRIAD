@@ -31,7 +31,9 @@ final class ThunderChainChecks {
             for(int i=0;i<5;i++){
                 var f=fixture(h,i);fixtures.add(f);var d=PlayerDataProvider.get(f.caster);
                 SkillSystem.cast(f.caster,CharacterType.SLOT_W);
-                h.assertTrue(d.getMana()==625&&d.getCooldown("g1_tianxing_n2")==200,"Thunder chain keeps 75 mana and 10s CD: mana="+d.getMana()+" cd="+d.getCooldown("g1_tianxing_n2"));
+                int expectedCost = i == 1 ? 60 : 75;
+                h.assertTrue(d.getMana()==700-expectedCost&&d.getCooldown("g1_tianxing_n2")==200,
+                        "Thunder chain pays the learned rank's cost and keeps its 10s cooldown");
                 h.assertTrue(SkillChargeSystem.active(f.caster),"Real W starts the original six-tick charge");
             }
         }catch(Throwable failure){System.err.println("[MYRIAD-THUNDER-CHAIN] fixture setup failed: "+failure);fixtures.forEach(f->cleanup(h,f));throw failure;}
@@ -44,8 +46,8 @@ final class ThunderChainChecks {
                     if(elapsed==3)PlayerDataProvider.get(fixtures.get(4).caster).setBuff("g1_stun",40);
                     for(var f:fixtures)AbilityRuntime.tick(f.caster);
                     if(elapsed<6)for(int i=0;i<fixtures.size();i++)h.assertTrue(fixtures.get(i).primary.getHealth()==(i==2?10:1000),"No hit before charge completes");
-                    if(elapsed==7)for(int i=0;i<2;i++)h.assertTrue(fixtures.get(i).primary.getHealth()==1000,"50 blocks/s: first moving tick has not reached the 5-block target");
-                    if(elapsed==8)for(int i=0;i<2;i++)h.assertTrue(Math.abs(fixtures.get(i).primary.getHealth()-(1000-fixtures.get(i).damage))<.02,"50 blocks/s reaches the 5-block target on moving tick two");
+                    if(elapsed==7)for(int i=0;i<2;i++)h.assertTrue(fixtures.get(i).primary.getHealth()==1000,"65 blocks/s: first moving tick has not reached the 5-block target");
+                    if(elapsed==8)for(int i=0;i<2;i++)h.assertTrue(Math.abs(fixtures.get(i).primary.getHealth()-(1000-fixtures.get(i).damage))<.02,"65 blocks/s reaches the 5-block target on moving tick two");
                     if(elapsed==25){
                         for(int i=0;i<fixtures.size();i++){
                             var f=fixtures.get(i);boolean hit=i<3;

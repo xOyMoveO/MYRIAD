@@ -149,7 +149,7 @@ final class HeroActionTimeChecks {
             f.target.setHealth(10000);f.lastHealth=f.target.getHealth();
             if(dome){
                 double rate=ActionTime.multiplier(f.actor.getUUID(),h.getLevel().getGameTime());
-                h.assertTrue(Math.abs(rate-(f.slow?.4-.05:1))<1E-12,"Actual rank-two dome is active before the drawn after-cut");
+                h.assertTrue(Math.abs(rate-(f.slow?.30:1))<1E-12,"Actual rank-two dome is active before the drawn after-cut");
                 ShuoCombat.draw(f.actor,com.myriad.network.ShuoViewPayload.CUT_LEFT,1);
             }
             cast(f,h);sample(f,0);
@@ -167,8 +167,8 @@ final class HeroActionTimeChecks {
                     KehengTimeFields.needle(needle,f.actor,1-.05*(needle.rank+2));
                 }
             }
-            if(dome&&f.slow&&action<=20)h.assertTrue(Math.abs(ActionTime.multiplier(f.actor.getUUID(),h.getLevel().getGameTime())-(.4-.05))<1E-12,
-                    "Retreat and all twenty after-cut updates remain inside the actual rank-two dome");
+            if(dome&&f.slow&&action<=24)h.assertTrue(Math.abs(ActionTime.multiplier(f.actor.getUUID(),h.getLevel().getGameTime())-.30)<1E-12,
+                    "Retreat and all twenty-four after-cut updates remain inside the actual rank-two dome");
             if(!dome&&f.slow&&age>=34&&age<=43){
                 double rate=ActionTime.multiplier(f.actor.getUUID(),h.getLevel().getGameTime());
                 h.assertTrue(Math.abs(rate-.8)<1E-12,"Actual rank-two needle covers all ten finishing updates; rate="+rate+" actor="+f.actor.position().subtract(f.origin)+" hp="+f.actor.getHealth());
@@ -193,9 +193,9 @@ final class HeroActionTimeChecks {
     private static void verify(GameTestHelper h,Fixture baseline,Fixture slow){
         String kind=baseline.scenario.kind;
         if(kind.equals("dome-finish")){
-            h.assertTrue(baseline.hits.equals(List.of(0,7))&&slow.hits.equals(List.of(0,20))
+            h.assertTrue(baseline.hits.equals(List.of(0,7))&&slow.hits.equals(List.of(0,24))
                             &&Math.abs(total(baseline)-67)<.1&&Math.abs(total(slow)-67)<.1,
-                    "Rank-two dome drawn after-cut deals its 40 percent once at update twenty, with no later replay; base="+baseline.hits+" slow="+slow.hits+" damage="+slow.damage);return;
+                    "Rank-two dome drawn after-cut deals its 40 percent once at update twenty-four, with no later replay; base="+baseline.hits+" slow="+slow.hits+" damage="+slow.damage);return;
         }
         if(kind.equals("needle-finish")){
             h.assertTrue(baseline.hits.equals(List.of(29))&&slow.hits.equals(List.of(31))&&slow.motionEnd==21&&slow.recasts==10

@@ -55,7 +55,8 @@ final class NightShieldChecks {
                 h.assertTrue(p.getDeltaMovement().lengthSqr()==0,"Existing upward/forced momentum stops without teleporting");
                 h.assertTrue(p.hasEffect(MobEffects.POISON)&&p.hasEffect(MobEffects.REGENERATION),"DoT and unrelated positive buffs are not erased");
                 h.assertTrue(Math.abs(ModShieldSystem.value(p)-50-expected)<.001,"Exact x1.7 full shield formula at every rank/strength; no multiplication of other shields");
-                h.assertTrue(Math.abs(d.getMana()-(mana-150))<.01&&d.getCooldown(skill.getId())==skill.getCooldownTicks(rank),"One normal mana payment and unchanged rank cooldown");
+                h.assertTrue(Math.abs(d.getMana()-(mana-150*(1-.05*(rank-1))))<.01
+                        &&d.getCooldown(skill.getId())==skill.getCooldownTicks(rank),"One rank-adjusted mana payment and unchanged rank cooldown");
                 h.assertTrue(skill.evaluatedDescription(rank,context.totalSpellPower,0)
                         .contains(AbilityFormulaText.amount(expected)),"Tooltip resolves the updated actual shield amount");
                 // A second, invalid request cannot cleanse for free while on cooldown.
