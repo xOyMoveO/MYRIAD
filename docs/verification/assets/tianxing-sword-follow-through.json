@@ -1,0 +1,263 @@
+{
+  "sourceCommit": "8214468fce704337c1bc006401c47b4b58cb1182",
+  "comparisonBaseline": "ffb9d414295eeb4eea70707c7b9a408131fb1359",
+  "minecraft": "26.3",
+  "loader": "0.20.1",
+  "previous": [
+    {
+      "jarSha256": "b31ff64cae5f4674dc892eb5a401ac3dba8bb05a88c1ce87ec9ce1b97d8adc4a",
+      "scene": {
+        "character": "tianxing",
+        "mainArm": "RIGHT",
+        "mainItem": "myriad:leitingjian",
+        "offhandEmpty": true,
+        "dimension": "myriad:training_ground",
+        "fov": 70,
+        "camera": "FIRST_PERSON",
+        "screen": "none",
+        "x": 0.5,
+        "y": 65.0,
+        "z": 0.5,
+        "yaw": 0.0,
+        "pitch": 0.0,
+        "meleeCadence": 28.571428
+      },
+      "strokes": [
+        {
+          "nativeClientTick": 415,
+          "videoTimeAtClick": 6.8306,
+          "serverTick": 380,
+          "target": 5,
+          "damage": 66.215034
+        },
+        {
+          "nativeClientTick": 442,
+          "videoTimeAtClick": 8.1796,
+          "serverTick": 409,
+          "target": 5,
+          "damage": 65.519066
+        },
+        {
+          "nativeClientTick": 476,
+          "videoTimeAtClick": 9.8956,
+          "serverTick": 441,
+          "target": 5,
+          "damage": 65.89124
+        }
+      ],
+      "bufferSubmissions": 1,
+      "rawVideo": {
+        "codec_name": "h264",
+        "width": 1708,
+        "height": 1016,
+        "avg_frame_rate": "576600/9979",
+        "duration": "16.631667",
+        "nb_frames": "961",
+        "sha256": "dc87769f10ff2fe93b05664aaa96a5ef298099b948fb7376ef44d604efff4ed4"
+      },
+      "heldInputsAtEnd": 0
+    },
+    {
+      "jarSha256": "b31ff64cae5f4674dc892eb5a401ac3dba8bb05a88c1ce87ec9ce1b97d8adc4a",
+      "scene": {
+        "character": "tianxing",
+        "mainArm": "LEFT",
+        "mainItem": "myriad:leitingjian",
+        "offhandEmpty": false,
+        "dimension": "myriad:training_ground",
+        "fov": 70,
+        "camera": "FIRST_PERSON",
+        "screen": "none",
+        "x": 0.5,
+        "y": 65.0,
+        "z": 0.5,
+        "yaw": 0.0,
+        "pitch": 0.0,
+        "meleeCadence": 28.571428
+      },
+      "strokes": [
+        {
+          "nativeClientTick": 410,
+          "videoTimeAtClick": 6.8325,
+          "serverTick": 379,
+          "target": 4,
+          "damage": 64.92333
+        },
+        {
+          "nativeClientTick": 437,
+          "videoTimeAtClick": 8.2003,
+          "serverTick": 408,
+          "target": 4,
+          "damage": 66.91254
+        },
+        {
+          "nativeClientTick": 471,
+          "videoTimeAtClick": 9.9144,
+          "serverTick": 440,
+          "target": 4,
+          "damage": 64.65816
+        }
+      ],
+      "bufferSubmissions": 1,
+      "rawVideo": {
+        "codec_name": "h264",
+        "width": 1708,
+        "height": 1016,
+        "avg_frame_rate": "285900/4939",
+        "duration": "16.456667",
+        "nb_frames": "953",
+        "sha256": "4e6ef1a1261401a2a7ca3b22353c0b78ba0d112b4fc05232990511f61f66b7dc"
+      },
+      "heldInputsAtEnd": 0
+    }
+  ],
+  "revised": [
+    {
+      "jarSha256": "d9db4aef8684b29e3a64bccc74ad9586136242f7290efd8c250b75a6530737bd",
+      "scene": {
+        "character": "tianxing",
+        "mainArm": "RIGHT",
+        "mainItem": "myriad:leitingjian",
+        "offhandEmpty": true,
+        "dimension": "myriad:training_ground",
+        "fov": 70,
+        "camera": "FIRST_PERSON",
+        "screen": "none",
+        "x": 0.5,
+        "y": 65.0,
+        "z": 0.5,
+        "yaw": 0.0,
+        "pitch": 0.0,
+        "meleeCadence": 28.571428
+      },
+      "strokes": [
+        {
+          "nativeClientTick": 420,
+          "videoTimeAtClick": 6.8238,
+          "serverTick": 379,
+          "target": 4,
+          "damage": 67.28217
+        },
+        {
+          "nativeClientTick": 447,
+          "videoTimeAtClick": 8.1741,
+          "serverTick": 408,
+          "target": 4,
+          "damage": 61.88029
+        },
+        {
+          "nativeClientTick": 482,
+          "videoTimeAtClick": 9.9129,
+          "serverTick": 441,
+          "target": 4,
+          "damage": 67.60471
+        }
+      ],
+      "bufferSubmissions": 1,
+      "rawVideo": {
+        "codec_name": "h264",
+        "width": 1708,
+        "height": 1016,
+        "avg_frame_rate": "112800/1951",
+        "duration": "16.258333",
+        "nb_frames": "940",
+        "sha256": "d39c238215e8a28f18da789e11c9e5ced75c6eefb25339f2153b8952ca9ad129"
+      },
+      "heldInputsAtEnd": 0,
+      "air": {
+        "nativeClicks": [
+          {
+            "t": 0.8624,
+            "strength": 1.0,
+            "clientTick": 652,
+            "route": "native_keyboard_or_mouse_handler"
+          },
+          {
+            "t": 2.4811,
+            "strength": 1.0,
+            "clientTick": 685,
+            "route": "native_keyboard_or_mouse_handler"
+          },
+          {
+            "t": 4.0796,
+            "strength": 1.0,
+            "clientTick": 717,
+            "route": "native_keyboard_or_mouse_handler"
+          }
+        ],
+        "damageReceipts": 0,
+        "rawVideo": {
+          "codec_name": "h264",
+          "width": 1708,
+          "height": 1016,
+          "avg_frame_rate": "318000/5489",
+          "duration": "9.143333",
+          "nb_frames": "530",
+          "sha256": "215d29bbb058ee6ccf346e35b1d87e6a080c403cc154ddd5808d7e1f7b892eee"
+        }
+      }
+    },
+    {
+      "jarSha256": "d9db4aef8684b29e3a64bccc74ad9586136242f7290efd8c250b75a6530737bd",
+      "scene": {
+        "character": "tianxing",
+        "mainArm": "LEFT",
+        "mainItem": "myriad:leitingjian",
+        "offhandEmpty": false,
+        "dimension": "myriad:training_ground",
+        "fov": 70,
+        "camera": "FIRST_PERSON",
+        "screen": "none",
+        "x": 0.5,
+        "y": 65.0,
+        "z": 0.5,
+        "yaw": 0.0,
+        "pitch": 0.0,
+        "meleeCadence": 28.571428
+      },
+      "strokes": [
+        {
+          "nativeClientTick": 421,
+          "videoTimeAtClick": 6.8321,
+          "serverTick": 380,
+          "target": 5,
+          "damage": 65.742966
+        },
+        {
+          "nativeClientTick": 448,
+          "videoTimeAtClick": 8.1811,
+          "serverTick": 409,
+          "target": 5,
+          "damage": 63.844162
+        },
+        {
+          "nativeClientTick": 482,
+          "videoTimeAtClick": 9.8946,
+          "serverTick": 441,
+          "target": 5,
+          "damage": 65.04648
+        }
+      ],
+      "bufferSubmissions": 1,
+      "rawVideo": {
+        "codec_name": "h264",
+        "width": 1708,
+        "height": 1016,
+        "avg_frame_rate": "11750/203",
+        "duration": "16.238333",
+        "nb_frames": "940",
+        "sha256": "5240687d4e9804b8cae87e2fd4a5a2aeed08c67954ef2f639e765acd839bf194"
+      },
+      "heldInputsAtEnd": 0
+    }
+  ],
+  "comparison": {
+    "codec_name": "h264",
+    "width": 1920,
+    "height": 680,
+    "avg_frame_rate": "60/1",
+    "duration": "38.766667",
+    "nb_frames": "2326",
+    "sha256": "e6fc269d8b9badd46fb81ee1345afa78019d4eea5fac1ca48d8f3b6e6e2646a1"
+  }
+}
