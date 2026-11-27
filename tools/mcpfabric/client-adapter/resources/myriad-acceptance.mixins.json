@@ -11,6 +11,7 @@
     "DummyDamageMixin",
     "BufferedMeleeMixin",
     "AbilityPresentationMixin",
+    "RivetHammerContactMixin",
     "SoundPresentationMixin"
   ],
   "injectors": {

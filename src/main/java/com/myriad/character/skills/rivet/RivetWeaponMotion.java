@@ -50,12 +50,17 @@ public final class RivetWeaponMotion {
         return FOLLOW.blend(IDLE,smooth((age-4)/6.5));
     }
     public void reset(){basicStart=Double.NEGATIVE_INFINITY;action=NONE;variant=-1;newest=Long.MIN_VALUE;start=received=impact=-100;progress=0;}
-    public void accept(AbilityVfxPayload p,double now){
-        if(!p.valid())return;
-        if(p.kind()==CANCEL){if(p.angle()==0||p.theme()==RivetVfx.THEME&&p.variant()==variant)reset();return;}
-        if(p.theme()!=RivetVfx.THEME||p.started()<newest||now-p.started()>p.life())return;
+    /** True only when the cue takes control of the grip. Impact accents and world cues can coexist with a basic. */
+    public boolean accept(AbilityVfxPayload p,double now){
+        if(!p.valid())return false;
+        if(p.kind()==CANCEL){
+            if(p.angle()==0||p.theme()==RivetVfx.THEME&&p.variant()==variant)reset();
+            return false;
+        }
+        if(p.theme()!=RivetVfx.THEME||p.started()<newest||now-p.started()>p.life())return false;
         int next=NONE;
-        if(p.kind()==CHARGE)next=p.variant()==2?HAMMER_READY:p.angle()==2?CHARGE_RUN:CHARGE_READY;
+        if(p.kind()==CHARGE&&p.variant()==2)next=HAMMER_READY;
+        else if(p.kind()==CHARGE&&p.variant()==7)next=p.angle()==2?CHARGE_RUN:CHARGE_READY;
         else if(p.kind()==ARC&&p.variant()==2)next=HAMMER_SWING;
         else if(p.kind()==BEAM&&p.variant()==5)next=p.angle()>0?TOW_RELEASE:TOW;
         else if(p.kind()==TRAIL&&p.variant()==7)next=CHARGE_RUN;
@@ -63,11 +68,13 @@ public final class RivetWeaponMotion {
         else if(p.kind()==BURST){
             if(p.variant()==3&&p.angle()==RivetVfx.ANCHOR_SET)next=ANCHOR;
             else if(p.variant()==1&&p.angle()==RivetVfx.RHYTHM_HIT)next=RHYTHM;
-            else if(p.angle()<=RivetVfx.CHARGE_HIT){impact=p.started();return;}
+            else if((p.variant()==2||p.variant()==7)&&(p.angle()==RivetVfx.WALL_HIT||p.angle()==RivetVfx.ANCHOR_HIT)
+                    ||p.variant()==7&&p.angle()==RivetVfx.CHARGE_HIT)impact=p.started();
         }
-        if(next==NONE)return;
+        if(next==NONE)return false;
         if(next!=action||!continuous(next))start=p.started();
         action=next;variant=p.variant();newest=p.started();received=p.started();progress=p.angle();
+        return true;
     }
     private static boolean continuous(int action){return action==HAMMER_READY||action==CHARGE_READY||action==TOW||action==CHARGE_RUN;}
     public Pose sample(double now,double basic,boolean rhythmReady){
