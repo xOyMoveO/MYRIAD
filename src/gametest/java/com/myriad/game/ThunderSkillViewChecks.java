@@ -59,6 +59,7 @@ final class ThunderSkillViewChecks {
         m.reset();h.assertTrue(!m.accept(new ThunderSkillViewPayload(GROUND,14,100,1),120,20,ThunderSwordMotion.IDLE),"Expired network cue rejected");
         h.assertTrue(!new ThunderSkillViewPayload(11,8,100,1).valid()&&!new ThunderSkillViewPayload(1,90,100,1).valid(),"Invalid cue rejected");
         var aim=ThunderSkillMotion.aim(8);h.assertTrue(aim.showOff()&&!ThunderSkillHandVfx.camera(aim,108,false).isEmpty(),"Synced aiming has left-hand thunder");
+        verifyRecovery(h);
         var buf=new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
         try{var cue=new ThunderSkillViewPayload(JUDGMENT_READY,12,100,9);ThunderSkillViewPayload.CODEC.encode(buf,cue);h.assertTrue(cue.equals(ThunderSkillViewPayload.CODEC.decode(buf)),"Thunder cue wire roundtrip");}finally{buf.release();}
         Vec3 forward=new Vec3(0,0,1);
@@ -68,5 +69,36 @@ final class ThunderSkillViewChecks {
         var warning=new AbilityVfxPayload(1,-1,1,7,com.myriad.character.ability.AbilityVfxGeometry.CHARGE,Vec3.ZERO,forward,8,120,4,100,false);
         h.assertTrue(ThunderVfxGeometry.build(warning,1,false).stream().flatMap(q->java.util.stream.Stream.of(q.a(),q.b(),q.c(),q.d())).allMatch(p->Math.abs(p.y)<.001),"Judgment telegraph is a ground fan, not an early attack");
         System.out.println("[MYRIAD-THUNDER-SKILL-VIEW] PASS: "+count+" actual grip/skin/mirror poses, physical second grip/wipe, distinct cues, aiming, wire/stale/cancel, exact fan and warning");
+    }
+
+    private static void verifyRecovery(GameTestHelper h){
+        for(int action:new int[]{SLASH_READY,JUDGMENT_READY,ThunderSkillMotion.AIM}){
+            var skill=new ThunderSkillMotion();
+            ThunderSkillMotion.Frame before;
+            if(action==ThunderSkillMotion.AIM){
+                before=ThunderSkillMotion.aim(8);
+                skill.settle(before,108);
+            }else{
+                skill.accept(new ThunderSkillViewPayload(action,14,100,1),100,0,ThunderSwordMotion.IDLE);
+                before=skill.sample(108);
+                skill.accept(new ThunderSkillViewPayload(CANCEL,0,108,1),108,0,ThunderSwordMotion.IDLE);
+            }
+            var recovery=skill.recovery(108);
+            h.assertTrue(recovery!=null&&recovery.from().equals(before)&&recovery.amount(108)==0
+                    &&recovery.amount(109.5)==.5f&&skill.recovery(111)==null,"Cancel starts at the visible charge or aim and settles in three ticks");
+            var neutral=skill.sample(109);
+            h.assertTrue(!skill.active(109)&&ThunderSkillHandVfx.camera(neutral,109,false).isEmpty()
+                    &&ThunderSkillHandVfx.blade(neutral,109).isEmpty(),"Settling neither blocks a new attack nor emits canceled hand effects");
+            for(boolean left:new boolean[]{false,true}){
+                var held=List.of(ThunderSkillRig.main(before,left),ThunderSkillRig.blade(before,left),ThunderSkillRig.off(before,left));
+                var rest=List.of(ThunderSwordRig.wrist(ThunderSwordMotion.IDLE,0,left),ThunderSwordRig.blade(left),ThunderSkillRig.off(neutral,left));
+                for(int i=0;i<held.size();i++){
+                    var start=ThunderSkillRig.recover(held.get(i),rest.get(i),0);
+                    var end=ThunderSkillRig.recover(held.get(i),rest.get(i),1);
+                    h.assertTrue(start.equals(held.get(i),1E-5f)&&end.equals(rest.get(i),1E-5f),
+                            "The cancel preserves the rendered wrist, blade face and support palm on both hands");
+                }
+            }
+        }
     }
 }

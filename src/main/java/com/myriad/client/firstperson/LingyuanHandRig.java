@@ -17,7 +17,7 @@ final class LingyuanHandRig {
         var p=m.pose(now);
         Vec3 axis=p.axis().normalize();
         Vec3 across=perpendicular(RIGHT,axis), face=across.cross(axis);
-        double roll=-.65;
+        double roll=-.35;
         double weight=m.edgeWeight(now), t=m.edgeSample(now);
         if (weight>0) {
             Vec3 motion=tip(m.pose(t+.055)).subtract(tip(m.pose(t-.055)));
@@ -42,7 +42,7 @@ final class LingyuanHandRig {
         double roll=off?p.palmRoll()*(left?-1:1):
                 .56*(weapon.m00()*side.x+weapon.m01()*side.y+weapon.m02()*side.z)/SCALE;
         across=across.scale(Math.cos(roll)).add(side.scale(Math.sin(roll)));
-        return basis(palm,across,axis).scale(.9f,1,.9f).mul(NightDaggerRig.arm(slim,armIsLeft));
+        return basis(palm,across,axis).scale(.78f,1,.78f).mul(NightDaggerRig.arm(slim,armIsLeft));
     }
 
     private static Vec3 tip(LingyuanHandMotion.Pose p) { return p.grip().add(p.axis().normalize().scale(SCALE*TIP)); }

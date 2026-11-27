@@ -8,7 +8,7 @@ public final class NightDaggerMotion {
                     mix(pitch,to.pitch,t), mix(yaw,to.yaw,t), mix(roll,to.roll,t), mix(wrist,to.wrist,t), mix(grip,to.grip,t));
         }
     }
-    public static final Pose IDLE = new Pose(.51,-.26,-.96,-10,-8,30,-6,0);
+    public static final Pose IDLE = new Pose(.525,-.365,-.91,-4,-4,12,2,0);
     private record Key(double time, Pose pose) { }
     private static Key k(double t, double x,double y,double z,double pitch,double yaw,double roll,double wrist) {
         return k(t,x,y,z,pitch,yaw,roll,wrist,0);
@@ -36,8 +36,10 @@ public final class NightDaggerMotion {
 
     /** Call only for an unconsumed, fully recovered vanilla left-click. */
     public void attack(double tick, double recoveryTicks) {
+        attack(tick,recoveryTicks,sample(tick));
+    }
+    void attack(double tick,double recoveryTicks,Pose previous) {
         if(!Double.isFinite(tick)||tick==start)return;
-        Pose previous = sample(tick);
         boolean restart = index < 0 || tick < start || tick - start > duration + 28;
         index = restart ? 0 : (index + 1) % 3;
         entry = previous; // Fast follow-ups never snap the hand back to its idle position.
@@ -49,8 +51,9 @@ public final class NightDaggerMotion {
         return Math.clamp(recoveryTicks*.27,3.5,6);
     }
     public Pose sample(double tick) {
-        if (index < 0 || tick < start || tick >= start + duration) return IDLE;
+        if (!hasPose(tick)) return IDLE;
         double progress = (tick-start)/duration;
+        if(index<0)return entry.blend(IDLE,progress*progress*(3-2*progress));
         Key[] keys = ATTACKS[index];
         for (int i=1;i<keys.length;i++) {
             if (progress <= keys[i].time) {
@@ -63,6 +66,12 @@ public final class NightDaggerMotion {
         return IDLE;
     }
     public int index() { return index; }
+    boolean hasPose(double tick) {return tick>=start&&tick<start+duration;}
+    public void interrupt(double tick) {
+        if(index<0)return;
+        if(!hasPose(tick)){reset();return;}
+        entry=sample(tick);index=-1;start=tick;duration=3;
+    }
     public double duration() { return duration; }
     public double started() { return start; }
     public double progress(double tick) { return Double.isFinite(tick)&&index>=0&&tick>=start&&tick<start+duration?(tick-start)/duration:-1; }

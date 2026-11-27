@@ -12,30 +12,78 @@ public final class FlameSkillMotion {
             CROSS=p(-.82,-.06,-1.38,-8,5,80),CROSS_OFF=p(-.82,.08,-1.28,-8,-5,80),
             OPEN=p(1.18,-.12,-1.42,-10,12,12),JOIN=p(-.35,-.10,-1.30,0,0,26),
             RAISED=p(.12,.52,-1.27,-15,0,65),SLAM=p(.10,.10,-1.65,-155,0,65);
-    public record Frame(Pose main,Pose off,boolean showOff,boolean showBlade,int action,double progress){}
+    public record Frame(Pose main,Pose off,boolean showOff,boolean showBlade,int action,double progress,
+                        double bladeGesture,double supportGrip){
+        public Frame(Pose main,Pose off,boolean showOff,boolean showBlade,int action,double progress){
+            this(main,off,showOff,showBlade,action,progress,switch(action){
+                case BURST_READY,SEA_FLIGHT,AIM -> smooth(progress/.18);
+                case CAGE_FIRE,BURST_FIRE,SEA_LAND -> 1-smooth((progress-.76)/.24);
+                case ARMOR -> smooth(progress/.18)*(1-smooth((progress-.76)/.24));
+                default -> 0;
+            },action==SEA_FLIGHT?1:action==SEA_LAND?1-smooth((progress-.55)/.35):0);
+        }
+    }
+    private static final double RECOVERY_TICKS=3;
     private int action=-1,token=-1,ended=-1;private double start,duration,descendingAt=-1;
+    private Frame recovery;
+    private double recoveryStart,aimStart=-1;
     private Pose entry=IDLE,offEntry=OFF;
     private static Pose p(double x,double y,double z,double pitch,double yaw,double roll){return new Pose(x,y,z,pitch,yaw,roll);}
     public static Pose blend(Pose a,Pose b,double u){double t=smooth(u);return p(a.x()+(b.x()-a.x())*t,a.y()+(b.y()-a.y())*t,
             a.z()+(b.z()-a.z())*t,a.pitch()+(b.pitch()-a.pitch())*t,a.yaw()+(b.yaw()-a.yaw())*t,a.roll()+(b.roll()-a.roll())*t);}
-    public void reset(){action=-1;token=ended=-1;start=duration=0;descendingAt=-1;entry=IDLE;offEntry=OFF;}
-    public void interrupt(){ended=Math.max(ended,token);action=-1;descendingAt=-1;}
+    public void reset(){action=-1;token=ended=-1;start=duration=0;descendingAt=aimStart=-1;entry=IDLE;offEntry=OFF;recovery=null;}
+    public void interrupt(double tick){
+        if(active(tick)||aimStart>=0)settle(frame(tick),tick);
+        else releaseExpiredHold(tick);
+        ended=Math.max(ended,token);action=-1;descendingAt=aimStart=-1;
+    }
+    public void aiming(boolean enabled,double tick){
+        if(enabled){
+            if(aimStart<0)aimStart=tick;
+        }else if(aimStart>=0){
+            if(!active(tick))settle(aim(tick-aimStart),tick);
+            aimStart=-1;
+        }
+    }
+    private void settle(Frame previous,double tick){recovery=previous;recoveryStart=tick;}
+    private void releaseExpiredHold(double tick){
+        double end=start+duration;
+        if((action==BURST_READY||action==SEA_FLIGHT)&&tick>=end){
+            settle(frame(Math.nextDown(end)),end);
+            action=-1;
+        }
+    }
+    public boolean recovering(double tick){
+        releaseExpiredHold(tick);
+        return recovery!=null && tick<recoveryStart+RECOVERY_TICKS;
+    }
+    public void finishRecovery(){recovery=null;}
+    public boolean presenting(double tick){return active(tick)||aimStart>=0||recovering(tick);}
     public boolean active(double tick){return action>=0&&Double.isFinite(tick)&&tick>=start&&tick<start+duration;}
     public boolean accept(FlameSkillViewPayload cue,double tick,double elapsed,Pose fallback,boolean aiming){
         if(!cue.valid()||!Double.isFinite(tick)||!Double.isFinite(elapsed)||elapsed<0||cue.token()<token||cue.token()<=ended)return false;
-        if(cue.action()==CANCEL){token=cue.token();interrupt();return true;}
+        if(cue.action()==CANCEL){token=cue.token();interrupt(tick);return true;}
         if(elapsed>=cue.ticks())return false;
         if(cue.token()==token&&(cue.action()==BURST_READY&&action!=BURST_READY||cue.action()==SEA_FLIGHT&&action!=SEA_FLIGHT))return false;
-        var previous=frame(tick);entry=active(tick)?previous.main:fallback;offEntry=active(tick)?previous.off:OFF;
-        if(cue.action()==CAGE_FIRE&&aiming){entry=LOW;offEntry=PALM;}
+        var previous=frame(tick);entry=presenting(tick)?previous.main:fallback;offEntry=presenting(tick)?previous.off:OFF;
+        if(cue.action()==CAGE_FIRE&&(aiming||previous.action==AIM)){entry=LOW;offEntry=PALM;}
         if(cue.token()==token&&cue.action()==BURST_FIRE){entry=CROSS;offEntry=CROSS_OFF;}
         if(cue.token()==token&&cue.action()==SEA_LAND){entry=RAISED;offEntry=second(RAISED);}
-        action=cue.action();token=cue.token();duration=cue.ticks();start=tick-elapsed;descendingAt=-1;return true;
+        recovery=null;action=cue.action();token=cue.token();duration=cue.ticks();start=tick-elapsed;descendingAt=-1;return true;
     }
     /** Only the real downward motion changes the flight pose. Never guess descent from a fixed timer. */
     public void vertical(double tick,double velocityY){if(active(tick)&&action==SEA_FLIGHT&&velocityY<-.01&&descendingAt<0)descendingAt=tick;}
     public Frame frame(double tick){
-        if(!active(tick))return new Frame(IDLE,OFF,false,true,-1,1);
+        if(!active(tick)){
+            if(aimStart>=0)return aim(tick-aimStart);
+            if(recovering(tick)){
+                double t=Math.clamp((tick-recoveryStart)/RECOVERY_TICKS,0,1),remaining=1-smooth(t);
+                return new Frame(blend(recovery.main,IDLE,t),blend(recovery.off,OFF,t),
+                        recovery.showOff,recovery.showBlade||t>.75,CANCEL,t,
+                        recovery.bladeGesture*remaining,recovery.supportGrip*remaining);
+            }
+            return new Frame(IDLE,OFF,false,true,-1,1);
+        }
         double t=Math.clamp((tick-start)/duration,0,1);Pose main,off;boolean blade=true;
         switch(action){
             case CAGE_FIRE->{main=blend(entry,IDLE,t);off=t<.30?blend(offEntry,PUSH,t/.30):blend(PUSH,OFF,(t-.50)/.50);}

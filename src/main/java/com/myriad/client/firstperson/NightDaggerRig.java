@@ -5,6 +5,7 @@ import org.joml.Matrix4f;
 /** Shared by the renderer and offline pose/grip checks. Units are camera-space blocks. */
 public final class NightDaggerRig {
     public static final float VIEW_SCALE=.74f;
+    private static final float BLADE_SCALE=.897f*1.25f; // Relative to the previous first-person blade, independent of the wrist.
     private static final float DEG=(float)(Math.PI/180);
     private NightDaggerRig() { }
     public static Matrix4f wrist(NightDaggerMotion.Pose p,boolean left) {
@@ -16,12 +17,15 @@ public final class NightDaggerRig {
     public static Matrix4f arm(boolean slim,boolean left) {
         return new Matrix4f().translation((slim ? .5f : 1f)/16f*(left ? -1 : 1),-8f/16f,0);
     }
+    public static Matrix4f daggerArm(boolean slim,boolean left) {
+        return new Matrix4f().scaling(.92f,1,.92f).mul(arm(slim,left));
+    }
     public static Matrix4f blade(boolean left) {
         return blade(left,0);
     }
     public static Matrix4f blade(boolean left,double grip) {
         float side=left ? -1 : 1;
         // Proper rotations instead of a negative scale: item face winding/culling stays correct.
-        return new Matrix4f().rotateZ(side*(90-(float)grip)*DEG).rotateY(side*22*DEG).scale(.78f*1.15f);
+        return new Matrix4f().rotateZ(side*(90-(float)grip)*DEG).rotateY(side*5*DEG).scale(BLADE_SCALE);
     }
 }

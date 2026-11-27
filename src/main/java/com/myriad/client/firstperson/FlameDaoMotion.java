@@ -5,7 +5,7 @@ public final class FlameDaoMotion {
     public record Pose(double x,double y,double z,double pitch,double yaw,double roll) {
         private double v(int i){return switch(i){case 0->x;case 1->y;case 2->z;case 3->pitch;case 4->yaw;default->roll;};}
     }
-    public static final Pose IDLE=new Pose(.54,.10,-1.12,-13,-10,47);
+    public static final Pose IDLE=new Pose(.45,.33,-1.04,-4,-3,35);
     public record Frame(Pose pose,Pose before,Pose after,double progress,int cut,
                         double entryRight,double entryLeft,double anchorRight,double anchorLeft){}
     private record Key(double t,Pose p){}
@@ -30,11 +30,16 @@ public final class FlameDaoMotion {
     private double start=Double.NEGATIVE_INFINITY,duration,entryRight,entryLeft,anchorRight,anchorLeft;
     private Pose entry=IDLE;
     public boolean attack(double tick,double recoveryTicks){
-        if(!Double.isFinite(tick)||tick==start)return false;
         var previous=frame(tick);
-        double right=FlameDaoRig.turn(previous,false),left=FlameDaoRig.turn(previous,true);
+        return attack(tick,recoveryTicks,previous.pose(),FlameDaoRig.turn(previous,false),FlameDaoRig.turn(previous,true));
+    }
+    public boolean attack(double tick,double recoveryTicks,FlameSkillMotion.Frame previous){
+        return attack(tick,recoveryTicks,previous.main(),FlameSkillRig.turn(previous,false),FlameSkillRig.turn(previous,true));
+    }
+    private boolean attack(double tick,double recoveryTicks,Pose previous,double right,double left){
+        if(!Double.isFinite(tick)||tick==start)return false;
         cut=cut<0||tick<start||tick-start>duration+28?0:(cut+1)%3;
-        entry=previous.pose();start=tick;entryRight=right;entryLeft=left;
+        entry=previous;start=tick;entryRight=right;entryLeft=left;
         duration=Double.isFinite(recoveryTicks)?Math.clamp(recoveryTicks*.32,4,7.5):6.4;
         var anchor=frame(start+duration*.30);
         anchorRight=FlameDaoRig.target(anchor,false);anchorLeft=FlameDaoRig.target(anchor,true);

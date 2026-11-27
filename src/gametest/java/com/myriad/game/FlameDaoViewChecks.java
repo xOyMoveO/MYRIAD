@@ -22,6 +22,9 @@ final class FlameDaoViewChecks {
                 var blade=new Matrix4f(wrist).mul(FlameDaoRig.blade(frame,left));
                 var palm=arm.transformPosition(new Vector3f((slim?.5f:1)/16*(left?1:-1),.5f,0));
                 var end=FlameDaoRig.forearmEnd(left);
+                var sleeveAxis=arm.transformDirection(new Vector3f(0,1,0)).normalize();
+                h.assertTrue(sleeveAxis.dot(new Vector3f(palm).sub(end).normalize())>.9999f,
+                        "Fist and sleeve stay on the same straight axis at every grip position");
                 h.assertTrue(end.isFinite()&&end.y/-end.z<-Math.tan(Math.toRadians(55)),"Forearm continues below even a 110-degree vertical field, no visible elbow/end cap");
                 h.assertTrue(palm.isFinite()&&palm.distance(blade.transformPosition(new Vector3f()))<1E-6,"Fist/handle remain attached in all skin/equip/hand variants");
                 h.assertTrue(blade.isFinite()&&wrist.determinant()>0&&blade.determinant()>0,"Finite rotations, no mirror winding flip");
@@ -45,7 +48,7 @@ final class FlameDaoViewChecks {
             var frame=new FlameDaoMotion().frame(0);var b=FlameDaoRig.wrist(frame.pose(),0,left).mul(FlameDaoRig.blade(frame,left));
             var edge=b.transformDirection(new Vector3f(1,0,0)).normalize();
             var side=b.transformDirection(new Vector3f(0,0,1)).normalize();
-            h.assertTrue(edge.z<-.70 && Math.abs(side.z)>.45,"Resting edge points forward with a readable blade face");
+            h.assertTrue(Math.abs(side.dot(b.getTranslation(new Vector3f()).normalize()))>.82 && Math.abs(edge.z)<.45,"The broad resting face is visible from the camera on either side");
         }
         motion.reset();motion.attack(0,20);
         var before=motion.frame(4);var pose=before.pose();

@@ -15,7 +15,7 @@ public final class WarSpiritHandMotion {
     }
     private record Clip(Pose contact, Pose follow, double hit, double sweep, double duration) {}
 
-    private static final Pose WAR_IDLE = p(.49,-.39,-.93, .26,.87,-.42, -.38);
+    private static final Pose WAR_IDLE = p(.389,-.531,-.991, .61,.77,-.16, -.20);
     private static final Pose SPIRIT_IDLE = p(.58,-.66,-.86, .12,.97,-.22, .06);
     private static final Pose WAR_BRACE = two(p(.50,-.57,-.99, -.95,.16,-.25, -.92), -.22,-.63,-1.02, -.52);
     private static final Pose WAR_DASH = p(.58,-.77,-1.03, .29,.18,-.94, -.60);

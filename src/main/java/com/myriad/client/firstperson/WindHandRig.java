@@ -14,6 +14,7 @@ final class WindHandRig {
     private static final Vec3 RIGHT = new Vec3(1, 0, 0);
     private static final Vec3 UP = new Vec3(0, 1, 0);
     private static final double BLADE_SCALE = .82;
+    private static final double IDLE_ROLL = -.18;
 
     private WindHandRig() {}
 
@@ -22,8 +23,18 @@ final class WindHandRig {
         Vec3 shaft = pose.shaft().normalize();
         Vec3 reference = across(RIGHT, shaft);
         Vec3 face = reference.cross(shaft);
-        double idleRoll = -.35;
-        double roll = idleRoll;
+        double roll = IDLE_ROLL + rollOffset(motion, now, shaft, reference, face);
+        Vec3 edge = reference.scale(Math.cos(roll)).subtract(face.scale(Math.sin(roll)));
+        return basis(palm(pose.grip(), equip), edge, shaft).scale((float)BLADE_SCALE);
+    }
+
+    static double rollOffset(WindHandMotion motion, double now) {
+        Vec3 shaft = motion.poseAt(now).shaft().normalize();
+        Vec3 reference = across(RIGHT, shaft);
+        return rollOffset(motion, now, shaft, reference, reference.cross(shaft));
+    }
+
+    private static double rollOffset(WindHandMotion motion, double now, Vec3 shaft, Vec3 reference, Vec3 face) {
         double weight = 0;
         double travelTick = now;
         double anchorTick = now;
@@ -52,13 +63,12 @@ final class WindHandRig {
                 Vec3 anchorRef = across(RIGHT, anchorShaft);
                 double anchor = cutAngle(motion, anchorShaft, anchorRef, anchorRef.cross(anchorShaft), anchorTick);
                 double turn = Double.isFinite(anchor)
-                        ? Math.IEEEremainder(anchor - idleRoll, Math.PI * 2) + Math.IEEEremainder(angle - anchor, Math.PI * 2)
-                        : Math.IEEEremainder(angle - idleRoll, Math.PI * 2);
-                roll += turn * weight;
+                        ? Math.IEEEremainder(anchor - IDLE_ROLL, Math.PI * 2) + Math.IEEEremainder(angle - anchor, Math.PI * 2)
+                        : Math.IEEEremainder(angle - IDLE_ROLL, Math.PI * 2);
+                return motion.returningRoll(now) * (1 - weight) + turn * weight;
             }
         }
-        Vec3 edge = reference.scale(Math.cos(roll)).subtract(face.scale(Math.sin(roll)));
-        return basis(palm(pose.grip(), equip), edge, shaft).scale((float)BLADE_SCALE);
+        return motion.returningRoll(now);
     }
 
     private static double cutAngle(WindHandMotion motion, Vec3 shaft, Vec3 reference, Vec3 face, double travelTick) {
@@ -78,7 +88,7 @@ final class WindHandRig {
         double wristRoll = off ? Math.toRadians(134) * pose.palmUp() : .53 *
                 weapon.transformDirection(new Vector3f(1, 0, 0)).normalize().dot(vector(transverse));
         across = across.scale(Math.cos(wristRoll)).add(transverse.scale(Math.sin(wristRoll)));
-        return basis(grip, across, axis).scale(.89f, .99f, .89f).mul(NightDaggerRig.arm(slim, off));
+        return basis(grip, across, axis).scale(.71f, .99f, .71f).mul(NightDaggerRig.arm(slim, off));
     }
 
     static Vec3 palm(Vec3 grip, float equip) {

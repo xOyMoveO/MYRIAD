@@ -13,7 +13,7 @@ final class WindHandMotion {
         }
     }
     private static final Vec3 HIDDEN = new Vec3(-.65, -1.27, -.9);
-    static final Pose IDLE = pose(.44, -.45, -1.02, .42, .54, -.73);
+    static final Pose IDLE = pose(.477, -.451, -.937, .54, .81, -.20);
     private static final Pose DOWN_RIGHT = pose(.49, -.51, -1.12, .28, -.41, -.87);
     private static final Pose CUT_1_READY = pose(.60, -.30, -1.32, .44, .43, -.82);
     private static final Pose CUT_1_END = pose(-.30, -.55, -1.45, -.53, -.34, -.79);
@@ -47,6 +47,7 @@ final class WindHandMotion {
 
     static final double CUT_FROM = .36, HIT = .98, CUT_TO = 2.65;
     private static final int PREPARE = -1;
+    private static final double SETTLE = 4;
     private record Gesture(int ability, int signal, double start, double end, Pose entry,
                            double fromProgress, double progress, Vec3 aim) {}
     private Gesture skill;
@@ -55,17 +56,20 @@ final class WindHandMotion {
     private double recovery;
     private double chargeBegan;
     private Pose attackEntry = IDLE;
+    private double rollStart = Double.NEGATIVE_INFINITY, canceledRoll;
 
     void reset() {
         skill = null;
         combo = -1;
         attack = Double.NEGATIVE_INFINITY;
         attackEntry = IDLE;
+        rollStart = Double.NEGATIVE_INFINITY;
     }
 
     void attack(double now, double delay) {
-        if (now == attack || hasSkill(now)) return;
+        if (now == attack || hasSkill(now) && skill.signal != CANCEL) return;
         attackEntry = poseAt(now);
+        skill = null;
         combo = now - attack > recovery + 23 ? 0 : (combo + 1) % CUT_START.length;
         attack = now;
         // Leave a little follow-through when the next recovered click arrives at the expected cadence.
@@ -73,7 +77,7 @@ final class WindHandMotion {
     }
 
     void prepare(int ability, double now) {
-        if (hasSkill(now)) return;
+        if (hasSkill(now) && skill.signal != CANCEL) return;
         var ready = ready(ability);
         if (ready == null) return;
         skill = new Gesture(ability, PREPARE, now, now + 5, poseAt(now), 0, 0, Vec3.ZERO);
@@ -81,20 +85,23 @@ final class WindHandMotion {
     }
 
     void cue(int ability, int signal, double now, int life, double progress, Vec3 aim) {
-        if (signal == CANCEL && (!hasSkill(now) || skill.ability != ability)) return;
-        if (signal == WINDUP && skill != null && skill.ability == ability && skill.signal == WINDUP) {
+        if (signal == CANCEL) {
+            if (hasSkill(now) && skill.ability == ability && skill.signal != CANCEL) settle(now, ability);
+            return;
+        }
+        if (signal == WINDUP && hasSkill(now) && skill.ability == ability && skill.signal == WINDUP) {
             skill = new Gesture(ability, signal, now, now + life, skill.entry, chargeProgress(now), progress, aim);
-        } else if (signal == DASH_HOLD && skill != null && skill.ability == ability && inMotion(skill.signal)) {
+        } else if (signal == DASH_HOLD && hasSkill(now) && skill.ability == ability && inMotion(skill.signal)) {
             skill = new Gesture(ability, DASH_START, skill.start, now + life, skill.entry, 0, 0, aim);
         } else {
             Pose entry = poseAt(now);
-            if (signal == CAST && (skill == null || skill.signal != PREPARE || skill.ability != ability))
+            if (signal == CAST && !settling(now) && (!hasSkill(now) || skill.signal != PREPARE || skill.ability != ability))
                 entry = entry.mix(ready(ability), .66);
             if (signal == DASH_HOLD) {
-                entry = ability == 2 ? THRUST : DASH;
+                if (!settling(now)) entry = ability == 2 ? THRUST : DASH;
                 signal = DASH_START;
             }
-            int duration = signal == CANCEL ? 4 : signal == CAST || signal == DASH_STOP ? 9 : life;
+            int duration = signal == CAST || signal == DASH_STOP ? 9 : life;
             if (signal == WINDUP) chargeBegan = now;
             skill = new Gesture(ability, signal, now, now + duration, entry, 0, progress, aim);
         }
@@ -103,10 +110,33 @@ final class WindHandMotion {
 
     void interrupt(double now) {
         if (hasSkill(now)) {
-            if (skill.signal != CANCEL) cue(skill.ability, CANCEL, now, 4, 0, Vec3.ZERO);
+            if (skill.signal != CANCEL) settle(now, skill.ability);
+        } else if (combo >= 0 && now >= attack && now < attack + recovery) {
+            settle(now, -1);
         } else {
             combo = -1;
         }
+    }
+
+    private void settle(double now, int ability) {
+        Pose entry = poseAt(now);
+        canceledRoll = WindHandRig.rollOffset(this, now);
+        rollStart = now;
+        skill = new Gesture(ability, CANCEL, now, now + SETTLE, entry, 0, 0, Vec3.ZERO);
+        combo = -1;
+    }
+
+    double returningRoll(double now) {
+        return now >= rollStart ? canceledRoll * (1 - smooth((now - rollStart) / SETTLE)) : 0;
+    }
+
+    private boolean settling(double now) {
+        return hasSkill(now) && skill.signal == CANCEL || expiredHold(now);
+    }
+
+    private boolean expiredHold(double now) {
+        return skill != null && now >= skill.end && now < skill.end + SETTLE
+                && (skill.signal == WINDUP || inMotion(skill.signal));
     }
 
     boolean hasSkill(double now) { return skill != null && now >= skill.start && now < skill.end; }
@@ -119,12 +149,17 @@ final class WindHandMotion {
 
     double chargeProgress(double now) {
         if (!hasSkill(now) || skill.signal != WINDUP) return 0;
+        return sampledProgress(now);
+    }
+
+    private double sampledProgress(double now) {
         double blend = Math.clamp((now - skill.start) * .5, 0, 1);
         return skill.fromProgress + (skill.progress - skill.fromProgress) * blend;
     }
 
     Pose poseAt(double now) {
         if (hasSkill(now)) return skillPose(now);
+        if (expiredHold(now)) return move(skillPose(skill.end), IDLE, now - skill.end, SETTLE);
         if (combo < 0 || now < attack || now - attack >= recovery) return IDLE;
         double age = now - attack;
         if (age < CUT_FROM) return move(attackEntry, CUT_START[combo], age, CUT_FROM);
@@ -138,9 +173,9 @@ final class WindHandMotion {
             Pose prep = move(skill.entry, ready(skill.ability), age, 1.4);
             return prep.mix(IDLE, smooth((age - 2.5) / 2.5));
         }
-        if (skill.signal == CANCEL) return move(skill.entry, IDLE, age, 4);
+        if (skill.signal == CANCEL) return move(skill.entry, IDLE, age, SETTLE);
         if (skill.signal == WINDUP)
-            return move(skill.entry, CHARGE_READY.mix(CHARGE, smooth(chargeProgress(now))), now - chargeBegan, 1.8);
+            return move(skill.entry, CHARGE_READY.mix(CHARGE, smooth(sampledProgress(now))), now - chargeBegan, 1.8);
         if (inMotion(skill.signal)) return move(skill.entry, skill.ability == 2 ? THRUST : DASH, age, 1.65);
         if (skill.signal == DASH_STOP)
             return gesture(skill.ability == 2 ? THRUST_LOW : DASH_END, IDLE, age, 1.2, 2.8);

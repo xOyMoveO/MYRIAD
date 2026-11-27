@@ -22,7 +22,7 @@ final class InkHandRig {
         Vec3 hand = lowered(left ? pose.palm() : pose.grip(), equip);
         Vec3 shoulder = new Vec3(left ? -.83 : .85, -.82, -.15);
         return pivot(hand, hand.subtract(shoulder), left ? pose.palmRoll() : pose.twist() * .56)
-                .scale(.89f, .98f, .89f).mul(NightDaggerRig.arm(slim, left));
+                .scale(.725f, .98f, .725f).mul(NightDaggerRig.arm(slim, left));
     }
 
     private static Matrix4f pivot(Vec3 at, Vec3 axis, double roll) {

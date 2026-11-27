@@ -40,10 +40,10 @@ final class ThunderSwordViewChecks {
         }
         var idle=ThunderSwordRig.wrist(ThunderSwordMotion.IDLE,0,false);
         var blade=new Matrix4f(idle).mul(ThunderSwordRig.blade(false));
-        h.assertTrue(blade.transformDirection(new Vector3f(0,1,0)).normalize().y>.9,"Normal blade points up");
+        h.assertTrue(blade.transformDirection(new Vector3f(0,1,0)).normalize().y>.78,"Resting blade rises diagonally above the guard");
         for(boolean left:new boolean[]{false,true}){
             var b=ThunderSwordRig.wrist(ThunderSwordMotion.IDLE,0,left).mul(ThunderSwordRig.blade(left));
-            h.assertTrue(b.transformDirection(new Vector3f(1,0,0)).normalize().z<-.97,"Cutting edge faces forward rather than broad face");
+            h.assertTrue(Math.abs(b.transformDirection(new Vector3f(0,0,1)).normalize().dot(b.getTranslation(new Vector3f()).normalize()))>.66,"Sword face is readable from the resting camera on each side");
         }
         for(float invalid:new float[]{Float.NaN,Float.POSITIVE_INFINITY,Float.NEGATIVE_INFINITY})
             h.assertTrue(ThunderSwordRig.wrist(ThunderSwordMotion.IDLE,invalid,false).isFinite(),"Invalid equip interpolation is safe");
@@ -58,7 +58,7 @@ final class ThunderSwordViewChecks {
             motion.attack(0,recovery);h.assertTrue(motion.duration()>=4&&motion.duration()<=7,"Attack speed bounded cosmetic duration");
             h.assertTrue(motion.sample(motion.duration()).equals(ThunderSwordMotion.IDLE),"No lingering pose after completion");motion.reset();
         }
-        System.out.println("[MYRIAD-THUNDER-FIRSTPERSON] PASS: 4356 palm/grip poses, forward idle edge, actual cutting edge aligned with all three swing velocities (no broad-face slap), projected paths, left/slim, lifecycle/clock/duration");
+        System.out.println("[MYRIAD-THUNDER-FIRSTPERSON] PASS: 4356 palm/grip poses, visible idle blade face, actual cutting edge aligned with all three swing velocities (no broad-face slap), projected paths, left/slim, lifecycle/clock/duration");
     }
     private static Vector3f tip(ThunderSwordMotion.Pose p){
         return ThunderSwordRig.wrist(p,0,false).mul(ThunderSwordRig.blade(false)).transformPosition(new Vector3f(0,1.40625f,0));

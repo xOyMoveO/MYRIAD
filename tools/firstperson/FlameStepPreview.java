@@ -20,7 +20,7 @@ public final class FlameStepPreview {
     private static final Map<Integer,BufferedImage> textures=new HashMap<>();
     private static List<NightDaggerPreview.Quad> blade,standing;
     private static final List<NightDaggerPreview.Quad> terrain=new ArrayList<>();
-    private static FlameDaoArmModel.Skin arm;
+    private static List<NightDaggerPreview.Quad> arm;
     private record Vertex(Vector3f p,float u,float v){Vertex mix(Vertex b,float t){return new Vertex(new Vector3f(p).lerp(b.p,t),u+(b.u-u)*t,v+(b.v-v)*t);}}
     private static AbilityVfxPayload sides(Vec3 feet,long time){return new AbilityVfxPayload(1,1,2,3,SHIELD,feet,feet.add(0,0,1),.8f,0,3,time,false);}
     private static final AbilityVfxPayload END=new AbilityVfxPayload(1,-1,2,3,ARC,new Vec3(0,1.62,8),new Vec3(0,1.62,9),2.2f,1,8,106,false);
@@ -38,8 +38,8 @@ public final class FlameStepPreview {
         var step=new FlameStepMotion();step.accept(sides(Vec3.ZERO,100),0,0,new FlameDaoMotion().frame(0));
         if(tick>=6)step.accept(END,6,0,step.frame(6));
         if(!observer){
-            var frame=step.frame(tick);arm.pose(frame.pose(),0);
-            NightDaggerPreview.submit(image,depth,FastTrailPreview.model(arm.model()),FlameDaoRig.hand(frame.pose(),0,false).mul(FlameDaoRig.arm(false,false)));
+            var frame=step.frame(tick);
+            NightDaggerPreview.submit(image,depth,arm,FlameDaoRig.hand(frame.pose(),0,false).mul(FlameDaoRig.arm(false,false)));
             var matrix=FlameDaoRig.wrist(frame.pose(),0,false).mul(FlameDaoRig.blade(frame,false));
             NightDaggerPreview.submit(image,depth,blade,matrix);
             for(var q:blade)for(var p:q.p())NightDaggerPreview.require(matrix.transformPosition(new Vector3f(p)).z<-.051,"Step blade crosses first-person near plane");
@@ -87,7 +87,7 @@ public final class FlameStepPreview {
             textures.put(0,ImageIO.read(zip.getInputStream(zip.getEntry("assets/minecraft/textures/particle/glow.png"))));
             for(int x=-9;x<10;x++)for(int z=-5;z<22;z++)tile(Math.abs(x)<2?stone:grass,x,z);
         }
-        arm=FlameDaoArmModel.bake(false,false);
+        arm=NightDaggerPreview.arm(false,false);
         var root=net.minecraft.client.model.geom.builders.LayerDefinition.create(net.minecraft.client.model.player.PlayerModel.createMesh(net.minecraft.client.model.geom.builders.CubeDeformation.NONE,false),64,64).bakeRoot();
         standing=FastTrailPreview.model(root);
         var sheet=new BufferedImage(2560,1440,BufferedImage.TYPE_INT_RGB);var g=sheet.createGraphics();

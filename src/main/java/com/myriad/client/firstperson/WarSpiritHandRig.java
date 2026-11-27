@@ -45,7 +45,8 @@ public final class WarSpiritHandRig {
         Vec3 axis=hand.subtract(shoulder).normalize(), side=perpendicular(RIGHT,axis), face=side.cross(axis);
         double roll=off?pose.palmRoll()*(left?-1:1):
                 .71*(item.m00()*face.x+item.m01()*face.y+item.m02()*face.z);
-        return basis(hand,twist(side,face,roll),axis).scale(.90f,1,.90f).mul(NightDaggerRig.arm(slim,armLeft));
+        float width=war?.85f:.90f;
+        return basis(hand,twist(side,face,roll),axis).scale(width,1,width).mul(NightDaggerRig.arm(slim,armLeft));
     }
 
     private static Vec3 palm(Matrix4f item,boolean war) {

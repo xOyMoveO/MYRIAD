@@ -16,7 +16,7 @@ final class LingyuanHandMotion {
     private record Clip(int skill, int phase, double start, double until, Pose from,
                         double sampledAt, double previous, double progress, Move move) {}
     private static final Vec3 HIDDEN = new Vec3(-.69, -1.34, -.91);
-    static final Pose IDLE = sword(.51,-.42,-1.00,.35,.85,-.39);
+    static final Pose IDLE = sword(.513,-.478,-.953,.53,.83,-.16);
     private static final Pose THRUST = p(.40,-.56,-1.66,.06,.19,-.98, -.78,-.80,-.99,-.3,0);
     private static final Pose DASH_READY = sword(.68,-.65,-1.04,.16,.25,-.95);
     private static final Pose DASH_DOWN = sword(.54,-.70,-1.43,.21,.07,-.97);

@@ -51,9 +51,12 @@ public final class ThunderSwordView {
         var mc=Minecraft.getInstance();
         if(!enabled(mc)||mc.gui.screen()!=null||mc.player.isUsingItem()||(mc.gameMode!=null&&mc.gameMode.isDestroying())){reset();return;}
         checkOwner(mc);
-        if(ClientDataHolder.buffTicks("g1_stun")>0){SKILL.interrupt();MOTION.reset();}
+        if(ClientDataHolder.buffTicks("g1_stun")>0){SKILL.interrupt(mc.player.tickCount);MOTION.reset();}
         boolean next=ClientDataHolder.placementType()==106&&ClientDataHolder.buffTicks("g1_stun")<=0;
-        if(next&&!aiming)aimStart=mc.player.tickCount;aiming=next;
+        if(next&&!aiming)aimStart=mc.player.tickCount;
+        if(!next&&aiming&&!SKILL.active(mc.player.tickCount)&&SKILL.recovery(mc.player.tickCount)==null)
+            SKILL.settle(ThunderSkillMotion.aim(mc.player.tickCount-aimStart),mc.player.tickCount);
+        aiming=next;
         if(busy(mc))MOTION.reset();
     }
     /** Observe an unconsumed, recovered vanilla attack; never cancel or send an attack request. */
@@ -73,27 +76,38 @@ public final class ThunderSwordView {
         double now=mc.player.tickCount+event.getPartialTick();
         var skill=SKILL.sample(now);
         if(skill.action()<0&&aiming)skill=ThunderSkillMotion.aim(now-aimStart);
-        if(event.getHand()!=InteractionHand.MAIN_HAND){if(skill.showOff() && event.getItemStack().isEmpty()){event.setCanceled(true);return true;}return false;}
+        var recovery=SKILL.recovery(now);
+        boolean showOff=skill.showOff()||recovery!=null&&recovery.from().showOff();
+        if(event.getHand()!=InteractionHand.MAIN_HAND){if(showOff && event.getItemStack().isEmpty()){event.setCanceled(true);return true;}return false;}
         if(!event.getItemStack().is(ModItems.LEITINGJIAN.get()))return false;
         // Maps, offhand use, mining and other vanilla use poses keep their ordinary rendering.
         if(busy(mc)){MOTION.reset();if(mc.gui.screen()!=null||mc.player.isUsingItem()||(mc.gameMode!=null&&mc.gameMode.isDestroying()))return false;}
         boolean left=mc.player.getMainArm()==HumanoidArm.LEFT;
         boolean slim=mc.player.getSkin().model()==PlayerModelType.SLIM;
         var frame=MOTION.frame(now);boolean gesture=skill.action()>=0;
+        var wrist=gesture?ThunderSkillRig.main(skill,left):ThunderSwordRig.wrist(frame.pose(),event.getEquipProgress(),left);
+        var blade=gesture?ThunderSkillRig.blade(skill,left):ThunderSwordRig.blade(frame,left);
+        var off=showOff&&mc.player.getOffhandItem().isEmpty()?ThunderSkillRig.off(skill,left):null;
+        if(recovery!=null){
+            float amount=recovery.amount(now);
+            wrist=ThunderSkillRig.recover(ThunderSkillRig.main(recovery.from(),left),wrist,amount);
+            blade=ThunderSkillRig.recover(ThunderSkillRig.blade(recovery.from(),left),blade,amount);
+            if(off!=null)off=ThunderSkillRig.recover(ThunderSkillRig.off(recovery.from(),left),off,amount);
+        }
         PoseStack stack=event.getPoseStack();stack.pushPose();
         try{
-            stack.mulPose(gesture?ThunderSkillRig.main(skill,left):ThunderSwordRig.wrist(frame.pose(),event.getEquipProgress(),left));
+            stack.mulPose(wrist);
             submitArm(event,stack,mc,slim,left);
             stack.pushPose();try{
-                stack.mulPose(gesture?ThunderSkillRig.blade(skill,left):ThunderSwordRig.blade(frame,left));
+                stack.mulPose(blade);
                 // NONE prevents a second application of item display offsets after the palm attachment.
                 if(!gesture||skill.showBlade())com.myriad.client.platform.ClientItemRenderer.submit(mc.player,event.getItemStack(),
                         ItemDisplayContext.NONE,stack,event.getSubmitNodeCollector(),event.getPackedLight());
                 if(gesture&&skill.showBlade())ThunderSkillHandRenderer.submit(event,stack,ThunderSkillHandVfx.blade(skill,now));
             }finally{stack.popPose();}
         }finally{stack.popPose();}
-        if(gesture&&skill.showOff()&&mc.player.getOffhandItem().isEmpty()){
-            stack.pushPose();try{stack.mulPose(ThunderSkillRig.off(skill,left));submitArm(event,stack,mc,slim,!left);}finally{stack.popPose();}
+        if(off!=null){
+            stack.pushPose();try{stack.mulPose(off);submitArm(event,stack,mc,slim,!left);}finally{stack.popPose();}
         }
         if(gesture)ThunderSkillHandRenderer.submit(event,stack,ThunderSkillHandVfx.camera(skill,now,left));
         if(!gesture&&!busy(mc))AttackTrailRenderer.submit(event,ThunderBasicTrail.mesh(MOTION,now,left,event.getEquipProgress()));

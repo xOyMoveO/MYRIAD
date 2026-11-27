@@ -43,6 +43,24 @@ python tools/mcpfabric/call-rpc.py myriad.state --run-dir run-fabric-observer
 
 `--record /path/evidence.jsonl` 会追加时间、实例、参数和响应，凭据不进入记录。
 
+
+## 第一人称固定机位截图
+
+在仓库根目录运行以下命令。每次都把当前工作树编译为新的 JAR，启动一个独立的本地 Fabric 单人客户端，由游戏实际渲染十个角色并拍摄。朔另拍出鞘，夜影另拍午夜待机。
+
+```sh
+python tools/mcpfabric/capture-firstperson.py
+python tools/mcpfabric/capture-firstperson.py --roles yingxiao,fenjue,shuo --motion
+python tools/mcpfabric/capture-firstperson.py --roles fenjue --reference-run "outputs/firstperson/上一轮目录名"
+```
+
+- 默认输出在 `outputs/firstperson/<时间戳>/`。轮次目录的 `overview-*.jpg` 按基线顺序汇总新版。每个角色目录含原始 PNG、实机帧状态和与 #68 固定基线的左右对照 JPG。夜影午夜图单列。要改变输出位置，用 `--output <父目录>`；每轮各有目录。
+- 使用 `--reference-run` 可将指定的已完成轮次作为第二个基线，同时保留 #68 的对照。每个静帧目录额外生成 `previous-comparison.jpg`，包括所选角色对应的午夜或出鞘图。脚本读取并核对两个轮次的角色、取景、FOV、光照、皮肤与实际像素尺寸，将参考轮次的清单与 JAR 摘要及逐图结果写入本轮清单。
+- `--motion` 同时采集 26 帧原生普攻与收势。按帧的 `clientTick` 查看实际采样时刻。已安装 ffmpeg 时，会按此时间轴生成各角色的 `motion.mp4`。拔刀需要朔打中本人的训练假人，脚本会创建、移除假人并核对已同步的出鞘状态。
+- 运行需要桌面图形环境、Python 3.11+、JDK 25，以及上文的完整共享游戏资源、离线 Gradle 缓存和已验证的 MCPFabric 测试模组。测试模组默认复用 pilot 的副本，亦可传 `--bridge-jar <文件>`。脚本使用本轮 JAR 快照、单独的回环端口和临时测试目录，可与既有 pilot、observer 实例并存。
+- 截图基线采用仓库内 `docs/verification/assets/hero-motion/closer-grip-{1,2}.jpg`。新画面固定训练场坐标 `(0.5, 65, 0.5)`、水平朝南、70° FOV、Kai 皮肤、右主手和空副手。脚本逐帧核对这些条件以及实际武器、皮肤和光照，将游戏版本、提交和被测 JAR 的 SHA256 记入 `manifest.json`。失败时已采材料和 `client.log` 保留在本轮目录。
+- 临时世界重用仓库 26.3 合成平地 fixture 的两个小型启动文件及测试地图配置，进场后由万象生成训练场。启动文件在 `firstperson/seed/`，只含世界头和固定生成设置。脚本退出时释放输入并关闭自己启动的游戏。
+
 ## 26.2 历史记录
 
 以下为旧 NeoForge 环境的历史事实，不能作为 Fabric 26.3 的验证结果；其中旧命令和目录不得用于当前启动。
