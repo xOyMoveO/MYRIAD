@@ -13,6 +13,7 @@ public final class InkHandChecks {
     private InkHandChecks() {}
 
     public static void verify(GameTestHelper h) {
+        checkGrip(h, InkHandMotion.IDLE);
         var motion = new InkHandMotion();
         var casts = new HashSet<InkHandMotion.Pose>();
         for (int skill = 2; skill <= 7; skill++) {
@@ -35,6 +36,19 @@ public final class InkHandChecks {
             h.assertTrue(aimed.equals(motion.pose(4)), "A targeting refresh preserves the current hand pose");
             motion.cue(skill, STOP, 5, 8, 0, 20);
             h.assertTrue(motion.pose(9).equals(InkHandMotion.IDLE), "Cancel returns from each distinct targeting pose");
+        }
+        for (int phase : new int[]{AIM, WINDUP}) {
+            motion.reset();
+            int skill = phase == AIM ? 4 : 6;
+            motion.cue(skill, phase, 0, REFRESH_LIFE, .8, 20);
+            var held = motion.pose(REFRESH_LIFE - .001);
+            h.assertTrue(held.equals(motion.pose(REFRESH_LIFE))
+                    && materials(h, motion, REFRESH_LIFE).isEmpty()
+                    && motion.pose(REFRESH_LIFE + 4).equals(InkHandMotion.IDLE),
+                    "Expired targeting and gathering poses relax from the final visible pose without a release");
+            var returning = motion.pose(REFRESH_LIFE + 1);
+            motion.cue(2, RELEASE, REFRESH_LIFE + 1, 15, 0, 20);
+            h.assertTrue(returning.equals(motion.pose(REFRESH_LIFE + 1)), "A new cast starts at the current return pose");
         }
 
         motion.reset();

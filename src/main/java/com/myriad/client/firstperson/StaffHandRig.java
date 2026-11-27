@@ -23,10 +23,12 @@ final class StaffHandRig {
     static Matrix4f arm(StaffHandMotion.Pose pose, boolean mirrored, boolean offhand, boolean slim, float equip) {
         boolean left = mirrored != offhand;
         Vec3 hand = lowered(offhand ? pose.palm() : pose.grip(), mirrored, equip);
-        Vec3 shoulder = new Vec3(left ? -.85 : .85, -.89, -.16);
+        Vec3 shoulder = offhand
+                ? new Vec3(left ? -.85 : .85, -.89, -.16)
+                : new Vec3(left ? -.69 : .69, -.99, -.22);
         double roll = offhand ? pose.palmRoll() : pose.roll() * .52;
         return pivot(hand, hand.subtract(shoulder), mirrored ? -roll : roll)
-                .scale(.90f, 1.02f, .90f).mul(NightDaggerRig.arm(slim, left));
+                .scale(.89f, 1.02f, .89f).mul(NightDaggerRig.arm(slim, left));
     }
 
     static Vec3 lowered(Vec3 point, boolean mirrored, float equip) {

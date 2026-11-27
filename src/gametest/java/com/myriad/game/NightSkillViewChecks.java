@@ -22,7 +22,7 @@ final class NightSkillViewChecks {
                 double time=100+cue.ticks()*i/160.0;var frame=motion.sample(time);
                 for(boolean left:new boolean[]{false,true})for(boolean slim:new boolean[]{false,true}){
                     var wrist=NightDaggerRig.wrist(frame.main(),left);
-                    var arm=new Matrix4f(wrist).mul(NightDaggerRig.arm(slim,left));
+                    var arm=new Matrix4f(wrist).mul(NightDaggerRig.daggerArm(slim,left));
                     var blade=new Matrix4f(wrist).mul(NightDaggerRig.blade(left,frame.main().grip()));
                     var palm=arm.transformPosition(new Vector3f((slim?.5f:1f)/16*(left?1:-1),.5f,0));
                     h.assertTrue(palm.isFinite()&&palm.distance(blade.transformPosition(new Vector3f()))<1E-6,"Every skill preserves the same palm/grip on both hands and skin widths");
@@ -45,10 +45,12 @@ final class NightSkillViewChecks {
         var merge=motion.sample(106);
         h.assertTrue(Math.abs(merge.main().x()+merge.off().x()-.19)<.001&&!NightSkillHandVfx.camera(merge,106,false).isEmpty(),"Palms meet at lower centre with a layered shadow seal");
         motion.reset();motion.accept(new NightSkillViewPayload(SHIELD,14,100,7),100,0,NightDaggerMotion.IDLE);
-        var tap=motion.sample(106);
-        var tip=NightDaggerRig.wrist(tap.main(),false).mul(NightDaggerRig.blade(false,tap.main().grip())).transformPosition(new Vector3f(.06375f,.5925f,0));
-        var off=NightDaggerRig.wrist(tap.off(),true).transformPosition(new Vector3f());
-        h.assertTrue(tip.distance(off)<.1,"Shield dagger tip makes a small contact at the offhand, rather than swinging through the screen");
+        for(boolean left:new boolean[]{false,true})for(double t:new double[]{.40,.46,.51}){
+            var tap=motion.sample(100+14*t);
+            var tip=NightDaggerRig.wrist(tap.main(),left).mul(NightDaggerRig.blade(left,tap.main().grip())).transformPosition(new Vector3f(.06375f,.5925f,0));
+            var off=NightDaggerRig.wrist(tap.off(),!left).transformPosition(new Vector3f());
+            h.assertTrue(tip.distance(off)<.1,"Shield dagger tip stays in contact with the supporting palm for either dominant hand");
+        }
         motion.reset();motion.accept(new NightSkillViewPayload(READY,16,100,8),100,0,NightDaggerMotion.IDLE);
         h.assertTrue(motion.sample(110).main().grip()==180,"Ultimate completes grip turn during the windup");
         motion.accept(new NightSkillViewPayload(STRIKE,10,116,8),116,0,NightDaggerMotion.IDLE);
@@ -57,6 +59,21 @@ final class NightSkillViewChecks {
         h.assertTrue(!motion.accept(new NightSkillViewPayload(THROW,9,100,7),119,0,NightDaggerMotion.IDLE),"Older skill token cannot replace newer skill");
         motion.accept(new NightSkillViewPayload(CANCEL,0,119,8),119,0,NightDaggerMotion.IDLE);
         h.assertTrue(!motion.active(119)&&!motion.accept(new NightSkillViewPayload(STRIKE,10,116,8),119,0,NightDaggerMotion.IDLE),"Interrupted token cannot revive a stale stab");
+        motion.reset();motion.accept(new NightSkillViewPayload(READY,16,100,10),100,0,NightDaggerMotion.IDLE);
+        var windup=motion.sample(110).main();
+        motion.accept(new NightSkillViewPayload(CANCEL,0,110,10),110,0,NightDaggerMotion.IDLE);
+        var relaxing=motion.sample(111.5);
+        h.assertTrue(!motion.active(110)&&motion.sample(110).main().equals(windup)&&relaxing.action()<0&&
+                relaxing.main().grip()>0&&relaxing.main().grip()<windup.grip()&&motion.sample(113).main().equals(NightDaggerMotion.IDLE),
+                "Cancel stops attack feedback immediately and relaxes the actual grip back to reverse idle");
+        h.assertTrue(NightSkillHandVfx.blade(relaxing,111.5).isEmpty()&&NightSkillHandVfx.camera(relaxing,111.5,false).isEmpty(),
+                "The recovering hand emits neither a stab nor shield contact");
+        motion.reset();motion.accept(new NightSkillViewPayload(READY,16,100,11),100,0,NightDaggerMotion.IDLE);
+        var late=motion.sample(117).main();
+        h.assertTrue(motion.sample(116).main().equals(NightSkillMotion.FORWARD)&&late.grip()>0&&late.grip()<180,
+                "An unconfirmed windup can expire without a jump or a predicted strike");
+        motion.accept(new NightSkillViewPayload(STRIKE,10,117,11),117,0,late);
+        h.assertTrue(motion.sample(117).main().equals(late),"A late confirmed stab starts at the hand's current grip");
         h.assertTrue(!new NightSkillViewPayload(90,8,100,1).valid()&&!new NightSkillViewPayload(THROW,80,100,1).valid(),"Malformed cues are rejected");
         var buf=new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
         try{var cue=new NightSkillViewPayload(STRIKE,10,116,9);NightSkillViewPayload.CODEC.encode(buf,cue);

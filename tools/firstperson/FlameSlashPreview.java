@@ -17,7 +17,7 @@ import static com.myriad.character.ability.AbilityVfxGeometry.ARC;
 /** Production poses and VFX, with UV-aware near-plane clipping. Not Minecraft footage. */
 public final class FlameSlashPreview {
     private static List<NightDaggerPreview.Quad> blade;
-    private static FlameDaoArmModel.Skin arm;
+    private static List<NightDaggerPreview.Quad> arm;
     private static BufferedImage texture,core,emberTexture;
     private static List<NightDaggerPreview.Quad> standing;
     private static final List<NightDaggerPreview.Quad> terrain=new ArrayList<>();
@@ -44,8 +44,8 @@ public final class FlameSlashPreview {
             NightDaggerPreview.submit(im,depth,standing,new Matrix4f(view).translate(0,1.35f,4.5f).scale(.9f,-.9f,-.9f));
         }
         if(!observer){
-            var f=motion.frame(tick);arm.pose(f.pose(),0);
-            NightDaggerPreview.submit(im,depth,FastTrailPreview.model(arm.model()),FlameDaoRig.hand(f.pose(),0,false).mul(FlameDaoRig.arm(false,false)));
+            var f=motion.frame(tick);
+            NightDaggerPreview.submit(im,depth,arm,FlameDaoRig.hand(f.pose(),0,false).mul(FlameDaoRig.arm(false,false)));
             var matrix=FlameDaoRig.wrist(f.pose(),0,false).mul(FlameDaoRig.blade(f,false));
             NightDaggerPreview.submit(im,depth,blade,matrix);
             for(var q:blade)for(var p:q.p())NightDaggerPreview.require(matrix.transformPosition(new Vector3f(p)).z<-.051,"Actual skill blade crosses near plane");
@@ -122,7 +122,7 @@ public final class FlameSlashPreview {
         }
         var playerRoot=net.minecraft.client.model.geom.builders.LayerDefinition.create(net.minecraft.client.model.player.PlayerModel.createMesh(net.minecraft.client.model.geom.builders.CubeDeformation.NONE,false),64,64).bakeRoot();
         standing=FastTrailPreview.model(playerRoot);
-        arm=FlameDaoArmModel.bake(false,false);motion.accept(cue,0,0,new FlameDaoMotion().frame(0));
+        arm=NightDaggerPreview.arm(false,false);motion.accept(cue,0,0,new FlameDaoMotion().frame(0));
         ImageIO.write(referenceArc(),"png",out.resolve("flame_reference_arc.png").toFile());
         var sheet=new BufferedImage(2560,720,BufferedImage.TYPE_INT_RGB);var g=sheet.createGraphics();
         double[] times={1.6,3,5.2,8.4};

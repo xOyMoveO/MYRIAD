@@ -28,29 +28,44 @@ public final class NightSkillMotion {
     };
     private static final Key[] MERGE_OFF={k(0,OFF_REST),k(.26,p(.095,-.28,-1.06,0,0,25,0)),
             k(.65,p(.095,-.28,-1.06,0,0,25,0)),k(1,OFF_REST)};
-    private static final Key[] SHIELD_OFF={k(0,OFF_REST),k(.22,p(.06,-.35,-1.05,0,0,0,0)),
-            k(.60,p(.06,-.35,-1.05,0,0,0,0)),k(1,OFF_REST)};
+    private static final Pose SHIELD_PALM=p(.20,-.26,-1.05,0,0,0,0);
+    private static final Key[] SHIELD_OFF={k(0,OFF_REST),k(.22,SHIELD_PALM),
+            k(.60,SHIELD_PALM),k(1,OFF_REST)};
     private int action=-1,token=-1,ended=-1;
     private double start,duration;
+    private static final double RECOVERY_TICKS=3;
     private Pose entry=NightDaggerMotion.IDLE,offEntry=OFF_REST;
     public void reset(){action=-1;token=-1;ended=-1;start=duration=0;entry=NightDaggerMotion.IDLE;offEntry=OFF_REST;}
-    public boolean active(double tick){return action>=0&&tick>=start&&tick<start+duration;}
+    public boolean active(double tick){return action>=0&&action!=CANCEL&&tick>=start&&tick<start+duration;}
     public int action(){return action;}
     public int token(){return token;}
     public boolean accept(NightSkillViewPayload cue,double localTick,double elapsed,Pose fallback){
         if(!cue.valid()||cue.token()<token||cue.token()<=ended)return false;
-        if(cue.action()==CANCEL){ended=cue.token();token=cue.token();action=-1;return true;}
+        if(cue.action()==CANCEL){
+            entry=active(localTick)?sample(localTick).main():fallback;
+            ended=cue.token();token=cue.token();action=CANCEL;start=localTick;duration=RECOVERY_TICKS;
+            return true;
+        }
         if(cue.action()==READY&&token==cue.token()&&action==STRIKE)return false;
         if(elapsed>=cue.ticks()||elapsed<0)return false;
         Frame previous=sample(localTick);
         entry=active(localTick)?previous.main():fallback;
-        if(cue.action()==STRIKE&&cue.token()==token&&action==READY&&!active(localTick))entry=FORWARD;
+        if(cue.action()==STRIKE&&cue.token()==token&&action==READY&&!active(localTick))entry=previous.main();
         offEntry=active(localTick)&&previous.showOff()?previous.off():OFF_REST;
         action=cue.action();token=cue.token();duration=cue.ticks();start=localTick-elapsed;
         return true;
     }
     public Frame sample(double tick){
-        if(!active(tick))return new Frame(NightDaggerMotion.IDLE,OFF_REST,false,true,-1,1);
+        if(!active(tick)){
+            // READY can end before its server-confirmed strike or cancel reaches the client.
+            double end=action==CANCEL?start:start+duration;
+            Pose rest=NightDaggerMotion.IDLE;
+            if((action==READY||action==CANCEL)&&tick>=end&&tick<end+RECOVERY_TICKS){
+                double t=(tick-end)/RECOVERY_TICKS;
+                rest=(action==READY?FORWARD:entry).blend(rest,t*t*(3-2*t));
+            }
+            return new Frame(rest,OFF_REST,false,true,-1,1);
+        }
         double t=Math.clamp((tick-start)/duration,0,1);
         Pose main=sample(MAIN[action],t,entry);
         boolean two=action==MERGE||action==SHIELD;

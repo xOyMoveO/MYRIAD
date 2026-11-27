@@ -244,6 +244,14 @@ public final class MyriadInputBridge implements ClientModInitializer {
             o.addProperty("x", mc.player.getX()); o.addProperty("y", mc.player.getY()); o.addProperty("z", mc.player.getZ());
             o.addProperty("yaw", mc.player.getYRot()); o.addProperty("pitch", mc.player.getXRot());
             o.addProperty("camera", mc.options.getCameraType().name());
+            o.addProperty("fov", mc.options.fov().get());
+            o.addProperty("mainArm", mc.player.getMainArm().name());
+            o.addProperty("mainItem", net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(mc.player.getMainHandItem().getItem()).toString());
+            o.addProperty("offhandEmpty", mc.player.getOffhandItem().isEmpty());
+            o.addProperty("skin", mc.player.getSkin().body().texturePath().toString());
+            o.addProperty("shuoDrawn", ClientDataHolder.syncedCounter("g1_shuo_drawn") > 0);
+            o.addProperty("overworldClock", mc.level.getOverworldClockTime());
+            o.addProperty("rain", mc.level.getRainLevel(1));
             o.addProperty("uuid", mc.player.getUUID().toString());
             o.addProperty("name", mc.player.getName().getString());
             JsonArray observed = new JsonArray();

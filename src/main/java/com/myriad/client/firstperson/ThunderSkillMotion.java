@@ -37,28 +37,46 @@ public final class ThunderSkillMotion {
     private int action=-1,token=-1,ended=-1;
     private double start,duration;
     private Pose entry=IDLE,offEntry=OFF_REST;
-    public void reset(){action=-1;token=ended=-1;start=duration=0;entry=IDLE;offEntry=OFF_REST;}
-    public void interrupt(){ended=Math.max(ended,token);action=-1;}
+    private Recovery recovery;
+    public record Recovery(Frame from,double start){
+        public float amount(double tick){return (float)smooth((tick-start)/3);}
+    }
+    public void reset(){action=-1;token=ended=-1;start=duration=0;entry=IDLE;offEntry=OFF_REST;recovery=null;}
+    public void interrupt(double tick){
+        if(active(tick))settle(sample(tick),tick);
+        else if(ready(action))recovery=recovery(tick);
+        ended=Math.max(ended,token);action=-1;
+    }
+    public void settle(Frame from,double tick){recovery=new Recovery(from,tick);}
+    public Recovery recovery(double tick){
+        if(recovery!=null&&tick>=recovery.start&&recovery.amount(tick)<1)return recovery;
+        // A delayed release cue must not flash the idle pose between charge and release.
+        double end=start+duration;
+        return ready(action)&&tick>=end&&tick<end+3?new Recovery(keyframe(1),end):null;
+    }
     public boolean active(double tick){return action>=0&&Double.isFinite(tick)&&tick>=start&&tick<start+duration;}
     public int action(){return action;}
     public static boolean ready(int action){return action==ARC_READY||action==SLASH_READY||action==JUDGMENT_READY;}
     public boolean accept(ThunderSkillViewPayload cue,double tick,double elapsed,Pose fallback){
         if(!cue.valid()||!Double.isFinite(tick)||!Double.isFinite(elapsed)||cue.token()<token||cue.token()<=ended)return false;
-        if(cue.action()==CANCEL){token=cue.token();interrupt();return true;}
+        if(cue.action()==CANCEL){token=cue.token();interrupt(tick);return true;}
         if(cue.token()==token&&ready(cue.action())&&!ready(action))return false;
         if(elapsed<0||elapsed>=cue.ticks())return false;
+        Recovery pending=recovery(tick);
         Frame old=sample(tick);entry=active(tick)?old.main():fallback;
         offEntry=active(tick)&&old.showOff()?old.off():OFF_REST;
-        if(cue.token()==token&&!ready(cue.action())&&ready(action)&&!active(tick)){
-            entry=sample(MAIN[action],1,entry);
-            if(action==ARC_READY)offEntry=LEFT_PALM;
+        if(pending!=null){
+            entry=pending.from.main.blend(IDLE,pending.amount(tick));
+            offEntry=pending.from.off.blend(OFF_REST,pending.amount(tick));
         }
         if(cue.action()==NINE_FIRE){entry=LOW;offEntry=AIM_PALM;}
-        action=cue.action();token=cue.token();duration=cue.ticks();start=tick-elapsed;return true;
+        recovery=null;action=cue.action();token=cue.token();duration=cue.ticks();start=tick-elapsed;return true;
     }
     public Frame sample(double tick){
         if(!active(tick))return idle();
-        double t=Math.clamp((tick-start)/duration,0,1);
+        return keyframe(Math.clamp((tick-start)/duration,0,1));
+    }
+    private Frame keyframe(double t){
         var main=sample(MAIN[action],t,entry);
         var off=switch(action){case ARC_READY->sample(PALM_READY,t,offEntry);case ARC_FIRE,NINE_FIRE->sample(PALM_FIRE,t,offEntry);
             case GUARD->sample(MUDRA,t,offEntry);case GROUND,JUDGMENT_READY,JUDGMENT_FIRE->sample(SECOND_GRIP,t,offEntry);default->OFF_REST;};

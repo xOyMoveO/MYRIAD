@@ -41,11 +41,12 @@ public final class WarSpiritHandRig {
                                boolean war, boolean left, boolean off, boolean slim, float equip) {
         boolean armLeft=left!=off;
         var hand=off?StaffHandRig.lowered(pose.palm(),left,equip):palm(item,war);
-        var shoulder=new Vec3(armLeft?-.88:.88,-.87,-.17);
+        var shoulder=war&&!off?new Vec3(armLeft?-.64:.64,-.93,-.17):new Vec3(armLeft?-.88:.88,-.87,-.17);
         Vec3 axis=hand.subtract(shoulder).normalize(), side=perpendicular(RIGHT,axis), face=side.cross(axis);
         double roll=off?pose.palmRoll()*(left?-1:1):
                 .71*(item.m00()*face.x+item.m01()*face.y+item.m02()*face.z);
-        return basis(hand,twist(side,face,roll),axis).scale(.90f,1,.90f).mul(NightDaggerRig.arm(slim,armLeft));
+        float width=war&&!off?.82f:war?.85f:.90f;
+        return basis(hand,twist(side,face,roll),axis).scale(width,1,width).mul(NightDaggerRig.arm(slim,armLeft));
     }
 
     private static Vec3 palm(Matrix4f item,boolean war) {

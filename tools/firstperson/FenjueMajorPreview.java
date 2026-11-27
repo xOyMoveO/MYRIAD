@@ -20,7 +20,7 @@ import static com.myriad.network.FlameSkillViewPayload.*;
 public final class FenjueMajorPreview {
     private static final Map<Integer,BufferedImage> textures=new HashMap<>();
     private static List<NightDaggerPreview.Quad> blade;private static final List<NightDaggerPreview.Quad> terrain=new ArrayList<>();
-    private static FlameDaoArmModel.Skin main,off;
+    private static List<NightDaggerPreview.Quad> main,off;
     private static final List<NightDaggerPreview.Quad> dummy=new ArrayList<>();
     private static boolean closeWorld;
     private record Vertex(Vector3f p,float u,float v){Vertex mix(Vertex b,float t){return new Vertex(new Vector3f(p).lerp(b.p,t),u+(b.u-u)*t,v+(b.v-v)*t);}}
@@ -55,15 +55,15 @@ public final class FenjueMajorPreview {
             mesh.sort(Comparator.comparingDouble(q->view.transformPosition(vec(q.a().add(q.b()).add(q.c()).add(q.d()).scale(.25))).z));
             for(var q:mesh)paint(image,depth,q,view);
         }else{
-            var f=pose(role,tick);var hand=FlameDaoRig.hand(f.main(),0,false);main.pose(hand);
-            NightDaggerPreview.submit(image,depth,FastTrailPreview.model(main.model()),new Matrix4f(hand).mul(FlameDaoRig.arm(false,false)));
+            var f=pose(role,tick);var hand=FlameDaoRig.hand(f.main(),0,false);
+            NightDaggerPreview.submit(image,depth,main,new Matrix4f(hand).mul(FlameDaoRig.arm(false,false)));
             if(f.showBlade()){
                 var matrix=FlameSkillRig.main(f,false).mul(FlameSkillRig.blade(f,false));NightDaggerPreview.submit(image,depth,blade,matrix);
                 for(var q:blade)for(var p:q.p())NightDaggerPreview.require(matrix.transformPosition(new Vector3f(p)).z<-.051,"Blade crosses near plane: role="+role+" t="+tick);
             }
             if(f.showOff()){
-                var matrix=FlameSkillRig.off(f,false);off.pose(matrix);
-                NightDaggerPreview.submit(image,depth,FastTrailPreview.model(off.model()),new Matrix4f(matrix).mul(FlameDaoRig.arm(false,true)));
+                var matrix=FlameSkillRig.off(f,false);
+                NightDaggerPreview.submit(image,depth,off,new Matrix4f(matrix).mul(FlameDaoRig.arm(false,true)));
             }
             for(var q:FlameSkillHandVfx.build(f,100+tick,false))paint(image,depth,q,new Matrix4f());
         }
@@ -129,7 +129,7 @@ public final class FenjueMajorPreview {
                 NightDaggerPreview.gif(frames,out.resolve(side?"hit_oblique.gif":"hit_front.gif"));}
             System.out.println("[MYRIAD-FLAME-HIT-PREVIEW] PASS: actual contact mesh/atlas, ordinary/critical/periodic phases and two real-time-speed projections against terrain/target; CPU only");return;
         }
-        main=FlameDaoArmModel.bake(false,false);off=FlameDaoArmModel.bake(false,true);
+        main=NightDaggerPreview.arm(false,false);off=NightDaggerPreview.arm(false,true);
         var worlds=new BufferedImage(1280,720,BufferedImage.TYPE_INT_RGB);var wg=worlds.createGraphics();
         if(closeWorld){
             for(int role=0;role<4;role++)wg.drawImage(draw(role,role==1?3:18,true),role%2*640,role/2*360,null);

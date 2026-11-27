@@ -17,7 +17,8 @@ final class InkHandMotion {
                         double sampledAt, double prior, double progress) {}
 
     private static final Vec3 HIDDEN = new Vec3(-.67, -1.31, -.89);
-    static final Pose IDLE = new Pose(new Vec3(.54, -.50, -1.06), new Vec3(.27, .81, -.52), HIDDEN, -.34, 0);
+    private static final double SETTLE = 3.6;
+    static final Pose IDLE = new Pose(new Vec3(.545, -.455, -.955), new Vec3(.08, .96, -.25), HIDDEN, -.18, 0);
 
     private static Pose p(double x, double y, double z, double sx, double sy, double sz,
                           double lx, double ly, double lz, double turn, double palm) {
@@ -83,7 +84,7 @@ final class InkHandMotion {
     }
 
     void prepare(int ability, double now, double cadence) {
-        if (active(now)) return;
+        if (active(now) && clip.phase != STOP) return;
         int slot = ability == 0 ? 8 + next(now, cadence) : ability;
         if (slot != 2 && slot != 3 && slot < 8) return;
         clip = new Clip(slot, PREPARE, now, now + 4.5, pose(now), now, 0, 0);
@@ -116,8 +117,8 @@ final class InkHandMotion {
         }
         var action = action(ability, phase);
         if (action == null) return;
-        boolean readied = active(now) && clip.ability == ability;
-        if (!readied) entry = entry.mix(action.ready, .80);
+        boolean fromCurrent = active(now) && (clip.ability == ability || clip.phase == STOP) || expiredHold(now);
+        if (!fromCurrent) entry = entry.mix(action.ready, .80);
         clip = new Clip(ability, phase, now, now + action.duration, entry, now, 0, 0);
     }
 
@@ -128,7 +129,7 @@ final class InkHandMotion {
     }
 
     private void settle(double now) {
-        clip = new Clip(clip.ability, STOP, now, now + 3.6, pose(now), now, 0, 0);
+        clip = new Clip(clip.ability, STOP, now, now + SETTLE, pose(now), now, 0, 0);
     }
 
     boolean active(double now) { return clip != null && now >= clip.start && now < clip.expires; }
@@ -141,19 +142,32 @@ final class InkHandMotion {
 
     double progress(double now) {
         if (!active(now) || clip.phase != WINDUP) return 0;
+        return sampledProgress(now);
+    }
+
+    private double sampledProgress(double now) {
         double sinceLast = now - clip.sampledAt;
         return clip.prior + (clip.progress - clip.prior) * Math.clamp(sinceLast * .5, 0, 1);
     }
 
-    Pose pose(double now) {
-        if (!active(now)) return IDLE;
-        double age = age(now);
+    private boolean expiredHold(double now) {
+        return clip != null && now >= clip.expires && now < clip.expires + SETTLE
+                && (clip.phase == AIM || clip.phase == WINDUP);
+    }
+
+    private Pose heldPose(double now) {
+        double age = now - clip.start;
         if (clip.phase == AIM) return ease(clip.from, action(clip.ability, RELEASE).ready, age / 2.4);
-        if (clip.phase == WINDUP) {
-            Pose gather = ease(ARRAY_BEGIN, ARRAY_GATHER, progress(now));
-            return ease(clip.from, gather, age / 2);
-        }
-        if (clip.phase == STOP) return ease(clip.from, IDLE, age / 3.6);
+        Pose gather = ease(ARRAY_BEGIN, ARRAY_GATHER, sampledProgress(now));
+        return ease(clip.from, gather, age / 2);
+    }
+
+    Pose pose(double now) {
+        if (expiredHold(now)) return ease(heldPose(clip.expires), IDLE, (now - clip.expires) / SETTLE);
+        if (!active(now)) return IDLE;
+        double age = now - clip.start;
+        if (clip.phase == AIM || clip.phase == WINDUP) return heldPose(now);
+        if (clip.phase == STOP) return ease(clip.from, IDLE, age / SETTLE);
         var action = action(clip.ability, clip.phase);
         if (clip.phase == PREPARE) {
             Pose ready = ease(clip.from, action.ready, age / 1.15);

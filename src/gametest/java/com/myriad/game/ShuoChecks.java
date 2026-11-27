@@ -49,7 +49,7 @@ final class ShuoChecks {
         int poses=0;for(int action=0;action<=ShuoViewPayload.MAX_ACTION;action++)for(int n=0;n<=100;n++)for(boolean drawn:new boolean[]{false,true})for(boolean mirror:new boolean[]{false,true})for(boolean slim:new boolean[]{false,true}){
             var f=ShuoRig.frame(action,n/100.0,drawn);var blade=ShuoRig.blade(f,mirror);var scabbard=ShuoRig.sheath(f,mirror);
             boolean attacking=ShuoViewPayload.basicAction(action)||action==ShuoViewPayload.FLASH||action==ShuoViewPayload.CUT_LEFT||action==ShuoViewPayload.CUT_RIGHT||action==ShuoViewPayload.CUT_DOWN||action==ShuoViewPayload.GUARD||action==ShuoViewPayload.COUNTER;
-            h.assertTrue(ShuoRig.showMainHand(f,drawn)==(drawn||attacking),"Drawn blade always has a gripping hand; sheathed idle stays hand-free");
+            h.assertTrue(ShuoRig.showMainHand(f,drawn)==(drawn||attacking),"Drawn blade always has a gripping hand; sheathed idle leaves the hilt hand free");
             var oldFrame=ShuoRig.basis(f.palm(),f.axis(),f.edge(),mirror);
             for(var radial:List.of(new Vector3f(1,0,0),new Vector3f(0,0,1))){
                 var before=oldFrame.transformDirection(new Vector3f(radial)).normalize();
@@ -60,28 +60,44 @@ final class ShuoChecks {
             for(boolean off:new boolean[]{false,true}){
                 boolean left=off?!mirror:mirror;var hand=ShuoRig.hand(f,off,mirror).mul(NightDaggerRig.arm(slim,left));
                 var palm=hand.transformPosition(new Vector3f((slim?.5f:1)/16*(left?1:-1),.5f,0));
-                var grip=(off?scabbard:blade).transformPosition(new Vector3f(0,(off?.12f:ShuoRig.HAND_GRIP_RAISE)/ShuoRig.WEAPON_LENGTH,0));
+                var grip=(off?scabbard:blade).transformPosition(new Vector3f(0,(off?ShuoRig.SUPPORT_GRIP_OFFSET:ShuoRig.HAND_GRIP_RAISE)/ShuoRig.WEAPON_LENGTH,0));
                 h.assertTrue(palm.distance(grip)<1E-6,"Skin palm remains exactly on its raised hilt grasp through every pose");
             }
             if(action==ShuoViewPayload.CANCEL&&!drawn){
                 var throat=blade.transformPosition(new Vector3f(0,ShuoRig.MODEL_GRIP_TO_MOUTH,0));
                 h.assertTrue(throat.distance(scabbard.transformPosition(new Vector3f()))<1E-6,"Closed blade root exactly meets sheath throat");
-                h.assertTrue(f.palm().y<0&&f.mouth().y<-.30&&f.palm().x<-.55&&!ShuoRig.showMainHand(f,false),"Longer sheathed hilt stays left/below the crosshair, with the throat visible");
+                var supportPalm=ShuoRig.hand(f,true,mirror).transformPosition(new Vector3f());
+                h.assertTrue(f.palm().x<-.18&&f.mouth().y<-.25&&supportPalm.y<f.mouth().y&&!ShuoRig.showMainHand(f,false),
+                        "Sheathed hilt stays beside the crosshair, with the free support palm below the low sheath mouth");
             }poses++;
         }
-        h.assertTrue(!ShuoRig.SHOW_OFF_HAND,"No scabbard-supporting off hand is rendered");
+        h.assertTrue(ShuoRig.showSupportHand(ShuoRig.frame(ShuoViewPayload.CANCEL,0,false),false)
+                &&ShuoRig.showSupportHand(ShuoRig.frame(ShuoViewPayload.DRAW,.16,false),true)
+                &&ShuoRig.showSupportHand(ShuoRig.frame(ShuoViewPayload.SHEATHE,.8,true),true)
+                &&!ShuoRig.showSupportHand(ShuoRig.frame(ShuoViewPayload.CANCEL,0,true),true),
+                "The free support hand holds the sheath through docking and releases it in drawn idle");
         var sheathed=ShuoRig.frame(ShuoViewPayload.CANCEL,0,false);var sheathTransform=ShuoRig.sheath(sheathed,false);
         var mouth=sheathTransform.transformPosition(new Vector3f());var tail=sheathTransform.transformPosition(new Vector3f(0,ShuoRig.MODEL_SHEATH_LENGTH,0));
         float slope=(float)Math.tan(Math.toRadians(35));float m=mouth.y-mouth.z*slope,t=tail.y-tail.z*slope;
         float visible=m/(m-t);
-        h.assertTrue(sheathed.sheathAxis().y<-.95&&sheathed.sheathAxis().x<-.1&&sheathed.mouth().x<-.55,"Scabbard is near-vertical, gently tilted and low-left");
+        h.assertTrue(sheathed.sheathAxis().y<-.95&&sheathed.sheathAxis().x<-.1&&sheathed.mouth().x<-.22,"Scabbard is near-vertical, gently tilted and low-left clear of the HUD");
         h.assertTrue(visible>.27&&visible<.38,"At the default 70-degree view only about one third of the real sheath is visible: "+visible);
         var idle=ShuoRig.frame(ShuoViewPayload.CANCEL,0,true);var held=ShuoRig.blade(idle,false);
         var grip=held.transformPosition(new Vector3f());var tip=held.transformPosition(new Vector3f(0,ShuoRig.MODEL_GRIP_TO_TIP,0));
-        h.assertTrue(grip.x>0.7f&&grip.y<-.5f&&tip.y>grip.y+1.7f&&tip.x>grip.x,"Reference stance: low-right hilt, extended upward/right blade");
+        h.assertTrue(grip.x>.4f&&grip.y<-.5f&&tip.y>grip.y+1.4f&&tip.y < -tip.z*slope&&tip.x>grip.x&&tip.x<grip.x+.45f&&tip.x< -tip.z*slope*16/9,"Reference stance: low-right hilt, poised upright-forward blade inside frame");
         h.assertTrue(ShuoRig.MODEL_SHEATH_LENGTH>ShuoRig.MODEL_GRIP_TO_TIP-ShuoRig.MODEL_GRIP_TO_MOUTH&&ShuoRig.EXTRACT>(ShuoRig.MODEL_GRIP_TO_TIP-ShuoRig.MODEL_GRIP_TO_MOUTH)*ShuoRig.WEAPON_LENGTH,"Longer sheath houses the full blade, extraction clears its tip before the cut");
-        h.assertTrue(Math.abs(tip.z-grip.z)<.15f,"Drawn blade is not foreshortened by pointing into the screen");
+        h.assertTrue(tip.z<grip.z-.35f&&tip.z>grip.z-.80f,"Drawn blade extends naturally forward without flat sideways paste or extreme foreshortening");
         for(boolean mirror:new boolean[]{false,true}){
+            var closedHand=ShuoRig.occupiedHand(sheathed,mirror);
+            var fingers=closedHand.transformDirection(new Vector3f(0,1,0)).normalize();
+            var at=closedHand.getTranslation(new Vector3f());
+            at.x+=(mirror?-1:1)*-2*sheathed.palm().x;
+            h.assertTrue(fingers.y>.7f && (mirror?fingers.x:-fingers.x)>.5f && fingers.dot(at.normalize())<0,
+                    "With an occupied offhand the sheathed arm enters from its own lower side; its sleeve cap faces away from the eye");
+            h.assertTrue(ShuoRig.occupiedHand(idle,mirror).equals(ShuoRig.hand(idle,false,mirror),1E-6f),
+                    "A fully drawn weapon keeps its original wrist pose with an occupied offhand");
+            h.assertTrue(closedHand.getTranslation(new Vector3f()).distance(ShuoRig.hand(sheathed,false,mirror).getTranslation(new Vector3f()))<1E-6f,
+                    "Holding the closed sword with an occupied offhand preserves its hilt grasp");
             var edge=ShuoRig.blade(idle,mirror).transformDirection(new Vector3f(1,0,0)).normalize();
             var axis=ShuoRig.blade(idle,mirror).transformDirection(new Vector3f(0,1,0)).normalize();
             var before=ShuoRig.basis(idle.palm(),idle.axis(),idle.edge(),mirror);
@@ -89,13 +105,24 @@ final class ShuoChecks {
             h.assertTrue(axis.dot(before.transformDirection(new Vector3f(0,1,0)).normalize())>.9999f,"Turning the edge never tips or shortens the blade shaft");
         }
         var hand=ShuoRig.hand(idle,false,false);
-        h.assertTrue(Math.abs(hand.getScale(new Vector3f()).x-.74f)<1E-6&&Math.abs(hand.getScale(new Vector3f()).y-.74f)<1E-6,"Longer weapon never elongates skin hands");
+        h.assertTrue(Math.abs(hand.getScale(new Vector3f()).y-ShuoRig.ARM_LENGTH)<1E-6,"Skin hand preserves its un-squished length scale");
         for(boolean mirror:new boolean[]{false,true}){
             var fingers=ShuoRig.hand(idle,false,mirror).transformDirection(new Vector3f(0,1,0)).normalize();
-            h.assertTrue(fingers.z<-.95f&&fingers.y>0&&fingers.y<.3f,"Wrist-to-fingers axis faces forwards/slightly upwards, not vertically along the blade");
+            h.assertTrue(fingers.z<-.6f&&fingers.y>.5f&&(mirror?fingers.x:-fingers.x)>.3f,
+                    "The drawn wrist enters from below its hilt and shows the hand beside the cuff");
             var palmAt=ShuoRig.hand(idle,false,mirror).transformPosition(new Vector3f());
             var hiltAt=ShuoRig.blade(idle,mirror).transformPosition(new Vector3f());
-            h.assertTrue(palmAt.y>hiltAt.y+.10f&&palmAt.distance(hiltAt)<.12f,"Grasp is higher, towards the guard, without moving or resizing the weapon");
+            var shaft=ShuoRig.blade(idle,mirror).transformDirection(new Vector3f(0,1,0)).normalize();
+            var expectedPalm=new Vector3f(hiltAt).fma(ShuoRig.HAND_GRIP_RAISE,shaft);
+            h.assertTrue(palmAt.y>hiltAt.y&&palmAt.distance(expectedPalm)<1E-6,"Grasp is raised exactly along the slanted hilt towards its guard");
+            // Both drawn sword-hand cuff and sheathed support-hand cuff must anchor past the 70-degree bottom edge.
+            float cuffLocalY=(ShuoArmModel.SHUO_CUT_Y-8f)/16f;
+            for(var pair:List.of(ShuoRig.hand(idle,false,mirror),ShuoRig.hand(sheathed,true,mirror))){
+                for(float sx:new float[]{-2.25f/16,2.25f/16})for(float sz:new float[]{-2.25f/16,2.25f/16}){
+                    var corner=pair.transformPosition(new Vector3f(sx,cuffLocalY,sz));
+                    h.assertTrue(corner.z<-.2f&&corner.y<corner.z*slope,"Idle sleeve cuff anchors cleanly below the default 70-degree bottom edge");
+                }
+            }
         }
         var motion=new ShuoMotion();h.assertTrue(motion.accept(new ShuoViewPayload(0,9,0,1),10,0,false),"Confirmed cue accepted");
         h.assertTrue(!motion.accept(new ShuoViewPayload(0,9,0,1),10,0,false),"Duplicate token ignored");

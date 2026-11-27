@@ -94,7 +94,7 @@ public final class NightDaggerPreview {
         g.setColor(new Color(190,201,194,100));g.drawLine(W/2-5,H/2,W/2+5,H/2);g.drawLine(W/2,H/2-5,W/2,H/2+5);g.dispose();
         float[] depth=new float[W*H];Arrays.fill(depth,Float.NEGATIVE_INFINITY);
         var wrist=NightDaggerRig.wrist(pose,left);
-        submit(image,depth,arm(slim,left),new Matrix4f(wrist).mul(NightDaggerRig.arm(slim,left)));
+        submit(image,depth,arm(slim,left),new Matrix4f(wrist).mul(NightDaggerRig.daggerArm(slim,left)));
         submit(image,depth,blade,new Matrix4f(wrist).mul(NightDaggerRig.blade(left,pose.grip())));
         g=image.createGraphics();g.setFont(new Font("Microsoft YaHei",Font.PLAIN,15));
         g.setColor(new Color(12,20,28,210));g.fillRect(0,0,W,48);g.setColor(new Color(225,218,180));g.drawString(title,12,20);
@@ -120,7 +120,7 @@ public final class NightDaggerPreview {
             // Reconstruct the preceding release's 2.4x hidden tail from the current 3.6x tail.
             if(p.y<6f/16)p.y=6f/16+(p.y-6f/16)*(2.4f/3.6f);
         }
-        submit(im,depth,armMesh,new Matrix4f(wrist).mul(NightDaggerRig.arm(slim,left)));
+        submit(im,depth,armMesh,new Matrix4f(wrist).mul(NightDaggerRig.daggerArm(slim,left)));
         submit(im,depth,blade,new Matrix4f(wrist).mul(NightDaggerRig.blade(left,pose.grip())));
         int all=0,centre=0;
         for(int y=0;y<H;y++)for(int x=0;x<W;x++)if(Float.isFinite(depth[y*W+x])) {

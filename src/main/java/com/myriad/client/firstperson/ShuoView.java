@@ -58,11 +58,11 @@ public final class ShuoView {
         try {
         if(!free){
             // Keep the closed pair on the weapon side when the other hand carries a real item.
-            float closed=Math.clamp((-f.palm().x-.15f)/.415f,0,1);
-            stack.translate((mirror?-1:1)*1.18f*closed,0,0);
+            float closed=ShuoRig.ease((-.10f-f.palm().x)/.10f);
+            stack.translate((mirror?-1:1)*-2*f.palm().x*closed,0,0);
         }
-        if(free && ShuoRig.SHOW_OFF_HAND)arm(e,ShuoRig.hand(f,true,mirror),slim,!mirror);
-        if(!free || ShuoRig.showMainHand(f,held))arm(e,ShuoRig.hand(f,false,mirror),slim,mirror);
+        if(free && ShuoRig.showSupportHand(f,held))arm(e,ShuoRig.hand(f,true,mirror),slim,!mirror);
+        if(!free || ShuoRig.showMainHand(f,held))arm(e,free?ShuoRig.hand(f,false,mirror):ShuoRig.occupiedHand(f,mirror),slim,mirror);
         if(free || !held) item(e,ShuoRig.sheath(f,mirror),ModItems.SHUO_SCABBARD.get().getDefaultInstance());
         item(e,ShuoRig.blade(f,mirror),e.getItemStack());
         AttackTrailRenderer.submit(e,ShuoTrail.build(f,mirror));
@@ -71,7 +71,7 @@ public final class ShuoView {
         e.setCanceled(true);return true;
     }
     private static void arm(HandRenderContext e,Matrix4f hand,boolean slim,boolean left){var mc=Minecraft.getInstance();int i=(slim?2:0)+(left?1:0);
-        if(ARMS[i]==null)ARMS[i]=ShuoArmModel.bake(slim,left);var model=ARMS[i];
+        if(ARMS[i]==null)ARMS[i]=ShuoArmModel.bakeForShuo(slim,left);var model=ARMS[i];
         model.resetPose();model.setPos(0,0,0);model.setRotation(0,0,0);model.visible=true;
         model.getChild(left?"left_sleeve":"right_sleeve").visible=mc.player.isModelPartShown(left?PlayerModelPart.LEFT_SLEEVE:PlayerModelPart.RIGHT_SLEEVE);
         var stack=e.getPoseStack();stack.pushPose();try{stack.mulPose(new Matrix4f(hand).mul(NightDaggerRig.arm(slim,left)));

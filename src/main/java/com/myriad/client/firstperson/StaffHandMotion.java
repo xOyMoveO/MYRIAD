@@ -20,8 +20,8 @@ final class StaffHandMotion {
         return new Pose(new Vec3(x,y,z), new Vec3(ax,ay,az), new Vec3(lx,ly,lz), roll, palmRoll);
     }
 
-    static final Pose FROST_IDLE = p(.56,-.55,-1.10, .23,.80,-.56, -.67,-1.32,-.91, -.24,0);
-    static final Pose HERB_IDLE = p(.61,-.57,-1.12, .38,.72,-.58, -.67,-1.32,-.91, -.34,0);
+    static final Pose FROST_IDLE = p(.485,-.485,-1.020, .03,.94,-.34, -.67,-1.32,-.91, -.24,0);
+    static final Pose HERB_IDLE = p(.555,-.495,-1.028, .13,.95,-.26, -.67,-1.32,-.91, -.22,0);
 
     private static final Pose LOCK = p(.54,-.56,-1.11, .19,.76,-.62, -.37,-.47,-1.38, -.06,.12);
     private static final Pose COMPRESS = p(.38,-.60,-1.16, -.12,.69,-.71, -.19,-.50,-1.22, .22,.39);

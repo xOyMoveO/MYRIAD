@@ -1,0 +1,20 @@
+allprojects {
+    tasks.withType(JavaExec).configureEach {
+        if (name == 'runClient') {
+            doFirst {
+                // Export Loom's resolved, platform-specific launch. The Python owner starts
+                // the resulting client directly so it can always close precisely that JVM.
+                def mainOutput = sourceSets.main.output.files
+                def launch = [
+                    java: javaLauncher.get().executablePath.asFile.absolutePath,
+                    jvm: allJvmArgs.findAll { !it.startsWith('@') },
+                    cp: classpath.files.findAll { !mainOutput.contains(it) }*.absolutePath,
+                    main: mainClass.get(),
+                    jar: tasks.jar.archiveFile.get().asFile.absolutePath
+                ]
+                file(project.property('myriadCaptureLaunch')).text = groovy.json.JsonOutput.toJson(launch)
+                throw new org.gradle.api.tasks.StopExecutionException()
+            }
+        }
+    }
+}

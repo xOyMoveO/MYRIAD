@@ -15,7 +15,7 @@ public final class ShuoPreview {
     private static List<NightDaggerPreview.Quad> blade,sheath;
     private static BufferedImage texture;private static int centralIdle;
     private static List<NightDaggerPreview.Quad> arm(Matrix4f hand,boolean slim,boolean left){
-        var model=ShuoArmModel.bake(slim,left);
+        var model=ShuoArmModel.bakeForShuo(slim,left);
         var out=new ArrayList<NightDaggerPreview.Quad>();
         model.visit(new PoseStack(),(pose,path,index,cube)->{for(var face:cube.polygons){
             var vertices=new Vector3f[4];var uv=new float[8];for(int i=0;i<4;i++){var v=face.vertices()[i];
@@ -32,7 +32,7 @@ public final class ShuoPreview {
         g.setColor(new Color(180,200,195));g.drawLine(315,180,325,180);g.drawLine(320,175,320,185);g.dispose();
         var depth=new float[640*360];Arrays.fill(depth,Float.NEGATIVE_INFINITY);int action=f.action();
         for(boolean off:new boolean[]{true,false}){
-            if(off&&!ShuoRig.SHOW_OFF_HAND)continue;
+            if(off&&!ShuoRig.showSupportHand(f,drawn))continue;
             if(!off&&!ShuoRig.showMainHand(f,drawn))continue;
             boolean left=off?!mirror:mirror;var hand=ShuoRig.hand(f,off,mirror);
             NightDaggerPreview.submit(im,depth,arm(hand,mirror,left),new Matrix4f(hand).mul(NightDaggerRig.arm(mirror,left)));
@@ -40,7 +40,7 @@ public final class ShuoPreview {
         NightDaggerPreview.submit(im,depth,sheath,ShuoRig.sheath(f,mirror));NightDaggerPreview.submit(im,depth,blade,ShuoRig.blade(f,mirror));
         if(action==CANCEL&&!drawn){int total=0,central=0;for(int y=0;y<360;y++)for(int x=0;x<640;x++)if(Float.isFinite(depth[y*640+x])){
             total++;if(x>=256&&x<384&&y>=108&&y<252)central++;
-        }NightDaggerPreview.require(total>1000,"Sheathed hilt and visible one-third sheath remain visible without any hand");NightDaggerPreview.require(central<100,"Central aiming window should be clear: "+central);centralIdle=central;
+        }NightDaggerPreview.require(total>1000,"Sheathed hilt and visible one-third sheath remain visible with the support hand");NightDaggerPreview.require(central<100,"Central aiming window should be clear: "+central);centralIdle=central;
             System.out.println("[MYRIAD-SHUO-IDLE] mirror/slim="+mirror+" total="+total+" center="+central);}
         g=im.createGraphics();g.setColor(new Color(10,18,28,230));g.fillRect(0,0,420,47);g.setFont(new Font("Microsoft YaHei",Font.PLAIN,15));g.setColor(new Color(219,239,255));g.drawString(title,12,20);
         g.setFont(new Font("Microsoft YaHei",Font.PLAIN,11));g.setColor(new Color(165,185,196));g.drawString("实际模型 / 真实皮肤 / 生产握持矩阵 · 离线投影，非游戏截图",12,39);g.dispose();return im;
@@ -60,7 +60,7 @@ public final class ShuoPreview {
         }
         var sheet=new BufferedImage(1920,720,BufferedImage.TYPE_INT_RGB);var g=sheet.createGraphics();
         int[] actions={CANCEL,CHARGE,DRAW,DRAW,SHEATHE,CANCEL};double[] times={0,.7,.2,.6,.7,0};boolean[] drawn={false,false,false,false,true,true};
-        String[] titles={"朔 · 收鞘不露手","收鞘蓄势 / 不露手","向前伸手 / 靠近护手握柄","出刀后持续握柄","握柄回鞘 / 完成后隐手","前臂朝前 / 握点上移"};
+        String[] titles={"朔 · 副手持鞘待机","收鞘蓄势 / 副手稳住鞘口","向前伸手 / 靠近护手握柄","出刀后持续握柄","握柄回鞘 / 完成后松开刀柄","前臂朝前 / 握点上移"};
         for(int i=0;i<6;i++)g.drawImage(draw(actions[i],times[i],drawn[i],false,titles[i]),i%3*640,i/3*360,null);g.dispose();ImageIO.write(sheet,"png",out.resolve("shuo_pose_sheet.png").toFile());
         // Turning the curved tip towards the camera changes its projection.
         // The default drawn pose must retain the entire weapon inside the view.

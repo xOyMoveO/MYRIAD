@@ -22,7 +22,7 @@ final class NightDaggerViewChecks {
                 var pose=motion.sample(next+motion.duration()*i/200);
                 for (boolean left:new boolean[]{false,true}) for (boolean slim:new boolean[]{false,true}) {
                     var wrist=NightDaggerRig.wrist(pose,left);
-                    var arm=new org.joml.Matrix4f(wrist).mul(NightDaggerRig.arm(slim,left));
+                    var arm=new org.joml.Matrix4f(wrist).mul(NightDaggerRig.daggerArm(slim,left));
                     var blade=new org.joml.Matrix4f(wrist).mul(NightDaggerRig.blade(left,pose.grip()));
                     // Anatomical palm centre is eight pixels from shoulder, not the model pivot.
                     var palm=arm.transformPosition(new Vector3f((slim?.5f:1f)/16*(left?1:-1),.5f,0));
@@ -62,6 +62,12 @@ final class NightDaggerViewChecks {
         h.assertTrue(motion.sample(40+motion.duration()*.36).grip()==180 && motion.sample(40+motion.duration()*.62).grip()==180
                         && motion.sample(40+motion.duration()*.62).x()<-.1,
                 "Third attack completes the forward-grip turn BEFORE the slash");
+        var interrupted=motion.sample(42);
+        motion.interrupt(42);
+        motion.interrupt(43);
+        h.assertTrue(motion.progress(42)<0&&motion.sample(42).equals(interrupted)&&
+                motion.sample(43).grip()<interrupted.grip()&&motion.sample(45).equals(NightDaggerMotion.IDLE),
+                "An interrupted basic cut stops its trail and relaxes the current grip despite repeated stun updates");
         var reverse=NightDaggerRig.blade(false,0).transformDirection(new Vector3f(0,1,0)).normalize();
         var forward=NightDaggerRig.blade(false,180).transformDirection(new Vector3f(0,1,0)).normalize();
         h.assertTrue(reverse.dot(forward)<-.999,"Forward grip reverses the blade axis, not just its wide face");

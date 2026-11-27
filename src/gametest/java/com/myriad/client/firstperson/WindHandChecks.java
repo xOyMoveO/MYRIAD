@@ -47,6 +47,28 @@ public final class WindHandChecks {
         }
         motion.attack(100, 12);
         test.assertTrue(motion.combo() == 0, "A long pause resets the chain");
+        double stun = 100 + WindHandMotion.HIT;
+        var interruptedBlade = WindHandRig.weapon(motion, stun, 0);
+        motion.interrupt(stun);
+        test.assertTrue(interruptedBlade.equals(WindHandRig.weapon(motion, stun, 0), 1e-5f)
+                && motion.combo() < 0 && WindHandVfx.geometry(motion, stun, 0).isEmpty(),
+                "Stun stops the active cut and trail while preserving its grip, shaft and cutting edge");
+        var recoveringBlade = WindHandRig.weapon(motion, stun + 1, 0);
+        motion.attack(stun + 1, 12);
+        test.assertTrue(recoveringBlade.equals(WindHandRig.weapon(motion, stun + 1, 0), 1e-5f) && motion.combo() == 0,
+                "A new click starts at the visible recovery pose without waiting for the cosmetic settle");
+        for (int hold : new int[]{WINDUP, DASH_START}) {
+            motion.reset();
+            motion.cue(6, hold, 0, REFRESH_LIFE, .85, Vec3.ZERO);
+            var finalHold = motion.poseAt(REFRESH_LIFE - .001);
+            test.assertTrue(finalHold.equals(motion.poseAt(REFRESH_LIFE))
+                    && WindHandVfx.geometry(motion, REFRESH_LIFE, 0).isEmpty()
+                    && motion.poseAt(REFRESH_LIFE + 4).equals(WindHandMotion.IDLE),
+                    "A missing hold refresh withdraws the visible pose and ends local VFX without a dash finish");
+            var returning = motion.poseAt(REFRESH_LIFE + 1);
+            motion.cue(6, hold == WINDUP ? WINDUP : DASH_HOLD, REFRESH_LIFE + 1, REFRESH_LIFE, .9, Vec3.ZERO);
+            test.assertTrue(returning.equals(motion.poseAt(REFRESH_LIFE + 1)), "A delayed refresh resumes from the visible pose");
+        }
 
         motion.reset();
         motion.prepare(2, 0);

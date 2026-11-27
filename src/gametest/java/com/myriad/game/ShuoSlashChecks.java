@@ -6,6 +6,7 @@ import com.myriad.network.*;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.phys.Vec3;
 import java.util.*;
+import static com.myriad.network.ShuoViewPayload.*;
 final class ShuoSlashChecks {
     static void verify(GameTestHelper h){
         for(int kind=0;kind<=12;kind++){
@@ -66,6 +67,50 @@ final class ShuoSlashChecks {
             }
             h.assertTrue(previous.palm().distance(ShuoRig.frame(ShuoViewPayload.CANCEL,0,true).palm())<1E-6,"Each cut recovers to the established drawn grip");
         }
-        System.out.println("[MYRIAD-SHUO-BASIC-VFX] PASS: "+samples+" new recipe/LOD stages, old skill effects retired, 16 distinct temporal stages and bounded basic-only camera mesh");
+        crescentContinuity(h);
+        System.out.println("[MYRIAD-SHUO-BASIC-VFX] PASS: "+samples+" new recipe/LOD stages, 16 temporal stages, crescent draw, continued grips, cancellation and recovery");
+    }
+    private static void crescentContinuity(GameTestHelper h){
+        var motion=new ShuoMotion();
+        var idle=ShuoRig.frame(CANCEL,1,true);
+        motion.accept(new ShuoViewPayload(MOON_FIRST,7,100,1),100,0,false);
+        for(int i=0;i<=32;i++){
+            var f=motion.frame(100+7*i/100.0,true);
+            var mouthToGrip=new org.joml.Vector3f(f.palm()).sub(f.mouth());
+            h.assertTrue(f.axis().dot(f.sheathAxis())>.99999f&&mouthToGrip.cross(f.sheathAxis()).length()<1E-5,
+                    "Crescent first extracts the blade along the actual sheath axis");
+        }
+        var clear=motion.frame(100+7*.32,true);
+        var tip=ShuoRig.blade(clear,false).transformPosition(new org.joml.Vector3f(0,ShuoRig.MODEL_GRIP_TO_TIP,0));
+        h.assertTrue(tip.sub(clear.mouth()).dot(clear.sheathAxis())<0,"Tip clears the throat before the crescent turns");
+        var earlySync=new ShuoMotion();
+        earlySync.accept(new ShuoViewPayload(MOON_FIRST,7,100,1),100,0,true);
+        sameBlade(h,clear,earlySync.frame(100+7*.32,true),"Receiving the drawn counter first cannot skip the sheathed crescent extraction");
+        var first=motion.frame(106.999,true);
+        sameBlade(h,first,motion.frame(139.99,true),"First cut keeps its grip and edge through the recast window");
+        sameBlade(h,first,motion.frame(140,true),"Timeout starts recovery at the held pose");
+        sameBlade(h,idle,motion.frame(143,true),"Unused recast window returns to idle");
+        motion.accept(new ShuoViewPayload(CHARGE,4,115,2),115,0,true);
+        sameBlade(h,first,motion.frame(123,true),"A delayed release edge retains the previous cut after charge expires");
+        motion.accept(new ShuoViewPayload(MOON_SECOND,7,123,3),123,0,true);
+        sameBlade(h,first,motion.frame(123,true),"The accepted continuation starts at the held first cut");
+        var second=motion.frame(130,true);
+        sameBlade(h,second,motion.frame(136,true),"Second cut also waits at the end of its swing");
+        motion.accept(new ShuoViewPayload(CANCEL,0,136,4),136,0,true);
+        sameBlade(h,second,motion.frame(136,true),"Explicit cancellation preserves the last rendered grip on that frame");
+        h.assertTrue(!motion.active(136)&&ShuoSkillTrail.build(motion,136,false).isEmpty()&&ShuoTrail.build(motion.frame(136,true),false).isEmpty(),"Cancellation immediately stops both attack trails");
+        sameBlade(h,idle,motion.frame(139,true),"Cancelled continuation settles at the drawn idle grip");
+        for(int action:new int[]{MOON_THIRD,RETURNING_MOON}){
+            motion.reset();motion.accept(new ShuoViewPayload(action,7,200,1),200,0,true);
+            var end=motion.frame(206.999,true);
+            sameBlade(h,end,motion.frame(207,true),"A finishing cut cannot snap to idle at its action timeout");
+            sameBlade(h,idle,motion.frame(210,true),"The finishing cut naturally relaxes when its next cue is late");
+            motion.accept(new ShuoViewPayload(SHEATHE,8,206,2),206,0,true);
+            sameBlade(h,end,motion.frame(206,true),"An on-time automatic sheathe starts at the actual finishing pose");
+        }
+    }
+    private static void sameBlade(GameTestHelper h,ShuoRig.Frame expected,ShuoRig.Frame actual,String message){
+        for(boolean mirror:new boolean[]{false,true})
+            h.assertTrue(ShuoRig.blade(expected,mirror).equals(ShuoRig.blade(actual,mirror),1E-4f),message);
     }
 }

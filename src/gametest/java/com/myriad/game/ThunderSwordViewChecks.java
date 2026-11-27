@@ -18,9 +18,13 @@ final class ThunderSwordViewChecks {
             for(int i=0;i<=120;i++)for(float equip:new float[]{0,.5f,1})for(boolean left:new boolean[]{false,true})for(boolean slim:new boolean[]{false,true}){
                 var frame=motion.frame(start+motion.duration()*i/120);
                 var wrist=ThunderSwordRig.wrist(frame.pose(),equip,left);
-                var arm=new Matrix4f(wrist).mul(ThunderSwordRig.arm(slim,left));
+                var arm=ThunderSwordRig.hand(frame.pose(),equip,left).mul(ThunderSwordRig.arm(slim,left));
                 var blade=new Matrix4f(wrist).mul(ThunderSwordRig.blade(frame,left));
                 var palm=arm.transformPosition(new Vector3f((slim?.5f:1)/16*(left?1:-1),.5f,0));
+                var end=ThunderSwordRig.forearmEnd(left);
+                var sleeveAxis=arm.transformDirection(new Vector3f(0,1,0)).normalize();
+                h.assertTrue(sleeveAxis.dot(new Vector3f(palm).sub(end).normalize())>.9999f,"Fist and sleeve stay aligned along the straight forearm axis");
+                h.assertTrue(end.isFinite()&&end.y/-end.z<-Math.tan(Math.toRadians(55)),"Forearm continues off-screen even at wide FOV");
                 h.assertTrue(palm.isFinite()&&palm.distance(blade.transformPosition(new Vector3f()))<1E-6,"Palm and handle stay attached in every cut/equip/skin/hand pose");
                 h.assertTrue(wrist.determinant()>0&&blade.determinant()>0,"No reversed face winding or negative scale");
                 if(frame.cuttingWeight()==1){
@@ -40,10 +44,10 @@ final class ThunderSwordViewChecks {
         }
         var idle=ThunderSwordRig.wrist(ThunderSwordMotion.IDLE,0,false);
         var blade=new Matrix4f(idle).mul(ThunderSwordRig.blade(false));
-        h.assertTrue(blade.transformDirection(new Vector3f(0,1,0)).normalize().y>.9,"Normal blade points up");
+        h.assertTrue(blade.transformDirection(new Vector3f(0,1,0)).normalize().y>.78,"Resting blade rises diagonally above the guard");
         for(boolean left:new boolean[]{false,true}){
             var b=ThunderSwordRig.wrist(ThunderSwordMotion.IDLE,0,left).mul(ThunderSwordRig.blade(left));
-            h.assertTrue(b.transformDirection(new Vector3f(1,0,0)).normalize().z<-.97,"Cutting edge faces forward rather than broad face");
+            h.assertTrue(Math.abs(b.transformDirection(new Vector3f(0,0,1)).normalize().dot(b.getTranslation(new Vector3f()).normalize()))>.66,"Sword face is readable from the resting camera on each side");
         }
         for(float invalid:new float[]{Float.NaN,Float.POSITIVE_INFINITY,Float.NEGATIVE_INFINITY})
             h.assertTrue(ThunderSwordRig.wrist(ThunderSwordMotion.IDLE,invalid,false).isFinite(),"Invalid equip interpolation is safe");
@@ -58,7 +62,7 @@ final class ThunderSwordViewChecks {
             motion.attack(0,recovery);h.assertTrue(motion.duration()>=4&&motion.duration()<=7,"Attack speed bounded cosmetic duration");
             h.assertTrue(motion.sample(motion.duration()).equals(ThunderSwordMotion.IDLE),"No lingering pose after completion");motion.reset();
         }
-        System.out.println("[MYRIAD-THUNDER-FIRSTPERSON] PASS: 4356 palm/grip poses, forward idle edge, actual cutting edge aligned with all three swing velocities (no broad-face slap), projected paths, left/slim, lifecycle/clock/duration");
+        System.out.println("[MYRIAD-THUNDER-FIRSTPERSON] PASS: 4356 palm/grip poses, visible idle blade face, actual cutting edge aligned with all three swing velocities (no broad-face slap), projected paths, left/slim, lifecycle/clock/duration");
     }
     private static Vector3f tip(ThunderSwordMotion.Pose p){
         return ThunderSwordRig.wrist(p,0,false).mul(ThunderSwordRig.blade(false)).transformPosition(new Vector3f(0,1.40625f,0));

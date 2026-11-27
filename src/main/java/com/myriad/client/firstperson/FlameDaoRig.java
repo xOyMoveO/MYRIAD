@@ -1,6 +1,7 @@
 package com.myriad.client.firstperson;
 
 import org.joml.Matrix4f;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 /** A single wrist anchors the real skin palm and the long dao; +X is its ONLY sharp edge. */
@@ -12,23 +13,30 @@ public final class FlameDaoRig {
     public static boolean allowed(boolean mod,String role,boolean ownLivingFirstPerson,boolean mainDao){
         return mod&&"fenjue".equals(role)&&ownLivingFirstPerson&&mainDao;
     }
+    static Vector3f palm(FlameDaoMotion.Pose p,float equip,boolean left){
+        float lowered=Float.isFinite(equip)?Math.clamp(equip,0,1):0;
+        return new Vector3f((left?-1:1)*(.23f+.38f*(float)p.x()),-.58f+.35f*(float)p.y()-.48f*lowered,(float)p.z());
+    }
     public static Matrix4f wrist(FlameDaoMotion.Pose p,float equip,boolean left){
-        float side=left?-1:1,e=Float.isFinite(equip)?Math.clamp(equip,0,1):0;
-        // Keep the fist in the lower side of the view; let the blade arc do the visible work.
-        return new Matrix4f().translation(side*(.23f+.38f*(float)p.x()),-.58f+.35f*(float)p.y()-.48f*e,(float)p.z())
+        float side=left?-1:1;
+        return new Matrix4f().translation(palm(p,equip,left))
                 .rotateX((float)p.pitch()*DEG).rotateY(side*(float)p.yaw()*DEG)
                 .rotateZ(side*(float)p.roll()*DEG).scale(VIEW_SCALE);
     }
-    public static Matrix4f arm(boolean slim,boolean left){return NightDaggerRig.arm(slim,left);}
+    public static Matrix4f arm(boolean slim,boolean left){
+        return new Matrix4f().scaling(1.22f,1.35f,1.22f).mul(NightDaggerRig.arm(slim,left));
+    }
     public static Matrix4f hand(FlameDaoMotion.Pose p,float equip,boolean left){
-        // The fist follows with a restrained wrist gesture; do not rotate the whole forearm
-        // through the weapon's full cutting angle and then bend it back to the camera.
-        return wrist(new FlameDaoMotion.Pose(p.x(),p.y(),p.z(),-10+(p.pitch()+10)*.20,
-                p.yaw()*.35,54+(p.roll()-54)*.18),equip,left);
+        return handAt(palm(p,equip,left),left);
+    }
+    static Matrix4f handAt(Vector3f palm,boolean left){
+        // One rigid skin transform from the lower sleeve to the palm, including two-hand grips.
+        var axis=new Vector3f(palm).sub(forearmEnd(left)).normalize();
+        return new Matrix4f().translation(palm)
+                .rotate(new Quaternionf().rotationTo(0,1,0,axis.x,axis.y,axis.z)).scale(VIEW_SCALE);
     }
     public static Vector3f forearmEnd(boolean left){
-        // A view-model continuation, not an anatomical elbow exposed in the camera.
-        return new Vector3f(left?-.85f:.85f,-1.55f,-.86f);
+        return new Vector3f(left?-.84f:.84f,-1.48f,-.70f);
     }
     private static Matrix4f shaft(boolean left){return new Matrix4f().rotateZ((left?65:-65)*DEG).scale(BLADE_SCALE);}
     public static Vector3f travel(FlameDaoMotion.Frame f,boolean left){
@@ -36,18 +44,21 @@ public final class FlameDaoRig {
         var before=wrist(f.before(),0,left).mul(shaft(left)).transformPosition(new Vector3f(tip));
         return wrist(f.after(),0,left).mul(shaft(left)).transformPosition(tip).sub(before);
     }
-    private static double angle(FlameDaoMotion.Frame f,boolean left,Vector3f direction){
-        var base=wrist(f.pose(),0,left).mul(shaft(left));
+    private static double angle(FlameDaoMotion.Pose pose,boolean left,Vector3f direction){
+        var base=wrist(pose,0,left).mul(shaft(left));
         var x=base.transformDirection(new Vector3f(1,0,0)).normalize();
         var z=base.transformDirection(new Vector3f(0,0,1)).normalize();
         return Math.atan2(-direction.dot(z),direction.dot(x));
     }
     public static double target(FlameDaoMotion.Frame f,boolean left){
         var velocity=travel(f,left);
-        return angle(f,left,velocity.lengthSquared()>1E-12?velocity:new Vector3f(0,0,-1));
+        return angle(f.pose(),left,velocity.lengthSquared()>1E-12?velocity:new Vector3f(0,0,-1));
+    }
+    static double restTurn(FlameDaoMotion.Pose pose,boolean left){
+        return angle(pose,left,new Vector3f(left?-.98f:.98f,0,.18f));
     }
     public static double turn(FlameDaoMotion.Frame f,boolean left){
-        double idle=angle(f,left,new Vector3f(left?-.67f:.67f,0,-.74f));
+        double idle=restTurn(f.pose(),left);
         if(f.cut()<0)return idle;
         double anchor=left?f.anchorLeft():f.anchorRight();
         double target=anchor+Math.IEEEremainder(target(f,left)-anchor,2*Math.PI);

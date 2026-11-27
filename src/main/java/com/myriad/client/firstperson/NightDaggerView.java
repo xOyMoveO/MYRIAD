@@ -47,13 +47,14 @@ public final class NightDaggerView {
         if(!cue.valid()||!enabled(mc)||mc.gui.screen()!=null)return;
         checkOwner(mc);
         double elapsed=Math.max(0,mc.level.getGameTime()-cue.started());
-        if(SKILL.accept(cue,mc.player.tickCount,elapsed,MOTION.sample(mc.player.tickCount)))MOTION.reset();
+        double now=mc.player.tickCount;
+        if(SKILL.accept(cue,now,elapsed,mainPose(SKILL.sample(now),now)))MOTION.reset();
     }
     public static void tick() {
         Minecraft mc=Minecraft.getInstance();
         if (!enabled(mc) || mc.gui.screen()!=null) { reset(); return; }
         checkOwner(mc);
-        if(ClientDataHolder.placementType()!=0||ClientDataHolder.isChanneling()||ClientDataHolder.buffTicks("g1_stun")>0)MOTION.reset();
+        if(ClientDataHolder.placementType()!=0||ClientDataHolder.isChanneling()||ClientDataHolder.buffTicks("g1_stun")>0)MOTION.interrupt(mc.player.tickCount);
     }
     private static void checkOwner(Minecraft mc) {
         if (owner!=mc.player || world!=mc.level) {
@@ -71,7 +72,8 @@ public final class NightDaggerView {
         if (!event.isMeleeAssist() && mc.hitResult!=null && mc.hitResult.getType()==HitResult.Type.BLOCK) return;
         checkOwner(mc);
         if(SKILL.active(mc.player.tickCount))return;
-        MOTION.attack(mc.player.tickCount,mc.player.getCurrentItemAttackStrengthDelay());
+        double now=mc.player.tickCount;
+        MOTION.attack(now,mc.player.getCurrentItemAttackStrengthDelay(),mainPose(SKILL.sample(now),now));
     }
     public static boolean render(HandRenderContext event) {
         Minecraft mc=Minecraft.getInstance();
@@ -91,11 +93,11 @@ public final class NightDaggerView {
         // Respect the actual render stack during item-switch transitions.
         if (!event.getItemStack().is(ModItems.YINGCI.get())) return false;
         if (mc.player.isUsingItem() || (mc.gameMode!=null && mc.gameMode.isDestroying())) {MOTION.reset();return false;}
-        if(ClientDataHolder.placementType()!=0||ClientDataHolder.isChanneling()||ClientDataHolder.buffTicks("g1_stun")>0)MOTION.reset();
         checkOwner(mc);
         double now=mc.player.tickCount+event.getPartialTick();
+        if(ClientDataHolder.placementType()!=0||ClientDataHolder.isChanneling()||ClientDataHolder.buffTicks("g1_stun")>0)MOTION.interrupt(now);
         var skill=SKILL.sample(now);
-        var pose=skill.action()>=0?skill.main():MOTION.sample(now);
+        var pose=mainPose(skill,now);
         boolean left=mc.player.getMainArm()==HumanoidArm.LEFT;
         boolean slim=mc.player.getSkin().model()==PlayerModelType.SLIM;
         PoseStack stack=event.getPoseStack();
@@ -133,6 +135,10 @@ public final class NightDaggerView {
         event.setCanceled(true);
         return true;
     }
+
+    private static NightDaggerMotion.Pose mainPose(NightSkillMotion.Frame skill,double now){
+        return skill.action()<0&&MOTION.hasPose(now)?MOTION.sample(now):skill.main();
+    }
     private static void submitArm(HandRenderContext event,PoseStack stack,Minecraft mc,boolean slim,boolean left) {
         // Private baked parts: third-person rendering and the vanilla AvatarRenderer are never mutated.
         if (slim && slimRoot==null) slimRoot=NightDaggerArmModel.bake(true);
@@ -143,7 +149,7 @@ public final class NightDaggerView {
                 left ? PlayerModelPart.LEFT_SLEEVE : PlayerModelPart.RIGHT_SLEEVE);
         stack.pushPose();
         try {
-            stack.mulPose(NightDaggerRig.arm(slim,left));
+            stack.mulPose(NightDaggerRig.daggerArm(slim,left));
             event.getSubmitNodeCollector().submitModelPart(arm,stack,
                     RenderTypes.entityTranslucent(mc.player.getSkin().body().texturePath()),
                     event.getPackedLight(),OverlayTexture.NO_OVERLAY,null);

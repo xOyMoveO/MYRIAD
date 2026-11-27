@@ -18,7 +18,6 @@ public final class FastTrailPreview {
     private static final int W=640,H=360;
     private static final Map<Integer,BufferedImage> textures=new HashMap<>();
     private static List<NightDaggerPreview.Quad> blade,arm;
-    private static FlameDaoArmModel.Skin flameArm;
     private static final NightDaggerMotion night=new NightDaggerMotion();
     private static final ThunderSwordMotion thunder=new ThunderSwordMotion();
     private static final FlameDaoMotion flame=new FlameDaoMotion();
@@ -38,13 +37,13 @@ public final class FastTrailPreview {
         var depth=new float[W*H];Arrays.fill(depth,Float.NEGATIVE_INFINITY);
         Matrix4f hand,weapon;List<Quad> trail;
         if(role==0){
-            var p=night.sample(tick);hand=NightDaggerRig.wrist(p,false).mul(NightDaggerRig.arm(false,false));
+            var p=night.sample(tick);hand=NightDaggerRig.wrist(p,false).mul(NightDaggerRig.daggerArm(false,false));
             weapon=NightDaggerRig.wrist(p,false).mul(NightDaggerRig.blade(false,p.grip()));trail=NightBasicTrail.mesh(night,tick,false);
         }else if(role==1){
             var f=thunder.frame(tick);hand=ThunderSwordRig.wrist(f.pose(),0,false).mul(ThunderSwordRig.arm(false,false));
             weapon=ThunderSwordRig.wrist(f.pose(),0,false).mul(ThunderSwordRig.blade(f,false));trail=ThunderBasicTrail.mesh(thunder,tick,false);
         }else{
-            var f=flame.frame(tick);flameArm.pose(f.pose(),0);arm=model(flameArm.model());
+            var f=flame.frame(tick);
             hand=FlameDaoRig.hand(f.pose(),0,false).mul(FlameDaoRig.arm(false,false));
             weapon=FlameDaoRig.wrist(f.pose(),0,false).mul(FlameDaoRig.blade(f,false));trail=FlameBasicTrail.mesh(flame,tick,false);
         }
@@ -100,7 +99,7 @@ public final class FastTrailPreview {
         var sheet=new BufferedImage(W*3,H*3,BufferedImage.TYPE_INT_RGB);var sg=sheet.createGraphics();
         for(int role=0;role<3;role++){
             NightDaggerPreview.dagger=ImageIO.read(assets.resolve("textures/item/"+atlases[role]+".png").toFile());
-            blade=NightDaggerPreview.loadBlade(assets,weapons[role]);arm=NightDaggerPreview.arm(false,false);flameArm=FlameDaoArmModel.bake(false,false);
+            blade=NightDaggerPreview.loadBlade(assets,weapons[role]);arm=NightDaggerPreview.arm(false,false);
             night.reset();thunder.reset();flame.reset();var frames=new ArrayList<BufferedImage>();
             for(int cut=0;cut<3;cut++){
                 double start=cut*20;night.attack(start,20);thunder.attack(start,20);flame.attack(start,20);

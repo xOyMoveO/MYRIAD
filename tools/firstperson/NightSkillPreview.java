@@ -75,8 +75,8 @@ public final class NightSkillPreview {
         g.setColor(new Color(190,201,194,100));g.drawLine(W/2-5,H/2,W/2+5,H/2);g.drawLine(W/2,H/2-5,W/2,H/2+5);g.dispose();
         float[] depth=new float[W*H];Arrays.fill(depth,Float.NEGATIVE_INFINITY);
         var main=NightDaggerRig.wrist(frame.main(),left);
-        NightDaggerPreview.submit(image,depth,NightDaggerPreview.arm(slim,left),new Matrix4f(main).mul(NightDaggerRig.arm(slim,left)));
-        if(frame.showOff())NightDaggerPreview.submit(image,depth,NightDaggerPreview.arm(slim,!left),NightDaggerRig.wrist(frame.off(),!left).mul(NightDaggerRig.arm(slim,!left)));
+        NightDaggerPreview.submit(image,depth,NightDaggerPreview.arm(slim,left),new Matrix4f(main).mul(NightDaggerRig.daggerArm(slim,left)));
+        if(frame.showOff())NightDaggerPreview.submit(image,depth,NightDaggerPreview.arm(slim,!left),NightDaggerRig.wrist(frame.off(),!left).mul(NightDaggerRig.daggerArm(slim,!left)));
         var knife=new Matrix4f(main).mul(NightDaggerRig.blade(left,frame.main().grip()));
         if(frame.showBlade())NightDaggerPreview.submit(image,depth,NightDaggerPreview.blade,knife);
         vfx(image,depth,NightSkillHandVfx.needle(frame),new Matrix4f(main).scale(.55f));

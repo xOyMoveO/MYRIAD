@@ -36,6 +36,7 @@ final class FenjueMajorViewChecks {
         h.assertTrue(!m.accept(new FlameSkillViewPayload(BURST_READY,13,100,1),114,1,idle,false),"Late ready cannot overwrite release");
         m.accept(new FlameSkillViewPayload(CANCEL,0,114,1),114,0,idle,false);
         h.assertTrue(!m.active(114)&&!m.accept(new FlameSkillViewPayload(BURST_FIRE,10,113,1),115,2,idle,false),"Cancelled gesture cannot revive");
+        checkCancelledGestures(h);
         m.reset();m.accept(new FlameSkillViewPayload(SEA_FLIGHT,32,100,2),100,0,idle,false);
         var rise=m.frame(108);m.vertical(109,.1);h.assertTrue(m.frame(110).main().y()<0,"Ascent never prematurely enters the descending slam guard");
         m.vertical(110,-.1);h.assertTrue(m.frame(113).main().y()>.4,"Real negative Y motion raises both-handed slam guard");
@@ -65,5 +66,41 @@ final class FenjueMajorViewChecks {
             var charge=new SkillChargePayload("g1_fenjue_mb",13,100,.25f);SkillChargePayload.CODEC.encode(buf,charge);h.assertTrue(charge.equals(SkillChargePayload.CODEC.decode(buf)),"Mobile charge speed is sent to input/HUD client");
         }finally{buf.release();}
         System.out.println("[MYRIAD-FENJUE-MAJOR-VIEW] PASS: native HD alpha frames/gutters, four gestures, actual descent/landing, mirrored grip, token/cancel, grounded slabs/cliffs/voids, ambient light, mobile wire");
+    }
+    private static void checkCancelledGestures(GameTestHelper h){
+        for(int action:new int[]{FlameSkillMotion.AIM,BURST_READY,SEA_FLIGHT}){
+            var motion=new FlameSkillMotion();
+            if(action==FlameSkillMotion.AIM)motion.aiming(true,100);
+            else motion.accept(new FlameSkillViewPayload(action,20,100,1),100,0,FlameDaoMotion.IDLE,false);
+            var before=motion.frame(106);
+            if(action==FlameSkillMotion.AIM)motion.aiming(false,106);
+            else if(action==BURST_READY)motion.interrupt(106);
+            else motion.accept(new FlameSkillViewPayload(CANCEL,0,106,1),106,0,FlameDaoMotion.IDLE,false);
+            var first=motion.frame(106);
+            h.assertTrue(!motion.active(106)&&motion.recovering(106)&&first.action()==CANCEL
+                    &&first.main().equals(before.main())&&first.showBlade()==before.showBlade(),
+                    "Cancelled aim, stunned charge and interrupted flight start at their visible hand and blade state");
+            for(boolean left:new boolean[]{false,true}){
+                h.assertTrue(FlameSkillRig.blade(first,left).equals(FlameSkillRig.blade(before,left),1E-5f)
+                        &&FlameSkillRig.off(first,left).equals(FlameSkillRig.off(before,left),1E-5f),
+                        "Interrupted knife face and support grip stay continuous on both sides");
+                var middle=motion.frame(107.5);
+                h.assertTrue(FlameSkillHandVfx.build(middle,107.5,left).isEmpty()
+                        &&!middle.main().equals(first.main())&&!middle.main().equals(FlameDaoMotion.IDLE),
+                        "Only a hand recovery is shown after cancelling");
+                var basic=new FlameDaoMotion();
+                h.assertTrue(basic.attack(107.5,20,middle)&&basic.frame(107.5).pose().equals(middle.main())
+                        &&FlameDaoRig.blade(basic.frame(107.5),left).equals(FlameSkillRig.blade(middle,left),1E-5f),
+                        "A real basic attack immediately takes over the recovering wrist and blade orientation");
+            }
+            h.assertTrue(!motion.presenting(109)&&motion.frame(109).main().equals(FlameDaoMotion.IDLE),
+                    "The recovery finishes at the regular idle pose");
+        }
+        var timeout=new FlameSkillMotion();
+        timeout.accept(new FlameSkillViewPayload(BURST_READY,13,100,1),100,0,FlameDaoMotion.IDLE,false);
+        var held=timeout.frame(112.99);
+        timeout.accept(new FlameSkillViewPayload(CANCEL,0,113,1),113,0,FlameDaoMotion.IDLE,false);
+        h.assertTrue(timeout.recovering(113)&&timeout.frame(113).main().equals(held.main())
+                &&!timeout.frame(113).showBlade(),"Cancellation at the last windup tick preserves the closed-arm pose");
     }
 }
