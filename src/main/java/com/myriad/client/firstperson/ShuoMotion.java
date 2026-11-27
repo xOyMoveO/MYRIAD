@@ -14,7 +14,7 @@ public final class ShuoMotion {
         if(!p.valid()||p.token()<=token)return false;token=p.token();
         combo.confirm(p.action(),now-elapsed);
         // An acknowledgement can arrive during the long low return, after the server cue has expired.
-        if (basicAction(p.action()) && basicAction(action) && active(now)
+        if (basicAction(p.action()) && basicAction(action) && (active(now) || pendingSweep(now))
                 && Math.abs(now-start-elapsed)<3) { action=p.action(); return true; }
         if(p.action()==CANCEL || elapsed>=p.ticks()){
             entry=frame(now,drawn);
@@ -31,11 +31,15 @@ public final class ShuoMotion {
         action=p.action();start=now-elapsed;duration=p.ticks();fromDrawn=startsDrawn;return true;
     }
     public void basic(double now,boolean drawn){ basic(now,drawn,5); }
-    public void basic(double now,boolean drawn,double cadence){
-        if(active(now)&&now-start<3)return;
+    public void basic(double now,boolean drawn,double cadence){ basic(now,now,drawn,cadence); }
+    void basic(double now,double firstRenderTick,boolean drawn,double cadence){
+        if(pendingSweep(now) || active(now)&&now-start<3)return;
         entry=frame(now,drawn);
-        action=combo.select(now,drawn);start=now;duration=MeleeStrokeTiming.recovery(cadence);fromDrawn=drawn;
+        action=combo.select(now,drawn);
+        start=action==BASIC_SWEEP ? firstRenderTick : now;
+        duration=MeleeStrokeTiming.recovery(cadence);fromDrawn=drawn;
     }
+    private boolean pendingSweep(double now) { return action==BASIC_SWEEP && now>=start-1 && now<start; }
     public boolean active(double now){return action!=CANCEL&&now>=start&&now<start+duration;}
     public int action(double now){return active(now)?action:CANCEL;}
     public double started(){return start;}

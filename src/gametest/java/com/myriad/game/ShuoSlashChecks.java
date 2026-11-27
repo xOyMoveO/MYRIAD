@@ -69,6 +69,19 @@ final class ShuoSlashChecks {
             }
             h.assertTrue(previous.palm().distance(ShuoRig.frame(ShuoViewPayload.CANCEL,0,true).palm())<1E-6,"Each cut recovers to the established drawn grip");
         }
+        float first=0, last=0;
+        for(int n=0;n<=40;n++) {
+            double phase=.34+.12*n/40;
+            var blade=ShuoRig.blade(ShuoRig.frame(BASIC_SWEEP,phase,true),false);
+            var edge=blade.transformPosition(new org.joml.Vector3f(.06f,.87f,0));
+            float x=edge.x/-edge.z, y=edge.y/-edge.z;
+            if (n==0) first=x;
+            if (n==40) last=x;
+            if (n==20) h.assertTrue(Math.abs(x)<.065 && y>-.10 && y<.025 && edge.z<-2.55,
+                    "The outer cutting edge crosses the forward target at the third basic HIT");
+            h.assertTrue(y>-.13 && y<.05,"The sweep stays across the target at chest height");
+        }
+        h.assertTrue(first<0 && last>0,"The third cut travels across the target silhouette");
         crescentContinuity(h);
         System.out.println("[MYRIAD-SHUO-BASIC-VFX] PASS: "+samples+" new recipe/LOD stages, 16 temporal stages, crescent draw, continued grips, cancellation and recovery");
     }

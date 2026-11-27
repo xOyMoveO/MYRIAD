@@ -19,10 +19,11 @@ public final class NightDaggerMotion {
     private static final Key[][] ATTACKS = {
         {new Key(0,IDLE), k(.16,.56,-.27,-.88,0,-22,72,0),
             k(.40,.27,-.13,-1.22,62,5,82,0), k(.55,.23,-.12,-1.28,65,6,82,0), k(.78,.39,-.30,-1.09,35,0,62,0), new Key(1,IDLE)},
-        // Reverse-grip overhead hammer: lift at the right edge, then drive down rather than across.
-        {new Key(0,IDLE), k(.18,.57,.10,-1.04,0,-5,78,0),
-            k(.30,.40,.32,-1.00,-8,-2,84,0), k(.56,.32,-.31,-1.10,-10,5,80,0),
-            k(.70,.30,-.43,-1.14,-13,6,80,0), k(.84,.42,-.47,-1.03,-10,0,58,0), new Key(1,IDLE)},
+        // The reverse grip drops from above the sight line while the tip drives into the target.
+        {new Key(0,IDLE), k(.18,.53,.12,-.97,12,-8,64,0),
+            k(.30,.46,.43,-1.04,28,-4,58,0), k(.47,.25,.055,-1.48,64,-2,64,0),
+            k(.56,.23,.035,-1.57,70,-3,67,0), k(.70,.21,-.015,-1.62,75,-3,70,0),
+            k(.84,.39,-.20,-1.24,54,-11,53,0), new Key(1,IDLE)},
         // Rotate the KNIFE around the palm into a forward grip, slash, then restore reverse idle.
         {new Key(0,IDLE), k(.18,.57,-.23,-1.05,0,-12,70,20),
             k(.34,.48,-.20,-1.02,8,-12,72,-20,180),
@@ -32,18 +33,20 @@ public final class NightDaggerMotion {
     private int index = -1;
     private double start = Double.NEGATIVE_INFINITY;
     private double duration;
+    private double lastPress=Double.NEGATIVE_INFINITY;
     private Pose entry = IDLE;
 
     /** Call only for an unconsumed, fully recovered vanilla left-click. */
     public void attack(double tick, double recoveryTicks) {
-        attack(tick,recoveryTicks,sample(tick));
+        attack(tick,tick,recoveryTicks,sample(tick));
     }
-    void attack(double tick,double recoveryTicks,Pose previous) {
-        if(!Double.isFinite(tick)||tick==start)return;
+    void attack(double tick,double firstRenderTick,double recoveryTicks,Pose previous) {
+        if(!Double.isFinite(tick)||tick==lastPress)return;
+        lastPress=tick;
         boolean restart = index < 0 || tick < start || tick - start > duration + 28;
         index = restart ? 0 : (index + 1) % 3;
         entry = previous; // Fast follow-ups never snap the hand back to its idle position.
-        start = tick;
+        start = index==1 ? firstRenderTick : tick;
         duration = durationFor(recoveryTicks);
     }
     public static double durationFor(double recoveryTicks) {
@@ -79,6 +82,6 @@ public final class NightDaggerMotion {
     public double duration() { return duration; }
     public double started() { return start; }
     public double progress(double tick) { return Double.isFinite(tick)&&index>=0&&tick>=start&&tick<start+duration?(tick-start)/duration:-1; }
-    public void reset() { index=-1; start=Double.NEGATIVE_INFINITY; duration=0; entry=IDLE; }
+    public void reset() { lastPress=Double.NEGATIVE_INFINITY; index=-1; start=Double.NEGATIVE_INFINITY; duration=0; entry=IDLE; }
     private static double mix(double a,double b,double t) { return a+(b-a)*t; }
 }

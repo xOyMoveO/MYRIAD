@@ -92,19 +92,21 @@ public final class ShuoRig {
             // A short anticipation, committed cut, then a separate relaxed recovery.
             // Actual item +X is reversed by blade(), so -edge follows the cutting direction.
             boolean rise=action==BASIC_RISE;
-            var begin=rise?v(-.42f,-.62f,-1.42f):v(-.45f,-.22f,-1.48f);
-            var end=rise?v(.48f,-.14f,-1.44f):v(.56f,-.34f,-1.48f);
-            var beginAxis=rise?v(-.67f,.23f,-.40f).normalize():v(-.62f,.58f,-.38f).normalize();
-            var endAxis=rise?v(.45f,.76f,-.36f).normalize():v(.70f,.28f,-.36f).normalize();
+            // In the sweep the outer third passes through the sight line while the hilt stays below it.
+            var begin=rise?v(-.42f,-.62f,-1.42f):v(-.43f,-.32f,-1.42f);
+            var end=rise?v(.48f,-.14f,-1.44f):v(-.03f,-.35f,-1.60f);
+            var beginAxis=rise?v(-.67f,.23f,-.40f).normalize():v(-.38f,.19f,-.90f).normalize();
+            var endAxis=rise?v(.45f,.76f,-.36f).normalize():v(.54f,.22f,-.815f).normalize();
             var cutEdge=new Vector3f(begin).sub(end).normalize();
             if(p<.18){palm=mix(ready,begin,p/.18);axis=mix(readyAxis,beginAxis,p/.18).normalize();edge=mix(READY_EDGE,cutEdge,p/.18);}
             else if(p<.60){double t=(p-.18)/.42;palm=mix(begin,end,t);axis=mix(beginAxis,endAxis,t).normalize();edge=new Vector3f(cutEdge);}
             else {
                 double t=(p-.60)/.40;
-                var coast=rise?v(.55f,-.09f,-1.51f):v(.65f,-.36f,-1.53f);
+                var coast=rise?v(.55f,-.09f,-1.51f):v(.045f,-.39f,-1.65f);
                 var low=v(.46f,-.77f,-1.36f);
                 palm=t<.20?mix(end,coast,t/.20):t<.64?mix(coast,low,(t-.20)/.44):mix(low,ready,(t-.64)/.36);
-                axis=mix(endAxis,readyAxis,t).normalize();edge=mix(cutEdge,READY_EDGE,t);
+                double uncoil=rise?t:(t-.20)/.80;
+                axis=mix(endAxis,readyAxis,uncoil).normalize();edge=mix(cutEdge,READY_EDGE,uncoil);
             }
             slashProgress=(float)((p-.18)/.52);flash=slashProgress>0&&slashProgress<1?(float)Math.sin(Math.PI*slashProgress):0;
         }else if(moonCut(action)){

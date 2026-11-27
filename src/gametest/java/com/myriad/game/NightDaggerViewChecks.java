@@ -55,8 +55,16 @@ final class NightDaggerViewChecks {
         motion.attack(20,20);
         var raised=motion.sample(motion.tickAt(.30));
         var struck=motion.sample(motion.tickAt(.56));
-        h.assertTrue(raised.y()>.30 && struck.y()<-.30 && raised.y()-struck.y()>.60,
-                "Second attack lifts above the hand then drives down, not a lateral slash");
+        h.assertTrue(raised.y() - struck.y() > .34 && raised.z() - struck.z() > .48,
+                "The downward accent sends the hand forward from above the sight line");
+        for (int i=0;i<=24;i++) {
+            var contact=motion.sample(motion.tickAt(.47 + .23*i/24));
+            var tip=NightDaggerRig.wrist(contact,false).mul(NightDaggerRig.blade(false,contact.grip()))
+                    .transformPosition(new Vector3f(.06375f,.5925f,0));
+            h.assertTrue(tip.z()<contact.z()-.34 && Math.abs(tip.x()/-tip.z())<.05
+                            && tip.y()/-tip.z()>-.12 && tip.y()/-tip.z()<.02,
+                    "The reverse-grip tip stays on the forward target through HIT and follow-through");
+        }
         h.assertTrue(raised.grip()==0 && struck.grip()==0,"Overhead attack retains reverse grip");
         motion.attack(40,20);
         h.assertTrue(motion.sample(motion.tickAt(.36)).grip()==180 && motion.sample(motion.tickAt(.62)).grip()==180
