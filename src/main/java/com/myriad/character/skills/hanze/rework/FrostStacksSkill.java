@@ -11,7 +11,7 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 /** Independent branch; no gameplay switches in the batch registry. */
 public final class FrostStacksSkill extends AbilitySkill {
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.spellPower(MAGIC, 25, 10, .2f);
+            AbilityDamageFormula.spellPower(MAGIC, 25, 12, .2f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

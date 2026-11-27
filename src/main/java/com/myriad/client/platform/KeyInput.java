@@ -17,5 +17,8 @@ public final class KeyInput {
     }
     public int getAction() { return action; }
     public int getKey() { return key; }
+    public static boolean sameBinding(KeyMapping a, KeyMapping b) {
+        return KeyMappingHelper.getBoundKeyOf(a).equals(KeyMappingHelper.getBoundKeyOf(b));
+    }
     public boolean matches(KeyMapping mapping) { return KeyMappingHelper.getBoundKeyOf(mapping).equals(binding); }
 }

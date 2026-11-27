@@ -10,7 +10,7 @@ import java.util.List;
 /** Independent branch; no gameplay switches in the batch registry. */
 public final class CloudBreakSkill extends AbilitySkill {
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.physicalFromSpell(65, 18, .55f, .5f);
+            AbilityDamageFormula.physicalFromSpell(65, 22.5f, .55f, .5f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

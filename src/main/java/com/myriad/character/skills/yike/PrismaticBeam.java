@@ -8,7 +8,7 @@ import java.util.*;
 
 /** Charge follows local action time; the six damage opportunities use real ticks only. */
 public final class PrismaticBeam extends AbilitySkill {
-    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 70, 20, .25f)
+    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 70, 23, .25f)
             .segment("skill.myriad.damage.per_pulse", 6);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {

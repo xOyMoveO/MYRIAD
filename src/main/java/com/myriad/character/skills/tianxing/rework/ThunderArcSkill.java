@@ -15,7 +15,7 @@ public final class ThunderArcSkill extends AbilitySkill {
     public static final double RANGE=18,SPEED=2.5;
     public static final float CHAIN_RATIO=.35f;
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.physicalFromSpell(60, 18, .65f, .5f).segment("skill.myriad.damage.segment.primary", 1);
+            AbilityDamageFormula.physicalFromSpell(60, 22.5f, .65f, .5f).segment("skill.myriad.damage.segment.primary", 1);
     private static final AbilityDamageFormula CHAIN =
             DAMAGE.scaled(CHAIN_RATIO).segment("skill.myriad.damage.segment.chain", 1);
 

@@ -111,7 +111,7 @@ final class RivetChecks {
         int major=i<8?4+((i>>1)&1):Set.of(24,31,32,33,34,48,49,67,68,69,75,76,77,78,86).contains(i)?5:4;
         int ultimate=i<8?6+((i>>2)&1):Set.of(20,35,36,37,38,39,50,51,53,55,71,72,73,74,79,80,81,82,83,84,85).contains(i)?7:6;
         for(int nodeIndex:new int[]{passive,2,major,ultimate})PlayerDataProvider.upgradeSkill(f.p,node(nodeIndex).getId());
-        h.assertTrue(d.skillLevel(node(passive).getId())==1&&d.skillLevel(node(major).getId())==1&&d.skillLevel(node(ultimate).getId())==1,"Normal point spending installs the selected branch combination "+i);
+        h.assertTrue(d.skillLevel(node(passive).getId())==5&&d.skillLevel(node(major).getId())==1&&d.skillLevel(node(ultimate).getId())==1,"Normal point spending installs the selected branch combination "+i);
         int points=d.getSkillPoints();PlayerDataProvider.upgradeSkill(f.p,node(1-passive).getId());PlayerDataProvider.upgradeSkill(f.p,node(major==4?5:4).getId());PlayerDataProvider.upgradeSkill(f.p,node(ultimate==6?7:6).getId());
         h.assertTrue(points==d.getSkillPoints(),"All three opposite branches are rejected without spending points: "+i);
         CharacterType.applyInitialAttributes(f.p,CharacterType.byId("rivet"));FirstGroupGrowth.initialize(f.p,d);PlayerHealthSystem.fill(f.p);d.setMana(700);
@@ -233,7 +233,7 @@ final class RivetChecks {
                     if(tick==14&&i==29){int recovery=TacticalAnchor.recovery(p);h.assertTrue(recovery>0,"Q wall anchor impact starts owner recovery");d.setCooldown(node(3).getId(),0);SkillSystem.cast(p,1);h.assertTrue(TacticalAnchor.recovery(p)>=recovery-1,"Replacing an anchor cannot reset recovery");}
                     if(tick==18&&(i==47||i==52||i==70)){p.setPos(f.target.position().add(0,0,-1.2));p.getAttribute(ModAttributes.CRIT_CHANCE).setBaseValue(100);d.setCooldown(node(4).getId(),100);f.before=hp(f.target);p.getRandom().setSeed(28);basic(p,f.target);f.firstBasicLoss=f.before-hp(f.target);}
                     if(tick==19&&(i==47||i==52||i==70)){h.assertTrue(f.before-hp(f.target)>0&&d.getCooldown(node(4).getId())==60,"A real Q wall-followup basic hit consumes P2 and refunds exactly two seconds of E: "+i+" hpLoss="+(f.before-hp(f.target))+" cd="+d.getCooldown(node(4).getId())+" rhythm="+d.getBuff("g1_rivet_rhythm"));}
-                    if(tick==100&&(i==47||i==70)){float health=hp(f.target);p.getRandom().setSeed(28);basic(p,f.target);f.plainBasicLoss=health-hp(f.target);near(h,f.firstBasicLoss-f.plainBasicLoss,i==47?30:99.5,"Matched real critical basics isolate the uncritical P2 baseline and rank-five bonus with ten purchases: "+i);}
+                    if(tick==100&&(i==47||i==70)){float health=hp(f.target);p.getRandom().setSeed(28);basic(p,f.target);f.plainBasicLoss=health-hp(f.target);near(h,f.firstBasicLoss-f.plainBasicLoss,i==47?68.4:105.9,"Matched real critical basics isolate the uncritical P2 baseline and rank-five bonus with ten purchases: "+i);}
                     if(tick==20&&i==19)h.assertTrue(d.getMana()==615&&d.getCooldown(node(2).getId())==140,"Grown Q commits its unchanged 55 mana and seven-second cooldown");
                     if(tick==20&&i==20)h.assertTrue(d.getMana()==520&&d.getCooldown(node(7).getId())==1000,"Grown R2 commits its unchanged 150 mana and fifty-second cooldown");
                     if(tick==20&&i==22)h.assertTrue(d.getMana()==595&&d.getCooldown(node(4).getId())==260&&d.getCooldown(node(3).getId())==120,"Grown E1 commits 75 mana/thirteen seconds and refunds exactly two seconds of W");
@@ -244,34 +244,34 @@ final class RivetChecks {
                     if(tick==20&&i==55)h.assertTrue(loss(f)==0&&d.getMana()==700,"Local slow delays unfinished R2 windup without charging early");
                     if(tick==60&&i==55)near(h,loss(f),170,"Slowed windup eventually commits its ordinary physical charge");
                     if(tick==20){if(i>=56&&i<=61)h.assertTrue(d.getCooldown(node(3).getId())==160-8*(i-56)&&d.getMana()==670,"Each paid W rank commits its exact normal cooldown and 30 mana: "+(i-56));if(i==24)h.assertTrue(d.getCooldown(node(5).getId())==140,"Rank-seven tow commits a seven-second cooldown");if(i==25)h.assertTrue(d.getCooldown(node(3).getId())==120,"Five paid W points shorten base cooldown from eight to six seconds");}
-                    if(tick==42&&(i>=40&&i<=43||i==62)){near(h,ModShieldSystem.value(p),80,"P1 first grounded two seconds grant 80: "+i);f.shieldAbsorbed=ModShieldSystem.consume(p,45);}
+                    if(tick==42&&(i>=40&&i<=43||i==62)){near(h,ModShieldSystem.value(p),166.4,"P1 first grounded two seconds grant 166.4: "+i);f.shieldAbsorbed=ModShieldSystem.consume(p,45);}
                     if(tick==44&&i==40)p.setPos(f.origin.add(6,0,0));
                     if(tick==63&&i==40)p.setPos(f.origin);
-                    if(tick==84&&i==40)near(h,ModShieldSystem.value(p),35,"A short exit preserves remaining armor and never stacks a top-up");
+                    if(tick==84&&i==40)near(h,ModShieldSystem.value(p),121.4,"A short exit preserves remaining armor and never stacks a top-up");
                     if(tick==44&&(i==41||i==43||i==62||i==63))p.setPos(f.origin.add(6,0,0));
                     if(tick==85&&(i==41||i==43||i==62||i==63)){near(h,ModShieldSystem.value(p),0,"A full two-second exit clears only station armor");p.setPos(f.origin);}
                     if(tick==86&&i==62)ModShieldSystem.grant(p,StationArmor.source(p),35,600);
                     if(tick==126&&i==62)near(h,ModShieldSystem.value(p),35,"A pre-existing 35 armor remainder is preserved instead of adding 16");
-                    if(tick==126&&i==63)near(h,ModShieldSystem.value(p),46.4,"Return fraction uses current rank-five S230 full armor dynamically");
-                    if(tick==126&&i==41)near(h,ModShieldSystem.value(p),16,"Valid exit and grounded return refill to 20 percent, not additive");
+                    if(tick==126&&i==63)near(h,ModShieldSystem.value(p),49.28,"Return fraction uses current rank-five S230 full armor dynamically");
+                    if(tick==126&&i==41)near(h,ModShieldSystem.value(p),33.28,"Valid exit and grounded return refill to 20 percent, not additive");
                     if(tick==44&&(i==42||i==43))ModShieldSystem.consume(p,10000);
                     if(tick==126&&(i==42||i==43))near(h,ModShieldSystem.value(p),0,"Breaking armor enforces a ten-second lockout even after re-entry");
-                    if(tick==245&&i==42)near(h,ModShieldSystem.value(p),80,"Uninterrupted grounded defense restores a full shield after ten real seconds");
-                    if(tick==285&&i==43)near(h,ModShieldSystem.value(p),16,"Effective exit after break restores only the return fraction when lockout ends");
+                    if(tick==245&&i==42)near(h,ModShieldSystem.value(p),166.4,"Uninterrupted grounded defense restores a full shield after ten real seconds");
+                    if(tick==285&&i==43)near(h,ModShieldSystem.value(p),33.28,"Effective exit after break restores only the return fraction when lockout ends");
                     if(i<8){
-                        if(tick==43&&((i&1)==0))near(h,ModShieldSystem.value(p),80,"Combination P1 actually shields its owner: "+i);
+                        if(tick==43&&((i&1)==0))near(h,ModShieldSystem.value(p),166.4,"Combination P1 actually shields its owner: "+i);
                         if(tick==45)SkillSystem.cast(p,2);
                         if(tick==64){p.setPos(f.origin);SkillSystem.cast(p,0);}
                         if(tick==82){h.assertTrue(loss(f)>=125,"Combination Q really hits and collides with the wall: "+i);if((i&1)==1){p.setPos(f.target.position().add(0,0,-1.2));d.setCooldown(node(4+((i>>1)&1)).getId(),100);basic(p,f.target);f.sawBonus=true;}}
                         if(tick==86){p.setPos(f.origin);f.target.setPos(f.origin.add(0,0,2.35));SkillSystem.cast(p,3);}
                         if(tick==130){h.assertTrue(f.sawRoot,"Every branch combination observes an actual wall root: "+i);if(((i>>2)&1)==0)h.assertTrue(ModShieldSystem.value(p)>=160,"Combination R1 actually grants its own shield: "+i);else h.assertTrue(loss(f)>=340,"Combination R2 deals direct and wall damage: "+i);}
                     }
-                    if(tick==10&&i==22){near(h,ModShieldSystem.value(f.ally),342,"Rank-seven S230 emergency strut grants 342 actual ally shield");}
-                    if(tick==10&&i==23)near(h,ModShieldSystem.sourceValue(p,"rivet_hold_protocol/"+p.getUUID()),380,"Rank-three S230 hold grants 380 own source shield");
+                    if(tick==10&&i==22){near(h,ModShieldSystem.value(f.ally),375,"Rank-seven S230 emergency strut grants 375 actual ally shield");}
+                    if(tick==10&&i==23)near(h,ModShieldSystem.sourceValue(p,"rivet_hold_protocol/"+p.getUUID()),405,"Rank-three S230 hold grants 405 own source shield");
                     if(tick==10&&i==44){float value=ModShieldSystem.value(f.ally);near(h,value,110,"E1 grants its full shield to a real ally");ModShieldSystem.grant(f.ally,"unrelated_test_shield",20,600);AbilityRuntime.clear(p);near(h,ModShieldSystem.value(f.ally),20,"Owner cleanup removes only its own ally shield");}
                     if(tick==10&&i==45){ModShieldSystem.consume(f.ally,75);d.setCooldown(node(4).getId(),0);d.setMana(700);SkillSystem.cast(p,2);near(h,ModShieldSystem.value(f.ally),110,"Same support group uses the higher remaining shield rather than additive stacking");}
                     if(tick==12&&i==45)SkillSystem.cast(f.other,2);
-                    if(tick==13&&i==45){near(h,ModShieldSystem.value(f.ally),132,"Two owners contribute only the stronger strut group");float beforeShield=ModShieldSystem.value(f.ally);f.ally.damageCooldownTime = 0;NpcCombat.hit(f.ally,f.target,100,DamageCalc.Kind.TRUE);f.npcAbsorbed=beforeShield-ModShieldSystem.value(f.ally);near(h,f.npcAbsorbed,100,"A shared strut family absorbs one actual NPC hit");}
+                    if(tick==13&&i==45){near(h,ModShieldSystem.value(f.ally),137.5,"Two owners contribute only the stronger strut group");float beforeShield=ModShieldSystem.value(f.ally);f.ally.damageCooldownTime = 0;NpcCombat.hit(f.ally,f.target,100,DamageCalc.Kind.TRUE);f.npcAbsorbed=beforeShield-ModShieldSystem.value(f.ally);near(h,f.npcAbsorbed,100,"A shared strut family absorbs one actual NPC hit");}
                     if(tick==14&&i==45){AbilityRuntime.clear(f.other);near(h,ModShieldSystem.value(f.ally),10,"Leaving stronger owner removes only its source and cannot resurrect an unspent weaker reserve");}
                     if(tick==10&&i==46){float hp=f.ally.getHealth();float shield=ModShieldSystem.value(f.ally);f.ally.damageCooldownTime = 0;NpcCombat.hit(f.ally,f.target,50,DamageCalc.Kind.TRUE);f.shieldAbsorbed=shield-ModShieldSystem.value(f.ally);f.npcAbsorbed=f.shieldAbsorbed;near(h,f.shieldAbsorbed,50,"Support armor absorbs actual incoming damage budget");h.assertTrue(f.ally.getHealth()==hp,"Shield absorption preserves ally health");}
                     if(tick==50&&Set.of(28,48,49).contains(i))h.assertTrue(TacticalAnchor.anchor(p)==null,"Missing/unloaded or cleared anchor cannot remain active: "+i);
@@ -317,9 +317,9 @@ final class RivetChecks {
         if(i==15)h.assertTrue(f.maxZ>f.initialZ&&Math.abs(f.rear.getZ()-(f.origin.z+2.9))<.02,"Only the first crosshair target is pushed");
         if(i==17)h.assertTrue(ModShieldSystem.value(f.target)<1000&&f.sawRoot,"Shield absorption counts as an effective hit and still enables collision");
         if(i==18)h.assertTrue(loss(f)==0&&!f.sawRoot&&f.maxZ==f.initialZ,"Invulnerable targets cannot create effective Q hit rewards");
-        if(i==19)near(h,loss(f),312,"Rank-five Q plus wall add 75 with ten strength purchases and ignore bonus spell power");
-        if(i==20)near(h,loss(f),475,"Rank-three R2 plus wall add 120 with ten strength purchases and ignore bonus spell power");
-        if(i==21)near(h,ModShieldSystem.value(f.p),232,"Rank-five S230 station armor grows to 232");
+        if(i==19)near(h,loss(f),340,"Rank-five Q plus wall add 75 with ten strength purchases and ignore bonus spell power");
+        if(i==20)near(h,loss(f),496,"Rank-three R2 plus wall add 120 with ten strength purchases and ignore bonus spell power");
+        if(i==21)near(h,ModShieldSystem.value(f.p),246.4,"Rank-five S230 station armor grows to 246.4");
 
         if(i==23)h.assertTrue(ModShieldSystem.sourceValue(f.p,"rivet_hold_protocol/"+f.p.getUUID())==0,"Hold shield expires with its real six-second zone");
         if(i==28)h.assertTrue(TacticalAnchor.anchor(f.p)==null,"Breaking the attached block deactivates W");

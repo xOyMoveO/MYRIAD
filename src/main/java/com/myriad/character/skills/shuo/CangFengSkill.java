@@ -2,7 +2,7 @@ package com.myriad.character.skills.shuo;
 import com.myriad.character.ability.*;
 import java.util.List;
 public final class CangFengSkill extends AbilitySkill {
-    static final AbilityDamageFormula BONUS = AbilityDamageFormula.physicalFromSpell(40, 12, .40f, .40f)
+    static final AbilityDamageFormula BONUS = AbilityDamageFormula.physicalFromSpell(40, 14.4f, .40f, .40f)
             .segment("skill.myriad.damage.full_edge", 1);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {

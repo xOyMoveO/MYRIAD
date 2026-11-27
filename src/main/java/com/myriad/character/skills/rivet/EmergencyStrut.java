@@ -11,6 +11,10 @@ import java.util.*;
 
 /** Each owner retains a removable source; the shared strut family contributes only its highest shield. */
 public final class EmergencyStrut extends RivetSkill {
+    private static final SupportAmount SHIELD = new SupportAmount("shield", 95, 27.5f, .5f);
+
+    @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(SHIELD); }
+
     private static final Map<UUID, Long> BRACING = new HashMap<>();
     private static final Map<UUID, Set<LivingEntity>> TARGETS = new HashMap<>();
     public EmergencyStrut(Definition definition) { super(definition); }
@@ -23,7 +27,7 @@ public final class EmergencyStrut extends RivetSkill {
         recipients.add(c.player);
         for (var target : recipients) {
             ModShieldSystem.grantMaxGroup(target, "rivet_emergency_strut/" + c.player.getUUID(),
-                    "rivet_emergency_strut", c.value(95, 22, .5f), 40, c.player.getUUID());
+                    "rivet_emergency_strut", SHIELD.value(c), 40, c.player.getUUID());
             targets.add(target);
             RivetVfx.shield(c, target, .75);
         }

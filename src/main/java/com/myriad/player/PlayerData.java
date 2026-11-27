@@ -1,5 +1,6 @@
 package com.myriad.player;
 
+import com.myriad.character.rework.FirstGroupSkills;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -20,8 +21,12 @@ public class PlayerData {
             com.mojang.serialization.Codec.STRING.xmap(PlayerData::readSave, SAVE_JSON::toJson);
     /** 旧存档的符石字段由 Gson 忽略；只清理符石 buff，不影响角色技能和野怪增益。 */
     private static PlayerData readSave(String json) {
-        PlayerData data = SAVE_JSON.fromJson(json, PlayerData.class);
+        var object = com.google.gson.JsonParser.parseString(json);
+        PlayerData data = SAVE_JSON.fromJson(object, PlayerData.class);
         if (data == null) data = new PlayerData();
+        if (object.isJsonObject() && !object.getAsJsonObject().has("skillProgressVersion"))
+            data.migratePaidPassive();
+        data.recalculatePassive();
         data.discardRetiredRuneBuffs();
         return data;
     }
@@ -91,6 +96,57 @@ public class PlayerData {
 
     // ---- 技能升级（技能点体系） ----
     /** 可用技能点（升级普通技能/大招，每升1级 +1） */
+    // Version zero retains the old paid rules for the remainder of an unverifiable round.
+    private int skillProgressVersion = 1;
+    public boolean automaticPassives() { return skillProgressVersion == 1; }
+
+    private void migratePaidPassive() {
+        if (!FirstGroupSkills.active(characterId) && skillLevels.isEmpty()) return;
+        boolean valid = queueRound != null && level >= 1 && level <= 20 && skillPoints >= 0;
+        long spent = 0;
+        int paidPassive = 0;
+        for (var entry : skillLevels.entrySet()) {
+            var node = FirstGroupSkills.byId(entry.getKey());
+            Integer rank = entry.getValue();
+            if (node == null || !node.role().equals(characterId) || rank == null
+                    || rank < 0 || rank > node.maxRank() || rank > level
+                    || node.isUltimate() && 4 * rank > level) {
+                valid = false;
+                break;
+            }
+            int other = FirstGroupSkills.opposite(node.index());
+            if (rank > 0 && other >= 0 && skillLevel(FirstGroupSkills.node(characterId, other).getId()) > 0)
+                valid = false;
+            spent += rank;
+            if (node.isPassive()) paidPassive += rank;
+        }
+        if (valid && spent + skillPoints == level) {
+            skillPoints += paidPassive;
+        } else {
+            skillProgressVersion = 0;
+            com.myriad.Myriad.LOGGER.info("Preserving legacy skill budget for role {} at level {}", characterId, level);
+        }
+    }
+
+    public void recalculatePassive() {
+        if (!automaticPassives() || !FirstGroupSkills.active(characterId)) return;
+        for (int index = 0; index < 2; index++) {
+            String id = FirstGroupSkills.node(characterId, index).getId();
+            if (skillLevel(id) > 0) setSkillLevel(id, FirstGroupSkills.passiveRank(level));
+        }
+    }
+
+    public int spentSkillPoints() { return FirstGroupSkills.spentPoints(skillLevels, automaticPassives()); }
+
+    public void resetForTrainingLevel() {
+        skillLevels.entrySet().removeIf(entry -> {
+            var node = FirstGroupSkills.byId(entry.getKey());
+            return !automaticPassives() || node == null || !node.isPassive();
+        });
+        skillPoints = Math.max(1, level);
+        recalculatePassive();
+    }
+
     private int skillPoints = 0;
     /** 技能 id -> 技能等级（默认 0 = 未学习，加点后才可释放） */
     private final Map<String, Integer> skillLevels = new HashMap<>();
@@ -120,6 +176,7 @@ public class PlayerData {
 
     public void setLevel(int level) {
         this.level = level;
+        recalculatePassive();
     }
 
     public int getXp() {
@@ -365,7 +422,9 @@ public class PlayerData {
 
     /** 只读快照（同步到客户端用） */
     public Map<String, Integer> getBuffs() {
-        return new LinkedHashMap<>(buffs);
+        var snapshot = new LinkedHashMap<>(buffs);
+        if (!automaticPassives()) snapshot.put("g1_legacy_skill_budget", 1);
+        return snapshot;
     }
 
     // ---- 技能升级 ----
@@ -389,6 +448,7 @@ public class PlayerData {
     /** 训练模式切换角色时重置整套加点，并返还当前等级应有的全部技能点。 */
     public void refundAllSkillPointsForTraining() {
         skillLevels.clear();
+        skillProgressVersion = 1;
         skillPoints = Math.max(1, level);
     }
 
@@ -399,7 +459,8 @@ public class PlayerData {
 
     /** 按等级补发缺失技能点（登录时调用；已投入的等级计入总额，避免重复发放）。 */
     public void ensureLevelRewards(int level) {
-        int spentSkillPoints = skillLevels.values().stream().mapToInt(rank -> Math.max(0, rank)).sum();
+        if (!automaticPassives()) return;
+        int spentSkillPoints = spentSkillPoints();
         int expectedAvailable = Math.max(0, level - spentSkillPoints);
         if (skillPoints < expectedAvailable) {
             skillPoints = expectedAvailable;
@@ -529,6 +590,7 @@ public class PlayerData {
         this.channelTicks = old.channelTicks;
         this.channelStart = old.channelStart;
         this.placementType = old.placementType;
+        this.skillProgressVersion = old.skillProgressVersion;
         this.skillPoints = old.skillPoints;
         this.skillLevels.clear();
         this.skillLevels.putAll(old.skillLevels);

@@ -2,11 +2,11 @@ package com.myriad.character.skills.shuo;
 import com.myriad.character.ability.*;
 import java.util.List;
 public final class CanYueSkill extends AbilitySkill {
-    private static final AbilityDamageFormula DRAWN = AbilityDamageFormula.physicalFromSpell(280, 90, 1.35f, .80f)
+    private static final AbilityDamageFormula DRAWN = AbilityDamageFormula.physicalFromSpell(280, 112.5f, 1.35f, .80f)
             .segment("skill.myriad.damage.moon_final", 1);
-    private static final AbilityDamageFormula FIRST_TWO = AbilityDamageFormula.physicalFromSpell(100, 40, .60f, .80f * 2 / 7)
+    private static final AbilityDamageFormula FIRST_TWO = AbilityDamageFormula.physicalFromSpell(100, 46, .60f, .80f * 2 / 7)
             .segment("skill.myriad.damage.moon_first_two", 2);
-    private static final AbilityDamageFormula THIRD = AbilityDamageFormula.physicalFromSpell(160, 60, .90f, .80f * 3 / 7)
+    private static final AbilityDamageFormula THIRD = AbilityDamageFormula.physicalFromSpell(160, 69, .90f, .80f * 3 / 7)
             .segment("skill.myriad.damage.moon_third", 1);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {

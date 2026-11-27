@@ -9,7 +9,7 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 /** Independent reusable branch. */
 public final class BattleIntentSkill extends AbilitySkill {
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.spellPower(TRUE, 25, 10, .25f);
+            AbilityDamageFormula.spellPower(TRUE, 25, 12, .25f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

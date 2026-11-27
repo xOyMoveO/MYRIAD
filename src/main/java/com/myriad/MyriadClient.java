@@ -152,7 +152,6 @@ public class MyriadClient implements net.fabricmc.api.ClientModInitializer {
         }
 
         if("luoxia".equals(com.myriad.client.ClientDataHolder.characterId())){
-            com.myriad.client.LuoxiaInput.press(mc);
             event.setSwingHand(false);event.setCanceled(true);return;
         }
         if("yike".equals(com.myriad.client.ClientDataHolder.characterId())){

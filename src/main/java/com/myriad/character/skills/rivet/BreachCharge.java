@@ -7,9 +7,9 @@ import java.util.List;
 
 /** Fixed-direction ten-block charge; the first effective enemy is driven until the charge stops. */
 public final class BreachCharge extends RivetSkill {
-    private static final AbilityDamageFormula DIRECT = AbilityDamageFormula.physicalFromSpell(147.5f, 55, .75f, .60f)
+    private static final AbilityDamageFormula DIRECT = AbilityDamageFormula.physicalFromSpell(147.5f, 63.25f, .75f, .60f)
             .segment("skill.myriad.damage.direct_hit", 1);
-    private static final AbilityDamageFormula WALL = AbilityDamageFormula.physicalFromSpell(37.5f, 15, .25f, .20f)
+    private static final AbilityDamageFormula WALL = AbilityDamageFormula.physicalFromSpell(37.5f, 17.25f, .25f, .20f)
             .segment("skill.myriad.damage.wall_collision", 1);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {

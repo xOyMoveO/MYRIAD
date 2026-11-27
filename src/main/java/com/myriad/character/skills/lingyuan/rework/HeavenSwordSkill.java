@@ -11,7 +11,7 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 /** A stationary, telegraphed overhead chop, not a moving projectile. */
 public final class HeavenSwordSkill extends AbilitySkill {
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.spellPower(MAGIC, 300, 100, 1.2f);
+            AbilityDamageFormula.spellPower(MAGIC, 300, 125, 1.2f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

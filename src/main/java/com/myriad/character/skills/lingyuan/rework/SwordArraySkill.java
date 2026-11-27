@@ -11,7 +11,7 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 /** Independent branch; no gameplay switches in the batch registry. */
 public final class SwordArraySkill extends AbilitySkill {
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.spellPower(MAGIC, 35, 10, .25f).segment("skill.myriad.damage.segment.pulse", 4);
+            AbilityDamageFormula.spellPower(MAGIC, 35, 12.5f, .25f).segment("skill.myriad.damage.segment.pulse", 4);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

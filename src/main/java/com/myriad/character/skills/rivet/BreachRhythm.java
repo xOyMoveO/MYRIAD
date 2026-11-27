@@ -11,7 +11,7 @@ import java.util.List;
 
 /** Its reward is consumed only by a real basic-attack damage event, after the ordinary critical. */
 public final class BreachRhythm extends RivetSkill {
-    private static final AbilityDamageFormula BONUS = AbilityDamageFormula.physicalFromSpell(22.5f, 8, .25f, .25f);
+    private static final AbilityDamageFormula BONUS = AbilityDamageFormula.physicalFromSpell(22.5f, 9.6f, .25f, .25f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(BONUS);

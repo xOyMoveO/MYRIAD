@@ -2,7 +2,7 @@ package com.myriad.character.skills.shuo;
 import com.myriad.character.ability.*;
 import java.util.List;
 public final class NaDaoSkill extends AbilitySkill {
-    private static final AbilityDamageFormula RETREAT_CUT = AbilityDamageFormula.physicalFromSpell(55, 14, .40f, .50f);
+    private static final AbilityDamageFormula RETREAT_CUT = AbilityDamageFormula.physicalFromSpell(55, 17.5f, .40f, .50f);
     private static final AbilityDamageFormula OPENING = RETREAT_CUT.scaled(.60f)
             .segment("skill.myriad.damage.opening_slash", 1);
     private static final AbilityDamageFormula RETURN = RETREAT_CUT.scaled(.40f)

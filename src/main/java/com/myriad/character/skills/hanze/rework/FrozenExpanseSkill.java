@@ -15,7 +15,7 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 /** Independent branch; no gameplay switches in the batch registry. */
 public final class FrozenExpanseSkill extends AbilitySkill {
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.spellPower(MAGIC, 45, 25, .22f).segment("skill.myriad.damage.segment.pulse", 6);
+            AbilityDamageFormula.spellPower(MAGIC, 45, 28.75f, .22f).segment("skill.myriad.damage.segment.pulse", 6);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

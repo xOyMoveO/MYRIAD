@@ -71,6 +71,7 @@ final class FirstGroupRegressionChecks {
             SkillChoiceUiChecks.verify(h);
             CharacterChoiceUiChecks.verify(h);
             ShuoChecks.verify(h);
+            PassiveGrowthChecks.verify(h);
             var classes = new HashSet<Class<?>>();
             h.assertTrue(com.myriad.character.ability.AbilityFormulaText.evaluate("45＋15(r－1)＋55%S",3,100).equals("130"),
                     "Tooltip displays the current rank and S value");
@@ -96,8 +97,8 @@ final class FirstGroupRegressionChecks {
                 }
                 ranks.put(skills.get(0).getId(),5); ranks.put(skills.get(2).getId(),5);
                 ranks.put(skills.get(4).getId(),7); ranks.put(skills.get(6).getId(),3);
-                h.assertTrue(FirstGroupSkills.learnError(role,ranks,1,20,skills.get(3).getId()) != null,
-                        "Even malformed surplus points cannot bypass the 20-point budget");
+                h.assertTrue(FirstGroupSkills.learnError(role,ranks,1,20,skills.get(3).getId()) == null,
+                        "A free passive leaves five ordinary points for the other regular skill");
                 var d = PlayerDataProvider.get(p);
                 d.setCharacterId(role); d.setLevel(1); d.refundAllSkillPointsForTraining();
                 CharacterType.applyInitialAttributes(p, CharacterType.byId(role));
@@ -157,7 +158,7 @@ final class FirstGroupRegressionChecks {
             String passive=FirstGroupSkills.node("yingxiao",0).getId();
             PlayerDataProvider.upgradeSkill(p,passive);
             PlayerDataProvider.upgradeSkill(p,FirstGroupSkills.node("yingxiao",1).getId());
-            h.assertTrue(d.skillLevel(passive)==1 && d.getSkillPoints()==19,"Authoritative branch rejection spends no points");
+            h.assertTrue(d.skillLevel(passive)==5 && d.getSkillPoints()==20,"Authoritative branch rejection spends no points");
             d.setMana(200); var pending=FirstGroupSkills.node("yingxiao",5);
             d.setSkillLevel(pending.getId(),1);AbilityRuntime.request(p,d,pending);AbilityRuntime.cancel(p);
             h.assertTrue(d.getMana()==200 && d.getCooldown(pending.getId())==0 && d.getPlacementType()==0,

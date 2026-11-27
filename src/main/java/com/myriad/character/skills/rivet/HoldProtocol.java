@@ -10,6 +10,10 @@ import java.util.*;
 
 /** The fixed region survives anchor replacement and terrain destruction, but belongs to its caster's lifecycle. */
 public final class HoldProtocol extends RivetSkill {
+    private static final SupportAmount SHIELD = new SupportAmount("shield", 142, 62.5f, .6f);
+
+    @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(SHIELD); }
+
     private static final class Zone {
         final AbilityRuntime.Cast cast;
         final Vec3 center;
@@ -52,7 +56,7 @@ public final class HoldProtocol extends RivetSkill {
         if (!zone.shieldGranted && contains(zone, player)) {
             zone.shieldGranted = true;
             ModShieldSystem.grantMaxSource(player, "rivet_hold_protocol/" + player.getUUID(),
-                    zone.cast.value(142, 50, .6f), (int) (zone.until - player.level().getGameTime()));
+                    SHIELD.value(zone.cast), (int) (zone.until - player.level().getGameTime()));
             RivetVfx.shield(zone.cast, player, .9);
         }
     }

@@ -62,17 +62,17 @@ final class RosterAChecks {
                 d.setLevel(20);d.setSkillPoints(20);
                 // Learn both passive alternatives separately, through the same registered receiver.
                 if(index==2)for(int passive=0;passive<2;passive++){
-                    var node=FirstGroupSkills.node(role,passive);receive(h,p,new NetworkSetup.UpgradeSkillPayload(node.getId()));
-                    h.assertTrue(d.skillLevel(node.getId())==1,"Registered passive learning: "+node.getId());
+                    var node=FirstGroupSkills.node(role,passive);ShuoPilotChecks.learn(h, p, node.getId());
+                    h.assertTrue(d.skillLevel(node.getId())==5,"Registered passive learning: "+node.getId());
                     String opposite=FirstGroupSkills.node(role,1-passive).getId();int points=d.getSkillPoints();
-                    receive(h,p,new NetworkSetup.UpgradeSkillPayload(opposite));
+                    ShuoPilotChecks.learn(h, p, opposite);
                     h.assertTrue(d.skillLevel(opposite)==0&&d.getSkillPoints()==points,"Mutually exclusive passive request spends nothing");
                     d.refundAllSkillPointsForTraining();
                 }
-                receive(h,p,new NetworkSetup.UpgradeSkillPayload(f.skill.getId()));
+                ShuoPilotChecks.learn(h, p, f.skill.getId());
                 h.assertTrue(d.skillLevel(f.skill.getId())==1&&d.getSkillPoints()==19,"One paid rank via production receiver: "+f.skill.getId());
                 int opposite=FirstGroupSkills.opposite(index);
-                if(opposite>=0){receive(h,p,new NetworkSetup.UpgradeSkillPayload(FirstGroupSkills.node(role,opposite).getId()));
+                if(opposite>=0){ShuoPilotChecks.learn(h, p, FirstGroupSkills.node(role,opposite).getId());
                     h.assertTrue(d.getSkillPoints()==19&&d.skillLevel(FirstGroupSkills.node(role,opposite).getId())==0,"Opposite active branch cannot spend: "+f.skill.getId());}
                 prepare(p);d.setFaction(Faction.GUARDIAN);p.setPos(f.origin);aim(p,f.skill.needsPoint()||role.equals("tianxing")&&index==2);
             }
@@ -153,7 +153,7 @@ final class RosterAChecks {
         }
         // Exact baseline S=30/rank-one expectations for the A-group roles without a prior dedicated suite.
         var expected=Map.ofEntries(Map.entry("g1_xuanchen_n1",61.5),Map.entry("g1_xuanchen_ua",216.0),Map.entry("g1_xuanchen_ub",203.0),
-                Map.entry("g2_qingluo_n2",63.5),Map.entry("g2_chixiao_n1",93.0),Map.entry("g2_chixiao_n2",62.0),
+                Map.entry("g2_qingluo_n2",63.5),Map.entry("g2_chixiao_n1",98.0),Map.entry("g2_chixiao_n2",62.0),
                 Map.entry("g2_chixiao_ma",132.5),Map.entry("g2_chixiao_mb",101.5),Map.entry("g2_chixiao_ua",195.5));
         if(expected.containsKey(id))h.assertTrue(Math.abs(10000-f.minEnemy-expected.get(id))<.02,"Exact baseline damage: "+id);
         var shields=Map.of("g1_xuanchen_n2",108.0,"g1_xuanchen_mb",70.5,"g2_qingluo_ma",90.5,"g2_qingluo_mb",171.0,"g2_qingluo_ub",219.5,"g2_chixiao_ub",251.0);
@@ -170,15 +170,15 @@ final class RosterAChecks {
     private static void preparePassives(GameTestHelper h,List<Fixture> fixtures){
         for(var f:fixtures)if(Set.of("xuanchen","qingluo","chixiao").contains(f.skill.role())&&f.skill.index()<4
                 ||f.skill.getId().equals("shuo_qiaofan")||f.skill.getId().equals("g1_tianxing_n2")||f.skill.getId().equals("g1_fenjue_n2")){
-            var p=f.actor.player;var d=PlayerDataProvider.get(p);AbilityRuntime.clear(p);d.refundAllSkillPointsForTraining();
+            var p=f.actor.player;var d=PlayerDataProvider.get(p);AbilityRuntime.clear(p);d.setLevel(1);d.refundAllSkillPointsForTraining();
             p.setPos(f.origin);p.setYRot(0);p.setXRot(0);p.setHealth(1000);p.damageCooldownTime=0;f.ally.player.setHealth(1000);f.enemy.player.setHealth(10000);
             ModShieldSystem.clearFor(p);ModShieldSystem.clearFor(f.ally.player);f.enemy.player.damageCooldownTime=0;
-            var passive=FirstGroupSkills.node(f.skill.role(),f.skill.index()-2);receive(h,p,new NetworkSetup.UpgradeSkillPayload(passive.getId()));
+            var passive=FirstGroupSkills.node(f.skill.role(),f.skill.index()-2);ShuoPilotChecks.learn(h, p, passive.getId());
             h.assertTrue(d.skillLevel(passive.getId())==1,"Passive transaction uses formally learned rank: "+passive.getId());
             var first=AbilityRuntime.context(p,FirstGroupSkills.node(f.skill.role(),2));
             switch(passive.getId()){
                 case "shuo_jianqie" -> {
-                    var guard=FirstGroupSkills.node("shuo",3);receive(h,p,new NetworkSetup.UpgradeSkillPayload(guard.getId()));
+                    var guard=FirstGroupSkills.node("shuo",3);ShuoPilotChecks.learn(h, p, guard.getId());
                     d.setMana(700);d.setCooldown(guard.getId(),0);f.enemy.player.setPos(f.origin.add(0,0,2));
                     receive(h,p,new NetworkSetup.CastSkillPayload(guard.slot(),0,0));DamageCalc.dealDamage(f.enemy.player,p,100,DamageCalc.Kind.PHYSICAL);
                     h.assertTrue(d.getBuff("shuo_qiaofan_recast")>0,"Fresh actual frontal damage opens the passive's riposte window");
@@ -196,7 +196,7 @@ final class RosterAChecks {
                     h.assertTrue(Math.abs(10000-f.enemy.player.getHealth()-210)<.02,"A distinct cast cannot bypass Last Stand internal cooldown");
                 }
                 case "g1_xuanchen_pa" -> {
-                    receive(h,p,new NetworkSetup.UpgradeSkillPayload(first.skill.getId()));d.setCooldown(first.skill.getId(),0);d.setMana(700);
+                    ShuoPilotChecks.learn(h, p, first.skill.getId());d.setCooldown(first.skill.getId(),0);d.setMana(700);
                     receive(h,p,new NetworkSetup.CastSkillPayload(first.skill.slot(),0,0));
                     h.assertTrue(Math.abs(ModShieldSystem.value(f.ally.player)-47.5)<.02,"Array Guardian shields the lowest-health legal ally on an actual cast");
                 }

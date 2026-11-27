@@ -179,6 +179,8 @@ public final class SkillTooltipDescriptions {
         String mechanics = skill.description();
         String language = Minecraft.getInstance().getLanguageManager().getSelected();
         if (!language.startsWith("zh_")) mechanics = Language.getInstance().getOrDefault(skill.descKey(), mechanics);
+        double power = Double.isFinite(spell) ? spell : innateSpell;
+        mechanics = skill.resolveSupportText(mechanics, rank, power);
         var formulas = skill.damageFormulas();
         if (!formulas.isEmpty()) mechanics = AbilityFormulaText.withoutInlineDamageAmounts(mechanics);
         var lines = new ArrayList<>(readableLines(AbilityFormulaText.evaluate(mechanics, rank, Double.isFinite(spell) ? spell : innateSpell)));
@@ -187,6 +189,7 @@ public final class SkillTooltipDescriptions {
                     ClientDataHolder.buffTicks(skill.getId() + "_recast") > 0);
             if (!form.isEmpty()) lines.add(0, text("skill.myriad.current_form", form));
         }
+        for (var amount : skill.supportAmounts()) lines.add(supportLine(amount, rank, power));
         double total = 0;
         for (var formula : formulas) {
             boolean current = currentRole && switch (formula.scaling()) {
@@ -202,6 +205,11 @@ public final class SkillTooltipDescriptions {
         if (!skill.singleTargetTotalKey().isEmpty() && Double.isFinite(total))
             lines.add(text(skill.singleTargetTotalKey(), AbilityFormulaText.amount(total)));
         return lines;
+    }
+
+    static String supportLine(AbilitySkill.SupportAmount amount, int rank, double power) {
+        return text("screen.myriad.hover.amount_" + amount.effect(),
+                AbilityFormulaText.amount(amount.value(rank, power)));
     }
 
     static String hoverDamage(AbilitySkill skill, int index, int rank, com.myriad.network.NetworkSetup.PlayerDataPayload data) {

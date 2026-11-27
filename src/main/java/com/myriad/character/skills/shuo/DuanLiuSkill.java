@@ -2,8 +2,8 @@ package com.myriad.character.skills.shuo;
 import com.myriad.character.ability.*;
 import java.util.List;
 public final class DuanLiuSkill extends AbilitySkill {
-    private static final AbilityDamageFormula SHEATHED = AbilityDamageFormula.physicalFromSpell(110, 22, .85f, .50f);
-    private static final AbilityDamageFormula DOUBLE_SLASH = AbilityDamageFormula.physicalFromSpell(45, 10, .35f, .25f)
+    private static final AbilityDamageFormula SHEATHED = AbilityDamageFormula.physicalFromSpell(110, 27.5f, .85f, .50f);
+    private static final AbilityDamageFormula DOUBLE_SLASH = AbilityDamageFormula.physicalFromSpell(45, 12.5f, .35f, .25f)
             .segment("skill.myriad.damage.double_slash", 2);
     private static final AbilityDamageFormula OPENING = SHEATHED.scaled(.60f)
             .segment("skill.myriad.damage.first_cut", 1);

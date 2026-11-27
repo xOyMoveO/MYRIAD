@@ -15,6 +15,10 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class ShadowShieldSkill extends AbilitySkill {
+    private static final SupportAmount SHIELD = new SupportAmount("shield", 306, 148.75f, 1.53f);
+
+    @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(SHIELD); }
+
     @Override public boolean hasOwnCastSound() { return true; }
 
     public ShadowShieldSkill(Definition definition){super(definition);}
@@ -28,7 +32,7 @@ public final class ShadowShieldSkill extends AbilitySkill {
     @Override public void release(Cast c){
         AbilityRuntime.cleanseControls(c.player);
         long[] nextAbsorb = {Long.MIN_VALUE};
-        c.shield(c.player, c.value(306,119,1.53f), 80,
+        c.shield(c.player, SHIELD.value(c), 80,
                 () -> NightAudio.play(c, c.player.position(), SHIELD_OPEN),
                 hit -> {
                     if (!c.ownShield(c.player)) {

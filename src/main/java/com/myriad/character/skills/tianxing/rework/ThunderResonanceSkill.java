@@ -16,7 +16,7 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class ThunderResonanceSkill extends AbilitySkill {
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.spellPower(MAGIC, 35, 12, .3f).segment("skill.myriad.damage.segment.primary", 1);
+            AbilityDamageFormula.spellPower(MAGIC, 35, 14.4f, .3f).segment("skill.myriad.damage.segment.primary", 1);
     private static final AbilityDamageFormula SPLASH =
             DAMAGE.scaled(.5f).segment("skill.myriad.damage.segment.splash", 1);
 

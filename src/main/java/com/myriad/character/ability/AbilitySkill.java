@@ -19,17 +19,33 @@ public abstract class AbilitySkill extends Skill {
     public String role(){return definition.role();} public int index(){return definition.index();}
     public int maxRank(){return definition.maxRank();} public String displayName(){return definition.name();}
     public String description(){return definition.description();} public String iconAlias(){return definition.iconAlias();}
+    public record SupportAmount(String effect, float base, float rankGrowth, float spellScale) {
+        public float value(AbilityRuntime.Cast cast) { return value(cast.rank, cast.totalSpellPower); }
+        public float value(int rank, double power) {
+            return base + rankGrowth * (Math.max(1, rank) - 1) + spellScale * (float) power;
+        }
+    }
+
+    public List<SupportAmount> supportAmounts() { return List.of(); }
+
+    public String resolveSupportText(String text, int rank, double power) {
+        var amounts = supportAmounts();
+        for (int index = 0; index < amounts.size(); index++)
+            text = text.replace("{support" + index + "}", AbilityFormulaText.amount(amounts.get(index).value(rank, power)));
+        return text;
+    }
+
     public List<AbilityDamageFormula> damageFormulas(){return List.of();}
     /** Set only when all listed segments can belong to the same cast, form and target. */
     public String singleTargetTotalKey() { return ""; }
     public String evaluatedDescription(int rank, double skillPower, int purchasedStrength){
-        return AbilityFormulaText.evaluate(description(), rank, skillPower);
+        return AbilityFormulaText.evaluate(resolveSupportText(description(), rank, skillPower), rank, skillPower);
     }
     public int slot(){return index()<2?-1:index()<4?index()-2:index()<6?2:3;}
     @Override public boolean isPassive(){return index()<2;}
     @Override public boolean isUltimate(){return index()>=6;}
     @Override public int getCooldownTicks(int rank){int[] values=definition.cooldowns();return values[Math.min(Math.max(0,rank-1),values.length-1)];}
-    @Override public String levelEffects(int rank){return "Lv."+Math.max(1,rank)+" / "+maxRank()+" · "+description();}
+    @Override public String levelEffects(int rank){return "Lv."+Math.max(1,rank)+" / "+maxRank()+" · "+evaluatedDescription(rank, com.myriad.character.rework.FirstGroupGrowth.baselineSpellPower(), 0);}
     @Override public final void cast(ServerPlayer player,PlayerData data){AbilityRuntime.request(player,data,this);}
     /** The concrete class owns validation and whether it needs ground-point confirmation. */
     public boolean needsPoint(){return false;}

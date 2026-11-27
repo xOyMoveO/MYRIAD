@@ -8,7 +8,7 @@ import java.util.List;
 /** Independent reusable branch. */
 public final class UnreturningLeapSkill extends AbilitySkill {
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.physicalFromSpell(170, 65, .85f, .8f);
+            AbilityDamageFormula.physicalFromSpell(170, 81.25f, .85f, .8f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

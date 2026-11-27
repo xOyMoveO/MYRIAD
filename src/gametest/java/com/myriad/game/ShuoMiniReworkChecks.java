@@ -62,7 +62,7 @@ final class ShuoMiniReworkChecks {
                         p.move(MoverType.SELF,AbilityTargeting.clampPrediction(p.position(),end,p.getDeltaMovement()));
                     }
                     AbilityRuntime.tick(p);
-                    if(i==1&&age==12)h.assertTrue(Math.abs(f.t.getHealth()-918.7)<.01&&f.miss.getHealth()==1000,"Seven-block line hits distant centre, not old wide-cone side targets");
+                    if(i==1&&age==12)h.assertTrue(Math.abs(f.t.getHealth()-918.7)<.01&&f.miss.getHealth()==1000,"Seven-block line hits distant centre only: health=" + f.t.getHealth() + "/" + f.miss.getHealth() + " offset=" + f.t.position().subtract(p.position()));
                     if(age==35){
                         if(i==0)h.assertTrue(Math.abs(f.t.getHealth()-959.8)<.01,"Leaving the original retreat-cut position avoids its delayed 40%");
                         if(i==1)h.assertTrue(Math.abs(f.t.getHealth()-864.5)<.01&&f.miss.getHealth()==1000,"Second lane preserves locked direction and total damage budget");

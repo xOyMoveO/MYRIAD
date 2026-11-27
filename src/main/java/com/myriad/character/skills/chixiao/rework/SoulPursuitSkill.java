@@ -8,7 +8,7 @@ import java.util.List;
 /** Independent reusable branch. */
 public final class SoulPursuitSkill extends AbilitySkill {
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.physicalFromSpell(50, 15, .4f, .5f);
+            AbilityDamageFormula.physicalFromSpell(50, 18.75f, .4f, .5f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);
