@@ -29,12 +29,12 @@ public final class TianxingSwordPrototype {
         return new Pose(grip, orientation(shaft, edge));
     }
 
-    private static final Pose REST = guard(v(.80f,-.49f,-1.11f), v(-.24f,.665f,-.708f), v(.95f,.18f,-.14f));
+    private static final Pose REST = guard(v(.68f,-.52f,-1.03f), v(.09f,.882f,-.462f), v(-.10f,0f,-.995f));
     private static final Pose LEFT_GUARD = guard(v(-.69f,-.67f,-1.42f), v(-.78f,.05f,-.62f), v(-.24f,-.95f,.16f));
     private static final Pose RIGHT_GUARD = guard(v(.51f,-.53f,-1.31f), v(.83f,-.23f,-.51f), v(.18f,-.97f,.14f));
-    private static final Pose LOW_LEFT = guard(v(-.52f,-.69f,-1.43f), v(-.77f,-.17f,-.61f), v(-.25f,.95f,.10f));
-    private static final Pose LOW_CENTRE = guard(v(-.06f,-.81f,-1.36f), v(.28f,.21f,-.94f), v(.88f,.30f,.22f));
-    private static final Pose LOW_RIGHT = guard(v(.68f,-.69f,-1.35f), v(.57f,.16f,-.81f), v(.86f,.28f,.41f));
+    private static final Pose LOW_LEFT = guard(v(-.52f,-.69f,-1.43f), v(-.77f,-.17f,-.61f), v(-.25f,-.82f,.51f));
+    private static final Pose LOW_CENTRE = guard(v(-.06f,-.88f,-1.38f), v(.18f,-.12f,-.97f), v(.05f,-.96f,.25f));
+    private static final Pose LOW_RIGHT = guard(v(.72f,-.72f,-1.28f), v(.52f,.15f,-.84f), v(-.08f,-.72f,-.69f));
 
     // Projected screen slope and tilt into depth specify this weapon's cutting plane.
     // The three grip anchors define a curved shoulder orbit independent of the wrist's turn.
@@ -95,7 +95,7 @@ public final class TianxingSwordPrototype {
     public double sweepStart() { return start + windup; }
     public double sweepEnd() { return sweepStart() + swing; }
     public double returnStart() { return guardUntil; }
-    public double settledAt() { return guardUntil + (cut == 1 ? 12 : 17); }
+    public double settledAt() { return guardUntil + (cut == 1 ? 11 : 15); }
     public void reset() { cut = -1; initialEquipDrop = 0; }
     boolean active(double now) { return cut >= 0 && now >= start && now < settledAt(); }
 
@@ -153,16 +153,23 @@ public final class TianxingSwordPrototype {
             return stroke.pose(1 + overshoot).toward(sideGuard, ease(release / duration));
         }
 
-        // When the player stops linking attacks, bring the grip along the bottom first.
-        // In particular, leave the third stroke below the target until it reaches the right side.
-        double elapsed = now - guardUntil;
-        if (cut == 1) {
-            if (elapsed < 4) return RIGHT_GUARD.toward(LOW_RIGHT, ease(elapsed / 4));
-            return LOW_RIGHT.toward(REST, ease((elapsed - 4) / 8));
-        }
-        if (elapsed < 5) return sideGuard.toward(LOW_CENTRE, ease(elapsed / 5));
-        if (elapsed < 10) return LOW_CENTRE.toward(LOW_RIGHT, ease((elapsed - 5) / 5));
-        return LOW_RIGHT.toward(REST, ease((elapsed - 10) / 7));
+        // When the player stops linking attacks, sweep back along one continuous low Bezier arc
+        // with a single ease so the blade never pauses at intermediate waypoints.
+        double total = cut == 1 ? 11.0 : 15.0;
+        double s = ease((now - guardUntil) / total);
+        if (cut == 1) return quad(RIGHT_GUARD, LOW_RIGHT, REST, s);
+        return cubic(sideGuard, LOW_CENTRE, LOW_RIGHT, REST, s);
+    }
+
+    private static Pose quad(Pose a, Pose b, Pose c, double s) {
+        return a.toward(b, s).toward(b.toward(c, s), s);
+    }
+
+    private static Pose cubic(Pose a, Pose b, Pose c, Pose d, double s) {
+        var ab = a.toward(b, s);
+        var bc = b.toward(c, s);
+        var cd = c.toward(d, s);
+        return ab.toward(bc, s).toward(bc.toward(cd, s), s);
     }
 
     private static double ease(double u) {
