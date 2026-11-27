@@ -39,8 +39,8 @@ final class ActionRemovalChecks {
             h.assertTrue(clients.equals(List.of("ClientInputAccessor", "PlayerTabOverlayMixin", "ShuoHeldLightMixin", "ClientAttackTimeMixin", "YikeArmPoseMixin",
                     "MyriadKeyboardMixin", "MyriadMouseMixin", "MyriadMinecraftClientMixin", "ChatComponentMixin",
                     "ChatListenerMixin", "ChatScreenMixin", "CommandSuggestionsMixin", "GuiMessageMixin", "MyriadLocalPlayerMixin",
-                    "MyriadHandRendererMixin", "MyriadCameraMixin", "MyriadLivingRendererMixin", "MyriadNameTagMixin")),
-                    "Gameplay, local time, attached light and Yike local weapon pose hooks remain; no retired player-action mixin returns");
+                    "MyriadHandRendererMixin", "MyriadCameraMixin", "RivetWorldRollMixin", "MyriadLivingRendererMixin", "MyriadNameTagMixin")),
+                    "Registered client hooks include Rivet's world roll and exclude retired player-action mixins");
         } catch (java.io.IOException e) { throw new IllegalStateException(e); }
         var ranged = Set.of("xuanchen", "hanze", "qingluo", "yunsheng", "yike", "luoxia");
         for (var role : CharacterType.values()) {
