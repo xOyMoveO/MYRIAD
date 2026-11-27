@@ -88,12 +88,12 @@ class Prop:
         if bell and material != "aqua_glass":
             marks = bell_material_marks(material, base, light, shadow, shine)
         elif material == "charcoal":
-            marks = [(1,0,3,30,light),(20,0,3,30,shadow)]
-            for v in range(30):
-                for u in range(24):
-                    band = (v+u//4)%10
-                    if band in (0,1,2):
-                        marks.append((u,v,1,1,shine if band==1 else shadow))
+            marks = [(0,0,4,30,shadow),(4,0,3,30,light),(21,0,3,30,shadow)]
+        elif material in ("bronze", "gold"):
+            # The recessed bronze stays warm and dark beside narrow polished arrises.
+            marks = [(0,0,3,30,shadow),(3,0,2,30,light),(5,0,1,30,shine),
+                     (6,0,4,30,light),(19,0,3,30,base),(22,0,2,30,shadow),
+                     (6,2,13,1,light),(11,26,9,1,shadow),(7,24,4,1,light)]
         elif material in ("ruby", "aqua_glass"):
             marks += [(3,2,5,9,shine),(8,2,12,3,light),(17,16,3,10,light),(6,24,14,3,light)]
         elif material == "gunmetal":
@@ -182,22 +182,37 @@ class Prop:
         name = part["id"]
         if material == "gunmetal":
             base, bright, dark = "#414652", "#555c6a", "#2e323d"
-            lines = [(0,0,5,128,dark),(6,0,4,128,"#4b515e"),(19,0,5,128,bright),
-                     (25,0,2,128,"#666e7a"),(28,0,4,128,"#48515c")]
-            lines += [(u+(v//3), y+v, 3, 1, "#606875") for u,y,n in
-                      ((11,38,8),(15,72,7),(10,104,11)) for v in range(n)]
-            lines += [(x,y,1,7,"#79818a") for x,y in ((15,38),(18,72),(14,104))]
+            # The darker longitudinal trough and its lip occupy the same physical
+            # X along the blade, even where the breadth of the plate changes.
+            lines = [(0,0,6,128,dark),(6,0,4,128,"#343944"),(10,0,2,128,"#65707c"),
+                     (12,0,5,128,"#485160"),(23,0,5,128,bright),(28,0,2,128,"#69727c"),
+                     (30,0,2,128,"#58616d")]
+            for u, y, count in ((10,8,7),(14,31,10),(18,56,7),(17,83,6),(10,105,9)):
+                for j in range(count):
+                    lines.append((u+j//3,y+j,2,1,"#68717c"))
+                    if j<count-2:
+                        lines.append((u-1+j//3,y+j+1,1,1,"#373d49"))
+            for y in (39,71,103):
+                # Three short chisel cuts fan away from the copper spine fittings.
+                lines.extend([(12,y,4,1,"#ad8062"),(14,y-1,4,1,"#b9916f"),
+                              (16,y-2,4,1,"#76695d"),(12,y+3,3,1,"#83776a")])
         elif material == "edge":
             base, bright, dark = "#b6c0c8", "#f5f8f6", "#76838e"
-            lines = [(0,0,5,128,dark),(5,0,6,128,"#939fa9"),(11,0,9,128,base),
-                     (20,0,6,128,"#d0d8dd"),(26,0,3,128,"#e5ebed"),(29,0,3,128,bright),
-                     (13,24,3,12,"#c2ccd3"),(16,66,2,19,"#c2cbd1")]
+            lines = [(0,0,3,128,dark),(3,0,4,128,"#909ba7"),(7,0,4,128,"#9faab5"),
+                     (11,0,8,128,base),(19,0,6,128,"#cbd5dd"),(25,0,3,128,"#dfe6ec"),
+                     (28,0,2,128,bright),(30,0,2,128,"#ccd3d8")]
+            for x,y,length in ((7,13,8),(14,36,13),(9,63,10),(19,87,7),(12,109,11)):
+                for j in range(length):
+                    lines.append((x+j//4,y+j,2,1,"#c4cdd3"))
+            for y in (24,51,77,110):
+                lines.extend([(27,y,5,1,"#a5b0ba"),(29,y+1,3,1,"#e9eef0")])
         else:
             base, bright, dark = "#8d2637", "#bd4550", "#541927"
-            lines = [(0,0,5,128,dark),(6,0,3,128,"#742231"),(12,0,7,128,"#a52f41"),
-                     (19,4,3,120,bright),(26,0,6,128,dark)]
-            for y in (35,66,97):
-                lines += [(14,y,4,1,"#d8996e"),(11,y+1,8,1,"#d8996e"),(14,y+2,4,1,"#d8996e")]
+            lines = [(0,0,4,128,dark),(4,0,3,128,"#742231"),(13,0,9,128,"#a52f41"),
+                     (23,0,3,128,bright),(29,0,3,128,dark)]
+            for y in (37,69,101):
+                for j,w in enumerate((3,5,7,5,3)):
+                    lines.append((16-w//2,y+j,w,1,"#d69a70" if j<3 else "#b67554"))
         key = "continuous_"+material
         if key not in self.tiles:
             self.tiles[key]=True
@@ -218,47 +233,159 @@ class Prop:
                 "atlas":{"width":ATLAS_SIZE,"height":ATLAS_SIZE,"regions":regions}}
 
 
+def dao_grip_wrap(art, grip):
+    # A single unwrapped strip follows the four walls, joining at the north-west
+    # corner. Each opposing set of bindings advances one turn per circumference.
+    u,v=540,0
+    art.regions.append({"id":"oxblood_braid","rect":[u,v,48,80],"fill":"#262730"})
+    for x in range(0,48,3):
+        light = x%12 in (3,6)
+        for turn in range(-1,7):
+            for pitch, color in ((-1,"#65333d" if light else "#54313b"),(1,"#864049" if light else "#71333f")):
+                y=16*turn+pitch*(x//3)
+                for dy, height, shade in ((-1,1,"#1d2027"),(0,3,color),(3,1,"#a85958" if light and pitch==1 else "#58313c")):
+                    top=max(0,y+dy)
+                    bottom=min(80,y+dy+height)
+                    if bottom>top:
+                        art.mark(grip["id"],"north",(u,v),x,top,3,bottom-top,shade)
+    for i,face in enumerate(("north","east","south","west")):
+        grip["faces"][face]["uv"]=[u+12*i,v,u+12*(i+1),v+80]
+
+
+def dao_guard_engraving(art, plates):
+    # The paired hooked scrolls are incised across the joined shoulders.
+    u,v=610,0
+    art.regions.append({"id":"incised_guard","rect":[u,v,72,32],"fill":"#674a3e"})
+    marks=[(0,0,72,7,"#977252"),(0,7,72,2,"#be9166"),(0,9,72,2,"#835c46"),
+           (0,22,72,3,"#533a35"),(0,25,72,7,"#423334")]
+    spiral=[(1,10,7,2),(5,12,6,2),(8,14,7,2),(12,16,5,2),
+            (16,16,2,5),(12,20,5,2),(10,18,3,2),(18,14,5,2),
+            (21,12,5,2),(24,10,4,2),(25,17,5,1),(27,15,4,1)]
+    for x,y,w,h in spiral:
+        for left in (x,72-x-w):
+            marks.extend(((left,y+1,w,h,"#3c2e2d"),(left,y,w,h,"#c69868")))
+    for mark in marks:
+        art.mark(plates[0]["id"],"north",(u,v),*mark)
+    for part in plates:
+        x,y,_=part["pos"]
+        w,h,_=part["size"]
+        left=round(8*(x-3.5))
+        right=left+round(8*w)
+        top,bottom=(round(8*(11.5-i)) for i in (y+h,y))
+        for face,a,b in (("north",left,right),("south",72-right,72-left)):
+            part["faces"][face]["uv"]=[u+a,v+top,u+b,v+bottom]
+
+
+def dao_garnet(art, table, face):
+    # A cushion-cut stone and its four short claws occupy a single face so its
+    # facets follow the cut instead of restarting at each step of the setting.
+    u,v=700,0
+    if "garnet_cut" not in art.tiles:
+        art.tiles["garnet_cut"]=True
+        art.regions.append({"id":"garnet_cut","rect":[u,v,16,16],"fill":"#623f36"})
+        rows=[
+            (4,12, 7,10,"#af554e","#d77565","#a24b49"),
+            (2,14, 6,12,"#b95652","#d76b66","#913244"),
+            (1,15, 5,11,"#c75c5e","#d86b69","#a64050"),
+            (1,15, 4,10,"#bf5156","#e07a75","#9b3448"),
+            (0,16, 4,11,"#a23849","#d05a63","#8d2e44"),
+            (0,16, 4,12,"#923048","#c54755","#82273d"),
+            (0,16, 3,12,"#8c2c43","#bd394d","#79243c"),
+            (0,16, 3,12,"#84263f","#b3324a","#711d37"),
+            (0,16, 3,12,"#79253e","#a72c45","#72233c"),
+            (0,16, 4,12,"#752139","#992b42","#79243d"),
+            (0,16, 4,11,"#79233c","#8c293e","#8a3347"),
+            (0,16, 5,10,"#852b41","#842239","#a74c55"),
+            (1,15, 6,10,"#8a3244","#782039","#963e50"),
+            (1,15, 7,10,"#8b3947","#712039","#873545"),
+            (2,14, 7,10,"#7e3643","#691f34","#74303c"),
+            (4,12, 7,10,"#6c2a3a","#631e32","#692739")]
+        for y,(start,end,left,right,a,b,c) in enumerate(rows):
+            for lo,hi,color in ((start,left,a),(left,right,b),(right,end,c)):
+                if hi>lo:
+                    art.mark(table["id"],face,(u,v),lo,y,hi-lo,1,color)
+        for rect in ((4,3,4,1,"#eab196"),(5,2,1,3,"#fdd8b3"),
+                     (12,11,2,1,"#ca696b"),(1,1,2,1,"#b9905b"),
+                     (13,1,2,1,"#b9905b"),(1,14,2,1,"#957044"),(13,14,2,1,"#957044")):
+            art.mark(table["id"],face,(u,v),*rect)
+    table["faces"][face]["uv"]=[u,v,u+16,v+16]
+
+
 def war_dao():
     art=Prop("chixiao_war_dao")
     box=art.box
-    box("wrapped_grip",0,-7,0,2.5,14,2.5,"charcoal",None)
+    grip=box("wrapped_grip",0,-7,0,2.5,14,2.5,"charcoal",None)
+    dao_grip_wrap(art,grip)
+
+    def block(name, x0,x1, y0,y1, z0,z1, material, parent="wrapped_grip"):
+        return box(name,(x0+x1)/2,y0,(z0+z1)/2,x1-x0,y1-y0,z1-z0,material,parent)
+
+    # The hand surrounds the same centre section. Bronze sleeves only clasp
+    # the very ends of the red-black binding.
+    for tag, y0, y1 in (("heel",-7,-6.5),("throat",6,7)):
+        block(tag+"_braid_ferrule",-1.5,2,y0,y1,-1.5,2,"bronze")
     for name,y,w,h,d,m in [
-        ("grip_neck",6.5,3.5,1,3,"bronze"),("neck_band",7.5,3.5,.5,3,"gold"),
-        ("pommel_collar",-8.5,3.5,1.5,3,"bronze"),("pommel_band",-8.5,3.5,.5,3.5,"gold"),
-        ("pommel_shank",-9.5,2,1,2,"gold"),("ring_top",-10.5,3.5,1,1.5,"gold"),
-        ("ring_base",-14,3.5,1,1.5,"gold"),("guard_body",8,5,2.5,3.5,"bronze"),
-        ("guard_crown",10.5,4,.5,3,"gold"),("blade_socket",11,3.5,1.5,2.5,"bronze"),
-        ("socket_rim",12,4,.5,2.5,"gold")
+        ("grip_neck",7,3.5,.5,3,"bronze"),("neck_band",7.5,3.5,.5,3,"gold"),
+        ("pommel_shank",-9.5,2,1,2,"gold"),
+        ("ring_top",-10.5,3.5,1,1.5,"gold"),("ring_base",-14,3.5,1,1.5,"gold"),
+        ("guard_body",8,4,2.5,3.5,"bronze"),("guard_crown",10.5,4,.5,3,"gold"),
+        ("blade_socket",11,3.5,1.5,2.5,"bronze")
     ]:
         box(name,0,y,0,w,h,d,m)
-    for s,label in [(-1,"left"),(1,"right")]:
-        box(label+"_ring_rail",s*1.5,-13,0,.5,2.5,1.5,"gold","ring_base")
-        box(label+"_guard_arm",s*3,8.5,0,3,1.5,2.5,"bronze","guard_body")
-        box(label+"_guard_cap",s*3.70,9.5,0,1.5,.5,3,"gold","guard_body")
-        box(label+"_guard_drop",s*2.25,7.5,0,1.5,1,2.5,"bronze","guard_body")
-        box(label+"_guard_rail",s*2.30,8.5,s*1.5,2.5,.5,.5,"gold","guard_body")
-        box(label+"_ruby_frame",0,8,s*1.9,2.5,2.5,.6,"gold","guard_body")
-        box(label+"_ruby_bezel",0,8.45,s*2.2,1.8,1.6,.5,"bronze","guard_body")
-        box(label+"_ruby",0,8.74,s*2.5,1.2,1.2,.5,"ruby","guard_body")
-        for side,tag in [(-1,"front"),(1,"rear")]:
-            box(f"{label}_{tag}_guard_corner",s*4,8.75,side*1.25,.75,1,1,"bronze","guard_body")
-            box(f"{label}_{tag}_guard_seam",s*3.63,9.5,side*1.5,1,.5,.5,"gold","guard_body")
-            box(f"{label}_{tag}_guard_pin",s*2.5,9,side*1.5,.5,.5,.5,"steel","guard_body")
-        box(label+"_pommel_side",s*1.75,-13,0,.5,2.5,1,"bronze","ring_base")
-    # The visual cutting line is +X. All three strips meet without overlap,
-    # keeping the silhouette but tapering the model depth to a narrow bright land.
+    block("pommel_collar",-1.5,2,-8.5,-7,-1,1.5,"bronze")
+    block("pommel_front_band",-1.5,2,-8.5,-8,-1.5,-1,"gold")
+    block("pommel_rear_band",-1.5,2,-8.5,-8,1.5,2,"gold")
+    block("socket_front_band",-1.5,2,12,12.5,-1.5,-1,"gold","blade_socket")
+    block("socket_back_band",-1.5,2,12,12.5,1.5,2,"gold","blade_socket")
+
+    shoulders=[]
+    for sign,label in ((-1,"left"),(1,"right")):
+        def across(name, x0,x1, y0,y1, z0,z1, mat):
+            x0,x1=sorted((sign*x0,sign*x1))
+            return block(label+"_"+name,x0,x1,y0,y1,z0,z1,mat,"guard_body")
+        shoulders.append(across("guard_root",2,3,7.5,10,-1.5,1.5,"bronze"))
+        shoulders.append(across("guard_wing",3,4,8,10,-1,1,"bronze"))
+        shoulders.append(across("guard_terminal",4,4.5,8.5,10,-1,1,"bronze"))
+        across("wing_glint",2,3,10,10.5,-1.5,1.5,"gold")
+        across("wing_cap",3.5,4.5,10,10.5,-1,1,"gold")
+        rail_min,rail_max=sorted((sign,sign*1.5))
+        rim_min,rim_max=sorted((sign*1.5,sign*2))
+        block(label+"_ring_rail",rail_min,rail_max,-12.5,-10.5,-.5,1,"bronze","ring_base")
+        block(label+"_ring_joint",rail_min,rail_max,-13,-12.5,-.5,1,"gold","ring_base")
+        block(label+"_pommel_side",rim_min,rim_max,-13,-10.5,-.5,.5,"bronze","ring_base")
+        for face, z0,z1 in (("front",-1.5,-1),("rear",1,1.5)):
+            across(face+"_cap_pin",3.5,4,9,9.5,z0,z1,"gold")
+    dao_guard_engraving(art,shoulders)
+    # Three nested housings read as a dark-red cabochon framed by cut brass;
+    # adjacent steps share edges but never share an exposed face.
+    for name,z0,z1,polarity in (("front",-2,-1.5,-1),("rear",2,2.5,1)):
+        outside=z0 if polarity<0 else z1
+        def faceplate(tag,x0,x1,y0,y1,d0,d1,mat):
+            a,b=sorted((outside+polarity*d0,outside+polarity*d1))
+            return block(name+"_"+tag,x0,x1,y0,y1,a,b,mat,"guard_body")
+        for tier,(half,y0,y1) in enumerate(((1,7.5,8),(1.5,8,10),(1,10,10.5))):
+            block(f"{name}_setting_{tier}",-half,half,y0,y1,z0,z1,"gold","guard_body")
+        gem=faceplate("garnet_table",-1,1,8,10,0,.5,"ruby")
+        dao_garnet(art,gem,"north" if polarity<0 else "south")
+        for x in (-1,1):
+            block(f"{name}_shank_pin_{x+1}",x-.5,x,11.5,12,
+                  -1.5 if polarity<0 else 1.5,-1 if polarity<0 else 2,
+                  "gold","blade_socket")
+
+    # Unchanged +X cutting profile. The spine, main grind and silver land have
+    # different section thicknesses, and the tip keeps its original coordinates.
     profile=[(12.5,2,-1.0,2.0),(14.5,4,-1.0,2.5),(18.5,4,-1.0,3.0),(22.5,4,-1.0,3.5),
              (26.5,4,-1.0,4.0),(30.5,5,-1.0,4.5),(35.5,3,-1.0,5.0)]
     profile += [(38.5+i*.5,.5,-1.0,5.0-i*.5) for i in range(12)]
     for i,(y,h,x1,x2) in enumerate(profile):
-        wide=x2-x1
         edge=.5
-        bevel=min(1,wide-edge)
-        body=wide-edge-bevel
+        bevel=min(1,x2-x1-edge)
+        body=x2-x1-edge-bevel
         if body>0:
-            plate=box(f"blade_plate_{i:02}",x1+body/2,y,0,body,h,1.5,"gunmetal","blade_socket")
-            for face in ("north","south"):
-                art.forged_panel(plate,face,"gunmetal")
+            plate=block(f"blade_plate_{i:02}",x1,x1+body,y,y+h,-1,1,"gunmetal","blade_socket")
+            right=round(32*body/4.5)
+            for face,span in (("north",(0,right)),("south",(32-right,32))):
+                art.forged_panel(plate,face,"gunmetal",span)
         if bevel>0:
             slope=box(f"blade_bevel_{i:02}",x2-edge-bevel/2,y,0,bevel,h,1,"steel","blade_socket")
             for face in ("north","south"):
@@ -266,17 +393,21 @@ def war_dao():
         land=box(f"silver_edge_{i:02}",x2-edge/2,y,.25,edge,h,.5,"edge","blade_socket")
         for face in ("north","south"):
             art.forged_panel(land,face,"edge",(20,32))
-    for side,label in [(-1,"front"),(1,"rear")]:
-        z=side
-        channel=box(label+"_red_inlay",-.48,13,z,1,24.5,.5,"lacquer","blade_socket")
-        art.forged_panel(channel,"north" if side<0 else "south","lacquer")
-        box(label+"_spine_trim",-.98,13,z,.5,25.5,.5,"gold","blade_socket")
-        box(label+"_inner_trim",.23,14,z,.5,22.5,.5,"bronze","blade_socket")
-        for i,y in enumerate((13,21.5,29.5,37.5)):
-            box(f"{label}_spine_clip_{i}",-.54,y,z*1.25,1.5,.5,.5,"gold","blade_socket")
-        box(label+"_top_crook",.27,36.5,z,.5,1.5,.5,"gold","blade_socket")
-        for i,y in enumerate((15,36)):
-            box(f"{label}_fuller_stud_{i}",.8,y,z,.5,.5,.5,"bronze","blade_socket")
+
+    for sign,label in ((-1,"front"),(1,"rear")):
+        def relief(tag,x0,x1,y0,y1,depth0,depth1,mat):
+            z0,z1=sorted((sign*depth0,sign*depth1))
+            return block(label+"_"+tag,x0,x1,y0,y1,z0,z1,mat,"blade_socket")
+        channel=relief("red_inlay",-.5,.5,13,37.5,1,1.5,"lacquer")
+        art.forged_panel(channel,"north" if sign<0 else "south","lacquer")
+        relief("spine_trim",-1,-.5,13,38.5,1,1.5,"gold")
+        relief("upper_hook",-.5,0,37.5,38.5,1,1.5,"bronze")
+        relief("lower_socket",-.5,.5,12.5,13,1,1.5,"bronze")
+        for i,y in enumerate((14,21,27.5,33.5)):
+            relief(f"copper_lock_{i}",-1,.5,y,y+.5,1.5,2,"bronze")
+            relief(f"lock_pin_{i}",-.5,0,y,y+.5,2,2.5,"gold")
+        for i,y in enumerate((17.5,25.5,33.5)):
+            relief(f"engraved_spur_{i}",.5,1,y,y+.5,1,1.5,"bronze")
     return art
 
 

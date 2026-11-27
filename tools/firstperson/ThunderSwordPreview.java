@@ -61,6 +61,6 @@ public final class ThunderSwordPreview {
         }
         g.dispose();ImageIO.write(sheet,"png",out.resolve("thunder_sword_firstperson.png").toFile());
         NightDaggerPreview.gif(frames,out.resolve("thunder_sword_firstperson.gif"));
-        System.out.println("[MYRIAD-THUNDER-VIEW-PREVIEW] PASS: actual 169-cube V2 item + skin arms/UVs, forward-edge idle and three cuts, central idle view clear, blade near-plane safe; offline only");
+        System.out.println("[MYRIAD-THUNDER-VIEW-PREVIEW] PASS: actual " + NightDaggerPreview.blade.size() + "-face item + skin arms/UVs, forward-edge idle and three cuts, central idle view clear, blade near-plane safe; offline only");
     }
 }

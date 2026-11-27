@@ -11,7 +11,7 @@ import javax.imageio.ImageIO;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-/** Actual V2 sword, skin meshes, HD UVs and shipping matrices; not a game capture. */
+/** Current sword, skin meshes, HD UVs and shipping matrices; not a game capture. */
 public final class ThunderSkillPreview {
     private static final int W=640,H=360;
     private static final String[] NAMES={"闪雷 · 双手倒剑插地","雷电劫 · 左手蓄雷前推","天雷护体 · 双手合诀","斩雷 · 左上蓄势斩击","九天神雷 · 左手指向选点","雷霆裁决 · 拂刃引雷"};
@@ -62,6 +62,6 @@ public final class ThunderSkillPreview {
                 }checked++;
             }
         }
-        System.out.println("[MYRIAD-THUNDER-SKILL-PREVIEW] PASS: six linked gesture GIFs, actual V2 mesh/HD UVs/skin matrices, "+checked+" finite/clipping poses; offline only");
+        System.out.println("[MYRIAD-THUNDER-SKILL-PREVIEW] PASS: six linked gesture GIFs, current item mesh/HD UVs/skin matrices, "+checked+" finite/clipping poses; offline only");
     }
 }
