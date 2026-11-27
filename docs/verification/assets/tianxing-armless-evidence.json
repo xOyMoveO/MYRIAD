@@ -1,0 +1,318 @@
+{
+  "prototypeSourceCommit": "ffb9d414295eeb4eea70707c7b9a408131fb1359",
+  "platform": {
+    "minecraft": "26.3",
+    "fabricLoader": "0.20.1",
+    "fabricApi": "0.166.2+26.3",
+    "java": 25
+  },
+  "comparison": {
+    "sha256": "679b85b156f19f3709fb30a094f3947c6563982046ca16a5535813fff08175ac",
+    "codec_name": "h264",
+    "width": 1920,
+    "height": 672,
+    "avg_frame_rate": "60/1",
+    "duration": "20.516667",
+    "nb_frames": "1231"
+  },
+  "original": {
+    "video": "九人近战与归霞弓.mp4",
+    "sourceSha256": "e5d6edf4cc0794305fba74584326fec683a0990922545b5cda0efa333e9f742d",
+    "intervalSeconds": [
+      4.1,
+      8.25
+    ],
+    "fps": 20
+  },
+  "archiveJarNewRecording": {
+    "jarSha256": "f4ae4f0b83f04fe9e7ce00b49362f5930ce9a143762668d49aed830876b85d8e",
+    "setup": {
+      "dimension": "myriad:training_ground",
+      "character": "tianxing",
+      "camera": "FIRST_PERSON",
+      "fov": 70,
+      "mainArm": "RIGHT",
+      "mainItem": "myriad:leitingjian",
+      "offhandEmpty": true,
+      "x": 0.5,
+      "y": 65.0,
+      "z": 0.5,
+      "yaw": 0.0,
+      "pitch": 0.0,
+      "meleeCadence": 28.571428,
+      "screen": "none",
+      "overworldClock": 6000,
+      "rain": 0.0
+    },
+    "nativeClick": [
+      {
+        "clientTick": 420,
+        "t": 6.8219,
+        "strength": 1.0,
+        "route": "native_keyboard_or_mouse_handler"
+      },
+      {
+        "clientTick": 447,
+        "t": 8.1719,
+        "strength": 0.96250004,
+        "route": "native_keyboard_or_mouse_handler"
+      },
+      {
+        "clientTick": 478,
+        "t": 9.7412,
+        "strength": 1.0,
+        "route": "native_keyboard_or_mouse_handler"
+      }
+    ],
+    "serverAndBufferReceipts": [
+      {
+        "serverTick": 378,
+        "target": 4,
+        "type": "melee_accepted",
+        "clientTick": 421
+      },
+      {
+        "serverTick": 378,
+        "target": 4,
+        "damage": 62.612633,
+        "type": "training_damage",
+        "clientTick": 421
+      },
+      {
+        "worldTick": 406,
+        "type": "buffer_submitted",
+        "clientTick": 449
+      },
+      {
+        "serverTick": 407,
+        "target": 4,
+        "type": "melee_accepted",
+        "clientTick": 450
+      },
+      {
+        "serverTick": 407,
+        "target": 4,
+        "damage": 62.400784,
+        "type": "training_damage",
+        "clientTick": 450
+      },
+      {
+        "serverTick": 436,
+        "target": 4,
+        "type": "melee_accepted",
+        "clientTick": 479
+      },
+      {
+        "serverTick": 436,
+        "target": 4,
+        "damage": 67.80897,
+        "type": "training_damage",
+        "clientTick": 479
+      }
+    ],
+    "releasedInputs": 0,
+    "windowRecording": {
+      "sha256": "ddfd60a4cc9f240b531125bcc0d8a2c335dd693f317228d99177564c6f1ebe88",
+      "codec_name": "h264",
+      "width": 1708,
+      "height": 1016,
+      "avg_frame_rate": "57360/991",
+      "duration": "16.516667",
+      "nb_frames": "956"
+    }
+  },
+  "prototypeRight": {
+    "jarSha256": "b31ff64cae5f4674dc892eb5a401ac3dba8bb05a88c1ce87ec9ce1b97d8adc4a",
+    "setup": {
+      "dimension": "myriad:training_ground",
+      "character": "tianxing",
+      "camera": "FIRST_PERSON",
+      "fov": 70,
+      "mainArm": "RIGHT",
+      "mainItem": "myriad:leitingjian",
+      "offhandEmpty": true,
+      "x": 0.5,
+      "y": 65.0,
+      "z": 0.5,
+      "yaw": 0.0,
+      "pitch": 0.0,
+      "meleeCadence": 28.571428,
+      "screen": "none",
+      "overworldClock": 6000,
+      "rain": 0.0
+    },
+    "nativeClick": [
+      {
+        "clientTick": 415,
+        "t": 6.8306,
+        "strength": 1.0,
+        "route": "native_keyboard_or_mouse_handler"
+      },
+      {
+        "clientTick": 442,
+        "t": 8.1796,
+        "strength": 0.96250004,
+        "route": "native_keyboard_or_mouse_handler"
+      },
+      {
+        "clientTick": 476,
+        "t": 9.8956,
+        "strength": 1.0,
+        "route": "native_keyboard_or_mouse_handler"
+      }
+    ],
+    "serverAndBufferReceipts": [
+      {
+        "serverTick": 380,
+        "target": 5,
+        "type": "melee_accepted",
+        "clientTick": 416
+      },
+      {
+        "serverTick": 380,
+        "target": 5,
+        "damage": 66.215034,
+        "type": "training_damage",
+        "clientTick": 416
+      },
+      {
+        "worldTick": 407,
+        "type": "buffer_submitted",
+        "clientTick": 444
+      },
+      {
+        "serverTick": 409,
+        "target": 5,
+        "type": "melee_accepted",
+        "clientTick": 445
+      },
+      {
+        "serverTick": 409,
+        "target": 5,
+        "damage": 65.519066,
+        "type": "training_damage",
+        "clientTick": 445
+      },
+      {
+        "serverTick": 441,
+        "target": 5,
+        "type": "melee_accepted",
+        "clientTick": 477
+      },
+      {
+        "serverTick": 441,
+        "target": 5,
+        "damage": 65.89124,
+        "type": "training_damage",
+        "clientTick": 477
+      }
+    ],
+    "releasedInputs": 0,
+    "windowRecording": {
+      "sha256": "dc87769f10ff2fe93b05664aaa96a5ef298099b948fb7376ef44d604efff4ed4",
+      "codec_name": "h264",
+      "width": 1708,
+      "height": 1016,
+      "avg_frame_rate": "576600/9979",
+      "duration": "16.631667",
+      "nb_frames": "961"
+    }
+  },
+  "prototypeLeft": {
+    "jarSha256": "b31ff64cae5f4674dc892eb5a401ac3dba8bb05a88c1ce87ec9ce1b97d8adc4a",
+    "setup": {
+      "dimension": "myriad:training_ground",
+      "character": "tianxing",
+      "camera": "FIRST_PERSON",
+      "fov": 70,
+      "mainArm": "LEFT",
+      "mainItem": "myriad:leitingjian",
+      "offhandEmpty": false,
+      "x": 0.5,
+      "y": 65.0,
+      "z": 0.5,
+      "yaw": 0.0,
+      "pitch": 0.0,
+      "meleeCadence": 28.571428,
+      "screen": "none",
+      "overworldClock": 6000,
+      "rain": 0.0
+    },
+    "nativeClick": [
+      {
+        "clientTick": 410,
+        "t": 6.8325,
+        "strength": 1.0,
+        "route": "native_keyboard_or_mouse_handler"
+      },
+      {
+        "clientTick": 437,
+        "t": 8.2003,
+        "strength": 0.96250004,
+        "route": "native_keyboard_or_mouse_handler"
+      },
+      {
+        "clientTick": 471,
+        "t": 9.9144,
+        "strength": 1.0,
+        "route": "native_keyboard_or_mouse_handler"
+      }
+    ],
+    "serverAndBufferReceipts": [
+      {
+        "serverTick": 379,
+        "target": 4,
+        "type": "melee_accepted",
+        "clientTick": 411
+      },
+      {
+        "serverTick": 379,
+        "target": 4,
+        "damage": 64.92333,
+        "type": "training_damage",
+        "clientTick": 411
+      },
+      {
+        "worldTick": 407,
+        "type": "buffer_submitted",
+        "clientTick": 439
+      },
+      {
+        "serverTick": 408,
+        "target": 4,
+        "type": "melee_accepted",
+        "clientTick": 441
+      },
+      {
+        "serverTick": 408,
+        "target": 4,
+        "damage": 66.91254,
+        "type": "training_damage",
+        "clientTick": 441
+      },
+      {
+        "serverTick": 440,
+        "target": 4,
+        "type": "melee_accepted",
+        "clientTick": 472
+      },
+      {
+        "serverTick": 440,
+        "target": 4,
+        "damage": 64.65816,
+        "type": "training_damage",
+        "clientTick": 472
+      }
+    ],
+    "releasedInputs": 0,
+    "windowRecording": {
+      "sha256": "4e6ef1a1261401a2a7ca3b22353c0b78ba0d112b4fc05232990511f61f66b7dc",
+      "codec_name": "h264",
+      "width": 1708,
+      "height": 1016,
+      "avg_frame_rate": "285900/4939",
+      "duration": "16.456667",
+      "nb_frames": "953"
+    }
+  }
+}

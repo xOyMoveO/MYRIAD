@@ -10,6 +10,16 @@ import static com.myriad.character.ability.AbilityVfxMaterials.*;
 public final class ThunderBasicTrail {
     private static final AttackTrailMesh.Style STYLE=new AttackTrailMesh.Style(THUNDER_PIXEL_SLASH,THUNDER_PIXEL_BOLT,0xFFFFFF,0xB5F5FF,.82f,.018);
     private ThunderBasicTrail(){}
+    static List<Quad> prototype(TianxingSwordPrototype motion, double now, boolean left) {
+        double length = motion.sweepEnd() - motion.sweepStart();
+        if (!motion.active(now) || length <= 0 || now <= motion.sweepStart()) return List.of();
+        var samples = AttackTrailMesh.samples(now, motion.sweepStart(), length + AttackTrailMesh.LIFE,
+                0, length / (length + AttackTrailMesh.LIFE), t ->
+                        AttackTrailMesh.slice(motion.sword(t, left),
+                                new Vector3f(0, .40f, 0), new Vector3f(0, 1.40625f, 0), t));
+        return paint(samples, now);
+    }
+
     public static List<Quad> mesh(ThunderSwordMotion motion,double now,boolean left){
         return mesh(motion,now,left,0);
     }
@@ -21,6 +31,11 @@ public final class ThunderBasicTrail {
             var f=motion.frame(t);var m=ThunderSwordRig.wrist(f.pose(),equip,left).mul(ThunderSwordRig.blade(f,left));
             return AttackTrailMesh.slice(m,new Vector3f(0,.40f,0),new Vector3f(0,1.40625f,0),t);
         });
+        return paint(samples, now);
+    }
+
+    private static List<Quad> paint(List<AttackTrailMesh.Slice> samples, double now) {
+        if (samples.isEmpty()) return List.of();
         var a=ThunderFlipbook.loop(0,now,0,false);var b=ThunderFlipbook.loop(0,now,3,false);
         return AttackTrailMesh.build(samples,now,STYLE,new AttackTrailMesh.Cell(a.u0(),a.u1(),a.v0(),a.v1()),new AttackTrailMesh.Cell(b.u0(),b.u1(),b.v0(),b.v1()));
     }
