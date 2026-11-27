@@ -18,9 +18,13 @@ final class ThunderSwordViewChecks {
             for(int i=0;i<=120;i++)for(float equip:new float[]{0,.5f,1})for(boolean left:new boolean[]{false,true})for(boolean slim:new boolean[]{false,true}){
                 var frame=motion.frame(start+motion.duration()*i/120);
                 var wrist=ThunderSwordRig.wrist(frame.pose(),equip,left);
-                var arm=new Matrix4f(wrist).mul(ThunderSwordRig.arm(slim,left));
+                var arm=ThunderSwordRig.hand(frame.pose(),equip,left).mul(ThunderSwordRig.arm(slim,left));
                 var blade=new Matrix4f(wrist).mul(ThunderSwordRig.blade(frame,left));
                 var palm=arm.transformPosition(new Vector3f((slim?.5f:1)/16*(left?1:-1),.5f,0));
+                var end=ThunderSwordRig.forearmEnd(left);
+                var sleeveAxis=arm.transformDirection(new Vector3f(0,1,0)).normalize();
+                h.assertTrue(sleeveAxis.dot(new Vector3f(palm).sub(end).normalize())>.9999f,"Fist and sleeve stay aligned along the straight forearm axis");
+                h.assertTrue(end.isFinite()&&end.y/-end.z<-Math.tan(Math.toRadians(55)),"Forearm continues off-screen even at wide FOV");
                 h.assertTrue(palm.isFinite()&&palm.distance(blade.transformPosition(new Vector3f()))<1E-6,"Palm and handle stay attached in every cut/equip/skin/hand pose");
                 h.assertTrue(wrist.determinant()>0&&blade.determinant()>0,"No reversed face winding or negative scale");
                 if(frame.cuttingWeight()==1){

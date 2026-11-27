@@ -94,17 +94,20 @@ public final class ThunderSwordView {
             blade=ThunderSkillRig.recover(ThunderSkillRig.blade(recovery.from(),left),blade,amount);
             if(off!=null)off=ThunderSkillRig.recover(ThunderSkillRig.off(recovery.from(),left),off,amount);
         }
-        PoseStack stack=event.getPoseStack();stack.pushPose();
+        PoseStack stack=event.getPoseStack();
+        stack.pushPose();
+        try{
+            stack.mulPose(ThunderSwordRig.handAt(wrist.getTranslation(new org.joml.Vector3f()),left));
+            submitArm(event,stack,mc,slim,left);
+        }finally{stack.popPose();}
+        stack.pushPose();
         try{
             stack.mulPose(wrist);
-            submitArm(event,stack,mc,slim,left);
-            stack.pushPose();try{
-                stack.mulPose(blade);
-                // NONE prevents a second application of item display offsets after the palm attachment.
-                if(!gesture||skill.showBlade())com.myriad.client.platform.ClientItemRenderer.submit(mc.player,event.getItemStack(),
-                        ItemDisplayContext.NONE,stack,event.getSubmitNodeCollector(),event.getPackedLight());
-                if(gesture&&skill.showBlade())ThunderSkillHandRenderer.submit(event,stack,ThunderSkillHandVfx.blade(skill,now));
-            }finally{stack.popPose();}
+            stack.mulPose(blade);
+            // NONE prevents a second application of item display offsets after the palm attachment.
+            if(!gesture||skill.showBlade())com.myriad.client.platform.ClientItemRenderer.submit(mc.player,event.getItemStack(),
+                    ItemDisplayContext.NONE,stack,event.getSubmitNodeCollector(),event.getPackedLight());
+            if(gesture&&skill.showBlade())ThunderSkillHandRenderer.submit(event,stack,ThunderSkillHandVfx.blade(skill,now));
         }finally{stack.popPose();}
         if(off!=null){
             stack.pushPose();try{stack.mulPose(off);submitArm(event,stack,mc,slim,!left);}finally{stack.popPose();}

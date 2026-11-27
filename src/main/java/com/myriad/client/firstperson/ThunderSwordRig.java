@@ -1,6 +1,7 @@
 package com.myriad.client.firstperson;
 
 import org.joml.Matrix4f;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 /** Shared palm attachment for Tianxing's cosmetic first-person arm and actual item. */
@@ -8,20 +9,34 @@ public final class ThunderSwordRig {
     private static final float DEG=(float)(Math.PI/180);
     public static final float VIEW_SCALE=.74f;
     public static final float BLADE_SCALE=1.35f;
-    static double restTurn(boolean left){return (left?163:17)*DEG;}
+    static double restTurn(boolean left){return (left?166:14)*DEG;}
     private ThunderSwordRig(){}
     public static boolean allowed(boolean mod,String role,boolean ownLivingFirstPerson,boolean mainSword){
         return mod&&"tianxing".equals(role)&&ownLivingFirstPerson&&mainSword;
     }
+    static Vector3f palm(ThunderSwordMotion.Pose p,float equip,boolean left){
+        float e=Float.isFinite(equip)?Math.clamp(equip,0,1):0;
+        return new Vector3f((left?-1:1)*(float)p.x(),(float)p.y()-.48f*e,(float)p.z());
+    }
     public static Matrix4f wrist(ThunderSwordMotion.Pose p,float equip,boolean left){
         float side=left?-1:1;
-        float e=Float.isFinite(equip)?Math.clamp(equip,0,1):0;
-        return new Matrix4f().translation(side*(float)p.x(),(float)p.y()-.48f*e,(float)p.z())
+        return new Matrix4f().translation(palm(p,equip,left))
                 .rotateX((float)p.pitch()*DEG).rotateY(side*(float)p.yaw()*DEG)
                 .rotateZ(side*(float)p.roll()*DEG).scale(VIEW_SCALE);
     }
     public static Matrix4f arm(boolean slim,boolean left){
-        return new Matrix4f().scaling(1.35f,1.41f,1.35f).mul(NightDaggerRig.arm(slim,left));
+        return new Matrix4f().scaling(1.22f,1.35f,1.22f).mul(NightDaggerRig.arm(slim,left));
+    }
+    public static Matrix4f hand(ThunderSwordMotion.Pose p,float equip,boolean left){
+        return handAt(palm(p,equip,left),left);
+    }
+    static Matrix4f handAt(Vector3f palm,boolean left){
+        var axis=new Vector3f(palm).sub(forearmEnd(left)).normalize();
+        return new Matrix4f().translation(palm)
+                .rotate(new Quaternionf().rotationTo(0,1,0,axis.x,axis.y,axis.z)).scale(VIEW_SCALE);
+    }
+    public static Vector3f forearmEnd(boolean left){
+        return new Vector3f(left?-.85f:.85f,-1.48f,-.70f);
     }
     public static Matrix4f blade(boolean left){
         var p=ThunderSwordMotion.IDLE;

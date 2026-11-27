@@ -24,7 +24,7 @@ public final class FlameDaoRig {
                 .rotateZ(side*(float)p.roll()*DEG).scale(VIEW_SCALE);
     }
     public static Matrix4f arm(boolean slim,boolean left){
-        return new Matrix4f().scaling(1.25f,1.35f,1.25f).mul(NightDaggerRig.arm(slim,left));
+        return new Matrix4f().scaling(1.22f,1.35f,1.22f).mul(NightDaggerRig.arm(slim,left));
     }
     public static Matrix4f hand(FlameDaoMotion.Pose p,float equip,boolean left){
         return handAt(palm(p,equip,left),left);
@@ -36,7 +36,7 @@ public final class FlameDaoRig {
                 .rotate(new Quaternionf().rotationTo(0,1,0,axis.x,axis.y,axis.z)).scale(VIEW_SCALE);
     }
     public static Vector3f forearmEnd(boolean left){
-        return new Vector3f(left?-.85f:.85f,-1.55f,-.86f);
+        return new Vector3f(left?-.84f:.84f,-1.48f,-.70f);
     }
     private static Matrix4f shaft(boolean left){return new Matrix4f().rotateZ((left?65:-65)*DEG).scale(BLADE_SCALE);}
     public static Vector3f travel(FlameDaoMotion.Frame f,boolean left){

@@ -5,7 +5,7 @@ public final class FlameDaoMotion {
     public record Pose(double x,double y,double z,double pitch,double yaw,double roll) {
         private double v(int i){return switch(i){case 0->x;case 1->y;case 2->z;case 3->pitch;case 4->yaw;default->roll;};}
     }
-    public static final Pose IDLE=new Pose(.45,.33,-1.04,-4,-3,35);
+    public static final Pose IDLE=new Pose(.56,.28,-1.06,-18,-6,54);
     public record Frame(Pose pose,Pose before,Pose after,double progress,int cut,
                         double entryRight,double entryLeft,double anchorRight,double anchorLeft){}
     private record Key(double t,Pose p){}

@@ -18,7 +18,7 @@ public final class NightDaggerRig {
         return new Matrix4f().translation((slim ? .5f : 1f)/16f*(left ? -1 : 1),-8f/16f,0);
     }
     public static Matrix4f daggerArm(boolean slim,boolean left) {
-        return new Matrix4f().scaling(.92f,1,.92f).mul(arm(slim,left));
+        return new Matrix4f().scaling(1.06f,1,1.06f).mul(arm(slim,left));
     }
     public static Matrix4f blade(boolean left) {
         return blade(left,0);
