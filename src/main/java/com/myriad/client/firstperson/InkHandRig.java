@@ -20,9 +20,9 @@ final class InkHandRig {
 
     static Matrix4f arm(InkHandMotion.Pose pose, boolean left, boolean slim, float equip) {
         Vec3 hand = lowered(left ? pose.palm() : pose.grip(), equip);
-        Vec3 shoulder = new Vec3(left ? -.83 : .85, -.82, -.15);
+        Vec3 shoulder = left ? new Vec3(-.83, -.82, -.15) : new Vec3(.69, -.97, -.20);
         return pivot(hand, hand.subtract(shoulder), left ? pose.palmRoll() : pose.twist() * .56)
-                .scale(.725f, .98f, .725f).mul(NightDaggerRig.arm(slim, left));
+                .scale(.785f, .98f, .785f).mul(NightDaggerRig.arm(slim, left));
     }
 
     private static Matrix4f pivot(Vec3 at, Vec3 axis, double roll) {

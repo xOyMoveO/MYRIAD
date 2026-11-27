@@ -18,7 +18,7 @@ final class InkHandMotion {
 
     private static final Vec3 HIDDEN = new Vec3(-.67, -1.31, -.89);
     private static final double SETTLE = 3.6;
-    static final Pose IDLE = new Pose(new Vec3(.557, -.449, -.935), new Vec3(.20, .97, -.12), HIDDEN, -.15, 0);
+    static final Pose IDLE = new Pose(new Vec3(.545, -.455, -.955), new Vec3(.08, .96, -.25), HIDDEN, -.18, 0);
 
     private static Pose p(double x, double y, double z, double sx, double sy, double sz,
                           double lx, double ly, double lz, double turn, double palm) {

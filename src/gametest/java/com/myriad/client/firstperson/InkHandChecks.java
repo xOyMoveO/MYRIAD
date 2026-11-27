@@ -13,6 +13,7 @@ public final class InkHandChecks {
     private InkHandChecks() {}
 
     public static void verify(GameTestHelper h) {
+        checkGrip(h, InkHandMotion.IDLE);
         var motion = new InkHandMotion();
         var casts = new HashSet<InkHandMotion.Pose>();
         for (int skill = 2; skill <= 7; skill++) {
