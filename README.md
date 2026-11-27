@@ -42,7 +42,7 @@
 | Fabric Loader | `0.20.1` |
 | Fabric API | `0.166.2+26.3` |
 | Java | 运行至少 `25`；开发构建使用 JDK 25 |
-| 万象客户端 | 第一人称无手臂版 `myriad-0.1.0-no-arms.jar` |
+| 万象客户端 | 纯无手第一人称 `myriad-0.1.0-no-arms.jar` |
 
 启用万象后，第一人称显示武器、持物和特效，关闭万象玩法后恢复原版手臂。九名近战角色的左右主手动作互为镜像。[近战普攻动作说明](docs/verification/melee-firstperson.md)
 
