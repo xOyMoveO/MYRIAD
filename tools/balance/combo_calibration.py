@@ -26,23 +26,36 @@ def effect(skill, name):
     return named(skill["effects"])[f"{skill['id']}.{name}"]["rule"]["value"]
 
 
+def attribute_at_level(fields, name, level):
+    field = fields[name]
+    value = field["value"]
+    if isinstance(value, list):
+        return value[max(0, min(len(value) - 1, level - field.get("levelStart", 1)))]
+    return value
+
+
 def attributes(role, level, purchases, gain):
     def attribute(name):
-        value = role["attributes"][name]["value"]
-        return value[level - 1] if isinstance(value, list) else value
+        return attribute_at_level(role["attributes"], name, level)
 
+    innate_attack = attribute("physicalAttack")
+    innate_spell = attribute("spellPower")
+    opening_attack = attribute_at_level(role["attributes"], "physicalAttack", 1)
+    opening_spell = attribute_at_level(role["attributes"], "spellPower", 1)
     strength = purchases.get("strength", 0) * gain["physicalAttackPerStrength"]
     wisdom = purchases.get("wisdom", 0) * gain["spellPowerPerWisdom"]
     defense = purchases.get("defense", 0) * gain["defensePerPoint"]
     speed = purchases.get("speed", 0) * gain["attackSpeedPerPoint"]
     return {
-        "health": attribute("health"), "mana": attribute("mana"), "manaRegen": attribute("manaRegen"),
-        "bonus_physical": strength, "total_physical": attribute("physicalAttack") + strength,
-        "bonus_spell": wisdom, "total_spell": attribute("spellPower") + wisdom,
+        "health": attribute("health"), "mana": attribute("mana"),
+        "healthRegen": attribute("healthRegen"), "manaRegen": attribute("manaRegen"),
+        "bonus_physical": innate_attack - opening_attack + strength, "total_physical": innate_attack + strength,
+        "spell_above_level_one": innate_spell - opening_spell + wisdom, "total_spell": innate_spell + wisdom,
         "physicalDefense": attribute("physicalDefense") + defense,
         "magicDefense": attribute("magicResistance") + defense,
         "attackSpeed": min(gain["attackSpeedMax"], attribute("attackSpeed") + speed),
-        "innateAttackSpeed": attribute("attackSpeed"), "cooldownPurchases": purchases.get("cooldown", 0),
+        "openingAttackSpeed": attribute_at_level(role["attributes"], "attackSpeed", 1),
+        "cooldownPurchases": purchases.get("cooldown", 0),
         "none": 0,
     }
 
@@ -460,7 +473,7 @@ class Replay:
             quick = passive == "luoxia_chase_dusk" and self.tick < self.quick_until
             full = passive == "luoxia_steady_dusk" and not quick
             work = 20 if full else 11 - 0.4 * self.ranks[passive] if quick else row["drawWork"]["value"]
-            self.draw = self.action_progress + work * self.stats["innateAttackSpeed"] / self.stats["attackSpeed"], label, quick, full
+            self.draw = self.action_progress + work * self.stats["openingAttackSpeed"] / self.stats["attackSpeed"], label, quick, full
             self.record("bow_draw", label=label, actionTicks=work)
             return True
         self.basic_release(label, False, False)
@@ -480,7 +493,7 @@ class Replay:
             speed = data["overdrawSpeed"] if full else speed
             self.quick_until = 0
         elif mode == "magic_bullet":
-            raw = row["rawDamage"]["value"] + row["spellScaling"]["value"] * self.stats["bonus_spell"]
+            raw = row["rawDamage"]["value"] + row["spellScaling"]["value"] * self.stats["spell_above_level_one"]
             reach = row["range"]["value"]
             speed = row.get("flightSpeed", {}).get("value", speed)
             self.basic_ready = self.action_progress + ceil(20 / self.stats["attackSpeed"])
@@ -657,6 +670,8 @@ class Replay:
         return {
             "burstHp": sum(value for tick, value in primary.damage if tick < self.windows["burst"]),
             "sustainedHpPerSecond": sum(value for _, value in primary.damage) / (self.end / 20),
+            "firstLethalTick": primary.damage[-1][0] if primary.hp <= 0 and primary.damage else None,
+            "targetHpAfter": primary.hp,
             "controlActionSeconds": self.net_control(primary),
             "effectiveSupportHp": support.healed + support.absorbed,
             "actualHealingHp": support.healed, "actualAbsorbedHp": support.absorbed,

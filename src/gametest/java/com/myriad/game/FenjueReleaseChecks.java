@@ -82,8 +82,10 @@ final class FenjueReleaseChecks {
                     }
                 }
                 if(elapsed==20){
-                    h.assertTrue(Math.abs(fixtures.get(0).targets.getFirst().getHealth()-953)<.05,"Target beyond old 4-block dash is hit once with 47 zero-purchase damage despite extra spell power");
-                    h.assertTrue(Math.abs(fixtures.get(2).targets.getFirst().getHealth()-669.5)<.05,"New 5.8-block Burst target receives the 330.5-point rank-seven zero-purchase baseline exactly once");
+                    h.assertTrue(Math.abs(fixtures.get(0).targets.getFirst().getHealth()-829.5)<.05,
+                            "Target beyond the old four-block dash takes 170.5 level-twenty damage once");
+                    h.assertTrue(Math.abs(fixtures.get(2).targets.getFirst().getHealth()-546)<.05,
+                            "Target 5.8 blocks away takes the rank-seven level-twenty Burst's 454 damage once");
                     h.assertTrue(fixtures.get(2).p.getX()-fixtures.get(2).origin.x>1&&!SkillChargeSystem.active(fixtures.get(2).p)
                             &&Math.abs(fixtures.get(2).p.getAttributeValue(Attributes.MOVEMENT_SPEED)-fixtures.get(2).p.getAttribute(Attributes.MOVEMENT_SPEED).getBaseValue())<.001,"Walking more than old 0.8-block cancellation threshold completes Burst and restores normal movement");
                     h.assertTrue(fixtures.get(2).targets.getLast().getHealth()==1000,"Burst excludes 6.2-block target");

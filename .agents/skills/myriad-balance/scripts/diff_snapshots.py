@@ -82,7 +82,12 @@ def diff_nodes(before, after, path: str, include_meta: bool, out: list[dict]) ->
         core_before = {k: v for k, v in before.items() if k not in RULE_META_KEYS}
         core_after = {k: v for k, v in after.items() if k not in RULE_META_KEYS}
         if core_before != core_after:
-            if isinstance(before.get("value"), dict) and isinstance(after.get("value"), dict) and before.get("status") == after.get("status"):
+            before_value, after_value = before.get("value"), after.get("value")
+            if (path.startswith("attributes.") and isinstance(before_value, (int, float))
+                    and isinstance(after_value, list) and after_value
+                    and all(value == before_value for value in after_value)):
+                out.append({"path": path, "kind": "schema", "before": leaf_summary(before), "after": leaf_summary(after)})
+            elif isinstance(before_value, dict) and isinstance(after_value, dict) and before.get("status") == after.get("status"):
                 diff_nodes(before["value"], after["value"], path, include_meta, out)
             else:
                 out.append({

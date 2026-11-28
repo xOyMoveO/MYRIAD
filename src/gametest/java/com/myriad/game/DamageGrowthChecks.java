@@ -72,7 +72,10 @@ final class DamageGrowthChecks {
             FirstTenDamageFormulaChecks.verify(helper);
             LastFiveDamageFormulaChecks.run(helper);
             var healer = player(helper);
-            try { SupportGrowthChecks.verify(helper, healer); }
+            try {
+                SupportGrowthChecks.verify(helper, healer);
+                RoleStatGrowthChecks.verify(helper, healer);
+            }
             finally { AbilityRuntime.clear(healer); healer.discard(); }
             for (CharacterType mage : MAGES) {
                 double baseline = mage == CharacterType.HANZE ? 78 : 65;
@@ -84,6 +87,11 @@ final class DamageGrowthChecks {
                 buff(physicalBuff.actor(), ModAttributes.PHYSICAL_ATTACK, 50);
                 var spellBuff = add(helper, trials, mage, Attack.MAGE, ZERO, (baseline + 16 * ratio) * MAGIC_FACTOR, true);
                 buff(spellBuff.actor(), ModAttributes.SPELL_POWER, 16);
+                double grown = baseline + RoleStatGrowthChecks.spellGrowth(mage, 20) * ratio;
+                add(helper, trials, mage, Attack.MAGE, 20, ZERO, grown * MAGIC_FACTOR, false);
+                var trained = add(helper, trials, mage, Attack.MAGE, 20, new Build(0, 1),
+                        (grown + 36 * ratio) * MAGIC_FACTOR, true);
+                buff(trained.actor(), ModAttributes.SPELL_POWER, 16);
             }
             for (Build build : BUILDS) {
                 double attackPower = 65 + 15.0 * build.strength();
@@ -106,6 +114,13 @@ final class DamageGrowthChecks {
             }
             add(helper, trials, CharacterType.LINGYUAN, Attack.SWORD_HEART, ZERO, 21.76, false);
             add(helper, trials, CharacterType.LINGYUAN, Attack.SWORD_HEART, new Build(0, 1), 25.60, false);
+            add(helper, trials, CharacterType.KEHENG, Attack.MELEE, 20, ZERO, 141 * PHYSICAL_FACTOR, false);
+            add(helper, trials, CharacterType.YIKE, Attack.YIKE, 20, new Build(1, 0), 137 * PHYSICAL_FACTOR, true);
+            add(helper, trials, CharacterType.LUOXIA, Attack.FULL_DRAW, 20, ZERO, 480 * 1.21 * PHYSICAL_FACTOR, false);
+            add(helper, trials, CharacterType.TIANXING, Attack.ARC, 20, ZERO, (79.5 + 114 * .5) * PHYSICAL_FACTOR, false);
+            var trainedFenjue = add(helper, trials, CharacterType.FENJUE, Attack.FLAME_SLASH, 20, new Build(1, 0),
+                    (104 + (247 + 15 + 16) * .5) * PHYSICAL_FACTOR, true);
+            buff(trainedFenjue.actor(), ModAttributes.PHYSICAL_ATTACK, 16);
         } catch (RuntimeException | Error failure) {
             cleanup.run();
             throw failure;
@@ -134,14 +149,20 @@ final class DamageGrowthChecks {
 
     private static Trial add(GameTestHelper h, List<Trial> trials, CharacterType role, Attack attack,
                              Build build, double expected, boolean respecAfterLaunch) {
+        return add(h, trials, role, attack, 1, build, expected, respecAfterLaunch);
+    }
+
+    private static Trial add(GameTestHelper h, List<Trial> trials, CharacterType role, Attack attack,
+                             int level, Build build, double expected, boolean respecAfterLaunch) {
         int index = trials.size();
         // Separate all concurrent casts without relying on temporary terrain or real world files.
-        var local = new BlockPos(3 + 9 * (index % 3), 96 + 8 * (index / 3), 3);
+        var local = new BlockPos(3 + 9 * (index % 4), 96 + 8 * (index / 4), 3);
         var start = h.absolutePos(local);
         CombatChunks.prepare(h.getLevel(), start);
         var actor = player(h);
         PlayerDataProvider.chooseCharacter(actor, role);
         var data = PlayerDataProvider.get(actor);
+        if (level != 1) TrainingActions.apply(actor, "level:" + level, true);
         applyBuild(actor, build);
         actor.getAttribute(ModAttributes.CRIT_CHANCE).setBaseValue(0);
         actor.setPos(Vec3.atBottomCenterOf(start));

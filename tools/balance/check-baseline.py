@@ -22,11 +22,39 @@ def effect(skill, effect_id):
     return named(skill["effects"])[f"{skill['id']}.{effect_id}"]["rule"]
 
 
+def verify_growth(roles):
+    fields = ("physicalAttack", "spellPower", "physicalDefense", "magicResistance",
+              "attackSpeed", "healthRegen", "manaRegen")
+    for role_id, role in roles.items():
+        attributes = role["attributes"]
+        opening = (100 if role_id == "luoxia" else 65, 30, 45, 45, .70, 2, 4)
+        deltas = []
+        for name, base in zip(fields, opening, strict=True):
+            field = attributes[name]
+            series = field["value"]
+            label = f"{role_id}.{name}"
+            equal((field["levelStart"], field["levelEnd"], len(series)), (1, 20, 20), label)
+            equal((field["levelOne"], series[0]), (base, base), label + " opening value")
+            delta = field["firstLevelIncrease"]
+            if not all(isclose(observed, base + delta * index, abs_tol=1e-9)
+                       for index, observed in enumerate(series)):
+                raise SystemExit(f"{label}: non-linear level growth")
+            deltas.append(delta)
+        core = deltas[:4]
+        equal(sum(core), 30, role_id + " core growth budget")
+        equal(all(delta >= 0 and int(delta) == delta for delta in core), True, role_id + " integral core growth")
+        equal(max(core[:2]) >= 12, True, role_id + " main output growth")
+        equal(value(attributes, "movementSpeed"), .10, role_id + " fixed movement speed")
+        equal(value(attributes, "critDamage"), 150, role_id + " fixed crit damage")
+        equal(role["basicAttack"]["referenceLevel"], 1, role_id + " basic attack reference level")
+    print("PASS: 105 level curves across all 15 roles, level-one baselines and 30-point budgets")
+
+
 def verify(snapshot, report):
     rules = snapshot["rules"]
     roles = named(rules["roles"])
     skills = {item["id"] for role in roles.values() for item in role["skills"]}
-    if snapshot["formatVersion"] not in (1, 2):
+    if snapshot["formatVersion"] not in (1, 2, 3):
         raise SystemExit(f"Unsupported snapshot version {snapshot['formatVersion']}")
     equal(len(roles), 15, "distinct roles")
     equal(len(skills), 120, "distinct skills")
@@ -91,6 +119,8 @@ def verify(snapshot, report):
     equal(len(battlefield["supplies"]["offers"]), 5, "supply types")
     equal(value(battlefield["economy"], "openingPurse"), 500, "opening purse")
     print("PASS: 15 roles, 120 candidates, 120 branch combinations and independent #105 baseline samples")
+    if snapshot["formatVersion"] >= 3:
+        verify_growth(roles)
 
 
 def main():

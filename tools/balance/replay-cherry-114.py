@@ -202,6 +202,7 @@ def build(args):
             "frozenEarlierSyntheticTiming": evidence, "escortedLaneGameTest": lane_timing,
             "frozenRouteOfficialCases": full,
             "expandedRouteAndSupplyTrials": trials, "fullGameHumanSample": None,
+            "defenseTrials": ledger.defense_trials(scenario, rules, full["S0"]["result"]),
             "progressionArithmetic": {"passiveAndOpeningGold": nonactive_per_seat, "activeFor60Percent": min_active,
                                       "grossAt60Percent": min_income, "maximumBeforeSupplies": balanced,
                                       "spendingExampleBeforeSupplies": dict(zip(ledger.ATTRIBUTES, focused_ranks)),

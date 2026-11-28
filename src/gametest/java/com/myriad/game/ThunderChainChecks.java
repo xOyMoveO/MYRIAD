@@ -74,7 +74,8 @@ final class ThunderChainChecks {
         int rank=index==1?5:1;int strength=index==1?1:0;
         d.setSkillLevel("g1_tianxing_n2",rank);d.setFirstGroupAttribute("strength",strength);
         FirstGroupGrowth.initialize(caster, d);
-        h.assertTrue(caster.getAttributeValue(ModAttributes.PHYSICAL_ATTACK) == (strength == 1 ? 80 : 65),
+        float bonusAttack = 114 + 15 * strength;
+        h.assertTrue(caster.getAttributeValue(ModAttributes.PHYSICAL_ATTACK) == 65 + bonusAttack,
                 "Thunder Chain fixture has the actual innate and purchased physical attack");
         caster.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(index==1?100:0);
         caster.getAttribute(ModAttributes.CRIT_CHANCE).setBaseValue(0);caster.getAttribute(ModAttributes.COOLDOWN_REDUCTION).setBaseValue(0);
@@ -98,7 +99,7 @@ final class ThunderChainChecks {
         for(int y=0;y<3;y++)block(h,blocks,BlockPos.containing(contact.add(-2,y,-1)));
         if(index==3)for(int x=-1;x<=1;x++)for(int y=0;y<3;y++)block(h,blocks,BlockPos.containing(origin.add(x,y,2)));
         if(index==2)primary.setHealth(10);
-        return new Fixture(caster,primary,chained,excluded,players,blocks,79.5f+22.5f*(rank-1)+7.5f*strength);
+        return new Fixture(caster,primary,chained,excluded,players,blocks,79.5f+22.5f*(rank-1)+.5f*bonusAttack);
     }
     private static ServerPlayer player(GameTestHelper h,Vec3 at,Faction faction,List<ServerPlayer> list,boolean add){
         var p=(ServerPlayer)h.makeMockServerPlayer(GameType.SURVIVAL);

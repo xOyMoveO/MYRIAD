@@ -57,14 +57,22 @@ final class RosterSnapshot {
                 .mapToObj(level -> FirstGroupGrowth.health(id, level)).toList()));
         attributes.add("mana", growth("mana", "maxMana", IntStream.rangeClosed(1, 20)
                 .mapToObj(level -> FirstGroupGrowth.maxMana(role, level)).toList()));
-        attributes.add("physicalAttack", innate(FirstGroupGrowth.baselinePhysicalAttack(role), "physical_attack", "baselinePhysicalAttack"));
-        attributes.add("spellPower", innate(FirstGroupGrowth.baselineSpellPower(), "spell_power", "baselineSpellPower"));
-        attributes.add("attackSpeed", innate(FirstGroupGrowth.BASE_ATTACK_SPEED, "attacks_per_second", "BASE_ATTACK_SPEED"));
+        var levels = IntStream.rangeClosed(1, 20).mapToObj(level -> FirstGroupGrowth.innateStats(role, level)).toList();
+        attributes.add("physicalAttack", growth("physical_attack", "innateStats",
+                levels.stream().map(FirstGroupGrowth.InnateStats::physicalAttack).toList()));
+        attributes.add("spellPower", growth("spell_power", "innateStats",
+                levels.stream().map(FirstGroupGrowth.InnateStats::spellPower).toList()));
+        attributes.add("attackSpeed", growth("attacks_per_second", "innateStats",
+                levels.stream().map(FirstGroupGrowth.InnateStats::attackSpeed).toList()));
         attributes.add("movementSpeed", innate(FirstGroupGrowth.BASE_MOVEMENT_SPEED, "movement_attribute", "BASE_MOVEMENT_SPEED"));
-        attributes.add("physicalDefense", innate(FirstGroupGrowth.BASE_DEFENSE, "defense_points", "BASE_DEFENSE"));
-        attributes.add("magicResistance", innate(FirstGroupGrowth.BASE_DEFENSE, "defense_points", "BASE_DEFENSE"));
-        attributes.add("healthRegen", innate(FirstGroupGrowth.BASE_HEALTH_REGEN, "hp_per_second", "BASE_HEALTH_REGEN"));
-        attributes.add("manaRegen", innate(FirstGroupGrowth.BASE_MANA_REGEN, "mana_per_second", "BASE_MANA_REGEN"));
+        attributes.add("physicalDefense", growth("defense_points", "innateStats",
+                levels.stream().map(FirstGroupGrowth.InnateStats::physicalDefense).toList()));
+        attributes.add("magicResistance", growth("defense_points", "innateStats",
+                levels.stream().map(FirstGroupGrowth.InnateStats::magicResistance).toList()));
+        attributes.add("healthRegen", growth("hp_per_second", "innateStats",
+                levels.stream().map(FirstGroupGrowth.InnateStats::healthRegen).toList()));
+        attributes.add("manaRegen", growth("mana_per_second", "innateStats",
+                levels.stream().map(FirstGroupGrowth.InnateStats::manaRegen).toList()));
         attributes.add("critDamage", innate(FirstGroupGrowth.BASE_CRIT_DAMAGE, "percent", "BASE_CRIT_DAMAGE"));
         result.add("basicAttack", basicAttack(role));
         List<AbilitySkill> skills = FirstGroupSkills.candidates(id);
@@ -96,6 +104,7 @@ final class RosterSnapshot {
 
     private static JsonObject basicAttack(CharacterType role) {
         var result = new JsonObject();
+        result.addProperty("referenceLevel", 1);
         double physical = FirstGroupGrowth.baselinePhysicalAttack(role);
         double attackSpeed = FirstGroupGrowth.BASE_ATTACK_SPEED;
         if (VanillaMeleeAttack.usesVanilla(role)) {
@@ -134,7 +143,7 @@ final class RosterSnapshot {
             result.add("rawDamage", field(MagicBullet.rawDamage(role, FirstGroupGrowth.baselineSpellPower()), "hp",
                     source(MagicBullet.class, "rawDamage"), "无购买或增益的魔法普攻", "发射", NO_CLOCK));
             result.add("spellScaling", field(MagicBullet.spellPowerRatio(role), "hp_per_spell_power",
-                    source(MagicBullet.class, "spellPowerRatio"), "每点相对固有法强的增量", "发射", NO_CLOCK));
+                    source(MagicBullet.class, "spellPowerRatio"), "每点高于 1 级固有法强的有效法强增量", "发射", NO_CLOCK));
             result.add("range", field(MagicBullet.MAX_RANGE, "blocks", source(MagicBullet.class, "MAX_RANGE"),
                     "持初始武器，障碍物可提前截断", "发射", NO_CLOCK));
             result.add("recovery", field(MagicBullet.recoveryTicks(attackSpeed), "ticks", source(MagicBullet.class, "recoveryTicks"),
@@ -244,8 +253,8 @@ final class RosterSnapshot {
                 "on_cast_commit_or_yike_stance_exit", REAL));
         rules.add("legacyCooldownReductionCap", field(ModAttributes.MAX_COOLDOWN_REDUCTION, "percent",
                 source(ModAttributes.class, "MAX_COOLDOWN_REDUCTION"), "装备、灵石灌顶等独立百分比来源", "on_cast_commit", REAL));
-        rules.add("bonusPhysicalAttack", field("effective_minus_innate", "operator",
-                source(FirstGroupGrowth.class, "bonusPhysicalAttack"), "当前英雄与等级；计入购点及有效临时修饰",
+        rules.add("bonusPhysicalAttack", field("effective_minus_level_one_innate", "operator",
+                source(FirstGroupGrowth.class, "bonusPhysicalAttack"), "减去同角色 1 级固有物攻；计入固有物攻成长、力量购点及有效临时修饰",
                 "on_cast_context", NO_CLOCK));
         rules.add("azureHornPhysicalAttack", field(PlayerDataProvider.AZURE_HORN_ATTACK_BONUS, "added_total_ratio",
                 source(PlayerDataProvider.class, "applyBossBuffs"), "已有凛锋且尚未到期", "on_player_tick", REAL));
@@ -272,7 +281,7 @@ final class RosterSnapshot {
                         "attackSpeedMax", ModAttributes.MAX_ATTACK_SPEED,
                         "movementSpeedMax", Attributes.MOVEMENT_SPEED.value().sanitizeValue(Double.MAX_VALUE)), "rule_set",
                 source(FirstGroupGrowth.class, "purchaseError"),
-                "按固有值和已有购点判断。至少一项永久分量有增益才按当前档全价成交，训练免金仍记点",
+                "按当前等级固有值、已有购点及专精判断。至少一项永久分量有增益才按当前档全价成交，训练免金仍记点",
                 "before_purchase", NO_CLOCK));
         var options = new LinkedHashMap<String, Object>();
         for (String attribute : FirstGroupGrowth.ATTRIBUTES) {

@@ -166,6 +166,8 @@ java -version
 
 樱隙前线 3v3 是角色平衡基准。5v5 共用全部角色、购点价格和商店资格，开战锁定独立的兵线、野区、灵脉、塔赏和工资供给版本。旧对局的检查点续用原版本。全员构筑、战场、模式与少人规则的复跑入口见[全阵容与模式验证](docs/balance/roster-modes.md)。
 
+15 名角色从 2 级起按定位获得固有属性成长。逐级数值从平衡快照读取，复跑入口见[角色固有属性成长复跑](docs/balance/role-stat-growth.md)。
+
 开发运行入口：
 
 | 用途 | macOS / Linux | Windows PowerShell |

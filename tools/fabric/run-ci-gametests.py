@@ -13,7 +13,8 @@ CORE_TESTS = (
     "keheng", "yike", "rivet", "roster_delivery", "world_time", "hero_action_time",
     "arena_fixture", "arena_tower_5v5", "arena_tower_3v3",
 )
-EXTRA_TESTS = ("balance_calibration_damage", "calibration_keheng", "calibration_qingluo",
+EXTRA_TESTS = ("damage_growth", "balance_damage_support", "balance_control_supply",
+               "balance_calibration_damage", "calibration_keheng", "calibration_qingluo",
                "match_economy", "match_assists", "balance_haste", "balance_vertical",
                "wind_cast_animation", "fenjue_leap", "balance_tianxing", "balance_sulan_fenjue",
                "balance_shuo_chixiao", "balance_roster_lane", "balance_roster_camps", "balance_roster_towers",

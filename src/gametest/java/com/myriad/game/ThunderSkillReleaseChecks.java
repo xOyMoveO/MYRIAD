@@ -114,7 +114,8 @@ final class ThunderSkillReleaseChecks {
         var skill=FirstGroupSkills.node("tianxing",slash(index)?5:7);d.setSkillLevel(skill.getId(),rank);
         d.setFirstGroupAttribute("strength",strength);
         FirstGroupGrowth.initialize(caster, d);
-        h.assertTrue(caster.getAttributeValue(ModAttributes.PHYSICAL_ATTACK) == (strength == 1 ? 80 : 65),
+        float bonusAttack = 114 + 15 * strength;
+        h.assertTrue(caster.getAttributeValue(ModAttributes.PHYSICAL_ATTACK) == 65 + bonusAttack,
                 "Thunder Skill fixture has the actual innate and purchased physical attack");
         caster.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(spellPower);caster.getAttribute(ModAttributes.CRIT_CHANCE).setBaseValue(0);caster.getAttribute(ModAttributes.COOLDOWN_REDUCTION).setBaseValue(0);
         var hits=new ArrayList<LivingEntity>();var excluded=new ArrayList<LivingEntity>();
@@ -128,7 +129,7 @@ final class ThunderSkillReleaseChecks {
         var tower=h.spawn(ModEntities.DEFENSE_TOWER.get(),new BlockPos(2,6,2));tower.setPos(origin.add(rotate(new Vec3(.5,0,5.5),index==5)));tower.setHealth(1000);excluded.add(tower);
         if(index==2||index==7)for(int x=-9;x<=9;x++)for(int y=0;y<4;y++)set(h,saved,BlockPos.containing(origin.add(x,y,2)),Blocks.STONE.defaultBlockState());
         if(index==8){var wall=player(h,origin.add(0,0,2),Faction.DESTRUCTION,players,cues,false);var wd=PlayerDataProvider.get(wall);wd.setCharacterId("sulan");com.myriad.combat.WindWallSystem.createWall(wall,wd,80,false);}
-        float damage=slash(index)?95+30*(rank-1)+.95f*spellPower:245+92*(rank-1)+12f*strength;
+        float damage=slash(index)?95+30*(rank-1)+.95f*spellPower:245+92*(rank-1)+.8f*bonusAttack;
         return new Fixture(caster,hits,excluded,players,cues,saved,index,damage);
     }
     private static Vec3 rotate(Vec3 d,boolean turn){return turn?new Vec3(d.z,d.y,-d.x):d;}

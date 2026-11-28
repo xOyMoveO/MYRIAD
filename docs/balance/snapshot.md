@@ -5,6 +5,7 @@
 ## 读取规则
 
 - `formatVersion` 表示结构与单位版本。版本 2 导出技能急速和购点契约，盾疗字段以 `scaling` 和 `scale` 表示指定的属性与系数。版本 1 的 `spellScale` 表示总法强系数。`sourceSha` 标明构建时检出的提交。`sourceDirty` 标明该工作区还有未提交文件。源码归档可正常构建，未带 Git 元数据时两值分别为 `unknown` 和 `null`。
+- 版本 3 将物攻、法强、物防、魔抗、攻速、生命回复和法力回复导出为与生命及法力相同的 Lv1–20 序列。移速与暴击伤害仍为单值。`basicAttack.referenceLevel` 标注基础伤害与恢复读数的零购买参考等级。连招按场景等级读取固有值，额外物攻和魔法弹的法强增量相对同角色 Lv1 计算。
 - `rulesSha256` 对 `rules` 的紧凑 UTF-8 JSON 求摘要。对象键按字典序，数组保留其规则顺序。Git 信息、素材资源和文案提醒在摘要范围之外。未导出的机制应结合 `sourceSha`、成品摘要和覆盖报告追查。
 - `rules.roles` 通过角色表和已绑定技能生成。每个角色含从一级开始的属性、普攻、分支组合和候选技能。技能的 `ranks` 记录实际调用的逐阶蓝耗与基础冷却。位置无关的效果标识位于 `effects[].id`，取值、本游戏版本的单位、规则来源、条件、取值时点和时基位于 `effects[].rule`。炮台姿态等效果内可以再带分字段。距离和时长统一写作 `blocks`、`ticks`，时基分别为 `real_tick`、`action_tick` 或 `not_timed`。
 - 法师普攻的 `flightSpeed` 已乘公用英雄投射物速度系数，缓时由飞行事件另行结算。`rules.skillRules.incomingGuardResolution` 登记共享法阵减伤取强、独立减伤相乘，以及真伤和乘数下限。实际盾疗、减伤与净控制须按来伤、有效覆盖和到期前吸收复跑。
@@ -37,7 +38,7 @@ python tools/fabric/prepare-ci-release.py
 ./gradlew runGameTestServer -PmyriadGameTests -PgameTestFilter=myriad:damage_growth
 ```
 
-基线脚本保留该批的独立期望，故意调数后读数差异可单独评估。正常 Gradle 构建不运行这份基线脚本。引擎专项沿用 `FirstTenDamageFormulaChecks` 和 `LastFiveDamageFormulaChecks` 的独立期望，实际用例可从 `build/reports/fabric-gametest.xml` 读回。
+基线脚本保留 #105 独立期望，并检查版本 3 的成长曲线和预算。正常 Gradle 构建不运行这份基线脚本。引擎专项使用全阵容逐级面板、技能公式和实际伤害的独立期望，实际用例可从 `build/reports/fabric-gametest.xml` 读回。
 
 ## 公共战斗规则对照
 

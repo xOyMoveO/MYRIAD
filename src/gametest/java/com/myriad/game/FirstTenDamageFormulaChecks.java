@@ -115,6 +115,8 @@ final class FirstTenDamageFormulaChecks {
                 helper.assertTrue(candidates.size() == 8, "Eight registered candidates for " + role);
                 candidates.forEach(skill -> verifyLearning(helper, type, skill));
                 for (int characterLevel : new int[]{1, 20}) {
+                    double growthAttack = RoleStatGrowthChecks.attackGrowth(type, characterLevel);
+                    double growthSpell = RoleStatGrowthChecks.spellGrowth(type, characterLevel);
                     data.setLevel(characterLevel);
                     FirstGroupGrowth.initialize(player, data);
                     for (Build build : BUILDS) {
@@ -123,7 +125,7 @@ final class FirstTenDamageFormulaChecks {
                         FirstGroupGrowth.apply(player, data);
                         double attack = player.getAttributeValue(ModAttributes.PHYSICAL_ATTACK);
                         double spellPower = player.getAttributeValue(ModAttributes.SPELL_POWER);
-                        verifyBasic(helper, type, build, attack, spellPower);
+                        verifyBasic(helper, type, build, attack, spellPower, growthAttack, growthSpell);
                         for (AbilitySkill skill : candidates) {
                             var expected = SEGMENTS.stream().filter(segment -> segment.id().equals(skill.getId())).toList();
                             var formulas = skill.damageFormulas();
@@ -135,15 +137,17 @@ final class FirstTenDamageFormulaChecks {
                                 for (int i = 0; i < expected.size(); i++) {
                                     var segment = expected.get(i);
                                     var formula = formulas.get(i);
-                                    String label = skill.getId() + " segment " + (i + 1) + " rank " + rank + " " + build;
+                                    String label = skill.getId() + " segment " + (i + 1) + " rank " + rank
+                                            + " level " + characterLevel + " " + build;
                                     helper.assertTrue(formula.kind() == segment.kind() && formula.maxHits() == segment.hits(),
                                             label + " preserves damage type and hit count");
                                     double t = (rank - 1.0) / (skill.maxRank() - 1);
                                     double zero = segment.zero() + t * (segment.maxZero() - segment.zero());
                                     double wisdom = segment.wisdom() + t * (segment.maxWisdom() - segment.wisdom());
-                                    double damage = zero + segment.strength() * build.strength() + wisdom * build.wisdom();
+                                    double damage = zero + segment.strength() * (build.strength() + growthAttack / 15)
+                                            + wisdom * (build.wisdom() + growthSpell / 20);
                                     near(helper, formula.value(cast), damage, label + " authoritative Cast formula");
-                                    double bonusAttack = 15 * build.strength();
+                                    double bonusAttack = 15 * build.strength() + growthAttack;
                                     near(helper, formula.value(rank, attack, spellPower, bonusAttack, build.wisdom()), damage,
                                             label + " preview matches authoritative Cast formula");
                                     near(helper, formula.perPoint(rank), segment.strength() + wisdom, label + " per point");
@@ -193,12 +197,14 @@ final class FirstTenDamageFormulaChecks {
                 "Actual cast slot resolves " + skill.getId());
     }
 
-    private static void verifyBasic(GameTestHelper helper, CharacterType role, Build build, double attack, double spellPower) {
+    private static void verifyBasic(GameTestHelper helper, CharacterType role, Build build, double attack, double spellPower,
+                                    double growthAttack, double growthSpell) {
         if (VanillaMeleeAttack.usesVanilla(role)) {
-            near(helper, attack * VanillaMeleeAttack.damageScale(1), 65 + 15 * build.strength(),
+            near(helper, attack * VanillaMeleeAttack.damageScale(1), 65 + 15 * build.strength() + growthAttack,
                     role.getId() + " full-strength melee before random and jump modifiers " + build);
         } else {
-            double expected = role == CharacterType.HANZE ? 78 + 12 * build.wisdom() : 65 + 10 * build.wisdom();
+            double expected = role == CharacterType.HANZE ? 78 + .6 * (20 * build.wisdom() + growthSpell)
+                    : 65 + .5 * (20 * build.wisdom() + growthSpell);
             near(helper, MagicBullet.rawDamage(role, spellPower), expected, role.getId() + " raw magic projectile " + build);
             near(helper, MagicBullet.rawDamage(role, spellPower + 40), expected + (role == CharacterType.HANZE ? 24 : 20),
                     role.getId() + " magic projectile retains legal spell-power buffs " + build);

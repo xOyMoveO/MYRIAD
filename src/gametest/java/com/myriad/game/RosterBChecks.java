@@ -51,7 +51,10 @@ final class RosterBChecks {
                 }
                 s.origin=Vec3.atBottomCenterOf(floor.above());
                 s.actor=player(h,s.origin,s.packets,false);s.target=player(h,s.origin.add(0,0,role.equals("sulan")&&index==6?12:3),new ArrayList<>(),true);scenes.add(s);
-                receive(h,s.actor,new NetworkSetup.ChooseCharacterPayload(role));var d=PlayerDataProvider.get(s.actor);
+                var d=PlayerDataProvider.get(s.actor);
+                // Establish opening combat stats before staging skill availability for the fixed-damage cases.
+                d.setLevel(1);
+                receive(h,s.actor,new NetworkSetup.ChooseCharacterPayload(role));
                 int scenarioLevel = index < 2 ? (role.equals("yunsheng") && index == 0 ? 4 : 1) : 20;
                 d.setLevel(scenarioLevel);d.refundAllSkillPointsForTraining();
                 ShuoPilotChecks.learn(h, s.actor, node(s).getId());
@@ -172,12 +175,18 @@ final class RosterBChecks {
                 int other=FirstGroupSkills.opposite(skill.index());if(other>=0){ShuoPilotChecks.learn(h, p, FirstGroupSkills.node(role,other).getId());h.assertTrue(d.skillLevel(FirstGroupSkills.node(role,other).getId())==0&&d.getSkillPoints()==(skill.isPassive()?20:19),"Opposite branch receiver rejects without spending: "+skill.getId());}
             }
             FirstGroupGrowth.initialize(p,d);d.setGold(2400);
+            double attack = p.getAttributeValue(ModAttributes.PHYSICAL_ATTACK);
+            double power = p.getAttributeValue(ModAttributes.SPELL_POWER);
+            double speed = p.getAttributeValue(ModAttributes.ATTACK_SPEED);
+            double physical = p.getAttributeValue(ModAttributes.PHYSICAL_DEFENSE);
+            double magic = p.getAttributeValue(ModAttributes.MAGIC_RESISTANCE);
             for(String key:FirstGroupGrowth.ATTRIBUTES)receive(h,p,new NetworkSetup.CraftEquipPayload("g1_attribute_"+key));
             h.assertTrue(FirstGroupGrowth.ATTRIBUTES.stream().allMatch(key->d.firstGroupAttribute(key)==1)&&d.getGold()==0,
                     "Six actual purchase inputs charge 5x360 plus 600 gold: "+role);
-            near(h,p.getAttributeValue(ModAttributes.PHYSICAL_ATTACK),80,"Purchased strength "+role);near(h,p.getAttributeValue(ModAttributes.SPELL_POWER),50,"Purchased wisdom "+role);
-            near(h,p.getAttributeValue(ModAttributes.ATTACK_SPEED),.76,"Purchased attack speed "+role);h.assertTrue(Math.abs(p.getAttributeValue(Attributes.MOVEMENT_SPEED)-.1025)<.00001,"Purchased movement speed "+role);
-            near(h,p.getAttributeValue(ModAttributes.PHYSICAL_DEFENSE),50,"Purchased physical defense "+role);near(h,p.getAttributeValue(ModAttributes.MAGIC_RESISTANCE),50,"Purchased magic resistance "+role);
+            near(h,p.getAttributeValue(ModAttributes.PHYSICAL_ATTACK),attack + 15,"Purchased strength "+role);near(h,p.getAttributeValue(ModAttributes.SPELL_POWER),power + 20,"Purchased wisdom "+role);
+            h.assertTrue(Math.abs(p.getAttributeValue(ModAttributes.ATTACK_SPEED) - speed - .06) < .00001,"Purchased attack speed "+role);
+            h.assertTrue(Math.abs(p.getAttributeValue(Attributes.MOVEMENT_SPEED)-.1025)<.00001,"Purchased movement speed "+role);
+            near(h,p.getAttributeValue(ModAttributes.PHYSICAL_DEFENSE),physical + 5,"Purchased physical defense "+role);near(h,p.getAttributeValue(ModAttributes.MAGIC_RESISTANCE),magic + 5,"Purchased magic resistance "+role);
             near(h,p.getAttributeValue(ModAttributes.COOLDOWN_REDUCTION),0,"Purchased haste leaves legacy percentage unchanged "+role);
             near(h,FirstGroupGrowth.skillHaste(d.firstGroupAttribute("cooldown")),12.5,"One actual purchase grants haste "+role);
             h.assertTrue(AbilityRuntime.effectiveCooldownTicks(p,d,180)==160,"One haste purchase shortens a positive cooldown "+role);
