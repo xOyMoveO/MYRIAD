@@ -70,6 +70,10 @@ final class LuoxiaArrow {
         return hit.getType() == HitResult.Type.MISS ? desired : hit.getLocation();
     }
 
+    static double entityPadding(Shape shape) {
+        return (shape == Shape.LANCE ? .19 : .09) * com.myriad.combat.HeroProjectileTuning.ENTITY_PADDING;
+    }
+
     /** Radius checks and closest contact are computed on the wall-truncated segment. */
     static void launch(Cast c, Vec3 aim, double range, double velocity, Shape shape, boolean basic,
                        Predicate<LivingEntity> impact) {
@@ -81,7 +85,7 @@ final class LuoxiaArrow {
         UUID clock = UUID.randomUUID();
         int id = c.newVisualInstance();
         Vec3 direction = aim.normalize();
-        double radius = (shape == Shape.LANCE ? .19 : .09) * com.myriad.combat.HeroProjectileTuning.ENTITY_PADDING;
+        double radius = entityPadding(shape);
         double speed=velocity*com.myriad.combat.HeroProjectileTuning.SPEED;
 
         class Flight {

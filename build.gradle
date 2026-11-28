@@ -117,6 +117,7 @@ def exportBalanceSnapshot = tasks.register('exportBalanceSnapshot', JavaExec) {
     classpath = sourceSets.balanceSnapshot.runtimeClasspath
     inputs.files(fileTree('maps') { include '**/myriad_monster_spawns.json', '**/myriad_lane_layout.json', '**/myriad_match_tempo.json', '**/myriad_vein_spawns.json' })
         .withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.files('tools/balance/archived/zh_cn.json').withPathSensitivity(PathSensitivity.RELATIVE)
     inputs.property 'sourceRevision', snapshotRevision
     inputs.property 'sourceDirty', snapshotDirty
     outputs.dir balanceDirectory

@@ -12,7 +12,10 @@ import com.myriad.character.ability.AbilityDamageFormula;
 import com.myriad.character.ability.AbilityFormulaText;
 import com.myriad.character.ability.AbilitySkill;
 import com.myriad.character.rework.FirstGroupGrowth;
+import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.character.skills.shuo.ShuoForms;
+import com.myriad.character.skills.yike.RainbowShell;
+import com.myriad.character.skills.yike.YikeStance.ShotForm;
 import com.myriad.registry.ModAttributes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.locale.Language;
@@ -176,14 +179,19 @@ public final class SkillTooltipDescriptions {
         double innateSpell = FirstGroupGrowth.baselineSpellPower();
         double innatePhysical = FirstGroupGrowth.baselinePhysicalAttack(CharacterType.byId(skill.role()));
 
+        double power = Double.isFinite(spell) ? spell : innateSpell;
         String mechanics = skill.description();
         String language = Minecraft.getInstance().getLanguageManager().getSelected();
         if (!language.startsWith("zh_")) mechanics = Language.getInstance().getOrDefault(skill.descKey(), mechanics);
-        double power = Double.isFinite(spell) ? spell : innateSpell;
-        mechanics = skill.resolveSupportText(mechanics, rank, power);
+        mechanics = skill.resolveSupportText(skill.resolveDescriptionFields(mechanics, rank), rank, power);
         var formulas = skill.damageFormulas();
         if (!formulas.isEmpty()) mechanics = AbilityFormulaText.withoutInlineDamageAmounts(mechanics);
         var lines = new ArrayList<>(readableLines(AbilityFormulaText.evaluate(mechanics, rank, Double.isFinite(spell) ? spell : innateSpell)));
+        if (skill instanceof RainbowShell) {
+            lines.add(fieldText(skill, skill.nameKey() + ".guide_cooldown", rank));
+            lines.add(rainbowArtilleryLine(ShotForm.FIXED));
+            lines.add(rainbowArtilleryLine(ShotForm.MOBILE));
+        }
         if (currentRole && skill.role().equals("shuo") && !skill.isPassive()) {
             String form = ShuoForms.name(skill.getId(), ClientDataHolder.syncedCounter("g1_shuo_drawn") > 0,
                     ClientDataHolder.buffTicks(skill.getId() + "_recast") > 0);
@@ -205,6 +213,15 @@ public final class SkillTooltipDescriptions {
         if (!skill.singleTargetTotalKey().isEmpty() && Double.isFinite(total))
             lines.add(text(skill.singleTargetTotalKey(), AbilityFormulaText.amount(total)));
         return lines;
+    }
+
+    static String fieldText(AbilitySkill skill, String key, int rank, Object... args) {
+        return skill.resolveDescriptionFields(text(key, args), rank);
+    }
+
+    static String rainbowArtilleryLine(ShotForm form) {
+        var stance = FirstGroupSkills.byId(form == ShotForm.FIXED ? "yike_fixed_artillery" : "yike_mobile_array");
+        return fieldText(stance, "skill.myriad.yike_rainbow_shell.hover.artillery", 1, abilityName(stance));
     }
 
     static String supportLine(AbilitySkill.SupportAmount amount, int rank, double power) {

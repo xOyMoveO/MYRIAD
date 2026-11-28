@@ -264,6 +264,12 @@ final class RosterSnapshot {
         if (skill instanceof LastSun) {
             result.add(effect(skill, "arrow_range", "range", field(LastSun.RANGE, "blocks", source(LastSun.class, "RANGE"),
                     "重箭出手；首个合法敌人或地形可截断", "on_projectile_launch", NO_CLOCK)));
+            result.add(effect(skill, "arrow_speed", "projectile_speed", field(LastSun.speedBlocksPerActionTick(),
+                    "blocks_per_tick", source(LastSun.class, "speedBlocksPerActionTick"),
+                    "乘全局英雄投射物速度系数；局部缓时影响推进", "on_projectile_step", ACTION)));
+            result.add(effect(skill, "arrow_entity_padding", "projectile_padding", field(LastSun.entityPaddingBlocks(),
+                    "blocks", source(LastSun.class, "entityPaddingBlocks"),
+                    "碰撞候选箱向外扩张；射程仍核对实体本体箱", "on_projectile_step", NO_CLOCK)));
         }
         if (skill instanceof RainbowShell rainbowShell) yikeForms(result, rainbowShell);
         SkillEffects.add(result, skill);
@@ -312,6 +318,9 @@ final class RosterSnapshot {
                         condition, "on_stance_deploy", REAL));
                 fields.add("nextShot", field(form.nextShotTicks, "ticks", formSource,
                         condition + "；从上一发出膛计，原 Q 冷却挡首发，W 暂停可以推迟下一发", "on_projectile_launch", REAL));
+                fields.add("shotRequestBuffer", field(YikeStance.SHOT_REQUEST_BUFFER_TICKS, "ticks",
+                        source(YikeStance.class, "SHOT_REQUEST_BUFFER_TICKS"),
+                        condition + "；只允许上膛后提前起手，出膛仍要等真实截止刻", "on_cast_request", REAL));
                 fields.add("pauseForW", field(YikeStance.PAUSE_FOR_W_TICKS, "ticks", source(YikeStance.class, "PAUSE_FOR_W_TICKS"),
                         condition + "且 W 已完成合法预警提交", "on_w_commit", REAL));
             } else {

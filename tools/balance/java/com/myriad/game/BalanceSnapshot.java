@@ -8,7 +8,6 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonParseException;
 import com.myriad.character.rework.FirstGroupSkills;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,7 +26,7 @@ import net.minecraft.server.Bootstrap;
 
 public final class BalanceSnapshot {
     private static final int FORMAT_VERSION = 1;
-    private static final String LANGUAGE_RESOURCE = "assets/myriad/lang/zh_cn.json";
+    private static final String ARCHIVED_LANGUAGE = "tools/balance/archived/zh_cn.json";
     private static final Pattern LEGACY_RANK_GROWTH = Pattern.compile("\\+([0-9]+(?:\\.[0-9]+)?)\\(r-1\\)\\s*\\+\\s*[0-9.]+S");
 
     private BalanceSnapshot() {}
@@ -59,7 +58,7 @@ public final class BalanceSnapshot {
         report.addProperty("sourceSha", args[2]);
         report.add("sourceDirty", dirty);
         report.addProperty("rulesSha256", snapshot.get("rulesSha256").getAsString());
-        report.add("presentationReminders", checkKehengDescriptions());
+        report.add("presentationReminders", checkKehengDescriptions(root));
 
         Files.createDirectories(output);
         Files.writeString(output.resolve("balance-snapshot.json"), serialized);
@@ -163,14 +162,14 @@ public final class BalanceSnapshot {
         }
     }
 
-    private static JsonArray checkKehengDescriptions() {
+    private static JsonArray checkKehengDescriptions(Path root) {
         var reminders = new JsonArray();
-        try (var stream = BalanceSnapshot.class.getClassLoader().getResourceAsStream(LANGUAGE_RESOURCE)) {
-            if (stream == null) {
+        try (var reader = Files.newBufferedReader(root.resolve(ARCHIVED_LANGUAGE), StandardCharsets.UTF_8)) {
+            var language = JsonParser.parseReader(reader).getAsJsonObject().getAsJsonObject("entries");
+            if (language == null) {
                 languageUnavailable(reminders);
                 return reminders;
             }
-            var language = JsonParser.parseReader(new InputStreamReader(stream, StandardCharsets.UTF_8)).getAsJsonObject();
             for (String id : List.of("keheng_kehen", "keheng_chijie")) {
                 var skill = FirstGroupSkills.byId(id);
                 if (skill == null || skill.damageFormulas().isEmpty()) {
@@ -188,13 +187,13 @@ public final class BalanceSnapshot {
                     reminders.add(SnapshotJson.json(Map.of(
                             "level", 1, "skill", id, "language", "zh_cn", "field", "damage.rankGrowth",
                             "expected", expected, "displayed", displayed,
-                            "source", "src/main/resources/" + LANGUAGE_RESOURCE + "#" + key,
-                            "message", id + " zh_cn damage.rankGrowth，结算 " + expected + "，图鉴长说明 " + displayed)));
+                            "source", ARCHIVED_LANGUAGE + "#entries/" + key,
+                            "message", id + " zh_cn damage.rankGrowth，结算 " + expected + "，归档长说明 " + displayed)));
                 } else {
                     reminders.add(SnapshotJson.json(Map.of(
                             "level", 3, "skill", id, "language", "zh_cn", "field", "damage.rankGrowth",
-                            "source", "src/main/resources/" + LANGUAGE_RESOURCE + "#" + key,
-                            "message", id + " zh_cn 长说明的旧式阶数公式未找到，需确认新的字段绑定")));
+                            "source", ARCHIVED_LANGUAGE + "#entries/" + key,
+                            "message", id + " zh_cn 归档长说明的旧式阶数公式未找到")));
                 }
             }
         } catch (IOException | JsonParseException | IllegalStateException exception) {
@@ -205,7 +204,7 @@ public final class BalanceSnapshot {
 
     private static void languageUnavailable(JsonArray reminders) {
         reminders.add(SnapshotJson.json(Map.of("level", 3, "language", "zh_cn",
-                "source", "src/main/resources/" + LANGUAGE_RESOURCE, "message", "中文语言资源缺失或无法读取，图鉴长说明尚未核对")));
+                "source", ARCHIVED_LANGUAGE, "message", "归档中文说明缺失或无法读取，历史文案差异尚未核对")));
     }
 
     private static String markdown(JsonObject report) {
@@ -228,7 +227,7 @@ public final class BalanceSnapshot {
         output.append("\n逐字段原因、来源与受影响路径见同目录的 `balance-coverage.json`。公式是定义读数，实战覆盖需另跑对应场景。\n")
                 .append("\n## 文案提醒\n\n");
         var reminders = report.getAsJsonArray("presentationReminders");
-        if (reminders.isEmpty()) output.append("本批检查的两条图鉴长说明未发现差异。\n");
+        if (reminders.isEmpty()) output.append("本批检查的两条归档长说明未发现差异。\n");
         for (var entry : reminders) output.append("- ").append(entry.getAsJsonObject().get("message").getAsString()).append("\n");
         return output.toString();
     }

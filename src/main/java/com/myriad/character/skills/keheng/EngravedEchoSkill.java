@@ -13,6 +13,10 @@ public final class EngravedEchoSkill extends KehengSkill {
         return List.of(DAMAGE);
     }
 
+    @Override public Map<String, Number> descriptionFields(int rank) {
+        return Map.of("damage_rank_growth", DAMAGE.rankGrowth());
+    }
+
     private static final WeakHashMap<ServerPlayer,Map<UUID,Mark>> STATES=new WeakHashMap<>();
     private static final class Mark {int stacks;long until;final Set<Integer> seen=new HashSet<>();}
     public EngravedEchoSkill(Definition d){super(d);}

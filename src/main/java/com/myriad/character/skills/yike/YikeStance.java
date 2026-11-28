@@ -100,8 +100,13 @@ public final class YikeStance {
         public float multiplier(int stanceRank) {
             return baseMultiplier + multiplierPerRank * (stanceRank - 1);
         }
+
+        Map<String, Number> artilleryDescriptionFields() {
+            return Map.of("range_blocks", range, "shell_count", shells, "shot_interval_ticks", nextShotTicks);
+        }
     }
 
+    public static final int SHOT_REQUEST_BUFFER_TICKS = 5;
     public static final int DURATION_TICKS = 120;
     public static final int PAUSE_FOR_W_TICKS = 11;
     private static ShotForm artilleryForm(boolean mobile) { return mobile ? ShotForm.MOBILE : ShotForm.FIXED; }
@@ -136,7 +141,7 @@ public final class YikeStance {
         if (!usable(c.player, s)) return false;
         var q = YikeRework.q(c.player);
         return q != null && c.skill == q && c.data.skillLevel(q.getId()) > 0
-                && s.shots > 0 && nextShotTicks(c.player) <= (s.fired && !c.accepted() ? 5 : 0)
+                && s.shots > 0 && nextShotTicks(c.player) <= (s.fired && !c.accepted() ? SHOT_REQUEST_BUFFER_TICKS : 0)
                 && (TrainingMode.isNoMana(c.player) || c.data.getMana() >= q.manaCost(c.rank));
     }
 

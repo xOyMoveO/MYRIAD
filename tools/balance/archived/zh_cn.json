@@ -1,0 +1,8 @@
+{
+  "sourceSha": "103882c0c3cf6c6d748a754e2385104656fe8715",
+  "source": "src/main/resources/assets/myriad/lang/zh_cn.json",
+  "entries": {
+    "skill.myriad.keheng_kehen.description": "不同次主动施法对同一英雄有效命中叠1层；首击固定4秒，3层造成50+12(r-1)+0.25S魔法伤害。整次施法去重；护盾算命中，完全免伤不算。",
+    "skill.myriad.keheng_chijie.description": "10格合法地面选点，0.45秒独立预警后展开3.5格领域3+0.25(r-1)秒，造成一次80+18(r-1)+0.45S魔法伤害；行动/弹体倍率0.65至0.50。三维中心遮挡，不隔墙楼板。"
+  }
+}

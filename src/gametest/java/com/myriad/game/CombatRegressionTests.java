@@ -36,6 +36,7 @@ public final class CombatRegressionTests {
         register("yike", YikeChecks::run);
         register("rivet", RivetChecks::run);
         register("luoxia", LuoxiaChecks::run);
+        register("balance_vertical", BalanceVerticalChecks::run);
         register("projectile_basic_assist", ProjectileBasicAssistChecks::run);
         register("damage_growth", DamageGrowthChecks::run);
         register("cherry_first_ten_damage", CherryFirstTenDamageChecks::run);

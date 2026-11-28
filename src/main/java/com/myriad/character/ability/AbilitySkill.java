@@ -5,6 +5,7 @@ import com.myriad.player.PlayerData;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.List;
+import java.util.Map;
 
 /** Reusable ability module: every concrete skill owns its effect logic, not a role/batch switch. */
 public abstract class AbilitySkill extends Skill {
@@ -36,10 +37,22 @@ public abstract class AbilitySkill extends Skill {
     }
 
     public List<AbilityDamageFormula> damageFormulas(){return List.of();}
+    /** Named values for localized player descriptions, in the units used by the rule. */
+    public Map<String, Number> descriptionFields(int rank) { return Map.of(); }
+
+    public String resolveDescriptionFields(String template, int rank) {
+        for (var field : descriptionFields(rank).entrySet()) {
+            template = template.replace("{" + field.getKey() + "}",
+                    AbilityFormulaText.amount(field.getValue().doubleValue()));
+        }
+        return template;
+    }
+
     /** Set only when all listed segments can belong to the same cast, form and target. */
     public String singleTargetTotalKey() { return ""; }
     public String evaluatedDescription(int rank, double skillPower, int purchasedStrength){
-        return AbilityFormulaText.evaluate(resolveSupportText(description(), rank, skillPower), rank, skillPower);
+        String mechanics = resolveDescriptionFields(description(), rank);
+        return AbilityFormulaText.evaluate(resolveSupportText(mechanics, rank, skillPower), rank, skillPower);
     }
     public int slot(){return index()<2?-1:index()<4?index()-2:index()<6?2:3;}
     @Override public boolean isPassive(){return index()<2;}

@@ -4,7 +4,9 @@ import com.myriad.network.WeaponPosePayload.Move;
 
 import com.myriad.character.ability.*;
 import com.myriad.combat.DamageCalc;
+import com.myriad.combat.HeroProjectileTuning;
 import java.util.List;
+import java.util.Map;
 
 /** The shell is paid at the muzzle, never when the Q input begins. */
 public final class RainbowShell extends AbilitySkill {
@@ -12,6 +14,15 @@ public final class RainbowShell extends AbilitySkill {
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);
+    }
+
+    @Override public Map<String, Number> descriptionFields(int rank) {
+        return Map.of("range_blocks", YikeStance.ShotForm.NORMAL.range,
+                "blast_radius_blocks", YikeStance.ShotForm.NORMAL.radius,
+                "flight_speed_blocks_per_second", YikeStance.ShotForm.NORMAL.speed * HeroProjectileTuning.SPEED,
+                "windup_seconds", commitWindupTicks() / 20.0,
+                "normal_cooldown_ticks", cooldownTicks(rank, false),
+                "artillery_cooldown_ticks", cooldownTicks(rank, true));
     }
 
     public RainbowShell(Definition d){super(d);}

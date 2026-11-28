@@ -9,7 +9,7 @@
 - `rules.roles` 通过角色表和已绑定技能生成。每个角色含从一级开始的属性、普攻、分支组合和候选技能。技能的 `ranks` 记录实际调用的逐阶蓝耗与基础冷却。位置无关的效果标识位于 `effects[].id`，取值、本游戏版本的单位、规则来源、条件、取值时点和时基位于 `effects[].rule`。炮台姿态等效果内可以再带分字段。距离和时长统一写作 `blocks`、`ticks`，时基分别为 `real_tick`、`action_tick` 或 `not_timed`。
 - `defined` 与 `zero` 都是可读定义，`zero` 表示该字段的合法数字零。`not_applicable` 和 `missing_input` 使用空值并带理由。伤害公式与名义盾疗可以独立取数。连续有效命中、实际存活、多个技能段能否相加，以及缺条件的几何、触发与 Buff 交互须按场景验证。
 - `rules.battlefield` 包含真实规则定义与樱隙前线 3v3 已提交的地图配置。5v5 使用部署时的世界设施及营地配置，未提供的点位在报告中列为缺输入。野怪成长、塔保护、赏金等有明确场景的读数按其输入取样。
-- 文案提醒在覆盖报告中。目前核对刻衡两条中文图鉴长说明的伤害阶数系数，两处旧说明可以随同正式值一起构建和打包。
+- 覆盖报告包含刻衡两条[历史中文长说明](../../tools/balance/archived/zh_cn.json)的成长系数差异。提醒指出技能、语言和字段。游戏内「刻痕回响」按生效公式生成成长系数。
 
 ## 改前样本
 
@@ -37,3 +37,7 @@ python tools/fabric/prepare-ci-release.py
 ```
 
 基线脚本保留该批的独立期望，故意调数后读数差异可单独评估。正常 Gradle 构建不运行这份基线脚本。引擎专项沿用 `FirstTenDamageFormulaChecks` 和 `LastFiveDamageFormulaChecks` 的独立期望，实际用例可从 `build/reports/fabric-gametest.xml` 读回。
+
+## 落霞与伊珂纵向对照
+
+[两个复跑场景](vertical-scenarios.md)说明如何用同一配对快照、服务端 GameTest 事件和客户端技能介绍卡核对射程及炮台条件值。

@@ -1,0 +1,36 @@
+{
+  "scenarioId": "yike_rainbow_shell_stances",
+  "scenarioVersion": 1,
+  "role": "yike",
+  "skill": "yike_rainbow_shell",
+  "mode": "synthetic_flat_server",
+  "timeUnit": "real_tick",
+  "initial": {
+    "level": 1,
+    "rank": 1,
+    "mana": 700,
+    "cooldownTicks": 0,
+    "boughtPoints": 0,
+    "cooldownReductionPct": 0,
+    "noManaCost": false,
+    "noCooldown": false,
+    "actionMultiplier": 1
+  },
+  "conditions": {
+    "manaRecoveryDuringProbe": 0,
+    "enemyControl": "none",
+    "wPause": false,
+    "extraInputDelayTicks": 0
+  },
+  "cases": {
+    "normal": {"stanceSkill": null, "stanceRank": null},
+    "fixed": {"stanceSkill": "yike_fixed_artillery", "stanceRank": 1},
+    "mobile": {"stanceSkill": "yike_mobile_array", "stanceRank": 1}
+  },
+  "actions": {
+    "openingRequestTick": 0,
+    "firstShotTicksAfterDeployment": 1,
+    "rejectedProbeTicksBeforeNextAllowedRequest": 1,
+    "manualExitTicksAfterSecondMuzzle": 1
+  }
+}

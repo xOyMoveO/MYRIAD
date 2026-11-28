@@ -6,6 +6,8 @@ import com.myriad.character.CharacterType;
 import com.myriad.character.ability.AbilityFormulaText;
 import com.myriad.character.ability.AbilitySkill;
 import com.myriad.character.rework.FirstGroupSkills;
+import com.myriad.character.skills.yike.RainbowShell;
+import com.myriad.character.skills.yike.YikeStance.ShotForm;
 import com.myriad.network.NetworkSetup.PlayerDataPayload;
 import com.myriad.registry.ModAttributes;
 import java.io.IOException;
@@ -72,7 +74,8 @@ public record SkillHoverDetails(String name, String group, String rank, boolean 
         String group = text("screen.myriad.g1." + GROUPS[skill.index() / 2]);
         if (opposite >= 0) group += (skill.index() % 2 == 0 ? " A" : " B");
         String normal = text(prefix + "summary");
-        String condition = Language.getInstance().has(prefix + "limit") ? text(prefix + "limit") : "";
+        String condition = Language.getInstance().has(prefix + "limit")
+                ? SkillTooltipDescriptions.fieldText(skill, prefix + "limit", rank) : "";
         boolean assigned = !skill.isPassive()
                 && FirstGroupSkills.resolve(CharacterType.byId(skill.role()), skill.slot(), ranks) == skill;
         if (preview && assigned && data.training() && CombatHudSkillRules.learned(skill, paid, true))
@@ -81,7 +84,11 @@ public record SkillHoverDetails(String name, String group, String rank, boolean 
         var player = Minecraft.getInstance().player;
         var yike = !preview && skill.role().equals("yike") && player != null ? YikeClientState.get(player.getId()) : null;
         int recast = assigned && !preview ? CombatHudState.recastTicks(skill, yike, ControlStatusOverlay.current()) : 0;
-        boolean artillery = id.equals("yike_rainbow_shell") && yike != null && (yike.mode() == 1 || yike.mode() == 2);
+        var shotForm = yike == null ? ShotForm.NORMAL : switch (yike.mode()) {
+            case 1 -> ShotForm.FIXED;
+            case 2 -> ShotForm.MOBILE;
+            default -> ShotForm.NORMAL;
+        };
         boolean shuo = !preview && !skill.isPassive() && skill.role().equals("shuo");
         String variant = "";
         if (recast > 0) variant = "recast";
@@ -89,10 +96,10 @@ public record SkillHoverDetails(String name, String group, String rank, boolean 
         String summary = variant.isEmpty() ? normal : text(prefix + variant);
         String costs = "";
         List<String> metrics;
-        if (artillery) {
+        if (skill instanceof RainbowShell shell && shotForm != ShotForm.NORMAL) {
             summary = label("mode" + yike.mode());
             costs = mana(skill, data, rank, preview) + " · " + label("next_shot", seconds(yike.nextShot()));
-            metrics = List.of(label("shells", yike.shells()));
+            metrics = List.of(label("shells", yike.shells()), SkillTooltipDescriptions.rainbowArtilleryLine(shotForm));
         } else {
             String metricId = shuo ? id + "." + variant : id;
             var rows = new ArrayList<String>();
@@ -102,6 +109,13 @@ public record SkillHoverDetails(String name, String group, String rank, boolean 
                 costs = mana(skill, data, rank, preview) + " · " + cooldown(skill, data, rank, preview, assigned);
             }
             if (recast == 0 || shuo) {
+                if (Language.getInstance().has(prefix + "fields")) {
+                    rows.add(SkillTooltipDescriptions.fieldText(skill, prefix + "fields", rank));
+                }
+                if (skill instanceof RainbowShell) {
+                    rows.add(SkillTooltipDescriptions.rainbowArtilleryLine(ShotForm.FIXED));
+                    rows.add(SkillTooltipDescriptions.rainbowArtilleryLine(ShotForm.MOBILE));
+                }
                 var fields = METRICS.getOrDefault(metricId, List.of());
                 for (int index = 0; index < fields.size(); index++) {
                     var metric = fields.get(index);
@@ -156,7 +170,7 @@ public record SkillHoverDetails(String name, String group, String rank, boolean 
 
     private static String cooldown(AbilitySkill skill, PlayerDataPayload data, int rank, boolean preview, boolean assigned) {
         if (data.training() && data.noCooldown()) return label("train_cd");
-        int ticks = skill.getCooldownTicks(rank);
+        int ticks = skill instanceof RainbowShell shell ? shell.cooldownTicks(rank, false) : skill.getCooldownTicks(rank);
         double reduction = ClientDataHolder.attrValue(ModAttributes.COOLDOWN_REDUCTION.value().getDescriptionId());
         if (ticks > 0 && Double.isFinite(reduction))
             ticks = Math.max(1, (int)(ticks * (1 - Math.clamp(reduction, 0, ModAttributes.MAX_COOLDOWN_REDUCTION) / 100)));
