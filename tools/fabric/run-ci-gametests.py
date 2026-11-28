@@ -21,13 +21,29 @@ EXTRA_TESTS = ("balance_calibration_damage", "calibration_keheng", "calibration_
 EXTRA_TESTS += ("balance_roster_sword_frost", "balance_mage_support_113", "ink_cast_animation",
                 "balance_small_modes", "mode_supply_rift", "mode_supply_cherry",
                 *(f"balance_roster_114_{scene}" for scene in ("lane", "camps", "towers")))
-parser = argparse.ArgumentParser(description=__doc__)
+def format_filter_catalog():
+    return (
+        "Available filters:\n"
+        "  core  (default): " + ", ".join(CORE_TESTS) + "\n"
+        "  extra (opt-in) : " + ", ".join(EXTRA_TESTS)
+    )
+
+
+parser = argparse.ArgumentParser(
+    description=__doc__,
+    epilog=format_filter_catalog(),
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+)
+parser.add_argument("--list", action="store_true", help="List available core and extra GameTest filters and exit")
 parser.add_argument("--offline", action="store_true", help="Use only already cached Gradle dependencies")
 parser.add_argument("filters", nargs="*", help="Explicit check filters; default is all core checks")
 args = parser.parse_args()
+if args.list:
+    print(format_filter_catalog())
+    raise SystemExit(0)
 unknown = set(args.filters) - set(CORE_TESTS + EXTRA_TESTS)
 if unknown:
-    parser.error("Unknown filters: " + ", ".join(sorted(unknown)))
+    parser.error("Unknown filters: " + ", ".join(sorted(unknown)) + "\n" + format_filter_catalog())
 root = Path(__file__).resolve().parents[2]
 output = root / "build/reports/fabric-ci"
 output.mkdir(parents=True, exist_ok=True)

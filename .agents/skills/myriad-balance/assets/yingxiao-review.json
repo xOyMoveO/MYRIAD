@@ -1,77 +1,71 @@
 {
   "title": "夜影绕背后，两下补 A 能否收尾",
-  "baseline": "游戏 bae9d06，归档原型 b97a9e0",
-  "scenario": "樱隙前线 3v3，夜影 21A34 绕背样例，剧本版本 b97a9e0",
-  "conditions": "双方 Lv20、各 4,885 金预算。夜影选暗影猎手、影袭、绝影追击，绕背全中，落霞起始 2,000 血。等级是强制样例条件。",
+  "baseline": "正式主干 dac6765（PR #115），3v3 标杆校准基线 d94b353，CHERRY_V2/V3 规则",
+  "scenario": "樱隙前线 3v3，夜影 21A34 绕背对落霞标杆（Lv10 联合账本 4,770 金基准与旧 Lv20／4,885 金对照）",
+  "conditions": "夜影选暗影猎手、影袭、绝影追击，同经济正面／绕背全中。两档冻结条件分别见 docs/balance/calibration-3v3.md 与 tools/balance/scenarios/combos/yingxiao.json。",
   "observations": [
     {
-      "metric": "首套结束时落霞剩余生命",
+      "metric": "正式选定：绝影追击每阶伤害",
+      "basis": "策划目标",
+      "value": 87.5,
+      "unit": "HP/阶",
+      "note": "保留现行每阶 87.5；另留限定绕背或完整连招的后续候选，避免无条件抬高其他 R A 构筑伤害。",
+      "source": "docs/balance/calibration-3v3.md#四个标杆"
+    },
+    {
+      "metric": "隔离试改（未采纳）：每阶 670 在 Lv10／4,770 金下第二次补 A 结果",
+      "basis": "引擎抽检",
+      "value": "第二次补 A 击杀（同时抬高非绕背 R A 构筑）",
+      "unit": "",
+      "level": 2,
+      "note": "仅用于验证收尾门槛的隔离构建，因同时显著抬高其他 R A 构筑伤害而未合入正式值。",
+      "source": "docs/balance/calibration-3v3.md#四个标杆"
+    },
+    {
+      "metric": "旧 Lv20／4,885 金基准下首套结束余血",
       "basis": "离线推演",
       "value": 1114.7,
       "unit": "HP",
-      "note": "从化影起手到大招命中。21A34 中的 A 已计入首套。",
-      "source": "https://github.com/xOyMoveO/MYRIAD/issues/96#issuecomment-7233469433"
+      "note": "落霞起始 2,000 HP，从化影起手到大招命中，21A34 中的 A 已计入首套。",
+      "source": "docs/balance/implementation-handoff.md#四角色标杆与证据"
     },
     {
-      "metric": "第一下补 A 后落霞剩余生命",
-      "basis": "离线推演",
-      "value": 997.323,
-      "unit": "HP",
-      "note": "归档的背面开手 finisherTarget.basics[0]。第一下在第 35 真实刻命中，第二下在第 64 刻命中。",
-      "source": "https://github.com/xOyMoveO/MYRIAD/blob/b97a9e0348c9716ecca7eafa7d85f325a8109eb1/tools/balance-prototype/samples/report.json"
-    },
-    {
-      "metric": "第二下补 A 后落霞剩余生命",
+      "metric": "旧 Lv20／4,885 金基准下第二下补 A 后余血",
       "basis": "离线推演",
       "value": 907,
       "unit": "HP",
       "level": 2,
-      "note": "近似值。两次期望伤害为 117.42 和 90.32，与已确认的收尾目标有差距。",
-      "source": "https://github.com/xOyMoveO/MYRIAD/blob/b97a9e0348c9716ecca7eafa7d85f325a8109eb1/tools/balance-prototype/REPORT.md"
+      "note": "与“第一下补 A 后存活、第二下击杀”的策划标杆存在差距。",
+      "source": "docs/balance/implementation-handoff.md#四角色标杆与证据"
     },
     {
-      "metric": "当前实战轮次",
+      "metric": "当前实战轮次反馈",
       "basis": "真人反馈",
       "value": "要等第二轮技能",
       "unit": "",
-      "note": "策划给出开手顺序和轮次判断。",
+      "note": "历史真人实战反馈，新版本六人正式樱隙前线整局仍待复测。",
       "source": "https://github.com/xOyMoveO/MYRIAD/issues/96#issuecomment-7233274645"
     },
     {
-      "metric": "目标收尾",
-      "basis": "策划目标",
-      "value": "第一下补 A 后存活，第二下击杀",
-      "unit": "",
-      "note": "条件为同经济、满血、成功绕背并全中。",
-      "source": "https://github.com/xOyMoveO/MYRIAD/issues/96#issuecomment-7233469433"
-    },
-    {
-      "metric": "独立专项中一阶影杀背击伤害",
-      "basis": "引擎抽检",
-      "value": 75.90039,
-      "unit": "HP",
-      "note": "这个单段专项取一点力量并从背面命中。正面读数为 69，正面另加 15% 临时物攻后仍为 69。该项只覆盖影杀。",
-      "source": "https://github.com/xOyMoveO/MYRIAD/blob/b97a9e0348c9716ecca7eafa7d85f325a8109eb1/tools/balance-prototype/samples/engine-evidence.json"
-    },
-    {
-      "metric": "相同初态下整套连招的引擎余血",
+      "metric": "新版樱隙 3v3 六人真人局夜影切入收尾样本",
       "basis": "未测",
       "value": null,
-      "unit": "HP",
-      "note": "已有夜影单段专项，完整 21A34 与两次补 A 的同输入引擎记录仍缺。",
+      "unit": "",
+      "level": 3,
+      "note": "已有本地 Fabric 合成服务端逐击对照，真实地图六人对局体验待采。",
       "source": ""
     }
   ],
   "checks": [
     {
-      "name": "本报告的整套连招 GameTest",
+      "name": "本地 Fabric 合成服务端逐击抽检（balance_calibration_damage）",
       "status": "未运行",
       "source": ""
     }
   ],
   "reproduce": [
-    "在归档原型提交 b97a9e0348c9716ecca7eafa7d85f325a8109eb1 的检出中，从仓库根目录运行下列命令。",
-    "python tools/balance-prototype/audit.py --trace yingxiao AAA --night-opener --level 20 --mode 当前 --scene 队友先控",
-    "该版 CLI 以“队友先控”选择这段剧本的绕背开手。读取 rotation.firstR.hpLeft，以及随后两次 A 的 rotation.hits 条目。"
+    "使用 JDK 25，在仓库根目录执行 bash ./gradlew build 与 python tools/fabric/prepare-ci-release.py。",
+    "运行引擎抽检：python tools/fabric/run-ci-gametests.py balance_calibration_damage。",
+    "按 docs/balance/calibration-3v3.md 传入配对基线与 build/ci-release 运行 tools/balance/replay-calibration.py，核对夜影两档逐击对照。"
   ]
 }

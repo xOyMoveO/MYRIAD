@@ -1,34 +1,17 @@
-# 万象（MYRIAD，原仙凡劫）项目交付约定
+# 万象（MYRIAD）项目协作约定
 
-- 对外中文名为“万象”，英文名为“MYRIAD”；新角色题材包罗万象，不默认局限于修仙、仙侠或东方玄幻。现有角色和地图主题保留。完整定位见`E:/mod/策划文件/万象_项目定位与角色方向.md`。
-- 用户于2026-11-12明确要求迁移内部命名：模组ID、资源命名空间为`myriad`，Java包为`com.myriad`，入口`Myriad`/`MyriadClient`，命令`/myriad`，NBT及测试属性前缀`myriad`。旧开发规范中“保留旧技术标识”的规定已被这次用户要求替代。
-- 本次是破坏兼容的身份迁移，不承诺旧世界中的物品、实体、角色进度、地图设施及个人HUD设置自动迁移。不要自动加载或覆盖原有正式存档；先在新测试世界验证，旧世界迁移须独立确认和备份。
+- 对外中文名“万象”，英文名 `MYRIAD`；新角色题材不限于修仙。内部标识统一为 `myriad`（模组 ID、命名空间、命令 `/myriad`、NBT 及测试前缀），Java 包 `com.myriad`，入口 `Myriad` / `MyriadClient`。详情、角色 ID 对照与开发边界见 `docs/协作开发与内部命名.md`。
+- 不自动迁移旧版（含原《仙凡劫》/ NeoForge）存档、玩家进度、地图设施或个人 HUD，也不可让新旧模组共存于同一实例；验证请用新测试世界，旧世界迁移须先备份并单独确认。
 
-## 分支与合并
+## 分支、PR 与文档同步
 
-- 每项更改开始前，必须先新建并切换到独立工作分支；修改和提交均在该分支完成，不直接在 `main` 上修改或提交。
-- 远端 `main` 的所有更改必须通过 GitHub Pull Request（PR）合并；不得直接推送 `main`，也不得先在本地合并再推送以绕过 PR。
-- 每次创建或更新 PR 前，按该分支的实际代码、配置和可用入口核对根目录 `README.md`；如有不一致，在同一 PR 中同步，已一致则无需改动。根 README 面向公开仓库读者，不写维护者个人环境、机器路径或临时 PR 状态。
+- 每项更改开始前先新建并切换到独立工作分支，不在 `main` 上直接修改或提交。
+- 远端 `main` 的所有更改通过 GitHub Pull Request（PR）合并，不直接推送 `main`，也不在本地合并后直推绕过 PR。
+- 创建或更新 PR 前，按当前分支的实际代码、配置和可用入口核对根目录 `README.md`；不一致则在同一 PR 中同步，已一致则不改动。根 `README.md` 面向公开读者，不写个人环境、本机路径或临时 PR 状态。
 
-## 构建后部署（用户于2026-11-08授权）
+## 导航指针
 
-- 每次完成游戏更新并成功构建、通过相关验证后，将本次确认的新JAR替换到`D:/Minecraft/.minecraft/versions/xianfanjie/mods`。这是用户指定的当前实例，不再默认使用历史的`26.2-NeoForge_26.2.0.59/mods`目录。
-- 只替换仙凡劫本体，不改其他模组、地图、配置或玩家存档。核对目标路径、实际模组标识和实例是否运行；不擅自关闭游戏。游戏运行或文件被占用时，保留构建包并说明待退出后安装。
-- 替换前将旧JAR备份至`E:/mod/outputs`下独立的时间戳备份目录（不能把可被加载的旧JAR留在mods中）。安装后核对目标文件与本次交付包的SHA256一致，避免重复仙凡劫JAR。
-- 目录权限不足时按工具权限流程申请指定目录写入，不绕过沙箱。构建失败或相关验证失败不能部署；不把安装成功当成游戏内验收。
-- 同步`E:/mod/策划文件/仙凡劫_项目理解与开发现状.md`的部署状态；玩法或视觉更新仍按仙凡劫开发规范追加玩家更新日志，保留历史记录。
-- 此次内部身份迁移是以上自动安装约定的安全例外：先交付`myriad-0.1.0.jar`，旧实例中必须移除旧模组后才能安装新模组，不可让新旧两个ID同时加载。在用户确认旧存档迁移方案前，不自动替换正式实例。
-
-## Agent skills
-
-### Issue tracker
-
-需求、规格和实施任务记录在 `xOyMoveO/MYRIAD` 的 GitHub Issues；读取、发布或更新任务前，先读 `docs/agents/issue-tracker.md`。
-
-### Triage labels
-
-使用五个默认分流标签；应用或变更分流状态前，先读 `docs/agents/triage-labels.md`。
-
-### Domain docs
-
-采用 single-context 布局：根目录 `GLOSSARY.md` 与 `docs/adr/`；探索代码、讨论领域术语或提出设计决策前，先读 `docs/agents/domain.md`。
+- **Issue tracker**：需求、规格和实施任务记录在 `xOyMoveO/MYRIAD` 的 GitHub Issues；读取、发布或更新任务前，先读 `docs/agents/issue-tracker.md`。
+- **Triage labels**：使用五个默认分流标签；应用或变更分流状态前，先读 `docs/agents/triage-labels.md`。
+- **Domain docs**：采用 single-context 布局（根目录 `GLOSSARY.md` 与 `docs/adr/`）；探索代码、讨论领域术语或提出设计决策前，先读 `docs/agents/domain.md`。
+- **数值平衡与快照**：涉及角色数值、购点与专精、经济或战场节奏变更时，使用 `myriad-balance` 技能，入口见 `docs/balance/snapshot.md` 与 `docs/balance/roster-modes.md`。
