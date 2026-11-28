@@ -140,7 +140,7 @@ public class GameManager {
     private long crystalTick = -1;
 
     private void sampleEconomy(long now) {
-        if (tempo != MatchTempo.CHERRY_V1) return;
+        if (!tempo.isCherry()) return;
         long elapsed = now - matchStartTime;
         if (elapsed != 6000 && elapsed != 12000 && elapsed != 18000) return;
         int minute = (int) (elapsed / 1200);
@@ -162,22 +162,22 @@ public class GameManager {
     }
 
     void recordTowerFall(long time) {
-        if (combatTempo() == MatchTempo.CHERRY_V1 && firstTowerTick < 0) firstTowerTick = time - matchStartTime;
+        if (combatTempo().isCherry() && firstTowerTick < 0) firstTowerTick = time - matchStartTime;
     }
 
     void recordCrabKill(long time) {
-        if (combatTempo() == MatchTempo.CHERRY_V1) crabKillTicks.add(time - matchStartTime);
+        if (combatTempo().isCherry()) crabKillTicks.add(time - matchStartTime);
     }
 
     void crystalDestroyed(Faction winningSide, long time) {
-        if (combatTempo() == MatchTempo.CHERRY_V1) crystalTick = time - matchStartTime;
+        if (combatTempo().isCherry()) crystalTick = time - matchStartTime;
         endMatch(winningSide);
     }
 
     private void logTempoResult(String outcome, long time) {
-        if (tempo == MatchTempo.CHERRY_V1) com.myriad.Myriad.LOGGER.info(
-                "[cherry-tempo] round={} players={} outcome={} ticks={} firstTower={} crabKills={} crystal={} samples={}",
-                queueRound, factions.size(), outcome, time - matchStartTime, firstTowerTick, crabKillTicks, crystalTick, economySamples);
+        if (tempo.isCherry()) com.myriad.Myriad.LOGGER.info(
+                "[cherry-tempo] profile={} round={} players={} outcome={} ticks={} firstTower={} crabKills={} crystal={} samples={}",
+                tempo, queueRound, factions.size(), outcome, time - matchStartTime, firstTowerTick, crabKillTicks, crystalTick, economySamples);
     }
     private final Map<UUID, OfflineStats> offlineStats = new HashMap<>();
     private long pickToken;
@@ -221,8 +221,13 @@ public class GameManager {
         return MatchProgress.JSON.toJsonTree(instance);
     }
     public static void restore(com.google.gson.JsonElement value, MinecraftServer server) {
-        instance = MatchProgress.JSON.fromJson(value, GameManager.class);
-        instance.setServer(server);
+        var restored = MatchProgress.JSON.fromJson(value, GameManager.class);
+        if (restored.tempo == null) {
+            if (value.getAsJsonObject().has("tempo")) throw new IllegalArgumentException("Unknown checkpoint match tempo");
+            restored.tempo = MatchTempo.STANDARD;
+        }
+        restored.setServer(server);
+        instance = restored;
     }
 
     public Phase getPhase() {

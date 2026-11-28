@@ -704,7 +704,7 @@ public final class PlayerDataProvider {
                 0.15, data.getGaleRocUntil() > now);
         applyTimedModifier(player, Attributes.MOVEMENT_SPEED, "myriad:buff_gold_wind_speed",
                 0.10, data.getGoldWindUntil() > now);
-        applyTimedModifier(player, Attributes.ATTACK_SPEED, "myriad:buff_gale_roc_attack_speed",
+        applyTimedModifier(player, ModAttributes.ATTACK_SPEED, "myriad:buff_gale_roc_attack_speed",
                 0.20, data.getGaleRocUntil() > now);
         applyTimedFlatModifier(player, ModAttributes.MANA_REGEN, "myriad:buff_spring_well_mana_regen",
                 8.0, data.getSpringWellUntil() > now);

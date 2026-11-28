@@ -5,7 +5,8 @@ import com.google.gson.JsonObject;
 /** A versioned map choice, frozen at the start of combat and carried by the match checkpoint. */
 enum MatchTempo {
     STANDARD(70, 30, 60, 360),
-    CHERRY_V1(35, 20, 40, 240);
+    CHERRY_V1(35, 20, 40, 240),
+    CHERRY_V2(35, 20, 40, 240);
 
     private final int wave, small, medium, boss;
 
@@ -21,9 +22,12 @@ enum MatchTempo {
         return switch (config.get("profile").getAsString()) {
             case "standard" -> STANDARD;
             case "cherry_v1" -> CHERRY_V1;
+            case "cherry_v2" -> CHERRY_V2;
             default -> throw new IllegalArgumentException("Unknown match tempo profile");
         };
     }
+
+    boolean isCherry() { return this != STANDARD; }
 
     long firstWaveTicks() { return wave * 20L; }
 

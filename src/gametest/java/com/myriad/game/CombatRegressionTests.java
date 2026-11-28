@@ -24,9 +24,15 @@ public final class CombatRegressionTests {
         register("combat_feedback",CombatFeedbackChecks::run);
         register("battle_tuning",BattleTuningChecks::run);
         register("tower_cover", TowerCoverChecks::run);
+        register("battlefield_buildings", BattlefieldBuildingChecks::run);
         register("match_economy", MatchEconomyChecks::run);
         register("match_assists", MatchAssistChecks::run);
         register("cherry_rift_camps", CherryRiftCampChecks::run);
+        register("battlefield_small_medium_camps", BattlefieldMonsterChecks::camps);
+        register("battlefield_rift_crab", BattlefieldMonsterChecks::crab);
+        register("battlefield_rift_crab_duo", BattlefieldMonsterChecks::crabDuo);
+        register("battlefield_rift_crab_trio", BattlefieldMonsterChecks::crabTrio);
+        register("battlefield_peng_king", BattlefieldMonsterChecks::pengKing);
         register("rift_crab_minimap", RiftCrabMinimapChecks::run);
         register("cherry_flat_lane", CherryFlatLaneChecks::run);
         register("arena_switch", ArenaSwitchRegression::run);

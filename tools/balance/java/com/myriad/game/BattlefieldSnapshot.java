@@ -155,20 +155,37 @@ final class BattlefieldSnapshot {
                 "周期波次用法兵替换一个远程兵", "wave_spawn", REAL));
         result.add("wavesPerGrowthStage", constant(LaneSystem.WAVES_PER_GROWTH_STAGE, "waves", LaneSystem.class, "WAVES_PER_GROWTH_STAGE"));
         result.add("lateGrowthBegins", at(LaneSystem.LATE_MINION_GROWTH_TICKS, "ticks", LaneSystem.class,
-                "LATE_MINION_GROWTH_TICKS", "从正式开战计时", "minion_tick", REAL));
+                "LATE_MINION_GROWTH_TICKS", "STANDARD 与 CHERRY_V1 从正式开战计时", "minion_tick", REAL));
+        var pressure = new JsonObject();
+        long stageTicks = LaneSystem.WAVES_PER_GROWTH_STAGE * LaneSystem.WAVE_INTERVAL;
+        pressure.add("growthBegins", at(MatchTempo.CHERRY_V2.firstWaveTicks() + stageTicks,
+                "ticks", LaneSystem.class, "elapsedGrowthStages", "CHERRY_V2", "match_start", REAL));
+        pressure.add("growthStageDuration", at(stageTicks,
+                "ticks", LaneSystem.class, "elapsedGrowthStages", "CHERRY_V2", "match_start", REAL));
+        pressure.add("begins", constant(LaneSystem.MINION_PRESSURE_START_TICKS, "ticks", LaneSystem.class, "MINION_PRESSURE_START_TICKS"));
+        pressure.add("healthPerGrowthStage", constant(LaneSystem.MINION_HEALTH_PER_GROWTH_STAGE, "base_health_ratio_per_stage",
+                LaneSystem.class, "MINION_HEALTH_PER_GROWTH_STAGE"));
+        pressure.add("attackPerGrowthStage", constant(LaneSystem.MINION_ATTACK_PER_GROWTH_STAGE, "base_attack_ratio_per_stage",
+                LaneSystem.class, "MINION_ATTACK_PER_GROWTH_STAGE"));
+        pressure.add("healthPerPressureMinute", constant(LaneSystem.MINION_HEALTH_PER_PRESSURE_MINUTE, "base_health_ratio_per_minute",
+                LaneSystem.class, "MINION_HEALTH_PER_PRESSURE_MINUTE"));
+        pressure.add("attackPerPressureMinute", constant(LaneSystem.MINION_ATTACK_PER_PRESSURE_MINUTE, "base_attack_ratio_per_minute",
+                LaneSystem.class, "MINION_ATTACK_PER_PRESSURE_MINUTE"));
+        result.add("cherryV2Pressure", pressure);
 
         var types = new JsonObject();
         for (LaneSystem.Kind kind : List.of(LaneSystem.Kind.MELEE, LaneSystem.Kind.RANGED, LaneSystem.Kind.MAGIC, LaneSystem.Kind.SIEGE)) {
             var unit = new JsonObject();
             float baseHp = LaneSystem.baseHealth(kind);
-            int baseGold = LaneSystem.minionBaseGold(kind);
+            int baseGold = LaneSystem.minionBaseGold(kind, MatchTempo.CHERRY_V1);
             int baseXp = LaneSystem.minionBaseXp(kind);
             unit.add("baseHealth", constant(baseHp, "hp", LaneSystem.class, "baseHealth"));
             unit.add("baseAttack", constant(LaneSystem.baseAttack(kind), "hp", LaneSystem.class, "baseAttack"));
             unit.add("attackRecovery", at(LaneSystem.minionAttackRecovery(kind), "ticks", LaneSystem.class,
                     "minionAttackRecovery", "受局部行动速度影响", "attack", ACTION));
             unit.add("attackRange", constant(LaneSystem.minionAttackRange(kind), "blocks", LaneSystem.class, "minionAttackRange"));
-            unit.add("baseGold", constant(baseGold, "gold", LaneSystem.class, "minionBaseGold"));
+            unit.add("baseGold", at(baseGold, "gold", LaneSystem.class, "minionBaseGold",
+                    "STANDARD 与 CHERRY_V1", "definition", NONE));
             unit.add("baseExperience", constant(baseXp, "xp", LaneSystem.class, "minionBaseXp"));
             var samples = new JsonArray();
             for (int stage : List.of(0, 1, 7)) {
@@ -186,22 +203,51 @@ final class BattlefieldSnapshot {
             for (long elapsed : new long[]{0, 2400, 24000}) {
                 var sample = new JsonObject();
                 sample.addProperty("elapsedTicks", elapsed);
-                sample.add("lastHitGold", minionReward(baseGold, true, false, elapsed));
-                sample.add("lastHitExperience", minionReward(baseXp, true, true, elapsed));
-                sample.add("nonPlayerKillNearbyGold", minionReward(baseGold, false, false, elapsed));
-                sample.add("nearbyExperience", minionReward(baseXp, false, true, elapsed));
+                sample.add("lastHitGold", minionReward(baseGold, true, false, elapsed, MatchTempo.CHERRY_V1));
+                sample.add("lastHitExperience", minionReward(baseXp, true, true, elapsed, MatchTempo.CHERRY_V1));
+                sample.add("nonPlayerKillNearbyGold", minionReward(baseGold, false, false, elapsed, MatchTempo.CHERRY_V1));
+                sample.add("nearbyExperience", minionReward(baseXp, false, true, elapsed, MatchTempo.CHERRY_V1));
                 rewards.add(sample);
             }
             unit.add("rewardSamplesBeforeCatchUpAndGlobalGold", rewards);
+            var byTempo = new JsonObject();
+            for (MatchTempo tempo : MatchTempo.values()) byTempo.add(tempo.name(), minionTimeline(kind, tempo));
+            unit.add("byTempo", byTempo);
             types.add(kind.name().toLowerCase(Locale.ROOT), unit);
         }
         result.add("types", types);
         return result;
     }
 
-    private static JsonObject minionReward(int base, boolean playerKill, boolean xp, long elapsed) {
-        return at(LaneSystem.minionReward(base, playerKill, xp, elapsed), xp ? "xp" : "gold", LaneSystem.class,
-                "minionReward", playerKill ? "英雄补刀" : "符合范围的非补刀受益者", "minion_death", REAL);
+    private static JsonObject minionTimeline(LaneSystem.Kind kind, MatchTempo tempo) {
+        var rule = new JsonObject();
+        int baseGold = LaneSystem.minionBaseGold(kind, tempo);
+        int baseXp = LaneSystem.minionBaseXp(kind);
+        rule.add("baseGold", constant(baseGold, "gold", LaneSystem.class, "minionBaseGold"));
+        rule.add("baseExperience", constant(baseXp, "xp", LaneSystem.class, "minionBaseXp"));
+        var samples = new JsonArray();
+        for (long elapsed : new long[]{700, 3600, 9600, 19180, 19200, 19220, 23980, 24000, 24020, 26400}) {
+            int wave = elapsed < tempo.firstWaveTicks() ? 0 : (int) ((elapsed - tempo.firstWaveTicks()) / LaneSystem.WAVE_INTERVAL) + 1;
+            var sample = new JsonObject();
+            sample.addProperty("elapsedTicks", elapsed);
+            sample.addProperty("wave", wave);
+            sample.add("health", at(LaneSystem.scaledMinionHealth(kind, wave, elapsed, tempo), "hp",
+                    LaneSystem.class, "scaledMinionHealth", tempo.name(), "minion_tick", REAL));
+            sample.add("attack", at(LaneSystem.scaledMinionAttack(kind, wave, elapsed, tempo), "hp",
+                    LaneSystem.class, "scaledMinionAttack", tempo.name(), "minion_tick", REAL));
+            sample.add("lastHitGold", minionReward(baseGold, true, false, elapsed, tempo));
+            sample.add("lastHitExperience", minionReward(baseXp, true, true, elapsed, tempo));
+            sample.add("nonPlayerKillNearbyGold", minionReward(baseGold, false, false, elapsed, tempo));
+            sample.add("nearbyExperience", minionReward(baseXp, false, true, elapsed, tempo));
+            samples.add(sample);
+        }
+        rule.add("timelineBeforeCatchUpAndGlobalGold", samples);
+        return rule;
+    }
+
+    private static JsonObject minionReward(int base, boolean playerKill, boolean xp, long elapsed, MatchTempo tempo) {
+        return at(LaneSystem.minionReward(base, playerKill, xp, elapsed, tempo), xp ? "xp" : "gold", LaneSystem.class,
+                "minionReward", tempo.name() + (playerKill ? " 英雄补刀" : " 符合范围的非补刀受益者"), "minion_death", REAL);
     }
 
     private static JsonObject towers() {
@@ -210,17 +256,20 @@ final class BattlefieldSnapshot {
             var tower = new JsonObject();
             tower.add("health", constant(LaneSystem.towerHealth(tier), "hp", LaneSystem.class, "towerHealth"));
             tower.add("attack", constant(LaneSystem.towerAttack(tier), "physical_hp", LaneSystem.class, "towerAttack"));
-            tower.add("baseTeamGoldPerRecipient", constant(LaneSystem.towerBaseGold(tier), "gold", LaneSystem.class, "towerBaseGold"));
+            tower.add("baseTeamGoldPerRecipient", at(LaneSystem.towerBaseGold(tier), "gold", LaneSystem.class, "towerBaseGold",
+                    "敌方阵营击破，按全局金币倍率结算给该阵营在主世界的在线参赛者", "tower_death", NONE));
             tower.add("attackRange", constant(LaneSystem.TOWER_ATTACK_RANGE, "blocks", DefenseTowerEntity.class, "ATTACK_RANGE"));
             tower.add("lockTime", at(LaneSystem.TOWER_LOCK_TICKS, "ticks", LaneSystem.class, "TOWER_LOCK_TICKS",
                     "持续合法锁定", "target_lock", REAL));
             result.add(Integer.toString(tier), tower);
         }
+        result.add("vulnerability", at("preceding_tiers_cleared", "rule_id", LaneSystem.class, "isTowerVulnerable",
+                "同路同阵营的更外层防御塔已经摧毁", "incoming_hit", NONE));
         result.add("escortedRadius", constant(LaneSystem.TOWER_ESCORTED_RADIUS, "blocks", LaneSystem.class, "TOWER_ESCORTED_RADIUS"));
         result.add("unescortedHeroDamageMultiplier", at(LaneSystem.TOWER_UNESCORTED_MULTIPLIER, "ratio", LaneSystem.class,
                 "TOWER_UNESCORTED_MULTIPLIER", "攻击者方兵线未进护送范围，含水晶", "incoming_hit", NONE));
         var protection = new JsonArray();
-        for (int elapsed : new int[]{0, 6000, 10200, 14400, 24000}) {
+        for (int elapsed : new int[]{0, 3600, 5999, 6000, 6001, 10200, 14400, 21600, 24000}) {
             var sample = new JsonObject();
             sample.addProperty("elapsedTicks", elapsed);
             sample.add("incomingMultiplier", at(MatchBalance.towerDamageTakenScale(elapsed), "ratio",
@@ -259,6 +308,10 @@ final class BattlefieldSnapshot {
                 "持续合法锁定", "target_lock", REAL));
         result.add("vulnerability", at("active_match_and_a_lane_cleared", "rule_id", LaneSystem.class,
                 "crystalVulnerable", "至少一路的敌方配置塔已全毁，正式开战中可攻击", "incoming_hit", NONE));
+        result.add("unescortedHeroDamageMultiplier", at(LaneSystem.TOWER_UNESCORTED_MULTIPLIER, "ratio", LaneSystem.class,
+                "TOWER_UNESCORTED_MULTIPLIER", "攻击者方兵线未进护送范围", "incoming_hit", NONE));
+        result.add("matchResult", at("opposing_faction_wins", "rule_id", GameManager.class,
+                "crystalDestroyed", "敌方水晶实际摧毁，结束正式对局", "crystal_death", NONE));
         return result;
     }
 
@@ -281,6 +334,23 @@ final class BattlefieldSnapshot {
             row.add("baseAttack", constant(type.getAttack(), "hp", MonsterType.class, "getAttack"));
             row.add("basePhysicalDefense", constant(type.getPhysicalDefense(), "defense_points", MonsterType.class, "getPhysicalDefense"));
             row.add("baseMagicDefense", constant(type.getMagicDefense(), "defense_points", MonsterType.class, "getMagicDefense"));
+            var combatStats = new JsonObject();
+            for (MatchTempo tempo : MatchTempo.values()) {
+                String condition = "开战锁定 " + tempo.name() + "，首刷（第 0 代）";
+                var stats = new JsonObject();
+                double hp = type.healthFor(tempo);
+                stats.add("health", at(hp, "hp", MonsterType.class, "healthFor", condition, "monster_spawn", NONE));
+                stats.add("attack", at(type.attackFor(tempo), "hp", MonsterType.class, "attackFor",
+                        condition, "monster_spawn", NONE));
+                stats.add("physicalEffectiveHealth", at(hp * (1 + type.getPhysicalDefense() / 100), "hp",
+                        com.myriad.combat.DamageCalc.class, "mitigation", condition + "；零穿透、非暴击",
+                        "monster_spawn", NONE));
+                stats.add("magicEffectiveHealth", at(hp * (1 + type.getMagicDefense() / 100), "hp",
+                        com.myriad.combat.DamageCalc.class, "mitigation", condition + "；零穿透、非暴击",
+                        "monster_spawn", NONE));
+                combatStats.add(tempo.name(), stats);
+            }
+            row.add("combatStatsByTempo", combatStats);
             row.add("moveSpeed", constant(type.getMoveSpeed(), "blocks_per_second", MonsterType.class, "getMoveSpeed"));
             row.add("attackRange", constant(type.getAttackRange(), "blocks", MonsterType.class, "getAttackRange"));
             row.add("baseExperience", constant(type.getXp(), "xp", MonsterType.class, "getXp"));
@@ -295,6 +365,10 @@ final class BattlefieldSnapshot {
                 row.add("baseGold", constant(type.getGold(), "gold", MonsterType.class, "getGold"));
             }
             row.add("teamGold", constant(type.isTeamGold(), "boolean", MonsterType.class, "isTeamGold"));
+            row.add("goldOwner", at(type.isTeamGold() ? "killer_team" : "last_hitter", "reward_owner",
+                    MonsterManager.class, "onKill", "符合结算资格的玩家", "camp_death", NONE));
+            row.add("experienceOwner", at("last_hitter", "reward_owner", MonsterManager.class, "onKill",
+                    "符合结算资格的玩家", "camp_death", NONE));
             row.add("fixedCampEligible", constant(type.canUseFixedSpawn(), "boolean", MonsterType.class, "canUseFixedSpawn"));
             if (type.canUseFixedSpawn()) {
                 var tempoRows = new JsonObject();
@@ -314,7 +388,8 @@ final class BattlefieldSnapshot {
             }
             if (type.getBuff() != null) {
                 row.add("rewardBuff", at(type.getBuff(), "buff_id", MonsterType.class, "getBuff",
-                        "符合结算资格的最后一击", "camp_death", NONE));
+                        type.isLargeBoss() ? "击杀者阵营的符合结算资格成员" : "符合结算资格的最后一击",
+                        "camp_death", NONE));
                 if (type.isLargeBoss())
                     row.add("teamBuffDuration", at(MonsterManager.BOSS_BUFF_TICKS, "ticks", MonsterManager.class,
                             "BOSS_BUFF_TICKS", "击杀者阵营的符合资格成员", "camp_death", REAL));

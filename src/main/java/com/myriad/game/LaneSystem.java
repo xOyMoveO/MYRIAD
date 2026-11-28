@@ -50,6 +50,11 @@ public final class LaneSystem {
     public static final double FOUNTAIN_RADIUS = 6.0;
     public static final double FOUNTAIN_RESTORE_RATIO = 0.10;
     static final int MAGIC_WAVE_PERIOD = 3;
+    static final long MINION_PRESSURE_START_TICKS = 16L * 60 * 20;
+    static final double MINION_HEALTH_PER_GROWTH_STAGE = .06;
+    static final double MINION_ATTACK_PER_GROWTH_STAGE = .10;
+    static final double MINION_HEALTH_PER_PRESSURE_MINUTE = .10;
+    static final double MINION_ATTACK_PER_PRESSURE_MINUTE = .125;
     static final long LATE_MINION_GROWTH_TICKS = 20L * 60 * 20;
     static final int WAVES_PER_GROWTH_STAGE = 4;
     static final int FOUNTAIN_PULSE_TICKS = 20;
@@ -179,15 +184,50 @@ public final class LaneSystem {
     static float baseHealth(Kind kind){return switch(kind){case SIEGE->2240;case MELEE->665;case MAGIC->595;default->455;};}
     /** 兵线基础伤害整体下调约 20%，降低前期小兵对英雄和兵线的压制。 */
     static float baseAttack(Kind kind){return switch(kind){case SIEGE->63;case MELEE->24;case MAGIC->39;default->18;};}
-    private static void scaleMinion(Mob mob,UnitState state,long now){
-        int stages=Math.max(0,(waveNumber-1)/WAVES_PER_GROWTH_STAGE);
-        boolean late=activeMatchStart>=0 && now-activeMatchStart>=LATE_MINION_GROWTH_TICKS;
-        float maximum=scaledMinionHealth(baseHealth(state.kind),stages,late);
-        if(Math.abs(state.maxHealth-maximum)>.01){
-            state.health=maximum*Math.max(0,Math.min(1,state.health/state.maxHealth));state.maxHealth=maximum;
-            configureProxyHealth(mob,maximum);
+    private static void scaleMinion(Mob mob, UnitState state, long now) {
+        MatchTempo tempo = GameManager.combatTempo();
+        long elapsed = activeMatchStart < 0 ? 0 : Math.max(0, now - activeMatchStart);
+        float maximum = scaledMinionHealth(state.kind, waveNumber, elapsed, tempo);
+        if (state.maxHealth != maximum) {
+            state.health = maximum * Math.clamp(state.health / state.maxHealth, 0F, 1F);
+            state.maxHealth = maximum;
         }
-        state.attackDamage=scaledMinionAttack(state.kind, stages, late);
+        // Managed health grows each tick. Refresh the capped vanilla proxy at the display cadence.
+        if ((tempo != MatchTempo.CHERRY_V2 || now % 20 == 0) && mob.getMaxHealth() != Math.min(1024F, maximum)) {
+            configureProxyHealth(mob, maximum);
+        }
+        state.attackDamage = scaledMinionAttack(state.kind, waveNumber, elapsed, tempo);
+    }
+
+    static float scaledMinionHealth(Kind kind, int wave, long elapsed, MatchTempo tempo) {
+        float base = baseHealth(kind);
+        if (tempo != MatchTempo.CHERRY_V2) {
+            return scaledMinionHealth(base, growthStage(wave), elapsed >= LATE_MINION_GROWTH_TICKS);
+        }
+        return (float) (base * (1 + MINION_HEALTH_PER_GROWTH_STAGE * elapsedGrowthStages(elapsed, tempo)
+                + MINION_HEALTH_PER_PRESSURE_MINUTE * pressureMinutes(elapsed)));
+    }
+
+    static float scaledMinionAttack(Kind kind, int wave, long elapsed, MatchTempo tempo) {
+        if (tempo != MatchTempo.CHERRY_V2) {
+            return scaledMinionAttack(kind, growthStage(wave), elapsed >= LATE_MINION_GROWTH_TICKS);
+        }
+        return (float) (baseAttack(kind) * (1 + MINION_ATTACK_PER_GROWTH_STAGE * elapsedGrowthStages(elapsed, tempo)
+                + MINION_ATTACK_PER_PRESSURE_MINUTE * pressureMinutes(elapsed)));
+    }
+
+    private static int growthStage(int wave) {
+        return Math.max(0, (wave - 1) / WAVES_PER_GROWTH_STAGE);
+    }
+
+    private static double elapsedGrowthStages(long elapsed, MatchTempo tempo) {
+        long stageTicks = WAVES_PER_GROWTH_STAGE * WAVE_INTERVAL;
+        // Begin at the old first growth boundary without front-loading the first increase.
+        return Math.max(0, elapsed - tempo.firstWaveTicks() - stageTicks) / (double) stageTicks;
+    }
+
+    private static double pressureMinutes(long elapsed) {
+        return Math.max(0, elapsed - MINION_PRESSURE_START_TICKS) / 1200.0;
     }
 
     static float scaledMinionAttack(Kind kind, int stages, boolean late) {
@@ -1212,13 +1252,18 @@ public final class LaneSystem {
                     || factionOf(finisher) == state.faction
                     || queuedBattle && (!match.isParticipant(finisher.getUUID()) || TrainingMode.isEnabled(finisher)
                         || level.getServer().getPlayerList().getPlayer(finisher.getUUID()) != finisher)) return;
-            rewardMinion(finisher, minion, state, MinionCredit.LAST_HIT);
-            if (!queuedBattle) return;
+            if (queuedBattle && (!finisher.isAlive() || finisher.isSpectator() || HeroRespawnSystem.isWaiting(finisher))) {
+                finisher = null;
+            } else {
+                rewardMinion(finisher, minion, state, MinionCredit.LAST_HIT);
+                if (!queuedBattle) return;
+            }
         }
         for (ServerPlayer player : level.players()) {
             if (player == finisher || !player.isAlive() || player.isSpectator()
                     || player.distanceToSqr(minion) > 144 || factionOf(player) == null || factionOf(player) == state.faction
                     || queuedBattle && (!match.isParticipant(player.getUUID()) || TrainingMode.isEnabled(player)
+                        || HeroRespawnSystem.isWaiting(player)
                         || level.getServer().getPlayerList().getPlayer(player.getUUID()) != player)) continue;
             rewardMinion(player, minion, state, finisher == null ? MinionCredit.NON_PLAYER : MinionCredit.TEAMMATE);
         }
@@ -1227,7 +1272,7 @@ public final class LaneSystem {
     private static void rewardMinion(ServerPlayer player, LivingEntity minion, UnitState state, MinionCredit credit) {
         PlayerData data = PlayerDataProvider.get(player);
         boolean lastHit = credit == MinionCredit.LAST_HIT;
-        int baseGold = minionBaseGold(state.kind);
+        int baseGold = minionBaseGold(state.kind, GameManager.combatTempo());
         int baseXp = minionBaseXp(state.kind);
         int gold = credit == MinionCredit.TEAMMATE ? 0
                 : GlobalBalance.goldIncome(MatchBalance.farmReward(player, minionReward(baseGold, lastHit, false), false));
@@ -1237,10 +1282,10 @@ public final class LaneSystem {
         com.myriad.network.RewardFloatPayload.send(player, minion, gold, xp);
     }
 
-    static int minionBaseGold(Kind kind) {
+    static int minionBaseGold(Kind kind, MatchTempo tempo) {
         return switch (kind) {
-            case MAGIC -> 65;
-            case SIEGE -> 40;
+            case MAGIC -> tempo == MatchTempo.CHERRY_V2 ? 40 : 65;
+            case SIEGE -> tempo == MatchTempo.CHERRY_V2 ? 65 : 40;
             default -> kind.ranged() ? 18 : 12;
         };
     }
@@ -1257,13 +1302,18 @@ public final class LaneSystem {
         GameManager manager = GameManager.get();
         long elapsed = manager == null || manager.getPhase() != GameManager.Phase.PLAYING || server == null
                 ? 0 : Math.max(0, manager.getMatchElapsedTicks(server.overworld().getGameTime()));
-        return minionReward(base, playerKill, experience, elapsed);
+        return minionReward(base, playerKill, experience, elapsed, GameManager.combatTempo());
     }
 
-    static int minionReward(int base, boolean playerKill, boolean experience, long elapsed) {
-        // 每 2 分钟提高 10%，最多翻倍；明确按对局时间而不是波次结算。
-        long tenths = 10L + Math.min(10L, elapsed / (2L * 60L * 20L));
+    static int minionReward(int base, boolean playerKill, boolean experience, long elapsed, MatchTempo tempo) {
         long sharePercent = playerKill ? 100L : experience ? 80L : 25L;
+        if (tempo == MatchTempo.CHERRY_V2) {
+            long bonus = Math.clamp(elapsed, 0L, LATE_MINION_GROWTH_TICKS);
+            return (int) Math.min(Integer.MAX_VALUE,
+                    base * (LATE_MINION_GROWTH_TICKS + bonus) * sharePercent / (100L * LATE_MINION_GROWTH_TICKS));
+        }
+        // 旧节奏每两分钟提高 10%，最多翻倍。
+        long tenths = 10L + Math.min(10L, elapsed / (2L * 60L * 20L));
         return (int)Math.min(Integer.MAX_VALUE,base*tenths*sharePercent/1000L);
     }
 
@@ -1926,6 +1976,10 @@ public final class LaneSystem {
             else spawnMinion(level,saved.faction,saved.lane,orderedPath(saved.lane,saved.faction),saved.kind,0);
             for(var entry:UNITS.entrySet())if(!before.contains(entry.getKey())) {
                 UnitState live=entry.getValue();live.maxHealth=saved.maxHealth;live.health=saved.health;
+                if (!live.tower()) {
+                    if (saved.attackDamage > 0) live.attackDamage = saved.attackDamage;
+                    configureProxyHealth(live.entity, live.maxHealth);
+                }
                 if (java.util.Objects.equals(live.path,saved.path)) live.waypointIndex=saved.waypointIndex;
                 live.lastAttackTick=saved.lastAttackTick;live.attackRecovery=saved.attackRecovery;live.entity.setPos(position.x,position.y,position.z);
                 CombatChunks.prepare(level,BlockPos.containing(position));updateName(live.entity,live);

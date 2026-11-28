@@ -80,7 +80,9 @@ public final class MonsterManager {
     }
 
     static double growthMultiplier(int generation) { return 1.0 + Math.max(0,generation-2)*.03; }
-    private static double initialHealth(MonsterType type,int generation) { return type.getHealth()*growthMultiplier(generation); }
+    private static double initialHealth(MonsterType type, int generation) {
+        return type.healthFor(GameManager.combatTempo()) * growthMultiplier(generation);
+    }
     static final long FIRST_BOSS_SPAWN_TICKS = 8L * 60L * 20L;
     static final long BOSS_SPAWN_INTERVAL_TICKS = 5L * 60L * 20L;
     static final List<MonsterType> LARGE_BOSSES = List.of(
@@ -138,6 +140,7 @@ public final class MonsterManager {
         /** 独立模组生命池，不受原版 MAX_HEALTH 1024 上限影响。 */
         float modHealth;
         final float modMaxHealth;
+        final transient double rawAttack;
 
         State(BlockPos spawnPos, MonsterType type, String spawnPointId, boolean randomBoss,
                 int respawnGeneration) {
@@ -153,6 +156,7 @@ public final class MonsterManager {
             this.lastAttackTick = 0;
             this.modMaxHealth = (float) scaledHealth;
             this.modHealth = this.modMaxHealth;
+            this.rawAttack = type.attackFor(GameManager.combatTempo()) * growthMultiplier(respawnGeneration);
         }
 
         /** 当前仇恨值（最高玩家的累计伤害） */
@@ -214,16 +218,16 @@ public final class MonsterManager {
         if (mob instanceof CherryRiftMonsterEntity cherry) cherry.configure(type);
         mob.setPos(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
         // 原版生命仅作为存活代理；真实生命由 State.modHealth 管理。
-        double scaledHealth = initialHealth(type,generation);
+        State state = new State(pos, type, pointId, randomBoss, generation);
         double growth = growthMultiplier(generation);
-        float proxyHealth = (float) Math.min(1024.0, scaledHealth);
+        float proxyHealth = Math.min(1024.0F, state.modMaxHealth);
         AttributeInstance hp = mob.getAttribute(Attributes.MAX_HEALTH);
         if (hp != null) {
             hp.setBaseValue(proxyHealth);
         }
         AttributeInstance atk = mob.getAttribute(Attributes.ATTACK_DAMAGE);
         if (atk != null) {
-            atk.setBaseValue(type.getAttack()*growth);
+            atk.setBaseValue(state.rawAttack);
         }
         AttributeInstance scale = mob.getAttribute(Attributes.SCALE);
         if (scale != null && type.isLargeBoss() && type.cherryModel() == null) scale.setBaseValue(1.35);
@@ -242,7 +246,6 @@ public final class MonsterManager {
             com.myriad.Myriad.LOGGER.error("[monster] failed to spawn {} at {}", type, pos);
             return false;
         }
-        State state = new State(pos, type, pointId, randomBoss, generation);
         state.entity = mob;
         STATES.put(mob.getUUID(), state);
         // 移除重生倒计时显示
@@ -530,7 +533,7 @@ public final class MonsterManager {
                     cherry.publishAttackProgress(0F);
                 } else {
                     mob.swing(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT);
-                    applyNpcDamage(target,mob,(float)(s.type.getAttack()*growthMultiplier(s.respawnGeneration)));
+                    applyNpcDamage(target, mob, (float) s.rawAttack);
                 }
             }
         } else {
@@ -570,7 +573,7 @@ public final class MonsterManager {
         mob.publishAttackProgress((float) (completed / strike.timing().duration()));
         if (target != null && beforeHit && completed + 1E-9 >= strike.timing().hit()
                 && canReachByMelee(mob, state, target)) {
-            applyNpcDamage(target, mob, (float) (state.type.getAttack() * growthMultiplier(state.respawnGeneration)));
+            applyNpcDamage(target, mob, (float) state.rawAttack);
         }
         if (finished) endCherryStrike(state);
         return !finished;
