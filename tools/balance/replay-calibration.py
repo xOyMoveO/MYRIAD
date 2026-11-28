@@ -95,13 +95,57 @@ def same_hero_rules(first, second):
     return all(first["rules"][key] == second["rules"][key] for key in keys)
 
 
-def measured_variant(name, path, patch, log, xml, release):
-    snapshot, identity = paired_release(Path(path))
+def measured_variant(name, directory, patch, log, xml, release):
+    path = Path(directory)
+    patch_ref = reference(Path(patch))
+    manifest_path = path / "release.json"
+    manifest = load(manifest_path)
+    if "balance_snapshot" in manifest:
+        snapshot, identity = paired_release(path)
+    else:
+        jar_path = path / manifest["jar"]["file"]
+        snapshot_path = path / manifest["snapshot"]["file"]
+        jar_ref, snapshot_ref = reference(jar_path), reference(snapshot_path)
+        snapshot = load(snapshot_path)
+        with ZipFile(jar_path) as archive:
+            embedded = archive.read("META-INF/myriad-balance-snapshot.sha256").decode().strip()
+            changed = manifest["verifiedPatchedClass"]
+            class_hash = sha256(archive.read(changed["name"])).hexdigest()
+        if (jar_ref["sha256"] != manifest["jar"]["sha256"] or snapshot_ref["sha256"] != embedded
+                or snapshot_ref["sha256"] != manifest["snapshot"]["sha256"]
+                or snapshot["rulesSha256"] != manifest["snapshot"]["rulesSha256"]
+                or class_hash != changed["sha256"] or patch_ref["sha256"] != manifest["sourcePatchSha256"]):
+            raise ValueError(f"Experiment archive, changed class or patch does not match: {name}")
+        identity = {"sourceSha": manifest["baseSourceSha"], "sourceDirty": manifest["sourceDirty"],
+                    "archiveSourceSha": snapshot["sourceSha"], "rulesSha256": snapshot["rulesSha256"],
+                    "snapshot": snapshot_ref, "jar": jar_ref, "manifest": reference(manifest_path),
+                    "verifiedPatchedClass": changed}
     same = same_hero_rules(snapshot, release)
-    return {"name": name, "release": identity, "patch": reference(Path(patch)),
+    return {"name": name, "release": identity, "patch": patch_ref,
             "snapshotExportsHeroChanges": not same,
             "engine": engine_run(name, Path(log), Path(xml)),
             "offlineReplay": None if same else replay_rules(snapshot)}
+
+
+def compare_night_replay(run, replay):
+    scenarios = {row["scenario"]["scenarioId"]: row for row in replay["roles"]["yingxiao"]["scripted"]}
+    comparison = []
+    for event in run["events"]:
+        if event["scenarioId"] != "yingxiao.backstab_21a34_finisher" or event["event"] != "case_result":
+            continue
+        archived = event["caseId"].endswith("_archived_inputs")
+        name = event["scenarioId"] if archived else event["scenarioId"] + "_cherry_v2"
+        cases = scenarios[name]["results"]
+        for delay, model in cases.items():
+            hits = {row["label"]: row["hpLeft"] for row in model["events"] if row["event"] == "hit"}
+            observed = {key: event[key] for key in ("afterOpener", "afterFirstBasic", "afterSecondBasic")}
+            predicted = dict(zip(observed, (hits.get(label) for label in ("4", "follow_a1", "follow_a2")), strict=True))
+            comparison.append({"scenario": name, "caseId": event["caseId"], "delay": delay,
+                               "fabricHp": observed, "offlineHp": predicted,
+                               "offlineMinusFabricHp": {key: predicted[key] - value
+                                   if predicted[key] is not None and value is not None else None
+                                   for key, value in observed.items()}})
+    return comparison
 
 
 def build_report(args):
@@ -130,6 +174,13 @@ def build_report(args):
                              for name, pair, patch, log, xml in args.variant],
         "decisions": load(ROLE_DECISIONS) if ROLE_DECISIONS.exists() else None,
     }
+    report["nightComparisons"] = {
+        run["label"]: compare_night_replay(run, report["replay"]) for run in report["engine"]
+        if any(row["scenarioId"] == "yingxiao.backstab_21a34_finisher" for row in run["events"])
+    }
+    for trial in report["measuredVariants"]:
+        report["nightComparisons"][trial["name"]] = compare_night_replay(
+            trial["engine"], trial["offlineReplay"] or report["replay"])
     if not report["combatRulesIdentical"]:
         report["baselineReplay"] = replay_rules(before)
     return report
@@ -182,6 +233,20 @@ def markdown(report):
             summarize_events((row for row in run["events"] if row["scenarioId"] == scenario), run["label"], result)
         if not matching:
             result.append("- 当前未附可核对的引擎事件。")
+    if report["nightComparisons"]:
+        result.extend(["", "### 夜影逐击离线与引擎对照", "",
+                       "两边固定等级、分支、配点、起点和动作顺序。近战随机值、实际命中所在刻及原生回复由各自口径产生。",
+                       "表中用常规延迟，零额外延迟及差值在 JSON。", "",
+                       "| 执行／输入 | 来源 | 首套后 HP | 第一下补 A HP | 第二下补 A HP |",
+                       "| --- | --- | ---: | ---: | ---: |"])
+        for run, records in report["nightComparisons"].items():
+            for row in records:
+                if row["delay"] != "human_default":
+                    continue
+                for measure in ("offlineHp", "fabricHp"):
+                    cells = " | ".join(f"{hp:.2f}" if hp is not None else "—" for hp in row[measure].values())
+                    name = "离线" if measure == "offlineHp" else "Fabric"
+                    result.append(f"| {run}／`{row['caseId']}` | {name} | {cells} |")
     result.extend(["", "### Fabric GameTest", "", "| 执行 | 状态 | XML 用例 |", "| --- | --- | --- |"])
     for run in report["engine"]:
         result.append(f"| {run['label']} | {run['status']} | {', '.join(run['testCases'])} |")

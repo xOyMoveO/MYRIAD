@@ -123,7 +123,7 @@
           "decision": "retain-current",
           "reason": "保留恒步实际踏入自己的领域时获取 40 刻护盾、240 刻内置间隔。具名刻衡专项曾确认五阶零购 156 盾，重进既不叠加也不续延；六智三急速的离线样例按一次 192 名义盾取值。不同自有领域和来伤的盾消耗量待采。",
           "mode": "L1 + L3 + historical L4",
-          "source": ["src/main/java/com/myriad/character/skills/keheng/ConstantStepSkill.java", "tools/balance/scenarios/combos/keheng.json", "src/gametest/java/com/myriad/game/KehengChecks.java", "docs/fabric/evidence/issue41-keheng.xml"]
+          "source": ["src/main/java/com/myriad/character/skills/keheng/ConstantStepSkill.java", "tools/balance/scenarios/combos/keheng.json", "src/gametest/java/com/myriad/game/KehengChecks.java", "docs/fabric/roster-a-20261116.md", "../106-artifacts/baseline/keheng.log", "../106-artifacts/baseline/keheng.xml"]
         },
         "keheng_chizhen": {
           "decision": "retain-current",
@@ -159,7 +159,7 @@
           "decision": "retain-current",
           "reason": "保留终刻贯穿 16 刻定身起手、14 格锁线走廊和一次魔法伤害。独立刻衡专项三阶正中一次 620.5，在走出 3.6 格宽走廊、被硬控或墙截断时无伤害；Lv20 六智三急速的 L3 对齐场景单次折后 504.84 HP。走廊预警后的真人走位与弹道缓时所提供的反打机会另采。",
           "mode": "L1 + L3 + historical L4",
-          "source": ["src/main/java/com/myriad/character/skills/keheng/FinalPenetrationSkill.java", "tools/balance/scenarios/combos/keheng.json", "src/gametest/java/com/myriad/game/KehengChecks.java", "docs/fabric/evidence/issue41-keheng.xml"]
+          "source": ["src/main/java/com/myriad/character/skills/keheng/FinalPenetrationSkill.java", "tools/balance/scenarios/combos/keheng.json", "src/gametest/java/com/myriad/game/KehengChecks.java", "docs/fabric/roster-a-20261116.md", "../106-artifacts/baseline/keheng.log", "../106-artifacts/baseline/keheng.xml"]
         }
       }
     },
