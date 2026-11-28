@@ -1,6 +1,7 @@
 package com.myriad.character.skills.rivet;
 
 import com.myriad.character.ability.AbilityRuntime;
+import com.myriad.character.rework.AttributeSpecializations;
 import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.combat.SkillTargets;
 import com.myriad.player.ModShieldSystem;
@@ -29,7 +30,8 @@ public final class EmergencyStrut extends RivetSkill {
         recipients.add(c.player);
         for (var target : recipients) {
             ModShieldSystem.grantMaxGroup(target, "rivet_emergency_strut/" + c.player.getUUID(),
-                    "rivet_emergency_strut", SHIELD.value(c), SHIELD_TICKS, c.player.getUUID());
+                    "rivet_emergency_strut", AttributeSpecializations.allySupport(c.data, c.player, target, SHIELD.value(c)),
+                    SHIELD_TICKS, c.player.getUUID());
             targets.add(target);
             RivetVfx.shield(c, target, .75);
         }

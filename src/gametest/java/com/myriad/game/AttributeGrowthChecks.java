@@ -70,10 +70,12 @@ final class AttributeGrowthChecks {
                     "Player clone and attachment round trip preserve ranks beyond the old limits and exact wallet");
         }
         var legacy = PlayerData.CODEC.parse(JsonOps.INSTANCE, new JsonPrimitive(
-                "{\"gold\":1234,\"firstGroupAttributes\":{\"strength\":10,\"wisdom\":5}}")).getOrThrow();
+                "{\"gold\":1234,\"firstGroupAttributes\":{\"strength\":10,\"wisdom\":5,\"speed\":2}}")).getOrThrow();
         helper.assertTrue(legacy.getGold() == 1234 && legacy.firstGroupAttribute("strength") == 10
                 && legacy.firstGroupAttribute("wisdom") == 5 && legacy.firstGroupAttribute("defense") == 0
-                && FirstGroupGrowth.price(legacy.firstGroupAttribute("strength")) == 2227,
+                && FirstGroupGrowth.price(legacy.firstGroupAttribute("strength")) == 2227
+                && legacy.firstGroupAttribute(FirstGroupGrowth.ATTACK_SPEED) == 2
+                && legacy.firstGroupAttribute(FirstGroupGrowth.MOVEMENT_SPEED) == 0,
                 "Legacy balances and ranks load unchanged and retained ranks use V1 quotes");
 
         data.setGold(0);
@@ -81,19 +83,20 @@ final class AttributeGrowthChecks {
         helper.assertTrue(FirstGroupGrowth.buy(player, data, "speed") && data.getGold() == 0
                 && data.firstGroupAttribute("speed") == 1 && FirstGroupGrowth.price(data.firstGroupAttribute("speed")) == 432,
                 "Free training purchases advance the same rank used for future quotes");
-        data.setFirstGroupAttribute("speed", 86);
+        // Haste remains useful beyond the ranks that cap the other stats.
+        data.setFirstGroupAttribute("cooldown", 86);
         data.setGold(Integer.MAX_VALUE);
         TrainingMode.setNoGoldCost(false);
-        helper.assertTrue(FirstGroupGrowth.price(86) == 2318908332L && !FirstGroupGrowth.buy(player, data, "speed")
-                && data.getGold() == Integer.MAX_VALUE && data.firstGroupAttribute("speed") == 86,
+        helper.assertTrue(FirstGroupGrowth.price(86) == 2318908332L && !FirstGroupGrowth.buy(player, data, "cooldown")
+                && data.getGold() == Integer.MAX_VALUE && data.firstGroupAttribute("cooldown") == 86,
                 "Prices above the wallet range retain their exact quote and never wrap into a paid purchase");
         helper.assertTrue(FirstGroupGrowth.price(207) == 8835158659165832047L
                 && FirstGroupGrowth.price(208) == FirstGroupGrowth.PRICE_OVERFLOW, "Last representable quote precedes overflow");
-        data.setFirstGroupAttribute("speed", 208);
-        helper.assertTrue(!FirstGroupGrowth.buy(player, data, "speed") && data.getGold() == Integer.MAX_VALUE,
+        data.setFirstGroupAttribute("cooldown", 208);
+        helper.assertTrue(!FirstGroupGrowth.buy(player, data, "cooldown") && data.getGold() == Integer.MAX_VALUE,
                 "A quote above the integer price range cannot debit the wallet");
         TrainingMode.setNoGoldCost(true);
-        helper.assertTrue(FirstGroupGrowth.buy(player, data, "speed") && data.firstGroupAttribute("speed") == 209
+        helper.assertTrue(FirstGroupGrowth.buy(player, data, "cooldown") && data.firstGroupAttribute("cooldown") == 209
                 && data.getGold() == Integer.MAX_VALUE, "A free purchase is valid even after paid prices exceed the represented range");
         data.setFirstGroupAttribute("cooldown", Integer.MAX_VALUE - 1);
         helper.assertTrue(FirstGroupGrowth.buy(player, data, "cooldown")

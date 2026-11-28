@@ -1,5 +1,7 @@
 package com.myriad.character.rework;
 
+import static com.myriad.character.rework.AttributeSpecializations.Option.*;
+
 import com.myriad.character.CharacterType;
 import com.myriad.game.*;
 import com.myriad.player.*;
@@ -14,7 +16,16 @@ import java.util.*;
 /** Per-match attribute purchases and the roster's baseline growth. */
 public final class FirstGroupGrowth {
     private FirstGroupGrowth(){}
-    public static final List<String> ATTRIBUTES=List.of("strength","wisdom","speed","defense","cooldown");
+    public static final String ATTACK_SPEED = "speed";
+    public static final String MOVEMENT_SPEED = "movement_speed";
+    public static final List<String> ATTRIBUTES =
+            List.of("strength", "wisdom", ATTACK_SPEED, "defense", "cooldown", MOVEMENT_SPEED);
+    public static final int MOVEMENT_SPEED_PRICE = 600;
+    public static final int MOVEMENT_SPEED_UPGRADE_TICK = 8 * 60 * 20;
+    public static final double OPENING_MOVEMENT_SPEED_GAIN = .0025;
+    public static final double LATE_MOVEMENT_SPEED_GAIN = .005;
+    public static final String MOVEMENT_SPEED_RATE_KEY = "myriad.movement_speed_per_point";
+    private static final Identifier MOVEMENT_SPEED_MODIFIER = Identifier.parse("myriad:g1_attribute_speed_ms");
     public static final long PRICE_OVERFLOW = -1;
     public static final int STARTING_PRICE = 360;
     public static final int PRICE_STEP_DIVISOR = 5;
@@ -26,7 +37,6 @@ public final class FirstGroupGrowth {
     public static final double BASE_HEALTH_REGEN = 2;
     public static final double BASE_CRIT_DAMAGE = 150;
     public static final double SPEED_ATTACK_GAIN = .06;
-    public static final double SPEED_MOVEMENT_GAIN = .0015;
     public static final double DEFENSE_GAIN = 5.0;
     private static final List<Long> PRICES = purchasePrices();
 
@@ -48,15 +58,46 @@ public final class FirstGroupGrowth {
         return rank < PRICES.size() ? PRICES.get(Math.max(0, rank)) : PRICE_OVERFLOW;
     }
 
+    public static long price(String key, int rank) {
+        return MOVEMENT_SPEED.equals(key) ? MOVEMENT_SPEED_PRICE : price(rank);
+    }
+
     public static double skillHaste(int purchasedPoints) {
         return HASTE_PER_POINT * purchasedPoints;
     }
 
-    public record SpeedGain(double attackSpeed, double movementSpeed) {}
+    public static double nextAttackSpeedGain(int rank, int specialization) {
+        var attr = ModAttributes.ATTACK_SPEED.value();
+        double raw = BASE_ATTACK_SPEED + SPEED_ATTACK_GAIN * rank;
+        return attr.sanitizeValue(raw + SPEED_ATTACK_GAIN + FLURRY.value(rank + 1, specialization))
+                - attr.sanitizeValue(raw + FLURRY.value(rank, specialization));
+    }
 
-    public static SpeedGain nextSpeedGain(int rank) {
-        return new SpeedGain(nextGain(ModAttributes.ATTACK_SPEED, BASE_ATTACK_SPEED, SPEED_ATTACK_GAIN, rank),
-                nextGain(Attributes.MOVEMENT_SPEED, BASE_MOVEMENT_SPEED, SPEED_MOVEMENT_GAIN, rank));
+    public static double nextMovementSpeedGain(int rank, double perPoint) {
+        return nextGain(Attributes.MOVEMENT_SPEED, BASE_MOVEMENT_SPEED, perPoint, rank);
+    }
+
+    public static double movementSpeedPerPoint(long matchElapsedTicks) {
+        return matchElapsedTicks >= MOVEMENT_SPEED_UPGRADE_TICK ? LATE_MOVEMENT_SPEED_GAIN : OPENING_MOVEMENT_SPEED_GAIN;
+    }
+
+    public static double movementSpeedPerPoint(ServerPlayer player) {
+        var match = GameManager.get();
+        if (match == null || match.getPhase() != GameManager.Phase.PLAYING || TrainingGround.isTraining(player)
+                || !match.isParticipant(player.getUUID())) return OPENING_MOVEMENT_SPEED_GAIN;
+        return movementSpeedPerPoint(match.getMatchElapsedTicks(player.level().getServer().overworld().getGameTime()));
+    }
+
+    public static void refreshMovementSpeed(ServerPlayer player, PlayerData data) {
+        var attribute = player.getAttribute(Attributes.MOVEMENT_SPEED);
+        if (attribute == null) return;
+        var modifier = attribute.getModifier(MOVEMENT_SPEED_MODIFIER);
+        double bonus = FirstGroupSkills.active(data.getCharacterId())
+                ? data.firstGroupAttribute(MOVEMENT_SPEED) * movementSpeedPerPoint(player) : 0;
+        if (bonus == (modifier == null ? 0 : modifier.amount())) return;
+        attribute.removeModifier(MOVEMENT_SPEED_MODIFIER);
+        if (bonus != 0) attribute.addTransientModifier(
+                new AttributeModifier(MOVEMENT_SPEED_MODIFIER, bonus, AttributeModifier.Operation.ADD_VALUE));
     }
 
     private static double nextGain(Holder<Attribute> attribute, double base, double perPoint, int rank) {
@@ -64,14 +105,13 @@ public final class FirstGroupGrowth {
                 - attribute.value().sanitizeValue(base + perPoint * rank);
     }
 
-    private static boolean improvesPermanentStats(CharacterType role, String key, int rank) {
+    private static boolean improvesPermanentStats(CharacterType role, String key, int rank,
+                                                  int specialization, double movementPerPoint) {
         return switch (key) {
             case "strength" -> nextGain(ModAttributes.PHYSICAL_ATTACK, baselinePhysicalAttack(role), purchasedPhysicalAttack(1), rank) > 0;
             case "wisdom" -> nextGain(ModAttributes.SPELL_POWER, baselineSpellPower(), purchasedSpellPower(1), rank) > 0;
-            case "speed" -> {
-                var gain = nextSpeedGain(rank);
-                yield gain.attackSpeed() > 0 || gain.movementSpeed() > 0;
-            }
+            case ATTACK_SPEED -> nextAttackSpeedGain(rank, specialization) > 0;
+            case MOVEMENT_SPEED -> nextMovementSpeedGain(rank, movementPerPoint) > 0;
             case "defense" -> nextGain(ModAttributes.PHYSICAL_DEFENSE, BASE_DEFENSE, DEFENSE_GAIN, rank) > 0
                     || nextGain(ModAttributes.MAGIC_RESISTANCE, BASE_DEFENSE, DEFENSE_GAIN, rank) > 0;
             case "cooldown" -> true;
@@ -80,10 +120,16 @@ public final class FirstGroupGrowth {
     }
 
     public static String purchaseError(CharacterType role, String key, int rank, int gold, boolean free) {
+        return purchaseError(role, key, rank, gold, free, 0, OPENING_MOVEMENT_SPEED_GAIN);
+    }
+
+    public static String purchaseError(CharacterType role, String key, int rank, int gold, boolean free,
+                                       int specialization, double movementPerPoint) {
         if (rank == Integer.MAX_VALUE) return "message.myriad.g1.attribute_rank_overflow";
-        if (!improvesPermanentStats(role, key, rank)) return "message.myriad.g1.attribute_no_gain";
+        if (!improvesPermanentStats(role, key, rank, specialization, movementPerPoint))
+            return "message.myriad.g1.attribute_no_gain";
         if (free) return null;
-        long price = price(rank);
+        long price = price(key, rank);
         if (price == PRICE_OVERFLOW) return "message.myriad.g1.attribute_price_overflow";
         return price > gold ? "message.myriad.equip_no_gold" : null;
     }
@@ -150,9 +196,10 @@ public final class FirstGroupGrowth {
         if(!BaseRules.canBuyAttributes(p))return false;
         int rank=d.firstGroupAttribute(key);
         boolean free=TrainingMode.isNoGoldCost(p);
-        String error=purchaseError(CharacterType.byId(d.getCharacterId()),key,rank,d.getGold(),free);
+        String error=purchaseError(CharacterType.byId(d.getCharacterId()),key,rank,d.getGold(),free,
+                d.specialization(key),movementSpeedPerPoint(p));
         if(error!=null){p.sendSystemMessage(Component.translatable(error));return false;}
-        if(!free)d.spendGold((int)price(rank));
+        if(!free)d.spendGold((int)price(key,rank));
         d.setFirstGroupAttribute(key,rank+1);apply(p,d);PlayerDataProvider.syncToClient(p);return true;
     }
     public static void initialize(ServerPlayer p,PlayerData d){
@@ -184,11 +231,21 @@ public final class FirstGroupGrowth {
         if(!FirstGroupSkills.active(d.getCharacterId()))return;
         modifier(p,ModAttributes.PHYSICAL_ATTACK,"strength",purchasedPhysicalAttack(d.firstGroupAttribute("strength")));
         modifier(p,ModAttributes.SPELL_POWER,"wisdom",purchasedSpellPower(d.firstGroupAttribute("wisdom")));
-        modifier(p,ModAttributes.ATTACK_SPEED,"speed_as",SPEED_ATTACK_GAIN*d.firstGroupAttribute("speed"));
-        modifier(p,Attributes.MOVEMENT_SPEED,"speed_ms",SPEED_MOVEMENT_GAIN*d.firstGroupAttribute("speed"));
+        modifier(p,ModAttributes.ATTACK_SPEED,"speed_as",SPEED_ATTACK_GAIN*d.firstGroupAttribute(ATTACK_SPEED));
+        refreshMovementSpeed(p,d);
         modifier(p,ModAttributes.PHYSICAL_DEFENSE,"defense_pd",DEFENSE_GAIN*d.firstGroupAttribute("defense"));
         modifier(p,ModAttributes.MAGIC_RESISTANCE,"defense_mr",DEFENSE_GAIN*d.firstGroupAttribute("defense"));
-        for(String key:ATTRIBUTES)d.setBuff("g1_attribute_"+key,d.firstGroupAttribute(key));
+        modifier(p, ModAttributes.FLAT_ARMOR_PEN, "specialization_armor_pierce", ARMOR_PIERCE.value(d));
+        modifier(p, ModAttributes.FLAT_MAGIC_PEN, "specialization_magic_pierce", MAGIC_PIERCE.value(d));
+        modifier(p, ModAttributes.ATTACK_SPEED, "specialization_flurry", FLURRY.value(d));
+        modifier(p, Attributes.MOVEMENT_SPEED, "specialization_lightfoot", LIGHTFOOT.value(d));
+        modifier(p, ModAttributes.PHYSICAL_DEFENSE, "specialization_steelbone", STEELBONE.value(d));
+        modifier(p, ModAttributes.MAGIC_RESISTANCE, "specialization_spirit_armor", SPIRIT_ARMOR.value(d));
+        modifier(p, ModAttributes.MANA_REGEN, "specialization_breath", BREATH.value(d));
+        for (String key : ATTRIBUTES) {
+            d.setBuff("g1_attribute_" + key, d.firstGroupAttribute(key));
+            d.setBuff(AttributeSpecializations.COUNTER_PREFIX + key, d.specialization(key));
+        }
         PlayerHealthSystem.recalculate(p);
         p.connection.send(new net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket(p.getId(),p.getAttributes().getSyncableAttributes()));
     }

@@ -1,5 +1,8 @@
 package com.myriad.player;
 
+import com.myriad.character.rework.AttributeSpecializations;
+import com.myriad.character.rework.FirstGroupGrowth;
+
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -152,6 +155,11 @@ public final class PlayerDataProvider {
         var delivery = com.myriad.network.BattleSnapshots.of(player);
         var previousAttrs = delivery.lastAttributes();
         var attrs = previousAttrs;
+        double movementRate = FirstGroupGrowth.movementSpeedPerPoint(player);
+        if (!java.util.Objects.equals(previousAttrs.get(FirstGroupGrowth.MOVEMENT_SPEED_RATE_KEY), movementRate)) {
+            attrs = new java.util.HashMap<>(previousAttrs);
+            attrs.put(FirstGroupGrowth.MOVEMENT_SPEED_RATE_KEY, movementRate);
+        }
         for (var holder : HUD_ATTRIBUTES) {
             String key = holder.value().getDescriptionId();
             // The mod health pool can exceed the vanilla cap.
@@ -287,6 +295,7 @@ public final class PlayerDataProvider {
             data.refundAllSkillPointsForTraining();
         }
         com.myriad.character.ability.AbilityRuntime.clear(player);
+        data.clearPursuit();
         data.setCharacterId(type.getId());
         // Selecting the same hero again must not mint an already spent opening point.
         if (com.myriad.character.rework.FirstGroupSkills.active(type.getId())) data.ensureLevelRewards(data.getLevel());
@@ -1132,6 +1141,7 @@ public final class PlayerDataProvider {
         if (data == null) {
             return;
         }
+        FirstGroupGrowth.refreshMovementSpeed(player, data);
         if (com.myriad.game.ModState.isEnabled()) ModShieldSystem.tick(player);
         // 法力回复
         if (player.tickCount % 20 == 0) {
@@ -1643,6 +1653,12 @@ public final class PlayerDataProvider {
             if (event.getAmount() > 0
                     && com.myriad.character.skills.sulan.LingFengBiaoJiSkill.isMarked(entity)) {
                 event.setAmount(event.getAmount() * 1.1f);
+            }
+            boolean basic = customBasicAttack || !skillHit
+                    && event.getSource().is(net.minecraft.world.damagesource.DamageTypes.PLAYER_ATTACK);
+            if (basic && event.getAmount() > 0 && attackerData != null) {
+                event.setAmount(event.getAmount()
+                        + AttributeSpecializations.pursuitDamage(attacker, attackerData, entity) * targetMitigationScale);
             }
             // 伤害飘字（仅对攻击者可见）：物理=红 / 法术=蓝 / 真实=白
             int type = com.myriad.client.DamageFloater.TYPE_PHYSICAL;

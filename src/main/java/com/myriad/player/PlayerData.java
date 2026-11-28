@@ -160,11 +160,42 @@ public class PlayerData {
     private final Map<String, Integer> skillLevels = new HashMap<>();
     /** Attribute purchase counts retain their existing attachment field and currency balance. */
     private final Map<String, Integer> firstGroupAttributes = new LinkedHashMap<>();
+    private final Map<String, Integer> attributeSpecializations = new LinkedHashMap<>();
+    private transient java.util.UUID pursuitTarget;
+    private transient int pursuitHits;
+    private transient Map<java.util.UUID, Long> pursuitCooldowns = new HashMap<>();
     public int firstGroupAttribute(String key) {
         return Math.max(0, firstGroupAttributes.getOrDefault(key, 0));
     }
     public void setFirstGroupAttribute(String key, int rank) {
         firstGroupAttributes.put(key, Math.max(0, rank));
+    }
+
+    public int specialization(String key) {
+        return attributeSpecializations.getOrDefault(key, 0);
+    }
+
+    public void setSpecialization(String key, int choice) {
+        attributeSpecializations.put(key, choice);
+    }
+
+    public boolean trackPursuitHit(java.util.UUID target, long now, int hits, int cooldownTicks) {
+        pursuitCooldowns.values().removeIf(ready -> now >= ready);
+        if (!java.util.Objects.equals(target, pursuitTarget)) {
+            pursuitTarget = target;
+            pursuitHits = 0;
+        }
+        if (target == null || pursuitCooldowns.containsKey(target)) return false;
+        if (++pursuitHits < hits) return false;
+        pursuitHits = 0;
+        pursuitCooldowns.put(target, now + cooldownTicks);
+        return true;
+    }
+
+    public void clearPursuit() {
+        pursuitTarget = null;
+        pursuitHits = 0;
+        pursuitCooldowns.clear();
     }
 
     // ---- 汲取/运输 ----
@@ -611,6 +642,8 @@ public class PlayerData {
         this.skillLevels.putAll(old.skillLevels);
         this.firstGroupAttributes.clear();
         this.firstGroupAttributes.putAll(old.firstGroupAttributes);
+        this.attributeSpecializations.clear();
+        this.attributeSpecializations.putAll(old.attributeSpecializations);
         this.cooldowns.clear();
         this.cooldowns.putAll(old.cooldowns);
         this.buffs.clear();

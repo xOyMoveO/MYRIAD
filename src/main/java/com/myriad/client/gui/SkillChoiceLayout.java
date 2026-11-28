@@ -6,7 +6,7 @@ public record SkillChoiceLayout(Box panel, Box body, Box viewport,
         int rowHeight, int scrollY, int maxY) {
     private static final int[] DISPLAY_GROUPS = {0, 2, 1, 3};
     private static final int SUPPLY_ROW_HEIGHT = 34;
-    public static final int ATTRIBUTE_ROWS = 5;
+    public static final int ATTRIBUTE_ROWS = com.myriad.character.rework.FirstGroupGrowth.ATTRIBUTES.size();
 
     public record Box(int x, int y, int w, int h) {
         public int right() { return x + w; }
@@ -118,7 +118,7 @@ public record SkillChoiceLayout(Box panel, Box body, Box viewport,
         return new Box(panel.x + pad, body.y + index * (size + 5), navigationWidth - 2, size);
     }
 
-    public int attributeRowHeight() { return Math.clamp((viewport.h - 22) / ATTRIBUTE_ROWS, 43, 63); }
+    public int attributeRowHeight() { return Math.clamp((viewport.h - 22) / ATTRIBUTE_ROWS, 54, 68); }
 
     public Box attributeRow(int index, int requestedScroll) {
         return new Box(viewport.x, viewport.y + 22 + index * attributeRowHeight() - requestedScroll,
@@ -136,6 +136,11 @@ public record SkillChoiceLayout(Box panel, Box body, Box viewport,
         var plate = attributeRow(row, requestedScroll);
         int left = icon.right() + 8;
         return new Box(left, plate.y + 3, Math.max(1, plate.right() - 6 - left), plate.h - 6);
+    }
+
+    public Box specializationButton(Box details, int choice) {
+        int half = (details.w - 4) / 2;
+        return new Box(details.x + (choice - 1) * (half + 4), details.bottom() - 16, half, 16);
     }
 
     public int attributeMaximum() {

@@ -1,5 +1,7 @@
 package com.myriad.client;
 
+import com.myriad.character.rework.AttributeSpecializations;
+
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.myriad.character.CharacterType;
@@ -178,7 +180,8 @@ public record SkillHoverDetails(String name, String group, String rank, boolean 
         if (data.training() && data.noCooldown()) return label("train_cd");
         int ticks = skill instanceof RainbowShell shell ? shell.cooldownTicks(rank, false) : skill.getCooldownTicks(rank);
         if (skill.role().equals(data.characterId())) {
-            double haste = FirstGroupGrowth.skillHaste(data.buffs().getOrDefault("g1_attribute_cooldown", 0));
+            double haste = AttributeSpecializations.skillHaste(data.buffs().getOrDefault("g1_attribute_cooldown", 0),
+                    data.buffs().getOrDefault(AttributeSpecializations.COUNTER_PREFIX + "cooldown", 0));
             double reduction = ClientDataHolder.attrValue(ModAttributes.COOLDOWN_REDUCTION.value().getDescriptionId());
             ticks = AbilityRuntime.effectiveCooldownTicks(ticks, haste, reduction);
         }
