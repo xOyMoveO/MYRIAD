@@ -8,8 +8,7 @@ public final class MatchBalance {
     static final double FARM_LEVEL_GAP_WEIGHT = .15;
     static final double FARM_CATCH_UP_CAP = .45;
     static final int FARM_GOLD_INCOME_FLOOR = 500;
-    static final double PASSIVE_GOLD_CATCH_UP_WEIGHT = 1.0;
-    // Candidate amounts from the two-assist example. First-round 3v3 decides the final pools.
+    static final double PASSIVE_GOLD_CATCH_UP_WEIGHT = 0.0;
     static final int ASSIST_GOLD_POOL = 101;
     static final int ASSIST_XP_POOL = 51;
 
@@ -51,6 +50,7 @@ public final class MatchBalance {
     }
 
     private static int farmReward(ServerPlayer player, int base, boolean xp, double catchUpWeight) {
+        if (catchUpWeight == 0) return base;
         var match = GameManager.get();
         if (!ModState.isEnabled() || match == null || match.getPhase() != GameManager.Phase.PLAYING
                 || TrainingMode.isEnabled(player)) return base;

@@ -1,4 +1,4 @@
-"""Replay the fixed #108 CHERRY_V1 economy scenarios from two paired Fabric releases."""
+"""Replay fixed Cherry 3v3 economy scenarios from paired Fabric releases."""
 import argparse
 import hashlib
 import json
@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 from math import floor
 from pathlib import Path
+from shlex import quote
 from zipfile import ZipFile
 
 
@@ -64,9 +65,89 @@ def paired_release(folder):
     return snapshot, manifest
 
 
+def read_battlefield_evidence(path, scenario, rules, manifest):
+    raw = path.read_bytes()
+    report = json.loads(raw)
+    identity = report["candidate"]
+    if (identity["sourceSha"] != manifest["source_sha"]
+            or identity["rulesSha256"] != manifest["balance_snapshot"]["rules_sha256"]):
+        raise ValueError("Battlefield observations do not belong to the reference release")
+    engine = {key: [row for row in report["engine"][key] if row.get("profile") == "CHERRY_V2"]
+              for key in ("lane", "monster", "building")}
+    lane_rewards = [row for row in engine["lane"] if row["scenario"] == "minion_death"]
+    if not lane_rewards:
+        raise ValueError("Missing CHERRY_V2 lane reward observations")
+    for row in lane_rewards:
+        gold, xp = rules.lane_rewards[row["kind"].lower()]
+        if (rules.lane_reward(gold, row["elapsedTicks"], 100) != row["goldBeforeCatchUpAndGlobalScale"]
+                or rules.lane_reward(xp, row["elapsedTicks"], 100) != row["experienceBeforeCatchUp"]):
+            raise ValueError(f"Lane reward differs from the engine observation for {row['kind']}")
+
+    camps = {row["scenario"]: row for row in engine["monster"] if row["event"] == "fight"}
+    camp_observations = {}
+    for unit, fixture in scenario["campObservationByType"].items():
+        row = camps[fixture]
+        definition = rules.monsters[unit]
+        timing = definition["fixedCampTiming"][rules.tempo]
+        rewards = [(item["gold"], item["experience"]) for item in row["rewards"]]
+        fixed_reward = (rules.gold(value(definition, "baseGold")), value(definition, "baseExperience"))
+        if row["outcome"] != "killed" or row["respawnDelayTicks"] != value(timing, "respawnDelay") or rewards != [fixed_reward]:
+            raise ValueError(f"Camp reward or respawn differs from engine observation {fixture}")
+        camp_observations[unit] = {key: row[key] for key in (
+            "source", "scenario", "elapsedStartTick", "fightTicks", "respawnDelayTicks", "rewards")}
+
+    tower_observations = {}
+    for tier in value(rules.map, "towerTiers"):
+        row = next(row for row in engine["building"] if row["scenario"] == "late_push_wave" and row["tier"] == tier)
+        gold = rules.gold(value(rules.towers[str(tier)], "baseTeamGoldPerRecipient"))
+        if not row["broken"] or sorted(row["goldByRecipient"].values()) != [0] * 3 + [gold] * 3:
+            raise ValueError(f"Tower {tier} reward differs from the engine observation")
+        tower_observations[str(tier)] = row
+
+    tower_pressure = {}
+    for event_list in scenario["eventGroups"].values():
+        for event in event_list:
+            if event.get("type") != "tower":
+                continue
+            if event["tower"] not in rules.map["towers"] or not event["tower"].endswith('/' + str(event["tier"])):
+                raise ValueError(f"Tower {event['tower']} is not an actual slot for tier {event['tier']}")
+            if event["observation"] == "mid_team_outer":
+                row = next(row for row in engine["building"] if row["scenario"] == "mid_team_outer")
+            else:
+                row = tower_observations[str(event["tier"])]
+            if not row["broken"]:
+                raise ValueError(f"No actual break in tower observation {event['observation']}")
+            start = row["elapsedTicks"] / TICKS
+            duration = row["waveEndTick"] / TICKS
+            event["at"] = start + duration
+            event["observationSource"] = row["source"]
+            tower_pressure[event["id"]] = {"from": start, "waveDuration": duration, "count": 8,
+                                          "waveSpacing": value(rules.catalog, "waveInterval") / TICKS,
+                                          "rawHealthFraction": 1 / rules.tower_scale(row["elapsedTicks"]),
+                                          "requiresTower": event.get("requiresTower")}
+    tower_at = {event["id"]: event["at"] for events in scenario["eventGroups"].values()
+                for event in events if event.get("type") == "tower"}
+    for events in scenario["eventGroups"].values():
+        for event in events:
+            if "secondsAfterTower" in event:
+                event["at"] = tower_at[event["requiresTower"]] + event["secondsAfterTower"]
+    lane_clear = {row["elapsedTicks"] // TICKS: row["finishTicks"]
+                  for row in engine["lane"] if row["scenario"] == "clear_wave"}
+    scenario["laneClearTicksByWaveSpawn"] = [[start, lane_clear[sample]]
+                                           for start, sample in scenario["laneClearObservationSeconds"]]
+    scenario["campFightTicks"] = {unit: row["fightTicks"] for unit, row in camp_observations.items()}
+    scenario["towerPressure"] = tower_pressure
+    return {"reportSha256": hashlib.sha256(raw).hexdigest(), "identity": identity,
+            "engineEvidence": report["engineEvidence"], "laneRewardObservations": lane_rewards,
+            "laneClearObservations": [row for row in engine["lane"] if row["scenario"] == "clear_wave"],
+            "campObservations": camp_observations, "towerRewardObservations": tower_observations,
+            "midOuterObservation": next(row for row in engine["building"] if row["scenario"] == "mid_team_outer")}
+
+
 class Rules:
-    def __init__(self, snapshot, track):
+    def __init__(self, snapshot, track, tempo="CHERRY_V1", *, current=False):
         self.track = track
+        self.tempo = tempo
         self.battlefield = snapshot["rules"]["battlefield"]
         self.economy = self.battlefield["economy"]
         self.farm_seats = value(self.economy, "farmReward")
@@ -76,7 +157,7 @@ class Rules:
             self.wage_weight = 1
             self.attribute_access = self.supply_access = "own_fountain_or_waiting"
             self.assist_pool = None
-        elif self.farm_seats == "locked_seat_averages" and track == "candidate":
+        elif self.farm_seats == "locked_seat_averages" and (track == "candidate" or current):
             self.farm = tuple(value(self.economy, name) for name in
                               ("farmGoldGapWeight", "farmLevelGapWeight", "farmCatchUpCap", "farmGoldIncomeFloor"))
             self.wage_weight = value(self.economy, "passiveGoldCatchUpWeight")
@@ -101,10 +182,26 @@ class Rules:
         self.protection = [(row["elapsedTicks"], value(row, "incomingMultiplier"))
                            for row in self.towers["scalingSamples"]]
         self.pricing = value(snapshot["rules"]["attributePurchases"], "pricing")
+        self.lane_rewards = {}
+        for unit, definition in self.catalog["types"].items():
+            if tempo == "CHERRY_V2":
+                definition = definition["byTempo"][tempo]
+            self.lane_rewards[unit] = (value(definition, "baseGold"), value(definition, "baseExperience"))
+        if tempo == "CHERRY_V2":
+            if value(self.map, "tempoProfile") != tempo:
+                raise ValueError(f"{track} is not a CHERRY_V2 map release")
+            self.permanent = value(snapshot["rules"]["attributePurchases"], "permanentGain")
+            self.roles = {role["id"]: role for role in snapshot["rules"]["roles"]}
         self.check_samples()
 
     def gold(self, base):
         return round_java(base * self.gold_scale)
+
+    def lane_reward(self, base, tick, share):
+        if self.tempo == "CHERRY_V2":
+            cap = value(self.catalog, "lateGrowthBegins")
+            return base * (cap + min(tick, cap)) * share // (100 * cap)
+        return base * (10 + min(10, tick // 2400)) * share // 1000
 
     @lru_cache(maxsize=None)
     def price(self, rank):
@@ -129,21 +226,19 @@ class Rules:
                     or kill_reward(True, *args)[1] != value(sample, "experience")):
                 raise ValueError("Kill formula differs from a snapshot sample")
         for unit, definition in self.catalog["types"].items():
-            for sample in definition["rewardSamplesBeforeCatchUpAndGlobalGold"]:
+            if self.tempo == "CHERRY_V2":
+                samples = definition["byTempo"][self.tempo]["timelineBeforeCatchUpAndGlobalGold"]
+            else:
+                samples = definition["rewardSamplesBeforeCatchUpAndGlobalGold"]
+            for sample in samples:
                 tick = sample["elapsedTicks"]
-                gold = value(definition, "baseGold")
-                xp = value(definition, "baseExperience")
-                actual = (minion_reward(gold, tick, 100), minion_reward(xp, tick, 100),
-                          minion_reward(gold, tick, 25), minion_reward(xp, tick, 80))
+                gold, xp = self.lane_rewards[unit]
+                actual = (self.lane_reward(gold, tick, 100), self.lane_reward(xp, tick, 100),
+                          self.lane_reward(gold, tick, 25), self.lane_reward(xp, tick, 80))
                 expected = tuple(value(sample, key) for key in (
                     "lastHitGold", "lastHitExperience", "nonPlayerKillNearbyGold", "nearbyExperience"))
                 if actual != expected:
                     raise ValueError(f"Minion formula differs from snapshot samples for {unit}")
-
-
-def minion_reward(base, tick, share):
-    return base * (10 + min(10, tick // 2400)) * share // 1000
-
 
 def kill_reward(xp, tick, streak, deaths, gap, weight):
     # MatchBalance#killReward at #107 and #108. Weight scales the delta from timed base.
@@ -218,6 +313,10 @@ def camp_event(camp, player, second, prefix):
     return {"id": f"{prefix}-{player}-{camp}-{second}", "at": second, "type": "camp", "player": player, "camp": camp}
 
 
+def event_tick(event):
+    return round_java(event["at"] * TICKS)
+
+
 def tower_projection(events, scenario, rules, weight):
     projection = {}
     for event in events:
@@ -233,11 +332,15 @@ def tower_projection(events, scenario, rules, weight):
                 if second <= start_after:
                     continue
                 multiplier = 1 - weight * (1 - rules.tower_scale(second * TICKS))
-                total += multiplier * pressure["rawHealthFraction"]
+                fraction = multiplier * pressure["rawHealthFraction"]
+                duration = pressure.get("waveDuration")
+                if duration is not None and fraction:
+                    second += duration * min(1, (1 - total) / fraction)
+                total += fraction
                 waves.append([second, multiplier, total])
-                if total >= 1:
+                if total >= 1 - 1e-12:
                     break
-        projection[event["id"]] = {"breakSecond": waves[-1][0] if total >= 1 else None,
+        projection[event["id"]] = {"breakSecond": waves[-1][0] if total >= 1 - 1e-12 else None,
                                    "fixedSecond": event["at"], "waves": waves,
                                    "assumedEntity": event["tower"]}
     return projection
@@ -247,6 +350,7 @@ def make_timeline(scenario, rules, case, events, end, active, tower_weight):
     scheduled = defaultdict(list)
     trips = defaultdict(list)
     relevant_towers = tower_projection(events, scenario, rules, tower_weight)
+    v2 = rules.tempo == "CHERRY_V2"
     for action in events:
         event = dict(action)
         tower = relevant_towers.get(event.get("requiresTower"))
@@ -256,11 +360,11 @@ def make_timeline(scenario, rules, case, events, end, active, tower_weight):
                 if changed is None:
                     continue
                 event["at"] = changed
-            if tower:
+            elif tower:
                 if tower["breakSecond"] is None:
                     continue
                 event["at"] += tower["breakSecond"] - tower["fixedSecond"]
-        scheduled[event["at"] * TICKS].append(event)
+        scheduled[event_tick(event)].append(event)
     camp_plan = scenario["campRotation"]
     for index, second in enumerate(camp_plan["opportunitiesSeconds"]):
         recalling = any(abs(second - shop) <= camp_plan["returnAvoidSeconds"] for shop in scenario["shops"])
@@ -275,22 +379,45 @@ def make_timeline(scenario, rules, case, events, end, active, tower_weight):
             elif camp_plan["difficulty"][index] > rate * (active if i == 1 else 1):
                 event["skip"] = "acquisition threshold"
             scheduled[second * TICKS].append(event)
-    for events_at_tick in scheduled.values():
+    ready = defaultdict(list)
+    for start_tick, events_at_tick in sorted(scheduled.items()):
         for event in events_at_tick:
+            finish_tick = start_tick
+            if v2 and event["type"] == "camp":
+                unit = value(rules.map["camps"][event["camp"]], "type")
+                finish_tick += scenario["campFightTicks"][unit]
+                event.update(startTick=start_tick, at=finish_tick / TICKS)
+            ready[finish_tick].append(event)
             if event["type"] != "camp" or "skip" in event or event["at"] > end:
                 continue
-            second = event["at"]
+            second = start_tick / TICKS
             trips[event["player"]].append((second - camp_plan["laneMissBeforeSeconds"],
-                                           second + camp_plan["laneMissAfterSeconds"]))
+                                           event["at"] + camp_plan["laneMissAfterSeconds"]))
+    scheduled = ready
 
-    offset = scenario["waveDeathAfterSpawnSeconds"] * TICKS
     start = value(rules.map, "firstWave")
     interval = value(rules.catalog, "waveInterval")
     melee = value(rules.catalog, "meleeSlots")
     ranged = value(rules.catalog, "rangedSlots")
     period = value(rules.catalog, "magicInterval")
     defaults = scenario["lane"]
+    siege_slots = value(rules.catalog, "siegeSlots") if v2 else 0
+    tower_breaks = {event["tower"]: tick for tick, actions in scheduled.items()
+                    for event in actions if event["type"] == "tower"}
+    opponent_towers = {team: [key for key in rules.map["towers"] if key.startswith(team + "/mid/")]
+                       for team in TEAMS}
     for wave, spawn in enumerate(range(start, end * TICKS + 1, interval), 1):
+        clear = 0
+        for second, ticks in scenario.get("laneClearTicksByWaveSpawn", []):
+            if spawn >= second * TICKS:
+                clear = ticks
+        offset = scenario["waveDeathAfterSpawnSeconds"] * TICKS + clear
+        sieged = {team for team, towers in opponent_towers.items() if siege_slots and towers and all(
+            tower_breaks.get(key, end * TICKS + 1) < spawn for key in towers)}
+        for team in TEAMS:
+            if team in sieged:
+                scheduled[spawn].append({"id": f"{team}-mid-{wave}-siege", "type": "siege_spawn",
+                                         "defendingTeam": team, "wave": wave, "slots": siege_slots})
         for slot in range(melee + ranged):
             unit = "melee" if slot < melee else "ranged"
             if slot == melee + ranged - 1 and wave % period == 0:
@@ -307,21 +434,27 @@ def make_timeline(scenario, rules, case, events, end, active, tower_weight):
                 rate = min(1, rate * (active if i == 1 else 1))
                 qualifies = (index * 37 % 100 + .5) / 100 <= rate
                 prefix = team[0].upper()
+                lane_unit = "siege" if slot < siege_slots and team in sieged else unit
                 scheduled[tick].append({"id": f"{team}-mid-{wave}-{slot + 1}", "at": tick / TICKS,
                                         "type": "lane", "team": team, "unitFaction": TEAMS[1 - i],
-                                        "unit": unit, "wave": wave,
+                                        "unit": lane_unit, "wave": wave,
                                         "finisher": prefix + str(POSITIONS[role]) if qualifies else None})
     return scheduled, trips, relevant_towers
 
 
 class Replay:
     def __init__(self, scenario, rules, case, events, grade=None, *, trace=True, wage_weight=1,
-                 active=1, farm_weight=1, kill_weight=1, tower_weight=1):
+                 active=1, farm_weight=1, kill_weight=1, tower_weight=1,
+                 wage_rate=None, assist_gold=None, assist_xp=None):
         self.scenario = scenario
         self.rules = rules
         self.case = case
         self.grade = grade
-        self.wage_weight = rules.wage_weight * wage_weight
+        self.wage_weight = rules.wage_weight * wage_weight if wage_rate is None else wage_rate
+        self.assist_pool = rules.assist_pool
+        if self.assist_pool:
+            self.assist_pool = {"gold": self.assist_pool["gold"] if assist_gold is None else assist_gold,
+                                "xp": self.assist_pool["xp"] if assist_xp is None else assist_xp}
         self.farm_weight = farm_weight
         self.kill_weight = kill_weight
         self.trace = [] if trace else None
@@ -433,15 +566,14 @@ class Replay:
         if leading:
             eligible.remove(finisher)
             eligible.insert(0, finisher)
-        definition = self.rules.catalog["types"][event["unit"]]
-        gold, xp = value(definition, "baseGold"), value(definition, "baseExperience")
+        gold, xp = self.rules.lane_rewards[event["unit"]]
         self.record("lane", **event, actualFinisher=assigned if leading else None,
                     nearby=[seat.config["id"] for seat in eligible],
                     missed=[seat.config["id"] for seat in team if seat not in eligible])
         for seat in eligible:
             last = leading and seat is finisher
-            self.earn_farm(seat, minion_reward(gold, self.tick, 100 if last else (0 if leading else 25)),
-                           minion_reward(xp, self.tick, 100 if last else 80), "lane", event["id"])
+            self.earn_farm(seat, self.rules.lane_reward(gold, self.tick, 100 if last else (0 if leading else 25)),
+                           self.rules.lane_reward(xp, self.tick, 100 if last else 80), "lane", event["id"])
 
     def camp(self, event):
         player = self.seats[event["player"]]
@@ -458,12 +590,15 @@ class Replay:
         definition = self.rules.monsters[unit]
         timing = definition["fixedCampTiming"][self.scenario["map"]]
         available = self.camp_available.get(event["camp"], value(timing, "firstSpawn"))
-        if self.tick < available:
+        if event.get("startTick", self.tick) < available:
             self.record("camp", **event, unit=unit, skip="not spawned", availableTick=available)
             return
         if value(definition, "teamGold"):
-            raise ValueError(f"Team gold camp {unit} is outside the fixed CHERRY_V1 event inputs")
+            raise ValueError(f"Team gold camp {unit} is outside the fixed event inputs")
         self.camp_available[event["camp"]] = self.tick + value(timing, "respawnDelay")
+        # Fixed V2 replays treat world tick zero as aligned to the polling clock.
+        if self.rules.tempo == "CHERRY_V2":
+            self.camp_available[event["camp"]] = (self.camp_available[event["camp"]] + TICKS - 1) // TICKS * TICKS
         self.record("camp", **event, unit=unit, nextSpawnTick=self.camp_available[event["camp"]])
         self.earn_farm(player, value(definition, "baseGold"), value(definition, "baseExperience"), "camp", event["id"])
 
@@ -478,7 +613,7 @@ class Replay:
             self.award(seat, gold, source="tower", cause=event["id"])
 
     def assist(self, event, killer):
-        pool = self.rules.assist_pool
+        pool = self.assist_pool
         eligible = [seat for seat in self.teams[killer.config["team"]]
                     if seat is not killer and seat.config["id"] in event["assists"]]
         ns = len(eligible)
@@ -613,6 +748,9 @@ class Replay:
                               "ultimateRanksUnlocked": sum(seat.level >= lv for lv in (4, 8, 12)),
                               "passiveRanksUnlocked": sum(seat.level >= lv for lv in (1, 4, 7, 10, 13)),
                               "frontierBudget": seat.wallet + seat.attribute_spend})
+            if self.rules.tempo == "CHERRY_V2":
+                state["normalRespawnTicksAtLevel"] = self.rules.wait[seat.level]
+                state["activeShare"] = active_share(state["sources"], seat.earned)
             states[id_] = state
         return states
 
@@ -627,7 +765,7 @@ class Replay:
         for event_list in self.scheduled.values():
             for event in event_list:
                 if event["type"] == "kill":
-                    moments.update(event["at"] * TICKS + wait for wait in self.rules.wait.values())
+                    moments.update(event_tick(event) + wait for wait in self.rules.wait.values())
         for self.tick in sorted(t for t in moments if self.start <= t <= self.end):
             if self.grade and self.tick == self.start:
                 self.checkpoints[self.tick] = self.states(self.trace is not None)
@@ -654,6 +792,8 @@ class Replay:
                     self.kill(event)
                 elif kind == "supply":
                     self.buy_supply(self.seats[event["player"]], event["item"], event["id"])
+                elif kind == "siege_spawn":
+                    self.record("siege_spawn", **event)
             if self.tick in shops:
                 for task in self.scenario["supplyPlan"]:
                     if self.tick // TICKS in task["occasions"]:
@@ -744,17 +884,27 @@ def analysis(replay, result):
                 wage_bonus / (wage_bonus + farm_bonus) if wage_bonus + farm_bonus else None)}
 
 
-def closing_stats(result):
-    seats = list(result["end"].values())
+def active_share(sources, earned):
+    active = sum(sources.get(key, 0) for key in ("lane", "laneAdjustment", "camp", "campAdjustment",
+                                               "kill", "killAdjustment", "assist", "tower"))
+    return active / earned if earned and not sources.get("cutSeed") else None
+
+
+def team_stats(seats):
     split = Counter()
     for state in seats:
         split.update(state["sources"])
-    active = sum(split[key] for key in ("lane", "laneAdjustment", "camp", "campAdjustment",
-                                       "kill", "killAdjustment", "assist", "tower"))
     earned = sum(s["earned"] for s in seats)
-    return {"income": earned, "sources": dict(split), "activeShare": active / earned if earned and not split["cutSeed"] else None,
+    result = {"income": earned, "sources": dict(split), "activeShare": active_share(split, earned),
             "avgLevel": sum(s["level"] for s in seats) / len(seats),
             "avgPoints": sum(s["points"] for s in seats) / len(seats)}
+    if "normalRespawnTicksAtLevel" in seats[0]:
+        result["avgNormalRespawnTicksAtLevel"] = sum(s["normalRespawnTicksAtLevel"] for s in seats) / len(seats)
+    return result
+
+
+def closing_stats(result):
+    return team_stats(list(result["end"].values()))
 
 
 def reminders(case, result):
@@ -851,6 +1001,112 @@ def calculate(scenario, tracks):
     return output, frontiers
 
 
+def summarize_public_trial(result):
+    return {"checkpoints": result["checkpoints"], "gaps": result["gaps"], "end": result["end"],
+            "closingStats": closing_stats(result), "endGaps": result["endGaps"],
+            "objectives": result["objectives"], "convergence": result["convergence"],
+            "purchaseMilestonesTicks": result["purchaseMilestonesTicks"]}
+
+
+def public_trials(scenario, rules):
+    settings = scenario["publicTrials"]
+    sweep = {}
+    for id_, case, _, events, grade in scenario_matrix(scenario):
+        trials = {}
+        for field, keyword in (("wageCatchUpWeight", "wage_rate"), ("assistGold", "assist_gold"),
+                               ("assistXp", "assist_xp")):
+            if field != "wageCatchUpWeight" and not any(e.get("assists") for e in events):
+                continue
+            results = {}
+            for amount in settings[field]:
+                run = Replay(scenario, rules, case, events, grade, trace=False, **{keyword: amount}).run()
+                results[amount] = summarize_public_trial(run)
+            trials[field] = results
+        sweep[id_] = trials
+    return sweep
+
+
+def defense_trials(scenario, rules, s0):
+    settings = scenario["publicTrials"]
+    hits = settings["defenseRawHits"]
+    patterns = {kind: [kind] * len(hits) for kind in ("physical", "spell", "true")}
+    patterns["mixed"] = settings["defenseMixedKinds"]
+    comparisons = []
+    for second in settings["defenseTimesSeconds"]:
+        seat = s0["checkpoints"][second * TICKS]["G1"]
+        level, budget = seat["level"], seat["frontierBudget"]
+        for role in ("luoxia", "yingxiao", "keheng", "qingluo"):
+            stats = rules.roles[role]["attributes"]
+            hp = value(stats, "health")[level - 1]
+            base = {"physical": value(stats, "physicalDefense"), "spell": value(stats, "magicResistance")}
+            reference_hp = 575 + 75 * (level - 1)
+            for ranks in settings["defenseRanks"]:
+                cost = sum(rules.price(rank) for rank in range(ranks))
+                variants = {}
+                for defense in settings["defensePerPoint"]:
+                    outcomes = {}
+                    for pattern, kinds in patterns.items():
+                        health, registered, death, trace = hp, 0, None, []
+                        without_purchases = hp
+                        for (tick, raw), kind in zip(hits, kinds, strict=True):
+                            multiplier = 1 if kind == "true" else 100 / (100 + base[kind] + ranks * defense)
+                            damage = raw * multiplier
+                            loss = min(health, damage)
+                            without_purchases -= raw if kind == "true" else raw * 100 / (100 + base[kind])
+                            health -= loss
+                            registered += damage
+                            if health == 0 and death is None:
+                                death = tick
+                            trace.append({"tick": tick, "kind": kind, "raw": raw, "mitigated": damage,
+                                          "effectiveLoss": loss, "remainingHp": health})
+                        avoided = health - max(0, without_purchases)
+                        outcomes[pattern] = {"incomingAfterMitigation": registered, "remainingHp": health,
+                                             "effectiveLifeLost": hp - health, "firstLethalTick": death,
+                                             "avoidedVsZeroPurchaseHp": avoided,
+                                             "budgetPoints": 100 * avoided / reference_hp,
+                                             "budgetPointsPer1000Gold": 100000 * avoided / (reference_hp * cost) if cost else None,
+                                             "events": trace}
+                    variants[defense] = outcomes
+                comparisons.append({"atSecond": second, "role": role, "level": level, "maximumHealth": hp,
+                                    "baselineDefense": base, "referenceHp": reference_hp, "spendableBudget": budget,
+                                    "defenseRanks": ranks, "cost": cost, "affordable": cost <= budget,
+                                    "remainingGold": budget - cost if cost <= budget else None,
+                                    "alternativesAtSameCost": {"strengthPhysicalAttack": ranks * rules.permanent["physicalAttackPerStrength"],
+                                                              "wisdomSpellPower": ranks * rules.permanent["spellPowerPerWisdom"]},
+                                    "trialsByResistancePerPoint": variants})
+    return {"source": "DamageCalc#mitigation | FirstGroupGrowth#price | paired playable role attributes",
+            "basis": "fixed incoming hit vectors, zero penetration, no regen/SR/shield/other mitigation",
+            "economyAnchor": "S0 guardian core same-time spendable budget, with four separate candidate targets",
+            "comparisons": comparisons}
+
+
+def add_v2_summary(report, evidence, scenario, tracks):
+    for data in report["cases"].values():
+        for run in data["runs"].values():
+            run["teamCheckpoints"] = {tick: {team: team_stats([state for id_, state in states.items()
+                                                             if id_.startswith(team[0].upper())])
+                                            for team in TEAMS} for tick, states in run["checkpoints"].items()}
+            run["eventCounts"] = {
+                "laneDeaths": dict(Counter(row["unit"] for row in run["trace"] if row["event"] == "lane")),
+                "campDeaths": dict(Counter(row["unit"] for row in run["trace"]
+                                           if row["event"] == "camp" and "skip" not in row)),
+                "siegeSpawns": sum(row["slots"] for row in run["trace"] if row["event"] == "siege_spawn"),
+                "towerBreaks": [row["id"] for row in run["objectives"] if row["kind"] == "tower"],
+                "confirmedRespawns": [row for row in run["trace"] if row["event"] == "respawn"],
+            }
+    baseline = tracks["baseline"]
+    report.update({"formatVersion": 2, "battlefieldEvidence": evidence,
+                   "publicTrials": public_trials(scenario, baseline), "defenseTrials": defense_trials(
+                       scenario, baseline, report["cases"]["S0"]["runs"]["baseline"]),
+                   "parameterDefinitions": {"defensePerPoint": "physical and magic resistance added per defense point",
+                                            "assistGold": "actual credited gold pool split by eligible locked roster order",
+                                            "assistXp": "credited experience pool split by eligible locked roster order",
+                                            "wageCatchUpWeight": "only the additional catch-up fraction on the timed base wage"},
+                   "missingEvidence": ["真人 3v3 补刀归属、交战、塔前路线与破塔过程",
+                                       "真实候选局终局时间及参战体验反馈",
+                                       "同态同预算三种伤害序列的引擎抽检"]})
+
+
 def elapsed(tick):
     if tick is None:
         return "未达"
@@ -869,13 +1125,21 @@ def pct(number):
 
 def snapshot_summary(rules, manifest):
     metadata = manifest["balance_snapshot"]
-    return {"sourceSha": manifest["source_sha"], "sourceDirty": metadata["source_dirty"],
+    summary = {"sourceSha": manifest["source_sha"], "sourceDirty": metadata["source_dirty"],
             "snapshotFormat": metadata["format_version"], "snapshotSha256": metadata["sha256"],
             "rulesSha256": metadata["rules_sha256"], "jarSha256": manifest["sha256"],
             "attrAccess": rules.attribute_access, "supplyAccess": rules.supply_access,
             "catchUpSeats": rules.farm_seats, "assistPool": rules.assist_pool,
             "wageCatchUpWeight": rules.wage_weight, "normalWaitTicks": rules.wait,
             "mapTowerSlots": list(rules.map["towers"])}
+    if rules.tempo == "CHERRY_V2":
+        summary.update({"defensePerPoint": rules.permanent["defensePerPoint"], "tempo": rules.tempo,
+                        "laneRewardsBeforeScaling": rules.lane_rewards,
+                        "openingPurse": rules.opening, "baseWageBeforeGoldMultiplier": rules.wage,
+                        "wageIntervalTicks": rules.wage_ticks,
+                        "activeFarmCatchUp": dict(zip(("goldGapWeight", "levelGapWeight", "cap", "goldIncomeFloor"),
+                                                      rules.farm, strict=True))})
+    return summary
 
 
 def markdown(report):
@@ -972,28 +1236,151 @@ def markdown(report):
     return "\n".join(out)
 
 
+def v2_markdown(report):
+    snapshots = report["snapshots"]
+    same_release = snapshots["baseline"]["snapshotSha256"] == snapshots["candidate"]["snapshotSha256"]
+    selected = report["amountsSelectedForFormalCalibration"]
+    tracks = {"baseline": "联验现值"}
+    if not same_release:
+        tracks["candidate"] = "正式选值构建" if selected else "复测构建"
+    out = ["# 樱隙前线 V2 经济与公共参数复跑", "",
+           "3v3 六席、四条全程剧本、九条中途切入剧本及一个掉线回归。兵、野、塔奖励取配对快照与 #109 合成 GameTest 读数。交锋和路线为固定输入。三级提醒供策划试测。", "",
+           "| 构建 | 源码 | 规则 SHA-256 | 防御每点 | 助攻金／XP | 工资追赶 |",
+           "| --- | --- | --- | ---: | ---: | ---: |"]
+    for track, name in tracks.items():
+        r = snapshots[track]
+        out.append(f"| {name} | `{r['sourceSha']}` | `{r['rulesSha256']}` | +{r['defensePerPoint']:g} | "
+                   f"{r['assistPool']['gold']}／{r['assistPool']['xp']} | {r['wageCatchUpWeight']:g}× |")
+    if selected:
+        out.extend(["", f"策划决定为{report['decision']}。以下复测读数使用新构建配对快照中的生效值。", "",
+                    "| 20:00 剧本 | 复测平均等级 | 复测平均购点 | 主动收入占比 | 普通复活均值 | 蓝减红人均累计金，改前 → 复测 |",
+                    "| --- | ---: | ---: | ---: | ---: | ---: |"])
+        for case in ("S0", "S1", "S2", "S3"):
+            runs = report["cases"][case]["runs"]
+            before, after = runs["baseline"], runs["candidate"]
+            st = after["closingStats"]
+            out.append(f"| {case} | Lv{st['avgLevel']:.2f} | {st['avgPoints']:.2f} | {pct(st['activeShare'])} | "
+                       f"{st['avgNormalRespawnTicksAtLevel'] / TICKS:.1f}s | "
+                       f"{before['endGaps']['teamGold']:+,.2f}g → {after['endGaps']['teamGold']:+,.2f}g |")
+    out.extend(["", "## 六个主时点", "",
+                "两侧各用三席均值。每格依次是人均累计金、等级、已购点、主动收入占比、该等级的普通复活秒数。实有阵亡与回场时刻见 JSON 的逐人事件。", "",
+                "| 剧本 | 构建 | 时点 | 守护 | 毁灭 |", "| --- | --- | ---: | --- | --- |"])
+    for case in ("S0", "S1", "S2", "S3"):
+        for track, name in tracks.items():
+            run = report["cases"][case]["runs"][track]
+            for tick, teams in run["teamCheckpoints"].items():
+                cells = []
+                for team in TEAMS:
+                    t = teams[team]
+                    cells.append(f"{t['income'] / 3:,.0f}g／Lv{t['avgLevel']:.2f}／{t['avgPoints']:.2f} 点／"
+                                 f"{pct(t['activeShare'])}／{t['avgNormalRespawnTicksAtLevel'] / TICKS:.1f}s")
+                out.append(f"| {case} | {name} | {elapsed(tick)} | " + " | ".join(cells) + " |")
+    out.extend(["", "终局参考是 Lv18–20、12–16 点、主动收入 60%–70%、复活显示 42–45 秒。选值试算与这些节奏缺口一并保留。已买属性沿实际过线购入，整数预算前沿可供角色配点。", "",
+                "## 兵、野、塔与复活", "",
+                "| 剧本 | 已结算兵死亡事件 | 已结算营地 | 攻城兵生成 | 塔破时点／每席金 | 实际完成的复活 |",
+                "| --- | ---: | ---: | ---: | --- | ---: |"])
+    for case in ("S0", "S1", "S2", "S3"):
+        run = report["cases"][case]["runs"]["baseline"]
+        counts = run["eventCounts"]
+        towers = [f"{elapsed(row['tick'])}／{row['goldPerRecipient']}g" for row in run["objectives"] if row["kind"] == "tower"]
+        out.append(f"| {case} | {sum(counts['laneDeaths'].values())} | {sum(counts['campDeaths'].values())} | "
+                   f"{counts['siegeSpawns']} | {'、'.join(towers) or '—'} | {len(counts['confirmedRespawns'])} |")
+    e = report["battlefieldEvidence"]
+    out.extend(["", f"配对核实 {len(e['laneRewardObservations'])} 条 V2 兵死亡读数、{len(e['campObservations'])} 类尾刀与重生读数、"
+                f"{len(e['towerRewardObservations'])} 个实际樱隙塔阶的到账金额。外塔固定用多人护送合成破塔刻，高地塔固定用后段第三波合成破塔刻。最后一波已生成的攻城兵可能到 20 分钟后才结算。"
+                "保护敏感度是同一入塔波压力下的投影，实际真人推进速度留待实测。", "",
+                "兵线采用 V2 线性收益成长，法兵与攻城兵分别以 40 和 65 基础金计算。清线用合成测试的时长加约定到线时间。野区路线为固定开打时刻，尾刀增加同类型合成击杀时长，每 20 刻轮询刷新。不同真人配装、站位和仇恨可能改变机会。", "",
+                "## 同预算双抗", "",
+                "六笔合计 960 原始来伤，物理、法术、真实伤害分别走同一事件轴，另列混合序列。零穿透、满血、无回复无盾。两种每点双抗以同报价比较。价格和四个目标的各事件剩余生命见 JSON。", "",
+                "| 防御购点 | 花费 | 物理 +5／+15 | 法术 +5／+15 | 真实 +5／+15 | 混合 +5／+15 |",
+                "| ---: | ---: | ---: | ---: | ---: | ---: |"])
+    for row in report["defenseTrials"]["comparisons"]:
+        if (row["atSecond"], row["role"]) != (1200, "luoxia"):
+            continue
+        trials = row["trialsByResistancePerPoint"]
+        cells = ["／".join(f"{trials[resist][kind]['incomingAfterMitigation']:.1f}" for resist in (5, 15))
+                 for kind in ("physical", "spell", "true", "mixed")]
+        note = "，超出该时点预算" if not row["affordable"] else ""
+        out.append(f"| {row['defenseRanks']} | {row['cost']:,}g{note} | " + " | ".join(cells) + " |")
+    out.extend(["", "## 工资追赶", "", "| 倍率 | S1 红方追赶金中工资占比 | S1 20:00 红核心累计金／点 | S1 20:00 蓝减红人均收入 | C0 中档 8→12／8→16 相对差收窄 |",
+                "| ---: | ---: | ---: | ---: | ---: |"])
+    trials = report["publicTrials"]
+    for amount, s1 in trials["S1"]["wageCatchUpWeight"].items():
+        c0 = trials["medium-C0"]["wageCatchUpWeight"][amount]
+        d = s1["end"]["D1"]
+        windows = [pct(row["relativeTeamIncomeShrink"]) for row in c0["convergence"]["defense"] if row["startSecond"] == 480]
+        out.append(f"| {amount:g}× | {pct(s1['convergence']['wageShareOfTrailingCatchUpGold'])} | "
+                   f"{d['earned']:,}g／{d['points']} 点 | {s1['endGaps']['teamGold']:+.2f}g | {'／'.join(windows)} |")
+    out.extend(["", "C0 相对差用落后方收入作分母，双方共同继续赚金本身也会缩小这个比值。JSON 同时列绝对差缩窄。4／8 分钟正常参考为 10%–30%／20%–45%，工资占追赶金超过 40% 时提示。", "",
+                "## 助攻金池与经验池", "",
+                "以联验构建为起点，每次只改变一个池额，工资追赶保持联验值。助攻池是实际结算总额。合格一人取全池，两人按锁定名单顺序分钱并分配奇数余份。", "",
+                "| 助攻金池 | S2 红游走累计金／已购点 | S3 20:00 蓝减红人均收入 | 助攻 XP 池 | S2 六席平均等级 | S2 红核心等级／经验槽 |",
+                "| ---: | ---: | ---: | ---: | ---: | ---: |"])
+    for (gold, s2_gold), (xp, s2_xp) in zip(trials["S2"]["assistGold"].items(), trials["S2"]["assistXp"].items(), strict=True):
+        roam, core = s2_gold["end"]["D2"], s2_xp["end"]["D1"]
+        s3 = trials["S3"]["assistGold"][gold]
+        out.append(f"| {gold}g | {roam['earned']:,}g／{roam['points']} 点 | {s3['endGaps']['teamGold']:+.2f}g | "
+                   f"{xp} XP | {s2_xp['closingStats']['avgLevel']:.2f} | Lv{core['level']}／{core['xp']} XP |")
+    out.extend(["", "S2 核心在首轮反打前已经达到 #100 的可争夺线。中档固定切入 C1 用于独立归因，仍按 8:00 预置差距重放。两类数字和预算、实际购点与下一点缺金均可从 JSON 回查。", "",
+                "## 选值依据与待采证据" if selected else "## 试算建议与待采证据", "",
+                "- 防御保留每点 +5 双抗。+15 在 4 点时对单类物理和法术各少承约 114 生命，同价保留真实伤害的全部压力。需要和同经济刺客收尾、持续输出和多角色防御配点一起测试。",
+                "- 助攻金／经验暂选 101g／51 XP。更高金币池会同时提高连续获胜方的领先，当前助攻金试算没有改变 S2 红游走终点 14 点。高 XP 档只在边界使个别席升级，终局经验缺口需要另采供给与全局 XP 记录。",
+                "- 工资追赶建议 0×，保留所有常规工资和主动发育追赶。0.5× 是偏向纯守方的备选。由 1× 降为 0× 时，S1 红核心会少一购点，S3 终局蓝方平均购点差多约三分之一个点。",
+                "- 六人真人全局没有样本。四种入伤序列为固定输入的公式试算，等待同态引擎读数。关卡路线、推塔压力、补刀分配、有效团战与终局时长也需要真人对照。",
+                "- JSON 记录每份 JAR、快照、规则、战场对照和脚本场景的 SHA-256，以及两轨 14 案、逐笔记录、各时点购买与整数配点前沿。", ""])
+    if not selected:
+        out.extend(["四项正式值待策划确认。", ""])
+    out.extend(["## 复跑", "", "从仓库根目录传入联验发行目录、新构建发行目录及联验战场对照。", "", "```sh",
+                "python tools/balance/replay-economy.py \\",
+                "  --scenario tools/balance/scenarios/economy-cherry-v2.json \\",
+                "  --baseline /release/cherry-v2-reference \\",
+                "  --candidate /release/cherry-v2-retest \\",
+                "  --battlefield-evidence /release/battlefield-report.json \\"])
+    if selected:
+        out.append(f"  --decision {quote(report['decision'])} \\")
+    out.extend(["  --output /review/economy", "```", ""])
+    return "\n".join(out) + "\n"
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--baseline", type=Path, required=True, help="directory with the baseline release.json, JAR and snapshot")
     parser.add_argument("--candidate", type=Path, required=True, help="directory with the candidate release.json, JAR and snapshot")
     parser.add_argument("--scenario", type=Path, default=SCENARIO)
+    parser.add_argument("--battlefield-evidence", type=Path,
+                        help="paired replay-battlefield.py JSON from the CHERRY_V2 reference release")
+    parser.add_argument("--decision", help="planner decision recorded with a paired candidate build")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     scenario = load(args.scenario)
-    if (scenario["version"], scenario["map"], scenario["mode"]) != (1, "CHERRY_V1", "3v3"):
-        parser.error("Expected scenario version 1 for CHERRY_V1 3v3")
+    version, tempo = scenario["version"], scenario["map"]
+    if (version, tempo) not in ((1, "CHERRY_V1"), (2, "CHERRY_V2")) or scenario["mode"] != "3v3":
+        parser.error("Expected scenario version 1 or 2 for its corresponding CHERRY 3v3 map")
+    if version == 2 and args.battlefield_evidence is None:
+        parser.error("CHERRY_V2 requires paired --battlefield-evidence")
+    if version == 1 and (args.battlefield_evidence or args.decision):
+        parser.error("The historical CHERRY_V1 replay does not support these options")
     releases = {"baseline": paired_release(args.baseline), "candidate": paired_release(args.candidate)}
-    tracks = {track: Rules(snapshot, track) for track, (snapshot, _) in releases.items()}
+    tracks = {track: Rules(snapshot, track, tempo, current=version == 2)
+              for track, (snapshot, _) in releases.items()}
+    if version == 2:
+        evidence = read_battlefield_evidence(args.battlefield_evidence, scenario, tracks["baseline"], releases["baseline"][1])
     results, frontiers = calculate(scenario, tracks)
     report = {"formatVersion": 1, "basis": "fixed-event offline replay", "scenario": scenario,
               "scenarioSha256": hashlib.sha256(args.scenario.read_bytes()).hexdigest(), "sources": SOURCES,
               "ticksPerSecond": TICKS, "pointOrder": ATTRIBUTES, "fullGameHumanSample": None,
-              "amountsSelectedForFormalCalibration": False, "snapshots": {
+              "amountsSelectedForFormalCalibration": bool(args.decision), "snapshots": {
                   track: snapshot_summary(tracks[track], manifest) for track, (_, manifest) in releases.items()},
               "cases": results, "frontiers": frontiers}
     args.output.mkdir(parents=True, exist_ok=True)
-    (args.output / "economy-report.md").write_text(markdown(report), encoding="utf-8")
-    (args.output / "economy-report.json").write_text(
+    name = "economy-report"
+    render = markdown
+    if version == 2:
+        report["decision"] = args.decision
+        add_v2_summary(report, evidence, scenario, tracks)
+        name, render = "economy", v2_markdown
+    (args.output / f"{name}.md").write_text(render(report), encoding="utf-8")
+    (args.output / f"{name}.json").write_text(
         json.dumps(report, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
     print(f"Replayed {len(results)} paired cases to {args.output}")
 

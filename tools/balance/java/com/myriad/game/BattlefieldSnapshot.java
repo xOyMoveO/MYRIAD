@@ -530,7 +530,7 @@ final class BattlefieldSnapshot {
                 "本轮首次领用", "match_opening", NONE));
         result.add("globalIncomeMultiplier", constant(GlobalBalance.GOLD_INCOME_SCALE, "ratio", GlobalBalance.class, "GOLD_INCOME_SCALE"));
         result.add("passiveGoldBase", at(GameManager.PASSIVE_GOLD_BASE, "gold", GameManager.class, "PASSIVE_GOLD_BASE",
-                "参赛者含阵亡等待，应用追赶和全局倍率", "wage_pulse", REAL));
+                "在线参赛者含阵亡等待，基础工资应用全局金币倍率", "wage_pulse", REAL));
         result.add("passiveGoldInterval", at(GameManager.PASSIVE_GOLD_INTERVAL_TICKS, "ticks",
                 GameManager.class, "PASSIVE_GOLD_INTERVAL_TICKS", "开战后经过刻数的倍数", "wage_pulse", REAL));
         result.add("shopRadius", at(BaseRules.SHOP_RADIUS, "blocks", BaseRules.class, "SHOP_RADIUS",
@@ -547,7 +547,7 @@ final class BattlefieldSnapshot {
                 "队列局战绩助攻：保护最终击杀者", "hero_death", REAL));
         result.add("assistPool", at(Map.of("gold", MatchBalance.ASSIST_GOLD_POOL, "xp", MatchBalance.ASSIST_XP_POOL),
                 "gold_and_xp", MatchBalance.class, "ASSIST_GOLD_POOL,ASSIST_XP_POOL",
-                "第 5 批待选的候选奖池；金币为实际入账额。两个池分别按锁定名单均分并按序补余数。"
+                "首轮 3v3 选定的奖池；金币为实际入账额。两个池分别按锁定名单均分并按序补余数。"
                         + "仅在线时到账；同局重连领取离线期间所得份额", "hero_death", NONE));
         result.add("farmReward", field("locked_seat_averages", "rule_id", source(GameManager.class, "farmBonus"),
                 "开战后使用双方锁定席位；掉线冻结累计收入和等级；训练及任一队零席位使用基础值", "farm_reward", NONE));
@@ -556,7 +556,7 @@ final class BattlefieldSnapshot {
         result.add("farmCatchUpCap", constant(MatchBalance.FARM_CATCH_UP_CAP, "ratio", MatchBalance.class, "FARM_CATCH_UP_CAP"));
         result.add("farmGoldIncomeFloor", constant(MatchBalance.FARM_GOLD_INCOME_FLOOR, "gold", MatchBalance.class, "FARM_GOLD_INCOME_FLOOR"));
         result.add("passiveGoldCatchUpWeight", at(MatchBalance.PASSIVE_GOLD_CATCH_UP_WEIGHT, "ratio", MatchBalance.class,
-                "PASSIVE_GOLD_CATCH_UP_WEIGHT", "沿用工资追赶倍率，仅调整工资的追赶部分。第 5 批待选", "wage_pulse", NONE));
+                "PASSIVE_GOLD_CATCH_UP_WEIGHT", "首轮 3v3 选定为零。主动发育沿用收入及等级追赶", "wage_pulse", NONE));
         result.add("farmRewardDynamicInputs", gap("missing_input", "team_income_and_hero_levels",
                 source(GameManager.class, "farmBonus"), "追赶结算", "farm_reward", NONE,
                 "需要开战锁定席位，以及事件前各席位的累计收入和等级。"));

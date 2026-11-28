@@ -1,0 +1,286 @@
+{
+  "scenarioId": "qingluo.zero_preparation",
+  "scenarioVersion": 1,
+  "schemaVersion": 1,
+  "baselineCommit": "d94b3534ef6fcff7d7fef1263b33425575a4a479",
+  "role": "qingluo",
+  "applicableBuilds": "all_terminal_combinations",
+  "category": "zero_preparation",
+  "status": "candidate_l3_partial",
+  "startState": {
+    "distance": 7,
+    "purchases": {
+      "wisdom": 6,
+      "cooldown": 3
+    }
+  },
+  "opponentCondition": [
+    "solo",
+    "ally_cc"
+  ],
+  "windows": [
+    "burst",
+    "sustained"
+  ],
+  "delayProfile": [
+    "human_default",
+    "zero_extra_delay"
+  ],
+  "basicAttack": {
+    "flightSpeed": 1.95,
+    "source": "src/main/java/com/myriad/combat/MagicBullet.java"
+  },
+  "skills": {
+    "g2_qingluo_n1": {
+      "source": "src/main/java/com/myriad/character/skills/qingluo/rework/VerdantDewSkill.java",
+      "range": 12,
+      "events": [
+        {
+          "effect": "heal",
+          "kind": "heal",
+          "at": 0,
+          "target": "ally"
+        }
+      ]
+    },
+    "g2_qingluo_n2": {
+      "source": "src/main/java/com/myriad/character/skills/qingluo/rework/BriarSeedSkill.java",
+      "range": 15,
+      "events": [
+        {
+          "effect": "damage",
+          "kind": "damage",
+          "at": 0,
+          "speed": 1.56,
+          "root": 14
+        }
+      ]
+    },
+    "g2_qingluo_ma": {
+      "source": "src/main/java/com/myriad/character/skills/qingluo/rework/HeartPillArraySkill.java",
+      "range": 14,
+      "events": [
+        {
+          "effect": "shield",
+          "kind": "shield",
+          "at": 0,
+          "duration": 25,
+          "target": "allies"
+        },
+        {
+          "effect": "shield",
+          "kind": "shield",
+          "at": 20,
+          "duration": 25,
+          "target": "allies"
+        },
+        {
+          "effect": "shield",
+          "kind": "shield",
+          "at": 40,
+          "duration": 25,
+          "target": "allies"
+        },
+        {
+          "effect": "shield",
+          "kind": "shield",
+          "at": 60,
+          "duration": 25,
+          "target": "allies"
+        },
+        {
+          "effect": "shield",
+          "kind": "shield",
+          "at": 80,
+          "duration": 25,
+          "target": "allies"
+        }
+      ],
+      "point": true
+    },
+    "g2_qingluo_mb": {
+      "source": "src/main/java/com/myriad/character/skills/qingluo/rework/LifeThreadSkill.java",
+      "range": 12,
+      "events": [
+        {
+          "effect": "shield",
+          "kind": "shield",
+          "at": 0,
+          "duration": 80,
+          "target": "ally"
+        },
+        {
+          "effect": "heal",
+          "kind": "heal",
+          "at": 20,
+          "target": "ally"
+        },
+        {
+          "effect": "heal",
+          "kind": "heal",
+          "at": 40,
+          "target": "ally"
+        },
+        {
+          "effect": "heal",
+          "kind": "heal",
+          "at": 60,
+          "target": "ally"
+        },
+        {
+          "effect": "heal",
+          "kind": "heal",
+          "at": 80,
+          "target": "ally"
+        }
+      ]
+    },
+    "g2_qingluo_ua": {
+      "source": "src/main/java/com/myriad/character/skills/qingluo/rework/SpringGroveSkill.java",
+      "range": 14,
+      "events": [
+        {
+          "effect": "heal",
+          "kind": "heal",
+          "at": 20,
+          "target": "allies"
+        },
+        {
+          "effect": "heal",
+          "kind": "heal",
+          "at": 40,
+          "target": "allies"
+        },
+        {
+          "effect": "heal",
+          "kind": "heal",
+          "at": 60,
+          "target": "allies"
+        },
+        {
+          "effect": "heal",
+          "kind": "heal",
+          "at": 80,
+          "target": "allies"
+        },
+        {
+          "effect": "heal",
+          "kind": "heal",
+          "at": 100,
+          "target": "allies"
+        },
+        {
+          "effect": "heal",
+          "kind": "heal",
+          "at": 120,
+          "target": "allies"
+        }
+      ],
+      "point": true
+    },
+    "g2_qingluo_ub": {
+      "source": "src/main/java/com/myriad/character/skills/qingluo/rework/JadeCanopySkill.java",
+      "range": 8,
+      "events": [
+        {
+          "effect": "heal",
+          "kind": "heal",
+          "at": 0,
+          "target": "allies"
+        },
+        {
+          "effect": "shield",
+          "kind": "shield",
+          "at": 0,
+          "duration": 100,
+          "target": "allies"
+        }
+      ]
+    }
+  },
+  "execution": {
+    "type": "apl",
+    "steps": [
+      {
+        "action": "cast",
+        "skill": "r"
+      },
+      {
+        "action": "cast",
+        "skill": "e"
+      },
+      {
+        "action": "cast",
+        "skill": "q"
+      },
+      {
+        "action": "cast",
+        "skill": "w"
+      },
+      {
+        "action": "basic_attack"
+      },
+      {
+        "action": "wait_until"
+      }
+    ]
+  },
+  "coverageGaps": {
+    "g2_qingluo_pa": {
+      "axes": [
+        "support"
+      ],
+      "reason": "只按受援者受援触发；移速收益无路径对照。"
+    },
+    "g2_qingluo_pb": {
+      "axes": [
+        "support"
+      ],
+      "reason": "回春印按相隔至少四刻的有效普攻与独立技能命中蓄层；队友路径和实际切人时点会改变触发。"
+    },
+    "g2_qingluo_n2": {
+      "axes": [
+        "support"
+      ],
+      "reason": "合成远距模板固定施法者友军与中弹敌军距离大于三格。近身受益另测。"
+    }
+  },
+  "scripted": [
+    {
+      "scenarioId": "qingluo.r_then_small",
+      "scenarioVersion": 1,
+      "category": "pressure_advantage",
+      "status": "candidate_l3_partial",
+      "applicableBuilds": [
+        "g2_qingluo_pa",
+        "g2_qingluo_mb",
+        "g2_qingluo_ub"
+      ],
+      "startState": {
+        "distance": 7,
+        "preconditions": [
+          "primary_ally_half_hp"
+        ]
+      },
+      "opponentCondition": "solo",
+      "windows": {
+        "burst": 30,
+        "sustained": 120
+      },
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "r"
+          },
+          {
+            "action": "cast",
+            "skill": "q",
+            "judgment": true
+          }
+        ]
+      }
+    }
+  ]
+}

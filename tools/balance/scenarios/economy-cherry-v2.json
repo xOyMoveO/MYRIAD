@@ -1,0 +1,137 @@
+{
+  "version": 2,
+  "map": "CHERRY_V2",
+  "mode": "3v3",
+  "seconds": [180, 300, 480, 720, 960, 1200],
+  "shops": [0, 180, 420, 720, 960, 1200],
+  "recallMissSeconds": 12,
+  "waveDeathAfterSpawnSeconds": 15,
+  "cutSeconds": 480,
+  "cutEndSeconds": 960,
+  "closingSeconds": 1200,
+  "slots": [
+    {"id": "G1", "team": "guardian", "position": "核心发育", "role": "luoxia", "preference": ["strength", "speed", "defense", "wisdom", "cooldown"]},
+    {"id": "G2", "team": "guardian", "position": "常规游走", "role": "yingxiao", "preference": ["strength", "cooldown", "speed", "defense", "wisdom"]},
+    {"id": "G3", "team": "guardian", "position": "受压／支援", "role": "qingluo", "preference": ["wisdom", "cooldown", "defense", "speed", "strength"]},
+    {"id": "D1", "team": "destruction", "position": "核心发育", "role": "luoxia", "preference": ["strength", "speed", "defense", "wisdom", "cooldown"]},
+    {"id": "D2", "team": "destruction", "position": "常规游走", "role": "yingxiao", "preference": ["strength", "cooldown", "speed", "defense", "wisdom"]},
+    {"id": "D3", "team": "destruction", "position": "受压／支援", "role": "qingluo", "preference": ["wisdom", "cooldown", "defense", "speed", "strength"]}
+  ],
+  "lane": {
+    "finisherRotation": ["core", "roam", "support", "core", "support", "roam"],
+    "defaultLastHitRate": 0.85,
+    "cases": {
+      "S1": [[0, 480, 1.0, 0.85]],
+      "S2": [[0, 480, 1.0, 0.85]],
+      "S3": [[0, 960, 1.0, 0.65]]
+    }
+  },
+  "campRotation": {
+    "opportunitiesSeconds": [55, 153, 251, 349, 447, 545, 643, 741, 839, 937, 1035, 1133],
+    "returnAvoidSeconds": 28,
+    "laneMissBeforeSeconds": 16,
+    "laneMissAfterSeconds": 12,
+    "guardian": ["east_garden_hare", "east_garden_jade_beast"],
+    "destruction": ["west_garden_hare_1", "west_garden_jade_beast"],
+    "difficulty": [0.39, 0.9, 0.84, 0.51, 0.74, 0.87, 0.48, 0.84, 0.58, 0.94, 0.71, 0.84],
+    "defaultAcquisitionRate": 0.85,
+    "heavyTrailingAcquisitionRate": 0.65
+  },
+  "supplyPlan": [
+    {"player": "core", "item": "blood_pill", "occasions": [180, 720, 960]},
+    {"player": "roam", "item": "mana_pill", "occasions": [180, 420, 720, 960]},
+    {"player": "support", "item": "scout_totem", "occasions": [180, 720]},
+    {"player": "support", "item": "spirit_snare", "occasions": [420, 960]}
+  ],
+  "fullCases": {
+    "S0": {"label": "均势基准"},
+    "S1": {"label": "轻中度顺逆风·纯防守止血", "events": "early_and_defense"},
+    "S2": {"label": "中度顺逆风·关键反打终结", "events": "early_and_counter"},
+    "S3": {"label": "重度单边滚雪球", "events": "heavy"}
+  },
+  "eventGroups": {
+    "early": [
+      {"id": "early-1", "at": 145, "type": "kill", "killer": "G1", "victim": "D1", "assists": []},
+      {"id": "early-2", "at": 272, "type": "kill", "killer": "G1", "victim": "D2", "assists": ["G2"]},
+      {"id": "early-3", "at": 375, "type": "kill", "killer": "G1", "victim": "D3", "assists": ["G3", "G2"]},
+      {"id": "early-neutral-crab", "at": 280, "type": "camp", "player": "G2", "camp": "boss_island_rift_crab"},
+      {"id": "early-extra-camp", "at": 401, "type": "camp", "player": "G2", "camp": "east_industry_walker"}
+    ],
+    "early_and_defense": [
+      {"include": "early"},
+      {"id": "defense-outer", "type": "tower", "tower": "destruction/mid/1", "team": "guardian", "tier": 1, "observation": "mid_team_outer"},
+      {"id": "defense-invade", "type": "camp", "player": "G1", "camp": "west_industry_scout_1", "requiresTower": "defense-outer", "secondsAfterTower": 35}
+    ],
+    "early_and_counter": [
+      {"include": "early"},
+      {"id": "S2-counter-1", "at": 600, "type": "kill", "killer": "D1", "victim": "G1", "assists": ["D2"], "round": 1},
+      {"id": "S2-counter-2", "at": 840, "type": "kill", "killer": "D1", "victim": "G2", "assists": ["D3", "D2"], "round": 2},
+      {"id": "S2-counter-3", "at": 842, "type": "kill", "killer": "G3", "victim": "D3", "assists": []},
+      {"id": "S2-counter-4", "at": 846, "type": "kill", "killer": "D2", "victim": "G3", "assists": ["D1"]},
+      {"id": "S2-counter-crab", "at": 860, "type": "camp", "player": "D2", "camp": "boss_island_rift_crab", "roundEnd": 2}
+    ],
+    "heavy": [
+      {"include": "early"},
+      {"id": "heavy-4", "at": 462, "type": "kill", "killer": "G2", "victim": "D1", "assists": ["G1", "G3"]},
+      {"id": "heavy-outer", "type": "tower", "tower": "destruction/mid/1", "team": "guardian", "tier": 1, "observation": "mid_team_outer"},
+      {"id": "heavy-5", "at": 585, "type": "kill", "killer": "G1", "victim": "D1", "assists": ["G2"]},
+      {"id": "heavy-invade", "type": "camp", "player": "G2", "camp": "west_industry_walker", "requiresTower": "heavy-outer", "secondsAfterTower": 35},
+      {"id": "heavy-highland", "type": "tower", "tower": "destruction/mid/3", "team": "guardian", "tier": 3, "observation": "late_push_wave", "requiresTower": "heavy-outer"},
+      {"id": "heavy-6", "at": 727, "type": "kill", "killer": "G1", "victim": "D2", "assists": ["G3"]},
+      {"id": "heavy-crab", "at": 800, "type": "camp", "player": "G2", "camp": "boss_island_rift_crab"},
+      {"id": "heavy-7", "at": 902, "type": "kill", "killer": "G2", "victim": "D3", "assists": ["G3", "G1"]}
+    ],
+    "reconnect": [
+      {"id": "disconnect-G3", "at": 599, "type": "disconnect", "player": "G3"},
+      {"id": "reconnect-kill", "at": 600, "type": "kill", "killer": "G1", "victim": "D3", "assists": ["G3", "G2"]},
+      {"id": "waiting-pill", "at": 601, "type": "supply", "player": "D3", "item": "blood_pill"},
+      {"id": "field-pill", "at": 603, "type": "supply", "player": "G1", "item": "mana_pill"},
+      {"id": "reconnect-G3", "at": 650, "type": "reconnect", "player": "G3"}
+    ]
+  },
+  "cut": {
+    "trailingIncome": [2800, 2400, 1800],
+    "trailingLevels": [8, 7, 6],
+    "grades": [
+      {"id": "light", "incomePercent": 115, "coreLevelLead": 1},
+      {"id": "medium", "incomePercent": 125, "coreLevelLead": 2},
+      {"id": "heavy", "incomePercent": 140, "coreLevelLead": 3}
+    ],
+    "cases": {
+      "C0": {"label": "无击杀对称发育"},
+      "C1": {
+        "label": "终结三连杀核心",
+        "event": {"id": "cut-shutdown", "at": 481, "type": "kill", "killer": "D1", "victim": "G1", "assists": ["D2"], "round": 1}
+      },
+      "C2": {
+        "label": "击杀零杀三死槽位",
+        "event": {"id": "cut-low-value", "at": 481, "type": "kill", "killer": "D1", "victim": "G3", "assists": ["D2"], "round": 1}
+      }
+    }
+  },
+  "provenance": {
+    "scenario": "https://github.com/xOyMoveO/MYRIAD/issues/100#issuecomment-7234845985",
+    "scope": "https://github.com/xOyMoveO/MYRIAD/issues/110",
+    "battlefield": "https://github.com/xOyMoveO/MYRIAD/issues/109",
+    "qualification": "六席固定交锋及路由假设。V2 兵线清除近似为假定到线 15 秒加对应合成清线实测，野区触发时点是开打、护送塔分时采用实际合成破塔刻。二阶塔未配置。奖励分支与数值取配对快照及合成实测，双方真人补刀率、路线和破塔时点没有输入。"
+  },
+  "laneClearObservationSeconds": [[0, 180], [480, 480]],
+  "campObservationByType": {
+    "cherry_frost_hare": "low_hare",
+    "cherry_dusk_fox": "low_fox",
+    "cherry_scout_bot": "low_scout",
+    "cherry_jade_beast": "low_jade",
+    "cherry_heavy_walker": "low_walker",
+    "cherry_rift_crab": "crab_solo"
+  },
+  "publicTrials": {
+    "assistGold": [0, 50, 101, 150],
+    "assistXp": [0, 25, 51, 75],
+    "wageCatchUpWeight": [0, 0.5, 1, 1.5],
+    "defensePerPoint": [5, 15],
+    "defenseRanks": [0, 2, 4, 6, 8],
+    "defenseTimesSeconds": [480, 960, 1200],
+    "defenseRawHits": [[0, 100], [4, 180], [9, 155], [15, 210], [21, 145], [28, 170]],
+    "defenseMixedKinds": ["physical", "spell", "true", "physical", "spell", "true"]
+  }
+}

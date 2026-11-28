@@ -1,0 +1,221 @@
+{
+  "schemaVersion": 1,
+  "roles": {
+    "luoxia": {
+      "attributesReason": "保留配对快照的零购固有曲线。Lv1–20 生命从 575 每级 +75 至 2000，法力从 700 每级 +24 至 1156，固有物攻 100、法强 30、双抗各 45、攻速 0.7、移速 0.10、每秒回体 2、回蓝 4、暴伤 150% 各级同值。把落霞作为 #96 的参考脆皮及夜影的满血目标，隔离拆塔偏差到箭与建筑的结算，避免改变英雄承伤、打英雄伤害和全等级 TTK。全等级实战承伤及缺蓝缺口仍待真人采样。",
+      "basicReason": "保留对英雄的普通弓零购 100 原始物伤、11 行动刻普拉和 18 格射程，快弓与满弓沿现有被动；打塔正式值暂留。3:00 Lv2/1105 金（一力一速一防）同一无守塔整波，现行 46.115%，塔箭候选 ×0.187 后 15.006%（英雄 601.06、兵线 659.42），Lv1/500 金零购历史输入对照由 41.124% 降至 14.072%。两档均为 Fabric 合成整波，候选也影响有兵和无兵的中后期塔箭；适用时间、后期射手纯普攻拆塔定位及真人塔下节拍仍需选值。证据见 anchors-damage/tower-arrow-scale-candidate.log。",
+      "skills": {
+        "luoxia_chase_dusk": {
+          "decision": "retain-current",
+          "reason": "保留追霞续弦在普攻命中敌方英雄后给下一弓 1.2 秒快弓窗口、90% 普攻伤害的连射取舍。Lv20、六力三速、8 格离线单人常规延迟下，含追霞的构筑达到 257.18 HP/s 已找到持续输出上沿。塔波未触发英雄续弦，拆塔候选不据此改续弦。真人走位和断链率待采。",
+          "mode": "L1 + L3",
+          "source": ["src/main/java/com/myriad/character/skills/luoxia/ChaseDusk.java", "tools/balance/scenarios/combos/luoxia.json"]
+        },
+        "luoxia_steady_dusk": {
+          "decision": "retain-current",
+          "reason": "保留凝霞满弓的 20 行动刻基准、26 格、121%–145% 伤害及拉满减移速。它交换的是单发射程和出手速度，塔波从普通弓基线隔离建筑系数。现有 8 格 APL 无法验证 18–26 格的额外命中，满弓常用率与塔下蓄势须另采。",
+          "mode": "L1 + L3 partial",
+          "source": ["src/main/java/com/myriad/character/skills/luoxia/SteadyDusk.java", "src/main/java/com/myriad/character/skills/luoxia/LuoxiaBow.java", "tools/balance/scenarios/combos/luoxia.json"]
+        },
+        "luoxia_dusk_mark": {
+          "decision": "retain-current",
+          "reason": "保留雁过霞痕的 20 格首箭与同一英雄 3 秒内下一箭消耗标记。8 格 Lv20 六力三速的离线首箭折后命中 72.26 HP，印记伤害依赖后续命中；保留这项连续命中收益。塔波只用普攻，未估计它的清兵间接收益。",
+          "mode": "L1 + L3",
+          "source": ["src/main/java/com/myriad/character/skills/luoxia/DuskMark.java", "tools/balance/scenarios/combos/luoxia.json"]
+        },
+        "luoxia_slant_step": {
+          "decision": "retain-current",
+          "reason": "保留斜照撤步 3 格方向位移、撞墙停止及保留拉弓进度。具名 `myriad:luoxia` GameTest 断言禁锢时无扣蓝或冷却，施放中保持拉弓；支持保留 W 与普攻衔接的职责。零预置不计方向性位移的追逃避伤、实际多命中箭数仍待观察。",
+          "mode": "L1 + existing L4 assertions",
+          "source": ["src/main/java/com/myriad/character/skills/luoxia/SlantStep.java", "tools/balance/scenarios/combos/luoxia.json", "src/gametest/java/com/myriad/game/LuoxiaChecks.java"]
+        },
+        "luoxia_feather_burst": {
+          "decision": "retain-current",
+          "reason": "保留飞羽连弦 19 格、0/5/10 刻三发轻箭和同目标第三箭半伤。离线能对照重瞄三发与慢起手重箭在 1.5/6 秒窗的节拍，半伤保留单一目标的边际递减。每支箭实际重瞄成功率待采。",
+          "mode": "L1 + L3",
+          "source": ["src/main/java/com/myriad/character/skills/luoxia/FeatherBurst.java", "tools/balance/scenarios/combos/luoxia.json"]
+        },
+        "luoxia_last_sun": {
+          "decision": "retain-current",
+          "reason": "保留一点残阳配对快照的一支首敌截停重箭、10 行动刻起手及 28 格射程。28 格已经作为单一真源纵向对照，保留稀疏阵形下一个目标的远射职责。8 格 APL 只验证当前伤害和释放时点，远距走位及小兵遮挡的命中率待采。",
+          "mode": "L1 + L3",
+          "source": ["src/main/java/com/myriad/character/skills/luoxia/LastSun.java", "docs/balance/implementation-handoff.md", "tools/balance/scenarios/combos/luoxia.json"]
+        },
+        "luoxia_thousand_feathers": {
+          "decision": "retain-current",
+          "reason": "保留千羽照野 22 格三轮箭幕和同目标每轮最多一次。Lv20 六力三速、8 格离线每轮命中约 68.06 HP，三轮合计 204.19；具名 GameTest 断言三轮之间各 12 行动刻。三弹道的多人实际命中率及技能清兵间接延长的塔下时间另采。",
+          "mode": "L1 + L3 + existing L4 assertions",
+          "source": ["src/main/java/com/myriad/character/skills/luoxia/ThousandFeathers.java", "tools/balance/scenarios/combos/luoxia.json", "tools/balance/scenarios/combos/multi-target.json", "src/gametest/java/com/myriad/game/LuoxiaChecks.java"]
+        },
+        "luoxia_sunset_line": {
+          "decision": "retain-current",
+          "reason": "保留霞沉一线的 17 刻起手、32 格锁线和三个次序伤害权重 1/0.6923/0.4808。合成分散、集中和队友先控分别计额外目标，仅用于解释逐目标衰减的取舍。塔波的输入只包含普攻，锁线预警及贯穿路径保留按现有英雄场景观察。",
+          "mode": "L1 + L3 modeled attribution",
+          "source": ["src/main/java/com/myriad/character/skills/luoxia/SunsetLine.java", "tools/balance/scenarios/combos/luoxia.json", "tools/balance/scenarios/combos/multi-target.json"]
+        }
+      }
+    },
+    "yingxiao": {
+      "attributesReason": "保留配对快照的零购固有曲线。Lv1–20 生命从 560 每级 +85 至 2175，法力从 700 每级 +24 至 1156，固有物攻 65、法强 30、双抗各 45、攻速 0.7、移速 0.10、每秒回体 2、回蓝 4、暴伤 150% 各级同值。把 21A34 的首套差额隔离到有背击和技能分支前提的读数，避免让全套前后及撤退构筑同时获益。等级与购点读数只覆盖已测 checkpoint，全等级资源与承伤体验待采。",
+      "basicReason": "保留满恢复的基础 65 原始物伤和零购 20/0.7≈28.57 行动刻恢复，原版交互距随属性与碰撞体取值。等经济 Lv10/4770 金场景的两次补 A 后仍余 454.63 HP，固定脚本覆盖近身恢复及补刀伤害。先用末段技能校准首套结束时的余血，维持普攻补刀和其他交战场景的伤害基线。L3 的 3 格属于场景取值，贴身维持与离散恢复需要按实际事件记录。",
+      "skills": {
+        "g1_yingxiao_pa": {
+          "decision": "retain-current",
+          "reason": "保留暗影猎手按阶 10%–30% 的条件增伤。Lv20 历史预算实跑中 Q 和两次补 A 记录背击，影袭后姿态变化为正面再由 R 落到背后。背击档位承担前置走位收益，保持该乘区能把首套候选的作用定位到单个技能，正背与失败切入的分支差异仍需实图读数。",
+          "mode": "L1 + L4 historical input",
+          "source": ["src/main/java/com/myriad/character/skills/yingxiao/rework/NightBackstabSkill.java", "anchors-damage/baseline-attempt-1.log", "https://github.com/xOyMoveO/MYRIAD/issues/96#issuecomment-7233469433"]
+        },
+        "g1_yingxiao_pb": {
+          "decision": "retain-current",
+          "reason": "保留孤影伏击 4 格孤立和同目标 160 刻间隔，单次附伤基础 37.5+14.4×(r−1)、额外物攻系数 0.25。历史角色专项实测对孤立英雄输入 10 点原始伤害后合计扣 47.5，支持保留正面抓单收益。周边出现其他英雄、从落单变成团战的有效触发率待采。",
+          "mode": "L1 + historical L4",
+          "source": ["src/main/java/com/myriad/character/skills/yingxiao/rework/NightAmbushSkill.java", "tools/balance/scenarios/combos/yingxiao.json", "src/gametest/java/com/myriad/game/RosterBChecks.java", "docs/fabric/evidence/roster-b-20261116.xml"]
+        },
+        "g1_yingxiao_n1": {
+          "decision": "retain-current",
+          "reason": "保留 15 格首敌飞匕与原有减速、基础 61.5+20.25×(r−1) 和 0.5 额外物攻系数。历史同预算实跑的背击伤害 150.97，且是两套 E/R 都能使用的远距开手。调它会同步改变正面消耗和其他分支，首轮隔离末段收尾；不同朝向下的拦截和减速收益待采。",
+          "mode": "L1 + L4 historical input",
+          "source": ["src/main/java/com/myriad/character/skills/yingxiao/rework/ShadowDaggerSkill.java", "anchors-damage/baseline-attempt-1.log"]
+        },
+        "g1_yingxiao_n2": {
+          "decision": "retain-current",
+          "reason": "保留化影 40–60 刻隐身与 +15% 移速，用于按已确认 21A34 起手制造背击。历史引擎按键 2 合法，消耗 72 法力后接 1 生效；该次起点已在背后。主动绕背消耗多少时间以及侦查、发光和被追击时的净规避需另外取样。",
+          "mode": "L1 + L4 input, reposition evidence pending",
+          "source": ["src/main/java/com/myriad/character/skills/yingxiao/rework/ShadowVanishSkill.java", "anchors-damage/baseline-attempt-1.log", "https://github.com/xOyMoveO/MYRIAD/issues/96#issuecomment-7233469433"]
+        },
+        "g1_yingxiao_ma": {
+          "decision": "retain-current",
+          "reason": "保留影袭的 9 格路径命中及首目标背击减速，历史 L4 的第 3 键折后实扣 236.10 HP 并改变双方相对位置，为第 4 键创造后续落点。稳定这段位移可保持目标朝向和追击脚本的比较条件。实图穿越、两目标和减速的实际收益待采。",
+          "mode": "L1 + L4 historical input",
+          "source": ["src/main/java/com/myriad/character/skills/yingxiao/rework/ShadowAssaultSkill.java", "anchors-damage/baseline-attempt-1.log", "tools/balance/scenarios/combos/yingxiao.json"]
+        },
+        "g1_yingxiao_mb": {
+          "decision": "retain-current",
+          "reason": "保留回影在 7 格选点、60 刻回返窗口内用影痕撤离的交易。离线显式剧本已走首段、等待、二段及后续普攻，返回不再造成伤害。它是 21A34 所用影袭的互斥位移分支，收益要用受追击后的安全率和禁锢/落点失败实跑衡量。",
+          "mode": "L1 + L3 scripted",
+          "source": ["src/main/java/com/myriad/character/skills/yingxiao/rework/ShadowReturnSkill.java", "tools/balance/scenarios/combos/yingxiao.json"]
+        },
+        "g1_yingxiao_ua": {
+          "decision": "pending",
+          "reason": "绝影追击暂留首阶 219、每阶成长 87.5、额外物攻系数 0.8。二/三阶每阶成长单改 670 后，同输入 Fabric Lv10/4770 金由 631.51→541.07→454.63 HP 变为 161.75→71.32→0，Lv20/4885 金历史输入由 1116.45→997.74→882.03 变为 139.35→20.65→0。两档均第一补后活、第二补击杀。该候选同时抬高非标杆构筑：正面开手的零预置离线 Lv20 中，R A 对 2000 HP 落霞单技能可扣约 1052–1368，四套含 R A 的 1.5 秒爆发升至约 1173–1619。需与常规和其他分支的收尾窗口一起选定。",
+          "mode": "L1 + L3 + L4 candidate, selection pending",
+          "source": ["src/main/java/com/myriad/character/skills/yingxiao/rework/ShadowExecutionSkill.java", "anchors-damage/baseline-attempt-3.log", "https://github.com/xOyMoveO/MYRIAD/issues/96#issuecomment-7233469433", "anchors-damage/night-rank-growth-candidate.log", "anchors-damage/night-rank-growth-candidate.xml", "tools/balance/scenarios/combos/yingxiao.json"]
+        },
+        "g1_yingxiao_ub": {
+          "decision": "retain-current",
+          "reason": "保留灵盾解控、80 刻自盾及移速。历史角色专项在一阶、S0 确认实际生成 306 盾，当前 Lv20 零智慧 APL 的 649.4 名义盾在固定来伤吸收 213.79 HP。维持防御终极分支的承压撤离职责，续控与何时能够脱离单独测。",
+          "mode": "L1 + L3 + historical L4",
+          "source": ["src/main/java/com/myriad/character/skills/yingxiao/rework/ShadowShieldSkill.java", "tools/balance/scenarios/combos/yingxiao.json", "src/gametest/java/com/myriad/game/RosterBChecks.java", "docs/fabric/evidence/roster-b-20261116.xml"]
+        }
+      }
+    },
+    "keheng": {
+      "attributesReason": "保留配对快照的零购固有曲线。Lv1–20 生命从 600 每级 +85 至 2215，法力从 700 每级 +36 至 1384，固有物攻 65、法强 30、双抗各 45、攻速 0.7、移速 0.10、每秒回体 2、回蓝 4、暴伤 150% 各级同值。Lv12 零购即可在本轮合成留人场景完成队友跟进，不需要增加自身耐久或资源兑现这项承诺。欠缺全等级追逃与有压力持续施法的真人读数。",
+      "basicReason": "保留满恢复的基础 65 原始物伤及零购 20/0.7≈28.57 行动刻近战恢复。2.4 格 Lv20 单人离线样例的首记普攻对 55 物抗落霞扣 41.94 HP。留人引擎专项测到的命中来自队友天刑，刻衡自身的实图接敌距离和普攻持续占比待采。",
+      "skills": {
+        "keheng_kehen": {
+          "decision": "retain-current",
+          "reason": "保留刻痕回响在 80 刻内对同一英雄按不同主动施法叠三层、每阶伤害成长 14.4。这个门槛让同一 R 的多次跳伤与多个独立施法形成不同收益；技能比较沿生效公式和按施法去重，未将模型的同目标连续命中当作真人触发率。",
+          "mode": "L1 + L3",
+          "source": ["src/main/java/com/myriad/character/skills/keheng/EngravedEchoSkill.java", "tools/balance/scenarios/combos/keheng.json"]
+        },
+        "keheng_hengbu": {
+          "decision": "retain-current",
+          "reason": "保留恒步实际踏入自己的领域时获取 40 刻护盾、240 刻内置间隔。具名刻衡专项曾确认五阶零购 156 盾，重进既不叠加也不续延；六智三急速的离线样例按一次 192 名义盾取值。不同自有领域和来伤的盾消耗量待采。",
+          "mode": "L1 + L3 + historical L4",
+          "source": ["src/main/java/com/myriad/character/skills/keheng/ConstantStepSkill.java", "tools/balance/scenarios/combos/keheng.json", "src/gametest/java/com/myriad/game/KehengChecks.java", "docs/fabric/evidence/issue41-keheng.xml"]
+        },
+        "keheng_chizhen": {
+          "decision": "retain-current",
+          "reason": "保留迟针 4 行动刻起手、12 格首敌和 25 刻目标缓时，行动倍率从 0.85 到 0.65。它在离线近距序列提供独立单体控制，发出后的弹体无需跟着目标降速。通用模型只取合成直线，障碍及实际拦截几率待采。",
+          "mode": "L1 + L3",
+          "source": ["src/main/java/com/myriad/character/skills/keheng/DelayedNeedleSkill.java", "tools/balance/scenarios/combos/keheng.json"]
+        },
+        "keheng_cuopaibu": {
+          "decision": "retain-current",
+          "reason": "保留错拍步的 4.5 格位移、2 格 30 刻残圈与 40 刻自盾。Lv20 六智三急速离线同一来伤下，W 的 107.5 HP 自盾被实际消耗，保留其短促防御用途。留人专项未用 W，位移避伤、起点残圈后的追击差量未量化。",
+          "mode": "L1 + L3 partial",
+          "source": ["src/main/java/com/myriad/character/skills/keheng/OffbeatStepSkill.java", "tools/balance/scenarios/combos/keheng.json"]
+        },
+        "keheng_chijie": {
+          "decision": "retain-current",
+          "reason": "保留迟界 9 刻独立预警、3.5 格定点圈与每阶伤害成长 22.5。在分散、集中、队友先控的离线留场假设下，计入展开瞬间命中与之后的净行动差。它与可随身移动的 E 分支交换固定区域，实图墙阻与留场时间分布待采。",
+          "mode": "L1 + L3 modeled attribution",
+          "source": ["src/main/java/com/myriad/character/skills/keheng/DelayedBoundarySkill.java", "tools/balance/scenarios/combos/keheng.json", "tools/balance/scenarios/combos/multi-target.json"]
+        },
+        "keheng_suixing": {
+          "decision": "retain-current",
+          "reason": "保留随行秒域 3 格随身范围与自然结束才结算伤害的代价。显式剧本覆盖已施放、等起手完成、主动取消和转 Q，取消后放弃收尾伤害。双方避让、强控中断和追逃期间的实际在圈时间缺引擎对照。",
+          "mode": "L1 + L3 scripted",
+          "source": ["src/main/java/com/myriad/character/skills/keheng/FollowingSecondSkill.java", "tools/balance/scenarios/combos/keheng.json"]
+        },
+        "keheng_yimiao": {
+          "decision": "retain-current",
+          "reason": "保留一秒之外的 13 刻预警、5 格、60 刻与三阶敌行动倍率 0.25。Lv12 三阶零购的合成后撤目标未交位移，队友 t23 有效 A、目标 t58 越界，无 R 时 t24 越界且队友未命中；施放轨队友领先越界 35 刻。采自固定起始间距与追逃输入，屏障、位移脱离和真人交战尚待补采。",
+          "mode": "L1 + L3 + L4",
+          "source": ["src/main/java/com/myriad/character/skills/keheng/BeyondOneSecondSkill.java", "tools/balance/scenarios/combos/keheng.json", "anchors-support/keheng.log", "https://github.com/xOyMoveO/MYRIAD/issues/96#issuecomment-7233921931"]
+        },
+        "keheng_zhongke": {
+          "decision": "retain-current",
+          "reason": "保留终刻贯穿 16 刻定身起手、14 格锁线走廊和一次魔法伤害。独立刻衡专项三阶正中一次 620.5，在走出 3.6 格宽走廊、被硬控或墙截断时无伤害；Lv20 六智三急速的 L3 对齐场景单次折后 504.84 HP。走廊预警后的真人走位与弹道缓时所提供的反打机会另采。",
+          "mode": "L1 + L3 + historical L4",
+          "source": ["src/main/java/com/myriad/character/skills/keheng/FinalPenetrationSkill.java", "tools/balance/scenarios/combos/keheng.json", "src/gametest/java/com/myriad/game/KehengChecks.java", "docs/fabric/evidence/issue41-keheng.xml"]
+        }
+      }
+    },
+    "qingluo": {
+      "attributesReason": "保留配对快照的零购固有曲线。Lv1–20 生命从 580 每级 +86 至 2214，法力从 700 每级 +36 至 1384，固有物攻 65、法强 30、双抗各 45、攻速 0.7、移速 0.10、每秒回体 2、回蓝 4、暴伤 150% 各级同值。Lv12 零购可满足合成半血队友救援的功能目标，隔离救援公式和受援者来伤。受援者与青萝自身的成长须分别读，缺青萝全等级被切及连续救援的真人数据。",
+      "basicReason": "保留初始武器的 65 原始魔法伤害、每点额外法强 +0.5、15 格和无增益 29 行动刻恢复。Lv20 六智三急速、7 格离线首记普攻对 55 魔抗落霞扣 80.65 HP；R 接 Q 引擎样例的首记有效 A 是队友赤霄所打。待用辅助实局走位核对青萝本人的消耗输出和采灵化露蓄层。",
+      "skills": {
+        "g2_qingluo_pa": {
+          "decision": "retain-current",
+          "reason": "保留仁心在有效支援后仍低于 60% 血线才额外治疗及加速、同目标间隔 80 刻的定位。固定来伤的离线六智三急速样例出现一次 85.4 HP 有效追加，覆盖空间来自受援血线。真人多线转援与加速带来的离险收益尚待测。",
+          "mode": "L1 + L3",
+          "source": ["src/main/java/com/myriad/character/skills/qingluo/rework/KindHerbalistSkill.java", "tools/balance/scenarios/combos/qingluo.json"]
+        },
+        "g2_qingluo_pb": {
+          "decision": "retain-current",
+          "reason": "保留采灵化露直接有效命中蓄层、按同次施法去重、最多三层且下次有效支援消耗。角色专项一层时实际为队友多补 15，触发后状态清空；六智离线记录单层 51 有效回复。多次攻击时的蓄层顺序、实际三层可用率和溢出需分开采样。",
+          "mode": "L1 + L3 + historical L4",
+          "source": ["src/main/java/com/myriad/character/skills/qingluo/rework/HerbalEssenceSkill.java", "tools/balance/scenarios/combos/qingluo.json", "src/gametest/java/com/myriad/game/RosterAChecks.java", "docs/fabric/evidence/issue41-roster-a.xml"]
+        },
+        "g2_qingluo_n1": {
+          "decision": "retain-current",
+          "reason": "保留青藤玉露的三阶公式和现行目标规则。Lv12 零购 R 接 Q 时 t10 的 Q 实回 140 HP，较单 R 使 6 秒末血量净多 140，且队友从 t12 恢复有效普攻。另有 #96 的只缺 50 实回 50 样本；当前引擎结论覆盖固定承压下的单人，移动收益与另两名队友待采。",
+          "mode": "L1 + L3 + L4",
+          "source": ["src/main/java/com/myriad/character/skills/qingluo/rework/VerdantDewSkill.java", "anchors-support/qingluo.log", "https://github.com/xOyMoveO/MYRIAD/issues/96#issuecomment-7233008588"]
+        },
+        "g2_qingluo_n2": {
+          "decision": "retain-current",
+          "reason": "保留缚生藤 15 格敌人首命中、14 刻禁锢及命中处 3 格治疗的近场交换。远距模型取到禁锢，受援者无同一命中附近的缺血样本；保留击中敌人才能紧凑扶队友的条件，近距清线和有效治疗量待采。",
+          "mode": "L1 + L3 partial",
+          "source": ["src/main/java/com/myriad/character/skills/qingluo/rework/BriarSeedSkill.java", "tools/balance/scenarios/combos/qingluo.json"]
+        },
+        "g2_qingluo_ma": {
+          "decision": "retain-current",
+          "reason": "保留护心丹阵 4 格、即时加盾再每 20 刻刷新。角色专项一阶 S30 实际盾为 90.5；六智七阶离线每次名义 284.3，按固定来伤只计实际吸收。主受援、副受压、低承压者分别留场多久、刷新时剩余护盾与第三人实际吸收待采。",
+          "mode": "L1 + L3 + historical L4",
+          "source": ["src/main/java/com/myriad/character/skills/qingluo/rework/HeartPillArraySkill.java", "tools/balance/scenarios/combos/qingluo.json", "tools/balance/scenarios/combos/multi-target.json", "src/gametest/java/com/myriad/game/RosterAChecks.java", "docs/fabric/evidence/issue41-roster-a.xml"]
+        },
+        "g2_qingluo_mb": {
+          "decision": "retain-current",
+          "reason": "保留千丝渡厄 12 格选友、80 刻初始盾和连线每秒治疗，14 格或不可见断线。#96 历史同输入的一阶专项实测 171 盾依次吸收 80/80/11 物/法/真伤，支持维持单体承伤的职责。本轮 R 接 Q 引擎样例未施放 E。跟跑过程的断线和回血待复测。",
+          "mode": "L1 + L3 + historical L4",
+          "source": ["src/main/java/com/myriad/character/skills/qingluo/rework/LifeThreadSkill.java", "tools/balance/scenarios/combos/qingluo.json", "https://github.com/xOyMoveO/MYRIAD/issues/96#issuecomment-7233008588"]
+        },
+        "g2_qingluo_ua": {
+          "decision": "retain-current",
+          "reason": "保留万木春晖 7 格春林、120 刻持续且每 20 刻治疗。角色专项一阶 S30 实回六跳共 309.6；三阶六智离线样例每跳 124，并按三类合成站位分开作边际归因。保持留圈持续治疗与瞬发悬壶天幕的取舍，真人在拆散、回撤和集中阵形中的留圈率待采。",
+          "mode": "L1 + L3 + historical L4",
+          "source": ["src/main/java/com/myriad/character/skills/qingluo/rework/SpringGroveSkill.java", "tools/balance/scenarios/combos/qingluo.json", "tools/balance/scenarios/combos/multi-target.json", "src/gametest/java/com/myriad/game/RosterAChecks.java", "docs/fabric/evidence/issue41-roster-a.xml"]
+        },
+        "g2_qingluo_ub": {
+          "decision": "retain-current",
+          "reason": "保留悬壶天幕 8 格范围内的即时治疗、100 刻护盾和加速。Lv12 零购三阶 R 在固定半血受援引擎样例实回 199.50、实吸 382，R 接 Q 到达固定 60% 的回打线并在 t12 命中，单 R 在 120 刻内未达回打线。多目标受援、混合来伤与真人恢复输出的时刻待采。",
+          "mode": "L1 + L3 + L4",
+          "source": ["src/main/java/com/myriad/character/skills/qingluo/rework/JadeCanopySkill.java", "tools/balance/scenarios/combos/multi-target.json", "anchors-support/qingluo.log", "https://github.com/xOyMoveO/MYRIAD/issues/96#issuecomment-7233921931"]
+        }
+      }
+    }
+  }
+}

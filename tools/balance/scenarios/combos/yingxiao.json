@@ -1,0 +1,417 @@
+{
+  "scenarioId": "yingxiao.zero_preparation",
+  "scenarioVersion": 1,
+  "schemaVersion": 1,
+  "baselineCommit": "d94b3534ef6fcff7d7fef1263b33425575a4a479",
+  "role": "yingxiao",
+  "applicableBuilds": "all_terminal_combinations",
+  "category": "zero_preparation",
+  "status": "candidate_l3_partial",
+  "startState": {
+    "distance": 2.3,
+    "purchases": {
+      "strength": 6,
+      "speed": 3
+    }
+  },
+  "opponentCondition": [
+    "solo",
+    "ally_cc"
+  ],
+  "windows": [
+    "burst",
+    "sustained"
+  ],
+  "delayProfile": [
+    "human_default",
+    "zero_extra_delay"
+  ],
+  "basicAttack": {
+    "range": 3,
+    "source": "src/main/java/com/myriad/combat/VanillaMeleeAttack.java"
+  },
+  "skills": {
+    "g1_yingxiao_n1": {
+      "source": "src/main/java/com/myriad/character/skills/yingxiao/rework/ShadowDaggerSkill.java",
+      "range": 15,
+      "events": [
+        {
+          "effect": "damage",
+          "kind": "damage",
+          "at": 0,
+          "speed": 1.95
+        }
+      ]
+    },
+    "g1_yingxiao_n2": {
+      "source": "src/main/java/com/myriad/character/skills/yingxiao/rework/ShadowVanishSkill.java",
+      "events": [],
+      "context": "预置状态按起点约束。隐身及移速期间的净规避单列缺口。"
+    },
+    "g1_yingxiao_ma": {
+      "source": "src/main/java/com/myriad/character/skills/yingxiao/rework/ShadowAssaultSkill.java",
+      "range": 9,
+      "events": [
+        {
+          "effect": "damage",
+          "kind": "damage",
+          "at": 2
+        },
+        {
+          "kind": "position",
+          "at": 5,
+          "distance": 2.3
+        }
+      ],
+      "motion": 5,
+      "basicDuringMotion": true
+    },
+    "g1_yingxiao_mb": {
+      "source": "src/main/java/com/myriad/character/skills/yingxiao/rework/ShadowReturnSkill.java",
+      "range": 7,
+      "events": [
+        {
+          "effect": "damage",
+          "kind": "damage",
+          "at": 2
+        },
+        {
+          "kind": "position",
+          "at": 4,
+          "distance": 2.3
+        }
+      ],
+      "point": true,
+      "motion": 4,
+      "recast": "return",
+      "recastWindow": 60,
+      "basicDuringMotion": true
+    },
+    "g1_yingxiao_ua": {
+      "source": "src/main/java/com/myriad/character/skills/yingxiao/rework/ShadowExecutionSkill.java",
+      "range": 8,
+      "events": [
+        {
+          "kind": "position",
+          "at": 0,
+          "distance": 1.65,
+          "behind": true
+        },
+        {
+          "effect": "damage",
+          "kind": "damage",
+          "at": 0
+        }
+      ],
+      "paidWindup": 16
+    },
+    "g1_yingxiao_ub": {
+      "source": "src/main/java/com/myriad/character/skills/yingxiao/rework/ShadowShieldSkill.java",
+      "events": [
+        {
+          "effect": "shield",
+          "kind": "shield",
+          "at": 0,
+          "duration": 80,
+          "target": "self"
+        }
+      ]
+    }
+  },
+  "execution": {
+    "type": "apl",
+    "steps": [
+      {
+        "action": "cast",
+        "skill": "r"
+      },
+      {
+        "action": "cast",
+        "skill": "e"
+      },
+      {
+        "action": "cast",
+        "skill": "q"
+      },
+      {
+        "action": "cast",
+        "skill": "w"
+      },
+      {
+        "action": "basic_attack"
+      },
+      {
+        "action": "wait_until"
+      }
+    ]
+  },
+  "coverageGaps": {
+    "g1_yingxiao_ma": {
+      "axes": [
+        "damage",
+        "control"
+      ],
+      "reason": "合成路径有已声明正／背朝向。首目标移动速度修饰与穿越碰撞扣点未接入。"
+    },
+    "g1_yingxiao_n2": {
+      "axes": [
+        "support"
+      ],
+      "reason": "隐身与移速没有相同敌方决策的证据。"
+    }
+  },
+  "scripted": [
+    {
+      "scenarioId": "yingxiao.backstab_21a34_finisher_cherry_v2",
+      "scenarioVersion": 1,
+      "category": "position_advantage",
+      "status": "candidate_l3_partial",
+      "applicableBuilds": [
+        "g1_yingxiao_pa",
+        "g1_yingxiao_ma",
+        "g1_yingxiao_ua"
+      ],
+      "startState": {
+        "distance": 2,
+        "purchases": {
+          "strength": 3,
+          "wisdom": 2,
+          "speed": 2,
+          "defense": 2,
+          "cooldown": 2
+        },
+        "targetPurchases": {
+          "strength": 2,
+          "wisdom": 2,
+          "speed": 2,
+          "defense": 2,
+          "cooldown": 2
+        },
+        "facing": "behind",
+        "preconditions": [
+          "pre_positioned_behind"
+        ],
+        "heroLevel": 10,
+        "budgetGold": 4770,
+        "skillRanks": {
+          "passive": 4,
+          "q": 3,
+          "w": 1,
+          "e": 4,
+          "r": 2
+        }
+      },
+      "opponentCondition": "solo",
+      "windows": {
+        "burst": 30,
+        "sustained": 120
+      },
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "w",
+            "label": "2"
+          },
+          {
+            "action": "cast",
+            "skill": "q",
+            "label": "1"
+          },
+          {
+            "action": "wait_until",
+            "condition": "hurt_ready:1",
+            "maxTicks": 30
+          },
+          {
+            "action": "basic_attack",
+            "label": "A"
+          },
+          {
+            "action": "wait_until",
+            "condition": "hurt_ready:A",
+            "maxTicks": 30
+          },
+          {
+            "action": "cast",
+            "skill": "e",
+            "label": "3"
+          },
+          {
+            "action": "wait_until",
+            "condition": "hurt_ready:3",
+            "maxTicks": 30
+          },
+          {
+            "action": "cast",
+            "skill": "r",
+            "label": "4"
+          },
+          {
+            "action": "wait_until",
+            "condition": "hurt_ready:4",
+            "maxTicks": 30
+          },
+          {
+            "action": "basic_attack",
+            "label": "follow_a1"
+          },
+          {
+            "action": "basic_attack",
+            "label": "follow_a2"
+          }
+        ]
+      },
+      "provenance": {
+        "evidenceRef": "https://github.com/xOyMoveO/MYRIAD/issues/96#issuecomment-7233469433",
+        "expectedOutcome": "两次补 A 中第一次后存活、第二次击杀。场景仍需逐段同输入核对。",
+        "fixture": "CHERRY_V2 S0 二十分钟共同可购快照，双方用 4770 金和相同配点。"
+      },
+      "opponentOverrides": {
+        "retreatPerActionTick": 0
+      }
+    },
+    {
+      "scenarioId": "yingxiao.backstab_21a34_finisher",
+      "scenarioVersion": 1,
+      "category": "position_advantage",
+      "status": "candidate_l3_partial",
+      "applicableBuilds": [
+        "g1_yingxiao_pa",
+        "g1_yingxiao_ma",
+        "g1_yingxiao_ua"
+      ],
+      "startState": {
+        "distance": 2,
+        "purchases": {
+          "strength": 5,
+          "defense": 3,
+          "cooldown": 2
+        },
+        "targetPurchases": {
+          "strength": 2,
+          "wisdom": 2,
+          "speed": 2,
+          "defense": 2,
+          "cooldown": 2
+        },
+        "facing": "behind",
+        "preconditions": [
+          "pre_positioned_behind"
+        ]
+      },
+      "opponentCondition": "solo",
+      "windows": {
+        "burst": 30,
+        "sustained": 120
+      },
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "w",
+            "label": "2"
+          },
+          {
+            "action": "cast",
+            "skill": "q",
+            "label": "1"
+          },
+          {
+            "action": "wait_until",
+            "condition": "hurt_ready:1",
+            "maxTicks": 30
+          },
+          {
+            "action": "basic_attack",
+            "label": "A"
+          },
+          {
+            "action": "wait_until",
+            "condition": "hurt_ready:A",
+            "maxTicks": 30
+          },
+          {
+            "action": "cast",
+            "skill": "e",
+            "label": "3"
+          },
+          {
+            "action": "wait_until",
+            "condition": "hurt_ready:3",
+            "maxTicks": 30
+          },
+          {
+            "action": "cast",
+            "skill": "r",
+            "label": "4"
+          },
+          {
+            "action": "wait_until",
+            "condition": "hurt_ready:4",
+            "maxTicks": 30
+          },
+          {
+            "action": "basic_attack",
+            "label": "follow_a1"
+          },
+          {
+            "action": "basic_attack",
+            "label": "follow_a2"
+          }
+        ]
+      },
+      "provenance": {
+        "evidenceRef": "https://github.com/xOyMoveO/MYRIAD/issues/96#issuecomment-7233469433",
+        "expectedOutcome": "两次补 A 中第一次后存活、第二次击杀。场景仍需逐段同输入核对。",
+        "fixture": "历史 Lv20/4,885 金；落霞保持朝向，固定场地。"
+      },
+      "opponentOverrides": {
+        "retreatPerActionTick": 0
+      }
+    },
+    {
+      "scenarioId": "yingxiao.return_step",
+      "scenarioVersion": 1,
+      "category": "position_advantage",
+      "status": "candidate_l3_partial",
+      "applicableBuilds": [
+        "g1_yingxiao_pa",
+        "g1_yingxiao_mb",
+        "g1_yingxiao_ua"
+      ],
+      "startState": {
+        "distance": 2.3
+      },
+      "opponentCondition": "solo",
+      "windows": {
+        "burst": 30,
+        "sustained": 120
+      },
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "e"
+          },
+          {
+            "action": "wait_until",
+            "condition": "motion_finished",
+            "maxTicks": 6
+          },
+          {
+            "action": "recast",
+            "skill": "e",
+            "judgment": true
+          },
+          {
+            "action": "basic_attack"
+          }
+        ]
+      }
+    }
+  ]
+}

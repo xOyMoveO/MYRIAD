@@ -1,0 +1,182 @@
+{
+  "scenarioId": "luoxia.zero_preparation",
+  "scenarioVersion": 1,
+  "schemaVersion": 1,
+  "baselineCommit": "d94b3534ef6fcff7d7fef1263b33425575a4a479",
+  "role": "luoxia",
+  "applicableBuilds": "all_terminal_combinations",
+  "category": "zero_preparation",
+  "status": "candidate_l3_partial",
+  "startState": {
+    "distance": 8,
+    "purchases": {
+      "strength": 6,
+      "speed": 3
+    }
+  },
+  "opponentCondition": [
+    "solo",
+    "ally_cc"
+  ],
+  "windows": [
+    "burst",
+    "sustained"
+  ],
+  "delayProfile": [
+    "human_default",
+    "zero_extra_delay"
+  ],
+  "basicAttack": {
+    "flightSpeed": 2.145,
+    "overdrawSpeed": 3.64,
+    "overdrawRange": 26,
+    "source": "src/main/java/com/myriad/character/skills/luoxia/LuoxiaBow.java"
+  },
+  "skills": {
+    "luoxia_dusk_mark": {
+      "source": "src/main/java/com/myriad/character/skills/luoxia/DuskMark.java",
+      "range": 20,
+      "events": [
+        {
+          "effect": "mark_arrow",
+          "kind": "damage",
+          "at": 0,
+          "speed": 2.08,
+          "mark": true
+        }
+      ]
+    },
+    "luoxia_slant_step": {
+      "source": "src/main/java/com/myriad/character/skills/luoxia/SlantStep.java",
+      "events": [],
+      "omitted": "斜掠按实际移动输入决定方向，通用 APL 无需位移。"
+    },
+    "luoxia_feather_burst": {
+      "source": "src/main/java/com/myriad/character/skills/luoxia/FeatherBurst.java",
+      "range": 19,
+      "events": [
+        {
+          "effect": "first_two_arrows",
+          "kind": "damage",
+          "at": 0,
+          "speed": 2.145,
+          "rapid": true
+        },
+        {
+          "effect": "first_two_arrows",
+          "kind": "damage",
+          "at": 5,
+          "speed": 2.145,
+          "rapid": true
+        },
+        {
+          "effect": "third_arrow",
+          "kind": "damage",
+          "at": 10,
+          "speed": 2.145,
+          "rapid": true
+        }
+      ],
+      "motion": 10
+    },
+    "luoxia_last_sun": {
+      "source": "src/main/java/com/myriad/character/skills/luoxia/LastSun.java",
+      "range": "arrow_range",
+      "events": [
+        {
+          "effect": "damage",
+          "kind": "damage",
+          "at": 0,
+          "speed": "arrow_speed"
+        }
+      ],
+      "prepayWindup": "commit_windup"
+    },
+    "luoxia_thousand_feathers": {
+      "source": "src/main/java/com/myriad/character/skills/luoxia/ThousandFeathers.java",
+      "range": 22,
+      "events": [
+        {
+          "effect": "per_round",
+          "kind": "damage",
+          "at": 0,
+          "speed": 2.6,
+          "rapid": true
+        },
+        {
+          "effect": "per_round",
+          "kind": "damage",
+          "at": 12,
+          "speed": 2.6,
+          "rapid": true
+        },
+        {
+          "effect": "per_round",
+          "kind": "damage",
+          "at": 24,
+          "speed": 2.6,
+          "rapid": true
+        }
+      ],
+      "prepayWindup": "commit_windup",
+      "motion": 24
+    },
+    "luoxia_sunset_line": {
+      "source": "src/main/java/com/myriad/character/skills/luoxia/SunsetLine.java",
+      "range": 32,
+      "events": [
+        {
+          "effect": "hero_first",
+          "kind": "damage",
+          "at": 0,
+          "speed": 4.225,
+          "perTargetEffect": [
+            "hero_first",
+            "hero_second",
+            "hero_third"
+          ]
+        }
+      ],
+      "prepayWindup": "commit_windup"
+    }
+  },
+  "execution": {
+    "type": "apl",
+    "steps": [
+      {
+        "action": "cast",
+        "skill": "q"
+      },
+      {
+        "action": "cast",
+        "skill": "e"
+      },
+      {
+        "action": "cast",
+        "skill": "r"
+      },
+      {
+        "action": "basic_attack"
+      },
+      {
+        "action": "wait_until"
+      }
+    ]
+  },
+  "coverageGaps": {
+    "luoxia_slant_step": {
+      "axes": [
+        "damage",
+        "control"
+      ],
+      "reason": "位移及随技能改变落点未纳入通用场景。"
+    },
+    "luoxia_thousand_feathers": {
+      "axes": [
+        "multiTarget"
+      ],
+      "reason": "逐轮三弹道与任意站位交叉须引擎/几何抽检。"
+    }
+  },
+  "scripted": []
+}

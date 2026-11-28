@@ -1,0 +1,258 @@
+{
+  "scenarioId": "keheng.zero_preparation",
+  "scenarioVersion": 1,
+  "schemaVersion": 1,
+  "baselineCommit": "d94b3534ef6fcff7d7fef1263b33425575a4a479",
+  "role": "keheng",
+  "applicableBuilds": "all_terminal_combinations",
+  "category": "zero_preparation",
+  "status": "candidate_l3_partial",
+  "startState": {
+    "distance": 2.4,
+    "purchases": {
+      "wisdom": 6,
+      "cooldown": 3
+    }
+  },
+  "opponentCondition": [
+    "solo",
+    "ally_cc"
+  ],
+  "windows": [
+    "burst",
+    "sustained"
+  ],
+  "delayProfile": [
+    "human_default",
+    "zero_extra_delay"
+  ],
+  "basicAttack": {
+    "range": 3,
+    "source": "src/main/java/com/myriad/combat/VanillaMeleeAttack.java"
+  },
+  "skills": {
+    "keheng_chizhen": {
+      "source": "src/main/java/com/myriad/character/skills/keheng/DelayedNeedleSkill.java",
+      "range": "needle_range",
+      "events": [
+        {
+          "effect": "damage",
+          "kind": "damage",
+          "at": 0,
+          "speed": 1.56,
+          "slow": [
+            "target_action_rate",
+            "target_action_slow_duration"
+          ]
+        }
+      ],
+      "paidWindup": "release_windup"
+    },
+    "keheng_cuopaibu": {
+      "source": "src/main/java/com/myriad/character/skills/keheng/OffbeatStepSkill.java",
+      "events": [
+        {
+          "effect": "shield",
+          "kind": "shield",
+          "at": 0,
+          "duration": "shield_duration",
+          "target": "self"
+        },
+        {
+          "kind": "slow",
+          "at": 0,
+          "rate": "field_actor_and_flight_rate",
+          "duration": "field_duration",
+          "radius": "field_radius"
+        },
+        {
+          "kind": "position",
+          "at": 5,
+          "distance": 2.4
+        }
+      ],
+      "motion": "dash_duration",
+      "basicDuringMotion": true
+    },
+    "keheng_chijie": {
+      "source": "src/main/java/com/myriad/character/skills/keheng/DelayedBoundarySkill.java",
+      "range": "target_range",
+      "events": [
+        {
+          "effect": "damage",
+          "kind": "damage",
+          "at": "field_warning",
+          "area": true
+        },
+        {
+          "kind": "slow",
+          "at": "field_warning",
+          "rate": "field_actor_and_flight_rate",
+          "duration": "field_duration",
+          "area": true
+        }
+      ],
+      "point": true,
+      "fieldRadius": "field_radius"
+    },
+    "keheng_suixing": {
+      "source": "src/main/java/com/myriad/character/skills/keheng/FollowingSecondSkill.java",
+      "events": [
+        {
+          "effect": "damage",
+          "kind": "damage",
+          "at": "field_duration",
+          "radius": "field_radius"
+        },
+        {
+          "kind": "slow",
+          "at": 0,
+          "rate": "field_actor_and_flight_rate",
+          "duration": "field_duration",
+          "radius": "field_radius"
+        }
+      ],
+      "paidWindup": "release_windup",
+      "recast": "cancel_follow",
+      "recastWindow": "field_duration"
+    },
+    "keheng_yimiao": {
+      "source": "src/main/java/com/myriad/character/skills/keheng/BeyondOneSecondSkill.java",
+      "range": "target_range",
+      "events": [
+        {
+          "kind": "slow",
+          "at": "field_warning",
+          "rate": "field_actor_rate",
+          "duration": "field_duration",
+          "area": true
+        },
+        {
+          "effect": "per_pulse",
+          "kind": "damage",
+          "at": "field_warning",
+          "repeat": [
+            "damage_interval",
+            "field_duration"
+          ],
+          "area": true
+        }
+      ],
+      "point": true,
+      "fieldRadius": "field_radius"
+    },
+    "keheng_zhongke": {
+      "source": "src/main/java/com/myriad/character/skills/keheng/FinalPenetrationSkill.java",
+      "range": 14,
+      "events": [
+        {
+          "effect": "damage",
+          "kind": "damage",
+          "at": 0
+        }
+      ],
+      "paidWindup": 16,
+      "preWindupSlow": 0.6
+    }
+  },
+  "execution": {
+    "type": "apl",
+    "steps": [
+      {
+        "action": "cast",
+        "skill": "r"
+      },
+      {
+        "action": "cast",
+        "skill": "e"
+      },
+      {
+        "action": "cast",
+        "skill": "q"
+      },
+      {
+        "action": "cast",
+        "skill": "w"
+      },
+      {
+        "action": "basic_attack"
+      },
+      {
+        "action": "wait_until"
+      }
+    ]
+  },
+  "coverageGaps": {
+    "keheng_cuopaibu": {
+      "axes": [
+        "damage",
+        "control"
+      ],
+      "reason": "错拍步和其他位移在同一条合成轨迹采样。"
+    },
+    "keheng_zhongke": {
+      "axes": [
+        "damage",
+        "control"
+      ],
+      "reason": "终刻走廊采用已对齐的直线。障碍裁断与独立弹道缓时仍需引擎抽检。"
+    },
+    "keheng_suixing": {
+      "axes": [
+        "damage",
+        "control"
+      ],
+      "reason": "随身圈按一维合成距离取留场，未接入双方躲避意图。"
+    },
+    "keheng_hengbu": {
+      "axes": [
+        "support"
+      ],
+      "reason": "进入自有领域才可获得护盾；仅覆盖随身场和错拍步起点。引擎空间相交未接入。"
+    }
+  },
+  "scripted": [
+    {
+      "scenarioId": "keheng.cancel_following",
+      "scenarioVersion": 1,
+      "category": "channel_option",
+      "status": "candidate_l3_partial",
+      "applicableBuilds": [
+        "keheng_kehen",
+        "keheng_suixing",
+        "keheng_yimiao"
+      ],
+      "startState": {
+        "distance": 2.4
+      },
+      "opponentCondition": "solo",
+      "windows": {
+        "burst": 30,
+        "sustained": 120
+      },
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "e"
+          },
+          {
+            "action": "wait_until",
+            "condition": "channel_finished",
+            "maxTicks": 10
+          },
+          {
+            "action": "cancel",
+            "skill": "e",
+            "judgment": true
+          },
+          {
+            "action": "cast",
+            "skill": "q"
+          }
+        ]
+      }
+    }
+  ]
+}

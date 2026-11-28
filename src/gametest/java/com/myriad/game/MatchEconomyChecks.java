@@ -100,6 +100,11 @@ final class MatchEconomyChecks {
                 enemy.addGold(1000);
                 helper.assertTrue(MatchBalance.farmReward(buyer, 100, false) == 145, "Real income gap grants up to 45 percent");
                 helper.assertTrue(MatchBalance.farmReward(rival, 100, false) == 100, "Leading side gains no catch-up");
+                helper.assertTrue(MatchBalance.passiveGoldReward(buyer) == 14 && MatchBalance.passiveGoldReward(rival) == 14,
+                        "Both sides get the same base wage with the global multiplier during an income gap");
+                System.out.printf("[MYRIAD-ECONOMY] income_gap wageBehind=%d wageAhead=%d activeBehind=%d activeAhead=%d%n",
+                        MatchBalance.passiveGoldReward(buyer), MatchBalance.passiveGoldReward(rival),
+                        MatchBalance.farmReward(buyer, 100, false), MatchBalance.farmReward(rival, 100, false));
                 helper.assertTrue(MatchBalance.farmReward(buyer, 100, true) == 100, "Gold gap alone does not boost XP");
                 enemy.setLevel(2);
                 helper.assertTrue(MatchBalance.farmReward(buyer, 100, true) == 115, "Personal level gap still boosts XP");
@@ -259,8 +264,8 @@ final class MatchEconomyChecks {
             before = wallet.getGold();
             long deathTick = server.overworld().getGameTime();
             manager.tick(server, deathTick + GameManager.PASSIVE_GOLD_INTERVAL_TICKS);
-            helper.assertTrue(wallet.getGold() == before + 21 && wallet.getMatchGoldEarned() == 521,
-                    "Spectator waiting receives the 21-gold passive wage, without active farm");
+            helper.assertTrue(wallet.getGold() == before + 14 && wallet.getMatchGoldEarned() == 514,
+                    "Spectator waiting receives the 14-gold passive wage, without active farm");
             System.out.printf("[MYRIAD-ECONOMY] waiting wallet=%d wage=%d income=%d respawnLv15=%d Lv18=%d Lv20=%d%n",
                     wallet.getGold(), wallet.getGold() - before, wallet.getMatchGoldEarned(),
                     HeroRespawnSystem.waitTicks(15, false), HeroRespawnSystem.waitTicks(18, false), wallet.getBuff("hero_respawn"));

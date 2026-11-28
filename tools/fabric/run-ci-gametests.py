@@ -13,12 +13,15 @@ CORE_TESTS = (
     "keheng", "yike", "rivet", "roster_delivery", "world_time", "hero_action_time",
     "arena_fixture", "arena_tower_5v5", "arena_tower_3v3",
 )
+EXTRA_TESTS = ("balance_calibration_damage", "calibration_keheng", "calibration_qingluo",
+               "match_economy", "match_assists", "balance_haste")
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--offline", action="store_true", help="Use only already cached Gradle dependencies")
-parser.add_argument("filters", nargs="*", help="Optional core check subset; default is all core checks")
+parser.add_argument("filters", nargs="*", help="Explicit check filters; default is all core checks")
 args = parser.parse_args()
-if set(args.filters) - set(CORE_TESTS):
-    parser.error("Unknown core filters: " + ", ".join(sorted(set(args.filters) - set(CORE_TESTS))))
+unknown = set(args.filters) - set(CORE_TESTS + EXTRA_TESTS)
+if unknown:
+    parser.error("Unknown filters: " + ", ".join(sorted(unknown)))
 root = Path(__file__).resolve().parents[2]
 output = root / "build/reports/fabric-ci"
 output.mkdir(parents=True, exist_ok=True)
