@@ -24,14 +24,14 @@ button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);co
 </main>
 <script id="model">
 const DATA=/*AUDIT_DATA*/null;
-const tabs=["角色与连招","经济与配点","普攻拆塔","改值与复审","引擎对照"];
+const tabs=["角色与连招","经济与配点","普攻拆塔","改值与复审","引擎对照","夜影 21A34"];
 const initial={tab:0,role:"luoxia",mode:"当前",level:20,branch:"AAA",scene:"独自出手",minute:12,wave:true,manual:false,record:true,shop:20};
 function transition(state,patch){return {...state,...patch}}
 function rowsAt(s){const role=DATA.roles[s.role][s.mode],stage=role.stages[s.level],branch=stage.branches[s.branch];return {role,stage,branch,sim:branch.scenes[s.scene]}}
 function exceptionState(s){const exp=DATA.experiment,item=exp.rows[s.manual?"manual":"current"],record=s.record && exp.record;const flags=item.signals.filter(x=>!(x.includes("已记")||x.includes("日期")||x.includes("无设计")||x.includes("清理")));if(record&&item.seconds>exp.reference[1]){if(item.seconds<record.overrideRange[0]||item.seconds>record.overrideRange[1])flags.push("超出已记区间，建议复审");if(record.reviewAt<=DATA.asOf)flags.push("复审日期已到")}else if(!record&&item.seconds>exp.reference[1])flags.push("无设计例外记录");return {item,record,flags}}
 </script>
 <script>
-let state={...initial};
+let state={...initial,tab:location.hash==="#21A34"?5:0};
 const el=id=>document.getElementById(id);
 const esc=s=>String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
 const num=(v,n=2)=>v==null?"—":Number(v).toLocaleString("zh-CN",{maximumFractionDigits:n});
@@ -48,7 +48,7 @@ const guides=[
  [["查看原值",{manual:false,record:true}],["换成手改 100 刻",{manual:true,record:true}],["移走例外说明",{manual:true,record:false}]],
  [["当前引擎输入",{manual:false}],["手改版本同输入",{manual:true}]]
 ];
-function guide(){return sub("逐步对照")+'<div class="guide">'+guides[state.tab].map(([name],i)=>'<button data-step="'+i+'">'+esc(name)+'</button>').join("")+'</div>'}
+function guide(){if(!guides[state.tab])return "";return sub("逐步对照")+'<div class="guide">'+guides[state.tab].map(([name],i)=>'<button data-step="'+i+'">'+esc(name)+'</button>').join("")+'</div>'}
 function draw(){
  el("nav").replaceChildren();tabs.forEach((n,i)=>{const b=document.createElement("button");b.textContent=n;b.setAttribute("aria-pressed",state.tab===i);b.onclick=()=>change({...initial,tab:i});el("nav").append(b)});
  el("controls").replaceChildren();const s=state;
@@ -92,11 +92,20 @@ function draw(){
  (s.manual&&DATA.client?para("同一 JAR 已进入独立 Minecraft 客户端训练场。原生 R 和左键提交，法力 "+num(DATA.client.before.mana)+" → "+num(DATA.client.after.mana)+"，R 冷却 "+num(DATA.client.after.cooldowns[3])+" 刻，结束时持有输入 "+DATA.client.heldAtEnd+"。"):"")+
  sub("本次报告")+flags.map(para).join("")+details("逐刻观察",table(["真实刻","行动倍率","累计掉血"],item.events.map(e=>[e.tick,num(e.rate),num(e.hpLost)])))+
  para("构建制品 SHA-256 前 16 位为 "+item.jarHash.slice(0,16)+"。移走设计例外后，观察值和已构建制品可在这里再次核对。");
- }else{
+ }else if(s.tab===4){
  const results=s.manual?DATA.manualProbes:DATA.probes;
  html=head("同输入的离线计算与服务端读数")+lead(results.filter(r=>r.match).length+" / "+results.length+" 个数值与服务端相符")+
  para("合成世界独立操作。候选列为尚未接入游戏的公式比较，夜影首点力量保留旧首点智慧的边际盾量。")+
  table(["场景","当前模型","该构建实读","候选试算","对照"],results.map(r=>[r.name,num(r.model,3),num(r.engine,3),num(r.candidate,3),r.match?"相符":"有差异"]));
+ }else{
+ const review=DATA.nightCalibration;
+ const entries=Object.entries(review.scenes);
+ const when=t=>t==null?"—":num(t/20)+" 秒";
+ html=head("夜影 · 21A34")+lead("策划反馈「"+review.feedback+"」")+
+ para("化影 → 影杀 → 普攻 → 影袭 → 绝影追击。沿用 Lv"+review.level+"、双方各有 "+num(review.gold)+" 金预算的满血落霞样例。首套余血在大招命中时读取。")+
+ table(["方位","首套后落霞余血","第二个影杀就绪","第二个影袭就绪","击杀时点"],entries.map(([f,v])=>[f,v.firstRemainingPct==null?"—":num(v.firstRemainingPct,1)+"%",when(v.shortSkills["1"].readyAt),when(v.shortSkills["3"].readyAt),v.kill?when(v.kill.tick)+" · "+v.kill.key:"60 秒内未击杀"]))+
+ para("从按下化影起计时。首套后的试算假定可以持续贴身，1、3 转好优先施放，空档补打完整普攻。伤害、余血与秒数为离线读数。")+
+ entries.map(([f,v])=>details(f+" · 逐次命中",table(["距开手","按键","本次伤害","落霞余血"],v.hits.map(hit=>[when(hit.tick),hit.key,num(hit.damage),num(hit.hpLeft)])))).join("");
  }
  el("body").innerHTML=html+guide();el("body").querySelectorAll("[data-step]").forEach((btn,i)=>btn.onclick=()=>change(guides[state.tab][i][1]));
 }

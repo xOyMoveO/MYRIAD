@@ -37,7 +37,17 @@ def ranks(level, skills, bits, passive_rank):
 
 
 def simulate(
-    rules, role, bits, level, points, target_points, candidate, assisted, exclude=None, full_trace=False
+    rules,
+    role,
+    bits,
+    level,
+    points,
+    target_points,
+    candidate,
+    assisted,
+    exclude=None,
+    full_trace=False,
+    night_opener=False,
 ):
     hero = rules["roles"][role]
     skills = hero["skills"]
@@ -61,6 +71,20 @@ def simulate(
         "keheng": [r, e, 2, 3],
         "qingluo": [e, 2, r, 3],
     }[role]
+    # Separate player-reported opener from the common priority script used for fair A/B comparisons.
+    if night_opener and (
+        role != "yingxiao" or bits != (0, 0, 0) or exclude is not None or not all(rk.values())
+    ):
+        raise ValueError("21A34 uses the learned offensive AAA kit, with each input available")
+    opening = [3, 2, -1, e, r] if night_opener else []
+    if night_opener:
+        priority = [
+            2,
+            e,
+        ]  # After the reported opener: Q/E on recovery and full-strength basics in the gaps.
+    keys = {3: "2", 2: "1", -1: "A", e: "3", r: "4"}
+    inputs, hits = [], []
+    next_basic = 0
     order = count()
     queue = []
     trace = []
@@ -156,6 +180,15 @@ def simulate(
             base, step = timing["backstab"]
             amount *= 1 + (base + step * (rk[0] - 1)) / 100
         total += amount * against
+        if night_opener and death is None:
+            hits.append(
+                dict(
+                    key=keys[i],
+                    tick=tick,
+                    damage=round(amount * against, 3),
+                    hpLeft=round(max(0.0, href - total), 3),
+                )
+            )
         record("普攻命中" if is_basic else skills[i]["name"] + " · 命中", amount * against)
         if death is None and total >= href:
             death = tick / 20
@@ -222,13 +255,16 @@ def simulate(
             elif i == 7:
                 strike(1, 0)  # One first hero, never add later pierced targets.
         elif role == "yingxiao":
-            if i == 7:
+            if i == 3:
+                # Shadow Vanish grants invisibility and move speed. Facing at the next hit is a scene input.
+                record("化影 · 隐身与移速生效")
+            elif i == 7:
                 shield(i, 0, 80)
             elif i == 6:
 
                 def execution():
                     nonlocal start_back
-                    start_back = tick + (30 if assisted else 10)
+                    start_back = tick + (30 if assisted and not night_opener else 10)
                     hit(i, damage_amount(i), token)
 
                 at(tick + 16, execution)
@@ -296,11 +332,13 @@ def simulate(
         commits += 1
         base_cd = skills[i]["cooldown"][rk[i] - 1]
         ready[i] = tick + max(1, int(base_cd * stats["cdFactor"]))
+        if night_opener and death is None:
+            inputs.append(dict(key=keys[i], tick=tick, readyAt=ready[i]))
         record(skills[i]["name"] + " · 提交后法力", mana)
         ability(i, token)
 
     def basic():
-        nonlocal lock
+        nonlocal lock, next_basic
         base = hero["attack"] + stats["extraAD"]
         if role == "luoxia":
             work = rules["basicDraw"]
@@ -317,7 +355,14 @@ def simulate(
             if role == "qingluo":
                 base = rules["mageBasic"] + rules["mageRatio"] * stats["extraAP"]
             at(tick + (1 if role == "qingluo" else 0), hit, -1, base)
-            lock = tick + ceil(20 / stats["speed"] - 1e-9)
+            next_basic = tick + ceil(20 / stats["speed"] - 1e-9)
+            if night_opener:
+                if death is None:
+                    inputs.append(dict(key="A", tick=tick, readyAt=next_basic))
+                # One input per tick. Vanilla melee recovery limits the next A, while E can start earlier.
+                lock = tick + 1
+            else:
+                lock = next_basic
 
     def drain():
         while queue and queue[0][0] <= tick:
@@ -332,13 +377,19 @@ def simulate(
                 del shields[key]
         drain()
         if tick >= lock:
-            available = [i for i in priority if active(i) and tick >= ready.get(i, 0)]
+            requested = opening[:1] if opening else priority
+            available = [i for i in requested if active(i) and tick >= ready.get(i, 0)]
             chosen = next((i for i in available if skills[i]["mana"][rk[i] - 1] <= mana), None)
             if chosen is None:
                 if available:
                     blocked += 1
-                basic()
+                if (not opening or opening[0] == -1) and (not night_opener or tick >= next_basic):
+                    if opening:
+                        opening.pop(0)
+                    basic()
             else:
+                if opening:
+                    opening.pop(0)
                 cast_token += 1
                 i = chosen
                 prepare = skills[i]["prepare"]
@@ -387,7 +438,7 @@ def simulate(
         corridor = "慢于参考"
     else:
         corridor = "在参考范围"
-    return dict(
+    result = dict(
         corridor=corridor,
         budget=round(budget, 4),
         deniedBasics=missed,
@@ -402,3 +453,14 @@ def simulate(
         trace=trace,
         ranks=rk,
     )
+    if night_opener:
+        # The first R impact includes the whole 21A34 opener. Subsequent hits are recorded up to lethal.
+        first_r = next((hit for hit in hits if hit["key"] == "4"), None)
+        result["rotation"] = dict(
+            inputs=inputs,
+            hits=hits,
+            targetHp=href,
+            firstR=first_r,
+            kill=hits[-1] if death is not None else None,
+        )
+    return result

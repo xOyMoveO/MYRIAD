@@ -363,6 +363,82 @@ def roster_audit(rules, curves):
     return roles
 
 
+def night_calibration(rules, data):
+    # Human evidence fixes the order and the qualitative result; the benchmark supplies the build and clock.
+    night = data["roles"]["yingxiao"]["当前"]
+    level = 20
+    options = {}
+    for facing, rear in (("正面开手", False), ("背面开手", True)):
+        sim = simulate(
+            rules,
+            "yingxiao",
+            (0, 0, 0),
+            level,
+            night["economy"]["points"],
+            night["defender"]["points"],
+            False,
+            rear,
+            night_opener=True,
+        )
+        replay = sim["rotation"]
+        short_skills = {}
+        for key in ("1", "3"):
+            casts = [event for event in replay["inputs"] if event["key"] == key]
+            impacts = [event for event in replay["hits"] if event["key"] == key]
+            short_skills[key] = dict(
+                readyAt=casts[0]["readyAt"] if casts else None,
+                secondCast=casts[1] if len(casts) > 1 else None,
+                secondHit=impacts[1] if len(impacts) > 1 else None,
+            )
+        # If an earlier hit is lethal, the target has zero remaining HP at the nominal end of the opener.
+        residual = replay["firstR"]["hpLeft"] if replay["firstR"] else 0 if replay["kill"] else None
+        options[facing] = dict(
+            **replay,
+            firstRemainingPct=None if residual is None else 100 * residual / replay["targetHp"],
+            shortSkills=short_skills,
+        )
+    return dict(
+        feedback="要等第二轮技能，出手是21A34",
+        level=level,
+        gold=data["curve"][-1]["income"],
+        points=night["economy"]["points"],
+        defender=night["defender"]["points"],
+        scenes=options,
+    )
+
+
+def night_table(calibration):
+    rows = [
+        "## 夜影 21A34 实战对照",
+        "",
+        f'策划对当前玩法的反馈为「{calibration["feedback"]}」。按 1 至 4 对应 Q、W、E、R，开手为化影、影杀、普攻、影袭、绝影追击。',
+        "",
+        f'两组离线回放沿用 Lv{calibration["level"]}、相同 {calibration["gold"]:,} 金预算的样例。落霞满血，夜影选暗影猎手、影袭、绝影追击。起手方位分别试算。下表从按下化影计时，第一套结束取大招实际命中的时点。',
+        "",
+        "|开手方位|第一套后落霞余血|第二个影杀就绪|第二个影袭就绪|击杀时间及收尾|",
+        "|---|---:|---:|---:|---|",
+    ]
+    for facing, item in calibration["scenes"].items():
+        hp = item["firstRemainingPct"]
+        remaining = "未完成" if hp is None else f"{hp:.1f}%"
+        second = item["shortSkills"]
+        kill = item["kill"]
+        finish = "60 秒内未击杀" if kill is None else f'{kill["tick"]/20:g} 秒（{kill["key"]}）'
+        ready = [
+            "—" if second[key]["readyAt"] is None else f'{second[key]["readyAt"]/20:g} 秒'
+            for key in ("1", "3")
+        ]
+        rows.append(f"|{facing}|{remaining}|{ready[0]}|{ready[1]}|{finish}|")
+    rows.extend(
+        [
+            "",
+            "后续脚本在普攻完整恢复时补 A，1 和 3 转好后优先施放。化影提供隐身和移速，下一次施法提交时破隐；背击另看落点与朝向。两组的击杀时点和余血都是模型读数。",
+            "",
+        ]
+    )
+    return rows
+
+
 def markdown(data):
     current = data["experiment"]["rows"]["current"]
     manual = data["experiment"]["rows"]["manual"]
@@ -392,6 +468,7 @@ def markdown(data):
         "",
         client_line,
         "",
+        *night_table(data["nightCalibration"]),
         "## 四个角色的终局筛查",
         "",
         "下表为强制 Lv20、持有同一笔 20 分钟收入、当前规则下两条固定脚本的逐列最大值。百分比使用同级参考脆皮。分支按被动、E、R 顺序显示。",
@@ -438,10 +515,17 @@ def main():
     parser.add_argument(
         "--trace", nargs=2, metavar=("ROLE", "BRANCH"), help="Print a full 60-second event trace as JSON"
     )
+    parser.add_argument(
+        "--night-opener",
+        action="store_true",
+        help="Replay the reported 21A34 opening with --trace yingxiao AAA",
+    )
     parser.add_argument("--scene", choices=SCENES, default=SCENES[0])
     parser.add_argument("--mode", choices=MODES, default=MODES[0])
     parser.add_argument("--level", type=int, choices=range(1, 21), default=20)
     args = parser.parse_args()
+    if args.night_opener and (args.trace != ["yingxiao", "AAA"] or args.level < 4):
+        parser.error("--night-opener takes --trace yingxiao AAA and level 4 or above")
     sample = HERE / "samples"
     snap = json.loads((sample / "balance-snapshot.json").read_text())
     evidence = json.loads((sample / "engine-evidence.json").read_text())
@@ -483,6 +567,7 @@ def main():
             candidate,
             args.scene == SCENES[1],
             full_trace=True,
+            night_opener=args.night_opener,
         )
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return
@@ -520,6 +605,7 @@ def main():
         manualProbes=micro(rules, evidence["manual"]["evidence"]["samples"]),
         count5000=sum(1 for _ in builds(rules["price"], 5000)),
     )
+    data["nightCalibration"] = night_calibration(rules, data)
     args.out.mkdir(parents=True, exist_ok=True)
     (args.out / "samples").mkdir(exist_ok=True)
     encoded = json.dumps(data, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
