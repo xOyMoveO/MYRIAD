@@ -68,8 +68,12 @@ final class BattlefieldMonsterChecks {
     }
 
     static void rosterCamps(GameTestHelper helper) {
+        rosterCamps(helper, List.of(CharacterType.YIKE, CharacterType.SHUO, CharacterType.RIVET, CharacterType.CHIXIAO));
+    }
+
+    static void rosterCamps(GameTestHelper helper, List<CharacterType> roles) {
         var encounters = new ArrayList<Encounter>();
-        for (var role : List.of(CharacterType.YIKE, CharacterType.SHUO, CharacterType.RIVET, CharacterType.CHIXIAO)) {
+        for (var role : roles) {
             encounters.add(new Encounter(role.getId() + "_scout", MonsterType.CHERRY_SCOUT_BOT, 1, 1, 1, 400, role));
             encounters.add(new Encounter(role.getId() + "_walker", MonsterType.CHERRY_HEAVY_WALKER, 1, 1, 1, 800, role));
         }
@@ -244,6 +248,12 @@ final class BattlefieldMonsterChecks {
                             target.getBoundingBox().getCenter());
                     BasicAttackSystem.tryAttack(player, 0);
                     action = "cannon_input";
+                } else if (MagicBullet.isMage(player)) {
+                    if (MagicBullet.remaining(player) > 0) continue;
+                    player.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES,
+                            target.getBoundingBox().getCenter());
+                    MagicBullet.tryFire(player, player.getMainHandItem());
+                    action = "magic_basic_input";
                 } else if (player.getAttackStrengthScale(.5F) >= 1) {
                     player.getRandom().setSeed(689L + i * 37L + fight);
                     player.attack(target);

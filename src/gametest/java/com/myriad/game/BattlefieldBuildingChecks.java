@@ -40,8 +40,8 @@ final class BattlefieldBuildingChecks {
     private static final int HELD_GOLD = 500;
     private static final List<CharacterType> PUSHERS = List.of(CharacterType.LUOXIA, CharacterType.SHUO, CharacterType.QINGLUO);
     private static final List<CharacterType> OPPONENTS = List.of(CharacterType.RIVET, CharacterType.YINGXIAO, CharacterType.XUANCHEN);
-    private static final List<CharacterType> ROSTER_PUSHERS = List.of(CharacterType.YIKE, CharacterType.SHUO, CharacterType.RIVET);
-    private static final List<CharacterType> ROSTER_OPPONENTS = List.of(CharacterType.CHIXIAO, CharacterType.LUOXIA, CharacterType.QINGLUO);
+    private static final List<CharacterType> ROSTER_111 = List.of(
+            CharacterType.YIKE, CharacterType.SHUO, CharacterType.RIVET, CharacterType.CHIXIAO);
     private static final Vec3 HOLDING = new Vec3(336.5, 64, 115.5);
 
     private record Build(int level, int strength, int wisdom, int speed) {
@@ -70,14 +70,24 @@ final class BattlefieldBuildingChecks {
     private static final Build LATE = new Build(18, 5, 3, 4);
 
     static void run(GameTestHelper helper) {
-        run(helper, false);
+        run(helper, List.of(), PUSHERS, OPPONENTS);
     }
 
     static void roster(GameTestHelper helper) {
-        run(helper, true);
+        roster(helper, ROSTER_111);
     }
 
-    private static void run(GameTestHelper helper, boolean rosterOnly) {
+    static void roster(GameTestHelper helper, List<CharacterType> roles) {
+        var pushers = roles.subList(0, 3);
+        var opponents = new ArrayList<>(roles.subList(3, roles.size()));
+        for (var alternate : List.of(CharacterType.LUOXIA, CharacterType.QINGLUO, CharacterType.YINGXIAO)) {
+            if (opponents.size() < 3 && !roles.contains(alternate)) opponents.add(alternate);
+        }
+        run(helper, roles, pushers, opponents);
+    }
+
+    private static void run(GameTestHelper helper, List<CharacterType> roles,
+            List<CharacterType> pushers, List<CharacterType> opponents) {
         var suite = new ArenaFixtureChecks.Suite(helper.getLevel().getServer());
         try {
             suite.install();
@@ -90,12 +100,11 @@ final class BattlefieldBuildingChecks {
             for (int seat = 0; seat < 6; seat++) suite.player(seat);
             for (var profile : MatchTempo.values()) {
                 if (!profile.name().startsWith("CHERRY_")) continue;
-                if (rosterOnly && profile != MatchTempo.CHERRY_V2) continue;
+                if (!roles.isEmpty() && profile != MatchTempo.CHERRY_V2) continue;
                 try {
-                    var replay = new Replay(suite, profile, rosterOnly ? ROSTER_PUSHERS : PUSHERS,
-                            rosterOnly ? ROSTER_OPPONENTS : OPPONENTS);
-                    if (rosterOnly) {
-                        for (var role : List.of(CharacterType.YIKE, CharacterType.SHUO, CharacterType.RIVET, CharacterType.CHIXIAO)) {
+                    var replay = new Replay(suite, profile, pushers, opponents);
+                    if (!roles.isEmpty()) {
+                        for (var role : roles) {
                             replay.wholeWaves(role);
                         }
                     } else {

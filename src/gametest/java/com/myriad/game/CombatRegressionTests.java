@@ -1,5 +1,6 @@
 package com.myriad.game;
 
+import com.myriad.character.CharacterType;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -18,6 +19,11 @@ import com.myriad.combat.DamageCalc;
 
 /** Explicit /test or runGameTestServer only; never runs as part of a match. */
 public final class CombatRegressionTests {
+    private static final List<CharacterType> BALANCE_ROSTER_112 = List.of(
+            CharacterType.TIANXING, CharacterType.SULAN, CharacterType.FENJUE);
+    private static final List<CharacterType> BALANCE_ROSTER_113 = List.of(
+            CharacterType.LINGYUAN, CharacterType.HANZE, CharacterType.XUANCHEN, CharacterType.YUNSHENG);
+
     public static void register() {
         register("faction_identity",FactionIdentityChecks::run);
         register("training_ui",TrainingUiChecks::run);
@@ -28,6 +34,8 @@ public final class CombatRegressionTests {
         register("balance_roster_lane", BattlefieldLaneChecks::roster);
         register("balance_roster_towers", BattlefieldBuildingChecks::roster);
         register("balance_roster_camps", BattlefieldMonsterChecks::rosterCamps);
+        registerBattlefieldRoster("balance_roster_112", BALANCE_ROSTER_112);
+        registerBattlefieldRoster("balance_roster_113", BALANCE_ROSTER_113);
         register("match_economy", MatchEconomyChecks::run);
         register("match_assists", MatchAssistChecks::run);
         register("cherry_rift_camps", CherryRiftCampChecks::run);
@@ -72,6 +80,12 @@ public final class CombatRegressionTests {
             verifyMeleeArc(helper);
             helper.succeed();
         });
+    }
+
+    private static void registerBattlefieldRoster(String name, List<CharacterType> roles) {
+        register(name + "_lane", helper -> BattlefieldLaneChecks.roster(helper, roles));
+        register(name + "_camps", helper -> BattlefieldMonsterChecks.rosterCamps(helper, roles));
+        register(name + "_towers", helper -> BattlefieldBuildingChecks.roster(helper, roles));
     }
 
     private static void register(String name, Consumer<GameTestHelper> function) {

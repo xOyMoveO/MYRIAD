@@ -8,6 +8,7 @@ import com.myriad.character.rework.FirstGroupGrowth;
 import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.combat.BasicAttackSystem;
 import com.myriad.combat.DamageCalc;
+import com.myriad.combat.MagicBullet;
 import com.myriad.player.LevelSystem;
 import com.myriad.player.PlayerData;
 import com.myriad.player.PlayerDataProvider;
@@ -29,6 +30,10 @@ final class BattlefieldLaneChecks {
     private BattlefieldLaneChecks() {}
 
     static void roster(GameTestHelper helper) {
+        roster(helper, List.of(CharacterType.YIKE, CharacterType.SHUO, CharacterType.RIVET, CharacterType.CHIXIAO));
+    }
+
+    static void roster(GameTestHelper helper, List<CharacterType> roles) {
         var suite = new ArenaFixtureChecks.Suite(helper.getLevel().getServer());
         var config = MatchArena.configuration(suite.world, MatchArena.Mode.DUEL, "myriad_match_tempo.json");
         try {
@@ -41,7 +46,7 @@ final class BattlefieldLaneChecks {
                     .findFirst().orElseThrow();
             var initialLane = LaneSystem.snapshot();
             long start = match.getMatchStartTime();
-            for (var role : List.of(CharacterType.YIKE, CharacterType.SHUO, CharacterType.RIVET, CharacterType.CHIXIAO)) {
+            for (var role : roles) {
                 suite.clock(start);
                 LaneSystem.restore(suite.server.overworld(), initialLane.deepCopy());
                 if (role == CharacterType.YIKE) {
@@ -76,6 +81,7 @@ final class BattlefieldLaneChecks {
         var defender = match.factionOf(suite.opponent(hero));
         var data = PlayerDataProvider.get(hero);
         AbilityRuntime.clear(hero);
+        MagicBullet.clearFor(hero.getUUID());
         data.clearSkillCooldowns();
         data.setCharacterId(role.getId());
         data.refundAllSkillPointsForTraining();
@@ -117,6 +123,7 @@ final class BattlefieldLaneChecks {
         var strikes = new com.google.gson.JsonArray();
         int basicReady = 1;
         int finish = 0;
+        boolean magicBasic = MagicBullet.isMage(hero);
         for (int tick = 1; tick <= 1500; tick++) {
             suite.clock(start + elapsed + tick);
             var target = enemies.stream().filter(Mob::isAlive).findFirst().orElse(null);
@@ -132,12 +139,14 @@ final class BattlefieldLaneChecks {
             }
             aim(hero, target.getBoundingBox().getCenter());
             if (tick >= basicReady && BasicAttackSystem.canAttackNow(hero, data)) {
-                DamageGrowthChecks.swing(hero, target);
+                if (magicBasic) MagicBullet.tryFire(hero, hero.getMainHandItem());
+                else DamageGrowthChecks.swing(hero, target);
                 basicReady = tick + BasicAttackSystem.cooldownTotal(hero);
             } else if (tick % 2 == 0 && data.getCooldown(opener.getId()) == 0 && data.getMana() >= opener.manaCost(qRank)) {
                 SkillSystem.cast(hero, 0);
             }
             AbilityRuntime.tick(hero);
+            if (magicBasic) MagicBullet.tickBullets(hero, data);
             data.tickCooldowns();
             for (var enemy : enemies) enemy.damageCooldownTime = Math.max(0, enemy.damageCooldownTime - 1);
             float after = enemies.stream().map(LaneSystem::health).reduce(0F, Float::sum);
@@ -150,7 +159,7 @@ final class BattlefieldLaneChecks {
             }
         }
         var row = sample("clear_wave", MatchTempo.CHERRY_V2, elapsed);
-        row.addProperty("variant", "clustered_melee_q_basic_fixed_reengage");
+        row.addProperty("variant", magicBasic ? "clustered_magic_q_basic_fixed_reengage" : "clustered_melee_q_basic_fixed_reengage");
         row.addProperty("hero", role.getId());
         row.addProperty("heroLevel", heroLevel);
         row.addProperty("strength", strength);
