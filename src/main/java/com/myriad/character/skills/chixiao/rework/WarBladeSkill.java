@@ -7,7 +7,7 @@ import java.util.List;
 
 /** Independent reusable branch. */
 public final class WarBladeSkill extends AbilitySkill {
-    private static final SupportAmount SHIELD = new SupportAmount("shield", 230, 87.5f, .7f);
+    private static final SupportAmount SHIELD = new SupportAmount(SupportEffect.SHIELD, SupportScaling.TOTAL_SPELL, 230, 87.5f, .7f);
 
     @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(SHIELD); }
 

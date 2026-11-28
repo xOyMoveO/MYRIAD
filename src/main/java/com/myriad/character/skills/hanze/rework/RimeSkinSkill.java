@@ -8,7 +8,7 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 
 /** Independent branch; no gameplay switches in the batch registry. */
 public final class RimeSkinSkill extends AbilitySkill {
-    private static final SupportAmount SHIELD = new SupportAmount("shield", 65, 24, .35f);
+    private static final SupportAmount SHIELD = new SupportAmount(SupportEffect.SHIELD, SupportScaling.TOTAL_SPELL, 65, 24, .35f);
 
     @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(SHIELD); }
 

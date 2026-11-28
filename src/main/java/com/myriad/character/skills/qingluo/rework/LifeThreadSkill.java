@@ -6,8 +6,8 @@ import net.minecraft.world.phys.Vec3;
 import static com.myriad.combat.DamageCalc.Kind.*;
 /** Independent reusable branch. */
 public final class LifeThreadSkill extends AbilitySkill {
-    private static final SupportAmount SHIELD = new SupportAmount("shield", 150, 43.75f, .7f);
-    private static final SupportAmount HEAL = new SupportAmount("heal", 20, 8.75f, .15f);
+    private static final SupportAmount SHIELD = new SupportAmount(SupportEffect.SHIELD, SupportScaling.TOTAL_SPELL, 150, 43.75f, .7f);
+    private static final SupportAmount HEAL = new SupportAmount(SupportEffect.HEAL, SupportScaling.TOTAL_SPELL, 20, 8.75f, .15f);
 
     @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(SHIELD, HEAL); }
 

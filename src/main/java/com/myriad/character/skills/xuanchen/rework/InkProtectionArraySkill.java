@@ -13,7 +13,7 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class InkProtectionArraySkill extends AbilitySkill {
-    private static final SupportAmount SHIELD = new SupportAmount("shield", 60, 20.7f, .35f);
+    private static final SupportAmount SHIELD = new SupportAmount(SupportEffect.SHIELD, SupportScaling.TOTAL_SPELL, 60, 20.7f, .35f);
 
     @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(SHIELD); }
 

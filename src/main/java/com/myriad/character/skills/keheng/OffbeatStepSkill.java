@@ -5,7 +5,7 @@ import com.myriad.character.ability.*;
 public final class OffbeatStepSkill extends KehengSkill {
     public static final int FIELD_TICKS = 30, SHIELD_TICKS = 40, DASH_TICKS = 5;
     public static final double FIELD_RADIUS = 2, FIELD_RATE = .8, DASH_RANGE = 4.5;
-    private static final SupportAmount SHIELD = new SupportAmount("shield", 35, 12.5f, .15f);
+    private static final SupportAmount SHIELD = new SupportAmount(SupportEffect.SHIELD, SupportScaling.TOTAL_SPELL, 35, 12.5f, .15f);
 
     @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(SHIELD); }
 

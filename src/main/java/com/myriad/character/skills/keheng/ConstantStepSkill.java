@@ -5,7 +5,7 @@ import com.myriad.character.ability.*;
 /** Entry edges and the independent real-time internal cooldown belong to the field owner. */
 public final class ConstantStepSkill extends KehengSkill {
     public static final int SHIELD_TICKS = 40, COOLDOWN_TICKS = 240;
-    private static final SupportAmount SHIELD = new SupportAmount("shield", 75, 18, .3f);
+    private static final SupportAmount SHIELD = new SupportAmount(SupportEffect.SHIELD, SupportScaling.TOTAL_SPELL, 75, 18, .3f);
 
     @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(SHIELD); }
 

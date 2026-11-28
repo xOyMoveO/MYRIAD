@@ -118,13 +118,13 @@ final class FirstGroupRegressionChecks {
                 d.setFirstGroupAttribute("strength",2); FirstGroupGrowth.apply(p,d);
                 h.assertTrue(p.getAttributeValue(ModAttributes.PHYSICAL_ATTACK)==baseAttack + 2 * 15
                         && p.getAttributeValue(ModAttributes.SPELL_POWER)==30, "Strength buys 15 physical attack per point");
-                var physicalFormula=AbilityDamageFormula.purchased(com.myriad.combat.DamageCalc.Kind.PHYSICAL,45,15,.50f);
+                var physicalFormula=AbilityDamageFormula.bonusPhysical(45,15,.50f);
                 var context=AbilityRuntime.context(p,skills.get(2));
                 float baseSpell=context.spellPowerValue(45,15,.55f);
                 float basePhysical=physicalFormula.value(context);
                 h.assertTrue(context.totalPhysicalAttack==baseAttack+30 && context.totalSpellPower==30
-                        && context.purchasedPhysicalAttack==30 && context.purchasedSpellPower==0,
-                        "Cast context distinguishes total and purchased attributes");
+                        && context.bonusPhysicalAttack==30 && context.purchasedSpellPower==0,
+                        "Cast context distinguishes total, bonus physical and purchased spell attributes");
                 d.setFirstGroupAttribute("strength",3); FirstGroupGrowth.apply(p,d);
                 var strong=AbilityRuntime.context(p,skills.get(2));
                 h.assertTrue(strong.spellPowerValue(45,15,.55f)==baseSpell

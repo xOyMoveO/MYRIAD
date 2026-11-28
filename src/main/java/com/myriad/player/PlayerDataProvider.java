@@ -691,11 +691,13 @@ public final class PlayerDataProvider {
         }
     }
 
+    public static final double AZURE_HORN_ATTACK_BONUS = .15;
+
     /** 四只大型野怪的阵营共享增益；属性修饰器在到期时自动移除。 */
     private static void applyBossBuffs(ServerPlayer player, PlayerData data) {
         long now = player.level().getGameTime();
         applyTimedModifier(player, ModAttributes.PHYSICAL_ATTACK, "myriad:buff_azure_horn_attack",
-                0.15, data.getAzureHornUntil() > now);
+                AZURE_HORN_ATTACK_BONUS, data.getAzureHornUntil() > now);
         applyTimedModifier(player, ModAttributes.SPELL_POWER, "myriad:buff_vermilion_flame_spell",
                 0.15, data.getVermilionFlameUntil() > now);
         applyTimedModifier(player, Attributes.MOVEMENT_SPEED, "myriad:buff_gale_roc_speed",
@@ -750,7 +752,7 @@ public final class PlayerDataProvider {
             LAST_PLAYER_DEATH_EVENT.remove(player.getUUID());
             com.myriad.game.BaseRules.logout(player);
             com.myriad.combat.KnockbackBuffer.clear(player.getUUID());
-            com.myriad.game.TacticalSupplySystem.clearRegeneration(player.getUUID());
+            com.myriad.game.TacticalSupplySystem.clearRegeneration(player);
             com.myriad.character.skills.yingxiao.YingShaSkill.clearFor(player.getUUID());
             com.myriad.character.skills.tianxing.LeiJieZhanSkill.clearFor(player.getUUID());
             com.myriad.character.skills.xuanchen.LingFuSkill.clearFor(player.getUUID());
@@ -868,9 +870,9 @@ public final class PlayerDataProvider {
     private static final net.minecraft.resources.Identifier OUT_OF_COMBAT_SPEED =
             Identifier.fromNamespaceAndPath(Myriad.MODID, "yingxiao_out_of_combat_speed");
     /** 脱离战斗 5 秒判定 */
-    private static final long OUT_OF_COMBAT_TICKS = 100;
+    public static final int COMBAT_WINDOW_TICKS = 100;
     /** “生命恢复”属性在战斗状态下仅保留10%，技能治疗、吸血与泉水不走该倍率。 */
-    private static final double IN_COMBAT_HEALTH_REGEN_MULTIPLIER = 0.10;
+    public static final double IN_COMBAT_HEALTH_REGEN_MULTIPLIER = 0.10;
 
     /**
      * 将内部的每秒生命回复换算为整数脉冲。正常情况固定每5秒结算并向下取整；
@@ -890,8 +892,11 @@ public final class PlayerDataProvider {
     }
 
     private static boolean isInCombat(ServerPlayer player, PlayerData data) {
-        return data.getLastCombatGameTime() >= 0
-                && player.level().getGameTime() - data.getLastCombatGameTime() <= OUT_OF_COMBAT_TICKS;
+        return isInCombat(player.level().getGameTime(), data.getLastCombatGameTime());
+    }
+
+    public static boolean isInCombat(long now, long lastCombatTick) {
+        return lastCombatTick >= 0 && now - lastCombatTick <= COMBAT_WINDOW_TICKS;
     }
 
     /** 每个角色的初始武器（无法破坏）：物品栏第一格锁定，无法移动/拖动
@@ -1894,7 +1899,7 @@ public final class PlayerDataProvider {
             }
             com.myriad.character.ability.AbilityRuntime.clear(player);
 
-            com.myriad.game.TacticalSupplySystem.clearRegeneration(player.getUUID());
+            com.myriad.game.TacticalSupplySystem.clearRegeneration(player);
             ModShieldSystem.clearFor(player);
             GameManager manager = GameManager.get();
             if (TrainingMode.isEnabled(player)) {

@@ -7,13 +7,13 @@ import net.minecraft.world.phys.Vec3;
 import java.util.List;
 
 final class SunsetLine extends LuoxiaSkill {
-    private static final AbilityDamageFormula FIRST = AbilityDamageFormula.purchased(DamageCalc.Kind.PHYSICAL, 175, 53.125f, .80f)
+    private static final AbilityDamageFormula FIRST = AbilityDamageFormula.bonusPhysical(175, 53.125f, .80f)
             .segment("skill.myriad.damage.hero_first", 1);
     private static final AbilityDamageFormula SECOND = FIRST.scaled(180f / 260)
             .segment("skill.myriad.damage.hero_second", 1);
     private static final AbilityDamageFormula THIRD = FIRST.scaled(125f / 260)
             .segment("skill.myriad.damage.hero_third", 1);
-    private static final AbilityDamageFormula NON_HERO = AbilityDamageFormula.purchased(DamageCalc.Kind.PHYSICAL, 40, 12.5f, .80f * .20f / 1.05f)
+    private static final AbilityDamageFormula NON_HERO = AbilityDamageFormula.bonusPhysical(40, 12.5f, .80f * .20f / 1.05f)
             .segment("skill.myriad.damage.non_hero", 1);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {

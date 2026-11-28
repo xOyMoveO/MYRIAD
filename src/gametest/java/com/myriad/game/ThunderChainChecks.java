@@ -3,6 +3,7 @@ package com.myriad.game;
 import com.myriad.character.CharacterType;
 import com.myriad.character.SkillSystem;
 import com.myriad.character.ability.*;
+import com.myriad.character.rework.FirstGroupGrowth;
 import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.player.*;
 import com.myriad.registry.*;
@@ -58,7 +59,7 @@ final class ThunderChainChecks {
                             for(var t:f.excluded)h.assertTrue(Math.abs(t.getHealth()-1000)<.02,"Friends, towers, outside radius, second-hop and blocked targets are untouched: case="+i+" hp="+t.getHealth());
                         }
                         var skill=FirstGroupSkills.node("tianxing",3);
-                        h.assertTrue(skill.displayName().equals("雷电劫")&&Math.abs(skill.damageFormulas().get(1).value(5, 80, 100, 1, 0) - 61.95) < .02,"Current UI resolves both main and 35% chain formulas");
+                        h.assertTrue(skill.displayName().equals("雷电劫")&&Math.abs(skill.damageFormulas().get(1).value(5, 80, 100, 15, 0) - 61.95) < .02,"Current UI resolves both main and 35% chain formulas");
                         done[0]=true;fixtures.forEach(f->cleanup(h,f));
                         System.out.println("[MYRIAD-THUNDER-CHAIN] PASS: actual W, 6-tick windup, ranks/S, all 4-block secondaries incl. vertical/boundary, lethal primary, no piercing/recursion, allies/buildings/LOS/range exclusions, wall and stun");
                     }
@@ -71,7 +72,11 @@ final class ThunderChainChecks {
         var players=new ArrayList<ServerPlayer>();var caster=player(h,origin,Faction.GUARDIAN,players,false);
         var d=PlayerDataProvider.get(caster);d.setCharacterId("tianxing");d.setLevel(20);d.setMana(700);
         int rank=index==1?5:1;int strength=index==1?1:0;
-        d.setSkillLevel("g1_tianxing_n2",rank);caster.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(index==1?100:0);d.setFirstGroupAttribute("strength",strength);
+        d.setSkillLevel("g1_tianxing_n2",rank);d.setFirstGroupAttribute("strength",strength);
+        FirstGroupGrowth.initialize(caster, d);
+        h.assertTrue(caster.getAttributeValue(ModAttributes.PHYSICAL_ATTACK) == (strength == 1 ? 80 : 65),
+                "Thunder Chain fixture has the actual innate and purchased physical attack");
+        caster.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(index==1?100:0);
         caster.getAttribute(ModAttributes.CRIT_CHANCE).setBaseValue(0);caster.getAttribute(ModAttributes.COOLDOWN_REDUCTION).setBaseValue(0);
         Vec3 contact=origin.add(0,0,5);LivingEntity primary;
         if(index==2){

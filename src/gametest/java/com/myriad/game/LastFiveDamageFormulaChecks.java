@@ -8,7 +8,6 @@ import com.myriad.character.skills.shuo.ShuoCombat;
 import com.myriad.combat.DamageCalc.Kind;
 import com.myriad.network.ShuoViewPayload;
 import com.myriad.player.PlayerDataProvider;
-import com.myriad.registry.ModAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.BlockPos;
@@ -112,12 +111,12 @@ final class LastFiveDamageFormulaChecks {
                     double strength = segment.strength();
                     if (candidate.id().equals("luoxia_steady_dusk")) strength += .9 * (rank - 1);
                     near(h, formula.value(rank, attack, 30, 0, 0), baseline, detail + " zero purchases");
-                    near(h, formula.value(rank, attack + 15, 30, 1, 0), baseline + strength, detail + " first strength");
+                    near(h, formula.value(rank, attack + 15, 30, 15, 0), baseline + strength, detail + " first strength");
                     near(h, formula.value(rank, attack, 50, 0, 1), baseline + segment.wisdom(), detail + " first wisdom");
-                    double high = formula.value(rank, attack + 150, 230, 10, 10);
+                    double high = formula.value(rank, attack + 150, 230, 150, 10);
                     near(h, high, baseline + 10 * (strength + segment.wisdom()), detail + " ten of each");
-                    near(h, high - formula.value(rank, attack + 135, 230, 9, 10), strength, detail + " remove one strength");
-                    near(h, high - formula.value(rank, attack + 150, 210, 10, 9), segment.wisdom(), detail + " remove one wisdom");
+                    near(h, high - formula.value(rank, attack + 135, 230, 135, 10), strength, detail + " remove one strength");
+                    near(h, high - formula.value(rank, attack + 150, 210, 150, 9), segment.wisdom(), detail + " remove one wisdom");
                     near(h, formula.perPoint(rank), strength + segment.wisdom(), detail + " preview increment");
                 }
             }
@@ -185,9 +184,9 @@ final class LastFiveDamageFormulaChecks {
     private static ServerPlayer shuo(GameTestHelper h, Vec3 position, int purchase, String passive) {
         ServerPlayer player = ShuoChecks.player(h, position, new ArrayList<>());
         var data = PlayerDataProvider.get(player);
-        player.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(purchase == 2 ? 50 : 30);
         data.setFirstGroupAttribute("strength", purchase == 1 ? 1 : 0);
         data.setFirstGroupAttribute("wisdom", purchase == 2 ? 1 : 0);
+        FirstGroupGrowth.initialize(player, data);
         data.setSkillLevel(passive, 1);
         return player;
     }

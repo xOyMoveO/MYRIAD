@@ -18,7 +18,7 @@ public final class LastSun extends LuoxiaSkill {
     public static double entityPaddingBlocks() {
         return LuoxiaArrow.entityPadding(LuoxiaArrow.Shape.LAST_SUN);
     }
-    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.purchased(DamageCalc.Kind.PHYSICAL, 150, 6.75f, .50f);
+    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.bonusPhysical(150, 6.75f, .50f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);

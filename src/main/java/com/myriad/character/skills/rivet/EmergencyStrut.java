@@ -11,7 +11,7 @@ import java.util.*;
 
 /** Each owner retains a removable source; the shared strut family contributes only its highest shield. */
 public final class EmergencyStrut extends RivetSkill {
-    private static final SupportAmount SHIELD = new SupportAmount("shield", 95, 27.5f, .5f);
+    private static final SupportAmount SHIELD = new SupportAmount(SupportEffect.SHIELD, SupportScaling.TOTAL_SPELL, 95, 27.5f, .5f);
 
     @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(SHIELD); }
 

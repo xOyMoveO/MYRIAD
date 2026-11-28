@@ -9,7 +9,7 @@ import java.util.List;
 
 final class FeatherBurst extends LuoxiaSkill {
     private static final float THIRD_HIT_MULTIPLIER = .50f;
-    private static final AbilityDamageFormula FIRST_TWO = AbilityDamageFormula.purchased(DamageCalc.Kind.PHYSICAL, 50, 5f / 6 * 1.25f, .20f)
+    private static final AbilityDamageFormula FIRST_TWO = AbilityDamageFormula.bonusPhysical(50, 5f / 6 * 1.25f, .20f)
             .segment("skill.myriad.damage.first_two_arrows", 2);
     private static final AbilityDamageFormula THIRD = FIRST_TWO.scaled(THIRD_HIT_MULTIPLIER)
             .segment("skill.myriad.damage.third_arrow", 1);

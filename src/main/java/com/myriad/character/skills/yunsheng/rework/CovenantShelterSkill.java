@@ -6,7 +6,7 @@ import net.minecraft.world.phys.Vec3;
 import static com.myriad.combat.DamageCalc.Kind.*;
 /** Independent reusable branch. */
 public final class CovenantShelterSkill extends AbilitySkill {
-    private static final SupportAmount SHIELD = new SupportAmount("shield", 210, 81.25f, .65f);
+    private static final SupportAmount SHIELD = new SupportAmount(SupportEffect.SHIELD, SupportScaling.TOTAL_SPELL, 210, 81.25f, .65f);
 
     @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(SHIELD); }
 

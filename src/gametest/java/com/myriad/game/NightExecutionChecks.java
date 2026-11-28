@@ -98,6 +98,7 @@ final class NightExecutionChecks {
         target.getAttribute(Attributes.MAX_HEALTH).setBaseValue(1000);target.setHealth(1000);
         target.getAttribute(ModAttributes.PHYSICAL_DEFENSE).setBaseValue(0);level.addNewPlayer(target);
         var d=PlayerDataProvider.get(p);d.setFaction(Faction.GUARDIAN);d.setCharacterId("yingxiao");d.setLevel(20);d.setSkillLevel("g1_yingxiao_ua",1);d.setMana(700);
+        com.myriad.character.rework.FirstGroupGrowth.initialize(p, d);
         p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(0);p.getAttribute(ModAttributes.CRIT_CHANCE).setBaseValue(0);
         p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND,new net.minecraft.world.item.ItemStack(ModItems.YINGCI.get()));
         return new Fixture(p,target,origin,floor,cues,targetCues,saved);

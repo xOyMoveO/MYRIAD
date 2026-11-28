@@ -37,6 +37,9 @@ public final class CombatRegressionTests {
         register("rivet", RivetChecks::run);
         register("luoxia", LuoxiaChecks::run);
         register("balance_vertical", BalanceVerticalChecks::run);
+        register("balance_haste", BalanceVerticalChecks::hasteAndPurchases);
+        register("balance_damage_support", BalanceDamageSupportChecks::run);
+        register("balance_control_supply", BalanceControlSupplyChecks::run);
         register("projectile_basic_assist", ProjectileBasicAssistChecks::run);
         register("damage_growth", DamageGrowthChecks::run);
         register("cherry_first_ten_damage", CherryFirstTenDamageChecks::run);

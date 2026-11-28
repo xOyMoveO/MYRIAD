@@ -4,7 +4,7 @@
 
 ## 读取规则
 
-- `formatVersion` 表示结构与单位版本。`sourceSha` 标明构建时检出的提交。`sourceDirty` 标明该工作区还有未提交文件。源码归档可正常构建，未带 Git 元数据时两值分别为 `unknown` 和 `null`。
+- `formatVersion` 表示结构与单位版本。版本 2 导出技能急速和购点契约，盾疗字段以 `scaling` 和 `scale` 表示指定的属性与系数。版本 1 的 `spellScale` 表示总法强系数。`sourceSha` 标明构建时检出的提交。`sourceDirty` 标明该工作区还有未提交文件。源码归档可正常构建，未带 Git 元数据时两值分别为 `unknown` 和 `null`。
 - `rulesSha256` 对 `rules` 的紧凑 UTF-8 JSON 求摘要。对象键按字典序，数组保留其规则顺序。Git 信息、素材资源和文案提醒在摘要范围之外。未导出的机制应结合 `sourceSha`、成品摘要和覆盖报告追查。
 - `rules.roles` 通过角色表和已绑定技能生成。每个角色含从一级开始的属性、普攻、分支组合和候选技能。技能的 `ranks` 记录实际调用的逐阶蓝耗与基础冷却。位置无关的效果标识位于 `effects[].id`，取值、本游戏版本的单位、规则来源、条件、取值时点和时基位于 `effects[].rule`。炮台姿态等效果内可以再带分字段。距离和时长统一写作 `blocks`、`ticks`，时基分别为 `real_tick`、`action_tick` 或 `not_timed`。
 - `defined` 与 `zero` 都是可读定义，`zero` 表示该字段的合法数字零。`not_applicable` 和 `missing_input` 使用空值并带理由。伤害公式与名义盾疗可以独立取数。连续有效命中、实际存活、多个技能段能否相加，以及缺条件的几何、触发与 Buff 交互须按场景验证。
@@ -37,6 +37,10 @@ python tools/fabric/prepare-ci-release.py
 ```
 
 基线脚本保留该批的独立期望，故意调数后读数差异可单独评估。正常 Gradle 构建不运行这份基线脚本。引擎专项沿用 `FirstTenDamageFormulaChecks` 和 `LastFiveDamageFormulaChecks` 的独立期望，实际用例可从 `build/reports/fabric-gametest.xml` 读回。
+
+## 公共战斗规则对照
+
+[第 3 批专项与离线复算](combat-rules.md)对照两版快照、玩家说明和服务端事件。
 
 ## 落霞与伊珂纵向对照
 

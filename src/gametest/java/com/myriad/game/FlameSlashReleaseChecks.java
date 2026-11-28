@@ -2,6 +2,7 @@ package com.myriad.game;
 
 import com.myriad.character.SkillSystem;
 import com.myriad.character.ability.AbilityRuntime;
+import com.myriad.character.rework.FirstGroupGrowth;
 import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.character.skills.fenjue.rework.FlameSlashAim;
 import com.myriad.network.AbilityVfxPayload;
@@ -55,6 +56,7 @@ final class FlameSlashReleaseChecks {
                 }
                 actor.setNoGravity(true);actor.setPos(origin);h.getLevel().addNewPlayer(actor);
                 var d=PlayerDataProvider.get(actor);d.setCharacterId("fenjue");d.setLevel(20);d.setFaction(Faction.GUARDIAN);
+                FirstGroupGrowth.initialize(actor, d);
                 actor.getAttribute(Attributes.MAX_HEALTH).setBaseValue(1000);actor.setHealth(1000);d.setModMaxHealth(1000);d.setModHealthInitialized(true);
                 actor.getAttribute(ModAttributes.CRIT_CHANCE).setBaseValue(0);actor.getAttribute(ModAttributes.COOLDOWN_REDUCTION).setBaseValue(0);
                 d.setSkillLevel(skill.getId(),1);

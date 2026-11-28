@@ -2,7 +2,9 @@ package com.myriad.client.gui;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.myriad.MyriadClient;
+import com.myriad.character.CharacterType;
 import com.myriad.character.ability.AbilityFormulaText;
+import com.myriad.character.ability.AbilityRuntime;
 import com.myriad.character.ability.AbilitySkill;
 import com.myriad.character.rework.FirstGroupGrowth;
 import com.myriad.character.rework.FirstGroupSkills;
@@ -15,7 +17,6 @@ import com.myriad.client.gui.SkillChoiceLayout.Box;
 import com.myriad.game.TacticalSupplySystem;
 import com.myriad.network.NetworkSetup;
 import com.myriad.network.Packets;
-import com.myriad.registry.ModAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -123,7 +124,8 @@ public final class FirstGroupScreen extends Screen {
             String key = id.substring(ATTRIBUTE_PREFIX.length());
             if (!FirstGroupGrowth.ATTRIBUTES.contains(key)) return "message.myriad.g1.invalid_skill";
             if (!UiFeedback.shopAllowed) return "message.myriad.shop_base_only";
-            return FirstGroupGrowth.purchaseError(data.buffs().getOrDefault(id, 0), data.gold(), data.training() && data.noGoldCost());
+            return FirstGroupGrowth.purchaseError(CharacterType.byId(data.characterId()), key,
+                    data.buffs().getOrDefault(id, 0), data.gold(), data.training() && data.noGoldCost());
         }
         if (TacticalSupplySystem.isSupply(id)) {
             if (!UiFeedback.shopAllowed) return "message.myriad.shop_base_only";
@@ -507,9 +509,17 @@ public final class FirstGroupScreen extends Screen {
                 : text("screen.myriad.g1.attribute_next_price", price);
     }
 
-    private static boolean hasteCapped(String key) {
-        return key.equals("cooldown") && ClientDataHolder.attrValue(ModAttributes.COOLDOWN_REDUCTION.value().getDescriptionId())
-                >= ModAttributes.MAX_COOLDOWN_REDUCTION;
+    private static String attributeDetail(String key, int rank) {
+        if (key.equals("speed")) {
+            var gain = FirstGroupGrowth.nextSpeedGain(rank);
+            return text("screen.myriad.g1.attribute_speed_next",
+                    String.format(java.util.Locale.ROOT, "%.2f", gain.attackSpeed()),
+                    String.format(java.util.Locale.ROOT, "%.4f", gain.movementSpeed()));
+        }
+        if (key.equals("cooldown")) {
+            return text("screen.myriad.g1.attribute_haste_current", AbilityFormulaText.amount(FirstGroupGrowth.skillHaste(rank)));
+        }
+        return "";
     }
 
     private List<String> attributeLines(String key) {
@@ -519,8 +529,12 @@ public final class FirstGroupScreen extends Screen {
         var lines = new ArrayList<String>();
         lines.add(text("screen.myriad.g1.attribute." + key));
         lines.add(text("screen.myriad.g1.attribute_rank", rank));
-        lines.add(text("screen.myriad.g1.attribute_effect." + key));
-        if (hasteCapped(key)) lines.add(text("screen.myriad.g1.attribute_haste_capped", ModAttributes.MAX_COOLDOWN_REDUCTION));
+        if (key.equals("cooldown")) lines.add(text("screen.myriad.g1.attribute_effect.cooldown",
+                AbilityFormulaText.amount(FirstGroupGrowth.HASTE_PER_POINT), AbilityRuntime.SKILL_HASTE_REFERENCE,
+                AbilityRuntime.MIN_POSITIVE_COOLDOWN));
+        else if (!key.equals("speed")) lines.add(text("screen.myriad.g1.attribute_effect." + key));
+        String detail = attributeDetail(key, rank);
+        if (!detail.isEmpty()) lines.add(detail);
         lines.add(nextAttributePrice(rank));
         if (data.training() && data.noGoldCost()) lines.add(text("screen.myriad.g1.attribute_free"));
         String reason = error(id);
@@ -558,9 +572,9 @@ public final class FirstGroupScreen extends Screen {
             }
             int quoteLines = Math.max(1, (details.bottom() - lineY + 2) / LINE_HEIGHT);
             wrapped(g, nextAttributePrice(rank), new Box(details.x(), lineY, details.w(), quoteLines * LINE_HEIGHT), quoteLines, GOLD);
-            if (sameLine && quoteLines > 1 && font.width(nextAttributePrice(rank)) <= details.w() && hasteCapped(key)) {
-                textIn(g, text("screen.myriad.g1.attribute_haste_limit", ModAttributes.MAX_COOLDOWN_REDUCTION),
-                        details.x(), details.bottom() - font.lineHeight, details.w(), MUTED);
+            if (sameLine && quoteLines > 1 && font.width(nextAttributePrice(rank)) <= details.w()) {
+                String detail = attributeDetail(key, rank);
+                if (!detail.isEmpty()) textIn(g, detail, details.x(), details.bottom() - font.lineHeight, details.w(), MUTED);
             }
             offer(id + ":tile", icon, () -> attributeLines(key), mx, my, view);
         }
@@ -585,7 +599,7 @@ public final class FirstGroupScreen extends Screen {
             offer(id + ":supply", row, () -> {
                 var lines = new ArrayList<String>();
                 lines.add(text("item.myriad." + id));
-                lines.add(text("item.myriad." + id + ".desc"));
+                lines.add(TacticalSupplySystem.supplyDescription(id).getString());
                 lines.add(text("screen.myriad.g1.buy", supplyCost(id)));
                 String reason = error(id);
                 if (reason != null) lines.add(text(reason));

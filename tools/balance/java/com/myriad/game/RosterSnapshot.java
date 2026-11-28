@@ -21,6 +21,7 @@ import com.myriad.character.skills.yike.YikeBasicAttack;
 import com.myriad.character.skills.yike.YikeStance;
 import com.myriad.combat.MagicBullet;
 import com.myriad.combat.VanillaMeleeAttack;
+import com.myriad.player.PlayerDataProvider;
 import com.myriad.registry.ModAttributes;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -30,6 +31,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.IntStream;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 
 final class RosterSnapshot {
     private static final String NO_CLOCK = "not_timed";
@@ -221,12 +223,41 @@ final class RosterSnapshot {
 
     static JsonObject commonSkillRules() {
         var rules = new JsonObject();
-        rules.add("cooldownReductionCap", field(ModAttributes.MAX_COOLDOWN_REDUCTION, "percent",
-                source(ModAttributes.class, "MAX_COOLDOWN_REDUCTION"), "现行有上限的百分比冷却缩减", "on_cast_commit", NO_CLOCK));
+        rules.add("skillHaste", field(Map.of("perPurchase", FirstGroupGrowth.HASTE_PER_POINT,
+                        "denominatorBase", AbilityRuntime.SKILL_HASTE_REFERENCE,
+                        "minPositiveTicks", AbilityRuntime.MIN_POSITIVE_COOLDOWN, "rounding", "floor"), "rule_set",
+                source(AbilityRuntime.class, "effectiveCooldownTicks"),
+                "购买急速只作用于受益正冷却。其他来源百分比冷却缩减仍独立乘算。炮台 Q 当发为零，射击间隔以真实刻独立推进",
+                "on_cast_commit_or_yike_stance_exit", REAL));
+        rules.add("legacyCooldownReductionCap", field(ModAttributes.MAX_COOLDOWN_REDUCTION, "percent",
+                source(ModAttributes.class, "MAX_COOLDOWN_REDUCTION"), "装备、灵石灌顶等独立百分比来源", "on_cast_commit", REAL));
+        rules.add("bonusPhysicalAttack", field("effective_minus_innate", "operator",
+                source(FirstGroupGrowth.class, "bonusPhysicalAttack"), "当前英雄与等级；计入购点及有效临时修饰",
+                "on_cast_context", NO_CLOCK));
+        rules.add("azureHornPhysicalAttack", field(PlayerDataProvider.AZURE_HORN_ATTACK_BONUS, "added_total_ratio",
+                source(PlayerDataProvider.class, "applyBossBuffs"), "已有凛锋且尚未到期", "on_player_tick", REAL));
         rules.add("shieldResolution", field("same_source_max_refresh", "rule", source(AbilityRuntime.class, "shield"),
                 "合法同阵营单位，实际新增盾触发支援", "on_shield_grant", REAL));
         rules.add("healResolution", field("clamp_to_missing_health", "rule", source(AbilityRuntime.class, "heal"),
                 "存活、同世界、合法友方且名义治疗量大于零", "on_heal", NO_CLOCK));
+        return rules;
+    }
+
+    static JsonObject attributePurchases() {
+        var rules = new JsonObject();
+        rules.add("pricing", field(Map.of("startingGold", FirstGroupGrowth.STARTING_PRICE,
+                        "stepNumerator", FirstGroupGrowth.PRICE_STEP_DIVISOR + 1, "stepDenominator", FirstGroupGrowth.PRICE_STEP_DIVISOR,
+                        "rounding", "nearest_gold_each_step", "freeTrainingCounts", true), "rule_set",
+                source(FirstGroupGrowth.class, "price"), "按本项已购点数计档", "on_purchase", NO_CLOCK));
+        rules.add("permanentGain", field(Map.of("physicalAttackPerStrength", FirstGroupGrowth.purchasedPhysicalAttack(1),
+                        "spellPowerPerWisdom", FirstGroupGrowth.purchasedSpellPower(1),
+                        "defensePerPoint", FirstGroupGrowth.DEFENSE_GAIN, "attackSpeedPerPoint", FirstGroupGrowth.SPEED_ATTACK_GAIN,
+                        "movementSpeedPerPoint", FirstGroupGrowth.SPEED_MOVEMENT_GAIN,
+                        "attackSpeedMax", ModAttributes.MAX_ATTACK_SPEED,
+                        "movementSpeedMax", Attributes.MOVEMENT_SPEED.value().sanitizeValue(Double.MAX_VALUE)), "rule_set",
+                source(FirstGroupGrowth.class, "purchaseError"),
+                "按固有值和已有购点判断。至少一项永久分量有增益才按当前档全价成交，训练免金仍记点",
+                "before_purchase", NO_CLOCK));
         return rules;
     }
 
@@ -252,10 +283,12 @@ final class RosterSnapshot {
             result.add(item);
         }
         for (var support : skill.supportAmounts()) {
-            result.add(effect(skill, support.effect(), support.effect(), field(Map.of(
-                    "base", support.base(), "rankGrowth", support.rankGrowth(), "spellScale", support.spellScale()),
+            String id = support.effect().id();
+            result.add(effect(skill, id, id, field(Map.of(
+                    "base", support.base(), "rankGrowth", support.rankGrowth(), "scale", support.scale(),
+                    "scaling", support.scaling().name().toLowerCase(Locale.ROOT)),
                     "hp_raw", source(skill.getClass(), "supportAmounts"), SkillEffects.supportCondition(skill),
-                    "支援应用前，取当前施法上下文总法强", NO_CLOCK)));
+                    "支援应用前，读取施法上下文记录的指定属性", NO_CLOCK)));
         }
         if (!skill.isPassive() && skill.commitWindupTicks() > 0) {
             result.add(effect(skill, "commit_windup", "windup", field(skill.commitWindupTicks(), "ticks",
@@ -323,6 +356,8 @@ final class RosterSnapshot {
                         condition + "；只允许上膛后提前起手，出膛仍要等真实截止刻", "on_cast_request", REAL));
                 fields.add("pauseForW", field(YikeStance.PAUSE_FOR_W_TICKS, "ticks", source(YikeStance.class, "PAUSE_FOR_W_TICKS"),
                         condition + "且 W 已完成合法预警提交", "on_w_commit", REAL));
+                fields.add("exitCooldown", field("max_of_existing_and_haste_adjusted_normal", "rule",
+                        source(YikeStance.class, "finish"), "本次炮台至少出膛一次且未启用训练免冷却", "on_stance_exit", REAL));
             } else {
                 fields.add("shots", gap("not_applicable", "shell", formSource, condition, "on_projectile_launch",
                         NO_CLOCK, "离开炮台姿态没有弹仓，仅看共用蓝耗与冷却"));

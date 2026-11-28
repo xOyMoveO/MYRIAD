@@ -31,6 +31,7 @@ final class ShuoChecks {
         };p.connection.handleAcceptPlayerLoad(new net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket());p.setNoGravity(true);p.setPos(at);p.setYRot(0);p.setXRot(0);
         var d=PlayerDataProvider.get(p);d.setCharacterId("shuo");d.setLevel(20);d.setMana(700);
         for(var s:FirstGroupSkills.candidates("shuo"))d.setSkillLevel(s.getId(),0);
+        p.getAttribute(ModAttributes.PHYSICAL_ATTACK).setBaseValue(65);
         p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(100);return p;
     }
     static net.minecraft.world.entity.animal.pig.Pig target(GameTestHelper h,Vec3 at){
@@ -206,7 +207,7 @@ final class ShuoChecks {
             h.assertTrue(ShuoCombat.parry(p,physical,DamageCalc.Kind.PHYSICAL)&&!ShuoCombat.parry(p,physical,DamageCalc.Kind.PHYSICAL),"One frontal nontrue hit only");
             double mana=d.getMana();SkillSystem.cast(p,1);
             h.assertTrue(d.getMana()==mana&&!w.recastAvailable(c)&&Math.abs(enemy.getHealth()-938)<.05,"Manual counter gives exactly 62 damage, no repeated payment; actual HP="+enemy.getHealth());
-            h.assertTrue(Math.abs(ModShieldSystem.value(p)-75)<.05,"Landed counter grants its separately sourced two-second shield");
+            h.assertTrue(Math.abs(ModShieldSystem.value(p)-57.5)<.05,"Landed counter grants its separately sourced two-second shield");
             ModShieldSystem.clearFor(p); // Isolate the next incoming-damage fixture from the new counter shield.
             AbilityRuntime.clear(p);d.setBuff("g1_stun",0);ShuoCombat.guard(AbilityRuntime.context(p,w));
             ModShieldSystem.grant(p,"shuo_test",500,100);p.damageCooldownTime = 0;

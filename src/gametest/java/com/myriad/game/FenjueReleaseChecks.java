@@ -2,6 +2,7 @@ package com.myriad.game;
 
 import com.myriad.character.SkillSystem;
 import com.myriad.character.ability.*;
+import com.myriad.character.rework.FirstGroupGrowth;
 import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.network.AbilityMotionPayload;
 import com.myriad.network.AbilityVfxPayload;
@@ -134,6 +135,7 @@ final class FenjueReleaseChecks {
         };
         viewer.connection.handleAcceptPlayerLoad(new net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket());viewer.setNoGravity(true);viewer.setPos(origin.add(3,0,0));PlayerDataProvider.get(viewer).setFaction(Faction.GUARDIAN);level.addNewPlayer(viewer);
         var d=PlayerDataProvider.get(p);d.setCharacterId("fenjue");d.setLevel(20);d.setMana(700);d.setFaction(Faction.GUARDIAN);
+        FirstGroupGrowth.initialize(p, d);
         p.getAttribute(Attributes.MAX_HEALTH).setBaseValue(1000);p.setHealth(1000);d.setModMaxHealth(1000);d.setModHealthInitialized(true);
         p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(100);p.getAttribute(ModAttributes.CRIT_CHANCE).setBaseValue(0);p.getAttribute(ModAttributes.COOLDOWN_REDUCTION).setBaseValue(0);
         var skill=FirstGroupSkills.node("fenjue",step(index)?3:5);d.setSkillLevel(skill.getId(),step(index)?1:7);

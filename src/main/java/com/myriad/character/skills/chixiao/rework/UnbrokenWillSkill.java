@@ -6,7 +6,7 @@ import net.minecraft.world.phys.Vec3;
 import static com.myriad.combat.DamageCalc.Kind.*;
 /** Independent reusable branch. */
 public final class UnbrokenWillSkill extends AbilitySkill {
-    private static final SupportAmount SHIELD = new SupportAmount("shield", 80, 26.4f, .4f);
+    private static final SupportAmount SHIELD = new SupportAmount(SupportEffect.SHIELD, SupportScaling.TOTAL_SPELL, 80, 26.4f, .4f);
 
     @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(SHIELD); }
 

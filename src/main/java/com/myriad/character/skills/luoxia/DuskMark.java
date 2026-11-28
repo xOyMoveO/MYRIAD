@@ -11,9 +11,9 @@ import net.minecraft.world.entity.LivingEntity;
 import java.util.List;
 
 final class DuskMark extends LuoxiaSkill {
-    private static final AbilityDamageFormula ARROW = AbilityDamageFormula.purchased(DamageCalc.Kind.PHYSICAL, 52, 8.75f, 5f / 18)
+    private static final AbilityDamageFormula ARROW = AbilityDamageFormula.bonusPhysical(52, 8.75f, 5f / 18)
             .segment("skill.myriad.damage.mark_arrow", 1);
-    private static final AbilityDamageFormula MARK = AbilityDamageFormula.purchased(DamageCalc.Kind.PHYSICAL, 25, 6.25f, 2f / 9)
+    private static final AbilityDamageFormula MARK = AbilityDamageFormula.bonusPhysical(25, 6.25f, 2f / 9)
             .segment("skill.myriad.damage.mark_pop", 1);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {

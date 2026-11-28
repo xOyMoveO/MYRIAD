@@ -262,11 +262,21 @@ final class SkillChoiceUiChecks {
                             .mapToDouble(segment -> segment.value(1, 0, 0, 0, 0) * segment.maxHits()).sum();
                     h.assertTrue(Math.abs(total - totals.get(id)) < .01, "Same-target pre-mitigation preview: " + id);
                 }
-                var fields = stats.getAsJsonArray(id);
-                h.assertTrue(fields.size() > 0 && fields.size() <= 2, "Concise metrics for " + id);
                 h.assertTrue(chinese.has(prefix + "summary") && english.has(prefix + "summary")
                                 && chinese.has(prefix + "limit") == english.has(prefix + "limit"),
                         "Both languages cover each skill summary and condition: " + id);
+                var fields = stats.getAsJsonArray(id);
+                if (fields == null) {
+                    h.assertTrue(!skill.descriptionFields(1).isEmpty() && chinese.has(prefix + "fields")
+                                    && english.has(prefix + "fields"), "Named mechanic fields replace metrics for " + id);
+                    for (var language : List.of(chinese, english)) {
+                        String template = language.get(prefix + "fields").getAsString();
+                        h.assertTrue(template.contains("{") && !skill.resolveDescriptionFields(template, 1).contains("{"),
+                                "All named fields resolve to live values: " + id);
+                    }
+                    continue;
+                }
+                h.assertTrue(fields.size() > 0 && fields.size() <= 2, "Concise metrics for " + id);
                 for (int i = 0; i < fields.size(); i++) {
                     var metric = fields.get(i).getAsJsonObject();
                     if (metric.has("damage")) {

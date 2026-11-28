@@ -1,12 +1,15 @@
 package com.myriad.character.skills.shuo;
+import com.myriad.character.CharacterType;
 import com.myriad.network.WeaponPosePayload;
 import com.myriad.network.WeaponPosePayload.Move;
 import com.myriad.character.ability.*;
+import com.myriad.character.rework.FirstGroupGrowth;
 import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.combat.*;
 import com.myriad.game.DefenseTowerEntity;
 import com.myriad.network.ShuoViewPayload;
 import com.myriad.player.*;
+import com.myriad.registry.ModAttributes;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
@@ -70,9 +73,10 @@ public final class ShuoCombat {
         if(!s.drawn){var passive=FirstGroupSkills.selected("shuo",0,d.getSkillLevels());int r=passive==null?0:d.skillLevel(passive.getId());
             if(r>0){
                 passiveIndex=passive.index();
-                int purchasedStrength=d.firstGroupAttribute("strength");
-                if(passive instanceof CangFengSkill)bonus=CangFengSkill.BONUS.value(r,0,0,purchasedStrength,0)*s.gauge/100;
-                else if(s.riposteUntil>now)bonus=JianQieSkill.BONUS.value(r,0,0,purchasedStrength,0);
+                double attack=p.getAttributeValue(ModAttributes.PHYSICAL_ATTACK);
+                double bonusAttack=FirstGroupGrowth.bonusPhysicalAttack(CharacterType.SHUO,attack);
+                if(passive instanceof CangFengSkill)bonus=CangFengSkill.BONUS.value(r,attack,0,bonusAttack,0)*s.gauge/100;
+                else if(s.riposteUntil>now)bonus=JianQieSkill.BONUS.value(r,attack,0,bonusAttack,0);
             }}
         s.drawn=true;s.charging=false;s.sheath=null;s.gauge=0;s.riposteUntil=0;
         ShuoWeaponState.sync(p,true);

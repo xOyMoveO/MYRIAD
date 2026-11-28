@@ -8,7 +8,7 @@ import java.util.List;
 import static com.myriad.combat.DamageCalc.Kind.*;
 /** Independent reusable branch. */
 public final class BriarSeedSkill extends AbilitySkill {
-    private static final SupportAmount HEAL = new SupportAmount("heal", 35, 15, .25f);
+    private static final SupportAmount HEAL = new SupportAmount(SupportEffect.HEAL, SupportScaling.TOTAL_SPELL, 35, 15, .25f);
 
     @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(HEAL); }
 

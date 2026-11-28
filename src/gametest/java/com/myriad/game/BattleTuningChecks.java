@@ -107,6 +107,7 @@ final class BattleTuningChecks {
 
     private static void verifySupplies(GameTestHelper h, ServerPlayer p) {
         var data = PlayerDataProvider.get(p);
+        data.setLastCombatGameTime(-1);
         data.setModMaxHealth(2000);
         p.setHealth(1000);
         data.setMana(100);
@@ -122,11 +123,11 @@ final class BattleTuningChecks {
         for (long age = 0; age < 20; age++) TacticalSupplySystem.tickRegeneration(p, start + age);
         h.assertTrue(p.getHealth() == 1000 && data.getMana() == 100, "Supplies wait a full second before paying");
         TacticalSupplySystem.tickRegeneration(p, start + 20);
-        h.assertTrue(p.getHealth() == 1009 && data.getMana() == 130, "Population effects use current max HP and mana");
+        h.assertTrue(p.getHealth() == 1033 && data.getMana() == 136, "Supplies use current max HP and mana");
         data.setModMaxHealth(3000);
         p.getAttribute(ModAttributes.MAX_MANA).setBaseValue(1200);
         for (long age = 21; age <= 180; age++) TacticalSupplySystem.tickRegeneration(p, start + age);
-        h.assertTrue(p.getHealth() == 1093 && data.getMana() == 266
+        h.assertTrue(p.getHealth() == 1351.5F && data.getMana() == 296
                 && data.getBuff("blood_pill") == 0 && data.getBuff("mana_pill") == 0,
                 "Only eight and five pulses occur, and later pulses use the changed maxima");
         p.setHealth(p.getMaxHealth());

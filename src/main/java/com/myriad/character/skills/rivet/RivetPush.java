@@ -2,6 +2,7 @@ package com.myriad.character.skills.rivet;
 
 import com.myriad.character.ability.AbilityRuntime;
 import com.myriad.character.ability.ActionTime;
+import com.myriad.combat.ControlStatusSystem;
 import com.myriad.combat.DamageCalc;
 import com.myriad.combat.KnockbackBuffer;
 import com.myriad.combat.SkillTargets;
@@ -216,8 +217,12 @@ public final class RivetPush {
                 ? Math.clamp(target.getAttributeValue(com.myriad.registry.ModAttributes.TENACITY), 0, 60) / 100 : 0;
         int duration = Math.max(1, (int) Math.ceil(ticks * (1 - tenacity)));
         String key = "g1_root/" + c.skill.getId() + "/" + c.player.getUUID();
+        long current = ROOTS.stream().filter(root -> root.target() == target && root.key().equals(key))
+                .mapToLong(Root::until).max().orElse(0);
+        long until = c.now() + duration;
+        if (ControlStatusSystem.laterExpiry(current, until) == current) return;
         ROOTS.removeIf(root -> root.target() == target && root.key().equals(key));
-        ROOTS.add(new Root(c, target, c.now() + duration, key));
+        ROOTS.add(new Root(c, target, until, key));
         c.slow(target, 1, ticks);
         if (target instanceof ServerPlayer player) {
             com.myriad.player.PlayerDataProvider.get(player).setBuff(key, duration);

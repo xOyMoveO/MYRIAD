@@ -6,8 +6,13 @@ import static com.myriad.game.SnapshotJson.source;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.myriad.character.ability.AbilityRuntime;
+import com.myriad.character.ability.ActionTime;
+import com.myriad.combat.ControlStatusSystem;
+import com.myriad.combat.SilenceSystem;
 import com.myriad.player.LevelSystem;
 import com.myriad.player.PlayerData;
+import com.myriad.player.PlayerDataProvider;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,6 +42,7 @@ final class BattlefieldSnapshot {
         rules.add("crystal", crystal());
         rules.add("monsters", monsters());
         rules.add("rotatingBosses", rotatingBosses());
+        rules.add("controls", controls());
         rules.add("supplies", supplies());
         rules.add("economy", economy());
         return rules;
@@ -338,10 +344,44 @@ final class BattlefieldSnapshot {
         return result;
     }
 
+    private static JsonObject controls() {
+        var result = new JsonObject();
+        result.add("sameTypeExpiry", at("max", "expiry_operator", ControlStatusSystem.class, "laterExpiry",
+                "叠加同类眩晕、禁锢或沉默；每次施加先结算其自身生效时长", "control_applied", REAL));
+        var overlaps = new JsonObject();
+        overlaps.add("30_then_10", at(ControlStatusSystem.laterExpiry(30, 10), "ticks",
+                ControlStatusSystem.class, "laterExpiry", "现余 30 刻再施加 10 刻同类控制", "control_applied", REAL));
+        overlaps.add("10_then_30", at(ControlStatusSystem.laterExpiry(10, 30), "ticks",
+                ControlStatusSystem.class, "laterExpiry", "现余 10 刻再施加 30 刻同类控制", "control_applied", REAL));
+        result.add("sameTypeExpirySamples", overlaps);
+        var actions = new JsonObject();
+        actions.add("stun", at(Map.of("move", false, "basicAttack", false, "stationaryCast", false),
+                "action_availability", AbilityRuntime.class, "root", "常规玩家行动；技能可声明解控例外",
+                "input", REAL));
+        actions.add("root", at(Map.of("move", false, "basicAttack", true, "stationaryCast", true),
+                "action_availability", AbilityRuntime.class, "root", "满足各自释放要求的动作；禁止自主位移",
+                "input", REAL));
+        actions.add("silence", at(Map.of("move", true, "basicAttack", true, "stationaryCast", false),
+                "action_availability", SilenceSystem.class, "isSilenced", "常规玩家行动；技能可声明解控例外",
+                "input", REAL));
+        result.add("basicActionAvailability", actions);
+        var time = new JsonObject();
+        time.add("overlap", at("minimum", "rate_operator", ActionTime.class, "multiplier",
+                "同一受支持行动对象同时具有多个生效的来源", "action_progress", ACTION));
+        time.add("cooldownClock", at(REAL, "timebase", PlayerData.class, "tickCooldowns",
+                "缓时期间技能冷却继续推进", "cooldown_tick", REAL));
+        result.add("actionTime", time);
+        return result;
+    }
+
     private static JsonObject supplies() {
         var result = new JsonObject();
         result.add("pillCarryLimit", at(TacticalSupplySystem.PILL_LIMIT, "items", TacticalSupplySystem.class,
                 "PILL_LIMIT", "回春丹与回灵丹合计", "purchase_and_inventory_check", NONE));
+        result.add("regenerationLifecycle", field(Map.of("fullStops", true, "deathStops", true, "sameTypeRejected", true),
+                "regeneration_lifecycle", source(TacticalSupplySystem.class, "tryUse,tickRegeneration")
+                        + " | " + source(PlayerDataProvider.class, "onLivingDeath"),
+                "同种丹药生效中不可续服；回满该资源或收到死亡事件即终止余下回复", "pill_use_and_tick", REAL));
         var offers = new JsonObject();
         for (String id : TacticalSupplySystem.supplyIds()) {
             var rules = new JsonObject();
@@ -353,10 +393,24 @@ final class BattlefieldSnapshot {
         }
         var blood = offers.getAsJsonObject("blood_pill");
         regeneration(blood, TacticalSupplySystem.BLOOD_DURATION, "BLOOD_DURATION", "bloodPerSecond", "hp",
-                List.of(0, 800), TacticalSupplySystem::bloodPerSecond);
+                List.of(0, 800), TacticalSupplySystem::bloodPerSecond, "脱战整额");
+        blood.add("pulseBase", constant(TacticalSupplySystem.BLOOD_PULSE_BASE, "hp",
+                TacticalSupplySystem.class, "BLOOD_PULSE_BASE"));
+        blood.add("pulseMaximumRatio", constant(TacticalSupplySystem.BLOOD_PULSE_MAX_HEALTH_PERCENT / 100.0,
+                "ratio", TacticalSupplySystem.class, "BLOOD_PULSE_MAX_HEALTH_PERCENT"));
+        blood.add("combatWindowInclusive", at(PlayerDataProvider.COMBAT_WINDOW_TICKS, "ticks",
+                PlayerDataProvider.class, "COMBAT_WINDOW_TICKS", "距最近一次已记录战斗的真实刻数，含边界",
+                "regeneration_pulse", REAL));
+        blood.add("combatMultiplier", at(PlayerDataProvider.IN_COMBAT_HEALTH_REGEN_MULTIPLIER, "ratio",
+                PlayerDataProvider.class, "IN_COMBAT_HEALTH_REGEN_MULTIPLIER",
+                "每跳重新检查战斗状态；战斗中将基础量与最大值成长之和乘一次", "regeneration_pulse", REAL));
         var mana = offers.getAsJsonObject("mana_pill");
         regeneration(mana, TacticalSupplySystem.MANA_DURATION, "MANA_DURATION", "manaPerSecond", "mana",
-                List.of(0, 700), TacticalSupplySystem::manaPerSecond);
+                List.of(0, 700), TacticalSupplySystem::manaPerSecond, "战斗与脱战同额");
+        mana.add("pulseBase", constant(TacticalSupplySystem.MANA_PULSE_BASE, "mana",
+                TacticalSupplySystem.class, "MANA_PULSE_BASE"));
+        mana.add("pulseMaximumRatio", constant(TacticalSupplySystem.MANA_PULSE_MAX_MANA_PERCENT / 100.0,
+                "ratio", TacticalSupplySystem.class, "MANA_PULSE_MAX_MANA_PERCENT"));
         var ward = offers.getAsJsonObject("scout_totem");
         ward.add("duration", supplyTime(TacticalSupplySystem.WARD_DURATION, "WARD_DURATION", "totem_placed"));
         ward.add("detectionRadius", constant(TacticalSupplySystem.WARD_RADIUS, "blocks", TacticalSupplySystem.class, "WARD_RADIUS"));
@@ -380,13 +434,13 @@ final class BattlefieldSnapshot {
     }
 
     private static void regeneration(JsonObject result, int duration, String durationSource, String amountSource,
-            String unit, List<Integer> maxima, RegenerationAmount amount) {
+            String unit, List<Integer> maxima, RegenerationAmount amount, String condition) {
         result.add("duration", supplyTime(duration, durationSource, "pill_used"));
         result.add("pulseInterval", supplyTime(TacticalSupplySystem.PILL_PULSE_TICKS, "PILL_PULSE_TICKS", "pill_used"));
         var samples = new JsonObject();
         for (int maximum : maxima) {
             samples.add(Integer.toString(maximum), at(amount.evaluate(maximum), unit, TacticalSupplySystem.class, amountSource,
-                    "按当前上限计算该跳；存活且还有对应资源缺口", "regeneration_pulse", REAL));
+                    "按当前上限计算该跳；存活且还有对应资源缺口；" + condition, "regeneration_pulse", REAL));
         }
         result.add("uncappedPulseSamplesByMaximum", samples);
     }

@@ -188,7 +188,7 @@ final class SkillEffects {
         } else {
             missing(effects, skill, "damage_sequence", "event", "公式可单独估值；形态、伤害段能否相加及实际命中节拍需用场景与引擎读数确认");
         }
-        var supportTypes = skill.supportAmounts().stream().map(AbilitySkill.SupportAmount::effect).toList();
+        var supportTypes = skill.supportAmounts().stream().map(support -> support.effect().id()).toList();
         if (!supportTypes.contains("heal")) {
             missing(effects, skill, "heal", "hp", "无已接入的治疗声明；尚未确认动态或间接治疗是否适用");
         }

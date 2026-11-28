@@ -54,8 +54,18 @@ final class BalanceVerticalChecks {
     private static final int TEST_END = 139;
     private static final float STARTING_MANA = 700;
     private static final float TARGET_HEALTH = 1000;
+    private static final int[] HASTE_POINTS = {0, 4, 8, 12};
+    private static final int[] ORDINARY_COOLDOWNS = {240, 160, 120, 96};
 
     static void run(GameTestHelper helper) {
+        run(helper, false);
+    }
+
+    static void hasteAndPurchases(GameTestHelper helper) {
+        run(helper, true);
+    }
+
+    private static void run(GameTestHelper helper, boolean compareHaste) {
         boolean enabled = ModState.isEnabled();
         boolean training = TrainingMode.isEnabled();
         boolean noCooldown = TrainingMode.isNoCooldown();
@@ -80,16 +90,21 @@ final class BalanceVerticalChecks {
             helper.assertTrue(expectedRange == 28 || expectedRange == 32, "Expected range must match a fixed probe boundary");
             long start = helper.getLevel().getGameTime();
             var arrows = new ArrayList<ArrowProbe>();
-            for (double distance : ARROW_PROBES) {
-                var fixture = new Fixture(helper, CharacterType.LUOXIA, fixtures.size(), distance);
-                fixtures.add(fixture);
-                arrows.add(new ArrowProbe(helper, fixture, start, distance, expectedRange));
-            }
             var shells = new ArrayList<ShellProbe>();
-            for (var stance : Stance.values()) {
-                var fixture = new Fixture(helper, CharacterType.YIKE, fixtures.size(), 5);
-                fixtures.add(fixture);
-                shells.add(new ShellProbe(helper, fixture, start, stance));
+            if (compareHaste) {
+                var ordinary = new Fixture(helper, CharacterType.LINGYUAN, fixtures.size(), 5);
+                fixtures.add(ordinary);
+                verifyHasteAndPurchases(helper, ordinary);
+                for (int i = 0; i < HASTE_POINTS.length; i++) {
+                    addShells(helper, fixtures, shells, start, HASTE_POINTS[i], ORDINARY_COOLDOWNS[i] / 2, true);
+                }
+            } else {
+                for (double distance : ARROW_PROBES) {
+                    var fixture = new Fixture(helper, CharacterType.LUOXIA, fixtures.size(), distance);
+                    fixtures.add(fixture);
+                    arrows.add(new ArrowProbe(helper, fixture, start, distance, expectedRange));
+                }
+                addShells(helper, fixtures, shells, start, 0, 120, false);
             }
             boolean[] done = {false};
             for (int step = 1; step <= TEST_END; step++) {
@@ -115,6 +130,105 @@ final class BalanceVerticalChecks {
         } catch (RuntimeException | Error failure) {
             cleanup.run();
             throw failure;
+        }
+    }
+
+    private static void addShells(GameTestHelper helper, List<Fixture> fixtures, List<ShellProbe> shells,
+            long start, int hastePoints, int expectedCooldown, boolean compareHaste) {
+        for (var stance : Stance.values()) {
+            var fixture = new Fixture(helper, CharacterType.YIKE, fixtures.size(), 5);
+            fixtures.add(fixture);
+            fixture.data.setFirstGroupAttribute("cooldown", hastePoints);
+            FirstGroupGrowth.apply(fixture.player, fixture.data);
+            shells.add(new ShellProbe(helper, fixture, start, stance, hastePoints, expectedCooldown, compareHaste));
+        }
+    }
+
+    private static void verifyHasteAndPurchases(GameTestHelper helper, Fixture fixture) {
+        var player = fixture.player;
+        var data = fixture.data;
+        var skill = FirstGroupSkills.node("lingyuan", 4);
+        data.setSkillLevel(skill.getId(), 1);
+        for (int i = 0; i < HASTE_POINTS.length; i++) {
+            int points = HASTE_POINTS[i];
+            AbilityRuntime.clear(player);
+            data.setCooldown(skill.getId(), 0);
+            data.setMana(STARTING_MANA);
+            data.setFirstGroupAttribute("cooldown", points);
+            FirstGroupGrowth.apply(player, data);
+            SkillSystem.cast(player, CharacterType.SLOT_E);
+            int observed = data.getCooldown(skill.getId());
+            helper.assertTrue(observed == ORDINARY_COOLDOWNS[i], "Live Sword Volley at " + points + " points had " + observed + " ticks of cooldown");
+            System.out.printf(java.util.Locale.ROOT,
+                    "MYRIAD_COMBAT case=ordinary_cooldown points=%d haste=%.1f base=%d cooldown=%d%n",
+                    points, FirstGroupGrowth.skillHaste(data.firstGroupAttribute("cooldown")), skill.getCooldownTicks(1), observed);
+        }
+        helper.assertTrue(AbilityRuntime.effectiveCooldownTicks(1, 150, 0) == 1
+                && AbilityRuntime.effectiveCooldownTicks(0, 150, 0) == 0, "One real tick minimum preserves a zero base");
+        AbilityRuntime.clear(player);
+
+        int[] openingPrices = {360, 432, 518, 622};
+        for (String attribute : FirstGroupGrowth.ATTRIBUTES) {
+            data.setFirstGroupAttribute(attribute, 0);
+            data.setGold(0);
+            TrainingMode.setNoGoldCost(true);
+            boolean free = FirstGroupGrowth.buy(player, data, attribute);
+            helper.assertTrue(free && data.getGold() == 0 && data.firstGroupAttribute(attribute) == 1,
+                    "Free " + attribute + " advances only that attribute's purchase rank");
+            TrainingMode.setNoGoldCost(false);
+            data.setGold(2000);
+            for (int rank = 1; rank < openingPrices.length; rank++) {
+                int before = data.getGold();
+                helper.assertTrue(FirstGroupGrowth.price(rank) == openingPrices[rank]
+                        && FirstGroupGrowth.buy(player, data, attribute) && data.getGold() == before - openingPrices[rank]
+                        && data.firstGroupAttribute(attribute) == rank + 1, "Purchase advances exact quote for " + attribute);
+            }
+            helper.assertTrue(FirstGroupGrowth.price(0) == openingPrices[0], "All attributes start at 360 gold");
+            System.out.printf("MYRIAD_COMBAT case=training_price attribute=%s starting_price=%d free=%b rank=%d gold=%d%n",
+                    attribute, FirstGroupGrowth.price(0), free, data.firstGroupAttribute(attribute), data.getGold());
+        }
+
+        // The fixture uses high ranks to reach both permanent attribute limits.
+        int partialRank = 22;
+        data.setFirstGroupAttribute("speed", partialRank);
+        FirstGroupGrowth.apply(player, data);
+        int price = Math.toIntExact(FirstGroupGrowth.price(partialRank));
+        data.setGold(price + 17);
+        double attack = player.getAttributeValue(ModAttributes.ATTACK_SPEED);
+        double movement = player.getAttributeValue(Attributes.MOVEMENT_SPEED);
+        var gain = FirstGroupGrowth.nextSpeedGain(partialRank);
+        boolean partial = FirstGroupGrowth.buy(player, data, "speed");
+        helper.assertTrue(partial && data.getGold() == 17 && data.firstGroupAttribute("speed") == partialRank + 1
+                && attack == 2 && player.getAttributeValue(ModAttributes.ATTACK_SPEED) == attack && gain.attackSpeed() == 0
+                && Math.abs(gain.movementSpeed() - .0015) < .00001
+                && Math.abs(player.getAttributeValue(Attributes.MOVEMENT_SPEED) - movement - gain.movementSpeed()) < .00001,
+                "Speed still pays its full quote and grants only the remaining permanent movement speed");
+        System.out.printf(java.util.Locale.ROOT,
+                "MYRIAD_COMBAT case=speed_purchase state=partial buy=%b rank=%d price=%d gold=%d attack_delta=%.4f movement_delta=%.4f%n",
+                partial, data.firstGroupAttribute("speed"), price, data.getGold(), gain.attackSpeed(), gain.movementSpeed());
+
+        var temporary = net.minecraft.resources.Identifier.parse("myriad:test_speed_debuff");
+        var moveAttribute = player.getAttribute(Attributes.MOVEMENT_SPEED);
+        int fullRank = (int) Math.ceil((Attributes.MOVEMENT_SPEED.value().sanitizeValue(Double.MAX_VALUE)
+                - FirstGroupGrowth.BASE_MOVEMENT_SPEED) / FirstGroupGrowth.SPEED_MOVEMENT_GAIN);
+        data.setFirstGroupAttribute("speed", fullRank);
+        FirstGroupGrowth.apply(player, data);
+        moveAttribute.addTransientModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(temporary, -.75,
+                net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+        try {
+            boolean cappedPaid = FirstGroupGrowth.buy(player, data, "speed");
+            TrainingMode.setNoGoldCost(true);
+            boolean cappedFree = FirstGroupGrowth.buy(player, data, "speed");
+            helper.assertTrue(!cappedPaid && !cappedFree && data.getGold() == 17 && data.firstGroupAttribute("speed") == fullRank
+                    && "message.myriad.g1.attribute_no_gain".equals(FirstGroupGrowth.purchaseError(CharacterType.LINGYUAN,
+                            "speed", fullRank, data.getGold(), false))
+                    && FirstGroupGrowth.nextSpeedGain(fullRank).equals(new FirstGroupGrowth.SpeedGain(0, 0)),
+                    "Temporary slowing does not reopen either permanent gain, and both wallet and purchase rank are unchanged");
+            System.out.printf("MYRIAD_COMBAT case=speed_purchase state=full paid=%b free=%b rank=%d gold=%d%n",
+                    cappedPaid, cappedFree, data.firstGroupAttribute("speed"), data.getGold());
+        } finally {
+            moveAttribute.removeModifier(temporary);
+            TrainingMode.setNoGoldCost(false);
         }
     }
 
@@ -271,27 +385,34 @@ final class BalanceVerticalChecks {
         final Fixture fixture;
         final long start;
         final Stance stance;
+        final boolean compareHaste;
+        final int hastePoints;
+        final int expectedCooldown;
         final int firstMuzzle;
         final int secondRequest;
         final int secondMuzzle;
         int hits;
         float previousHealth = TARGET_HEALTH;
 
-        ShellProbe(GameTestHelper helper, Fixture fixture, long start, Stance stance) {
+        ShellProbe(GameTestHelper helper, Fixture fixture, long start, Stance stance, int hastePoints,
+                int expectedCooldown, boolean compareHaste) {
             this.helper = helper;
             this.fixture = fixture;
             this.start = start;
             this.stance = stance;
+            this.hastePoints = hastePoints;
+            this.expectedCooldown = expectedCooldown;
+            this.compareHaste = compareHaste;
             firstMuzzle = (stance.artillery() ? stance.deployTicks + 1 : 0) + YIKE_Q_WINDUP;
-            secondRequest = firstMuzzle + (stance.artillery() ? stance.muzzleInterval - YIKE_Q_WINDUP : 120);
+            secondRequest = firstMuzzle + (stance.artillery() ? stance.muzzleInterval - YIKE_Q_WINDUP : expectedCooldown);
             secondMuzzle = secondRequest + YIKE_Q_WINDUP;
             fixture.data.setSkillLevel(Q, 1);
             double cdr = fixture.player.getAttributeValue(ModAttributes.COOLDOWN_REDUCTION);
             double actionMultiplier = ActionTime.multiplier(fixture.player.getUUID(), start);
             int boughtPoints = FirstGroupGrowth.ATTRIBUTES.stream().mapToInt(fixture.data::firstGroupAttribute).sum();
-            helper.assertTrue(cdr == 0 && actionMultiplier == 1 && boughtPoints == 0 && cooldown() == 0
+            helper.assertTrue(cdr == 0 && actionMultiplier == 1 && boughtPoints == hastePoints && cooldown() == 0
                     && fixture.data.getMana() == STARTING_MANA, "Fixed Q initial state");
-            trace(YIKE, stance.id, "initial", 0, "level", fixture.data.getLevel(), "rank", fixture.data.skillLevel(Q),
+            trace(YIKE, caseId(), "initial", 0, "level", fixture.data.getLevel(), "rank", fixture.data.skillLevel(Q),
                     "mana", fixture.data.getMana(), "cooldownTicks", cooldown(), "ammo", null,
                     "stanceRank", stance.artillery() ? 1 : null, "boughtPoints", boughtPoints,
                     "cooldownReductionPct", cdr, "noManaCost", TrainingMode.isNoMana(fixture.player),
@@ -302,7 +423,7 @@ final class BalanceVerticalChecks {
                 SkillSystem.cast(fixture.player, CharacterType.SLOT_E);
                 boolean accepted = skill.equals(AbilityRuntime.preparingSkill(fixture.player));
                 helper.assertTrue(accepted, stance.id + " E deploy request");
-                trace(YIKE, stance.id, "stance_requested", 0, "accepted", accepted);
+                trace(YIKE, caseId(), "stance_requested", 0, "accepted", accepted);
             } else {
                 request(0, 1, true);
             }
@@ -317,7 +438,7 @@ final class BalanceVerticalChecks {
                     helper.assertTrue(YikeStance.mobile(player) == (stance == Stance.MOBILE)
                             && ammo() == stance.ammo && fixture.data.getMana() == STARTING_MANA - stance.deploymentMana,
                             stance.id + " deployment ammo and mana");
-                    trace(YIKE, stance.id, "stance_entered", tick, "ammo", ammo(), "mana", fixture.data.getMana());
+                    trace(YIKE, caseId(), "stance_entered", tick, "ammo", ammo(), "mana", fixture.data.getMana());
                 }
             }
             if (stance.artillery() && tick == stance.deployTicks + 1) request(tick, 1, true);
@@ -339,8 +460,8 @@ final class BalanceVerticalChecks {
             if (stance.artillery() && tick == secondMuzzle + 1) {
                 SkillSystem.cast(player, CharacterType.SLOT_E);
                 helper.assertTrue(!YikeStance.active(player) && "manual".equals(YikeStance.exitReason(player))
-                        && ammo() == 0 && cooldown() == 120, stance.id + " manual exit restores the normal Q cooldown");
-                trace(YIKE, stance.id, "stance_exited", tick, "reason", YikeStance.exitReason(player),
+                        && ammo() == 0 && cooldown() == expectedCooldown, stance.id + " manual exit restores the normal Q cooldown");
+                trace(YIKE, caseId(), "stance_exited", tick, "reason", YikeStance.exitReason(player),
                         "cooldownTicks", cooldown());
             }
 
@@ -348,7 +469,7 @@ final class BalanceVerticalChecks {
             if (health < previousHealth) {
                 hits++;
                 helper.assertTrue(hits <= expectedShots, stance.id + " only an actual shot damages its target");
-                trace(YIKE, stance.id, "hit", tick, "shot", hits, "damage", previousHealth - health);
+                trace(YIKE, caseId(), "hit", tick, "shot", hits, "damage", previousHealth - health);
                 previousHealth = health;
             }
             if (tick == TEST_END) helper.assertTrue(hits == 2, stance.id + " both actual shots damaged the target");
@@ -360,7 +481,7 @@ final class BalanceVerticalChecks {
             int beforeCooldown = cooldown();
             SkillSystem.cast(fixture.player, CharacterType.SLOT_Q);
             boolean accepted = Q.equals(AbilityRuntime.preparingSkill(fixture.player));
-            trace(YIKE, stance.id, "cast_requested", tick, "accepted", accepted, "shot", shot);
+            trace(YIKE, caseId(), "cast_requested", tick, "accepted", accepted, "shot", shot);
             helper.assertTrue(accepted == expectedAcceptance && fixture.data.getMana() == beforeMana && cooldown() == beforeCooldown
                     && Objects.equals(beforeAmmo, ammo()), stance.id + " request is unresolved/unpaid at " + tick);
         }
@@ -368,16 +489,17 @@ final class BalanceVerticalChecks {
         private void muzzle(int tick, int shot) {
             var signal = (AbilityVfxPayload) fixture.signals.get(shot - 1);
             int nextShotTicks = YikeStance.nextShotTicks(fixture.player);
-            trace(YIKE, stance.id, "muzzle", tick, "shot", shot, "ammo", ammo(), "mana", fixture.data.getMana(),
+            trace(YIKE, caseId(), "muzzle", tick, "shot", shot, "ammo", ammo(), "mana", fixture.data.getMana(),
                     "cooldownTicks", cooldown(), "nextShotTicks", nextShotTicks);
             helper.assertTrue(signal.started() - start == tick && signal.variant() == 2
                     && fixture.data.getMana() == STARTING_MANA - stance.deploymentMana - 35 * shot
                     && (stance.artillery() ? cooldown() == 0 && ammo() == stance.ammo - shot
-                            && nextShotTicks == stance.muzzleInterval : cooldown() == 120),
+                            && nextShotTicks == stance.muzzleInterval : cooldown() == expectedCooldown),
                     stance.id + " real muzzle consumes one shell and 35 mana at " + tick);
         }
 
         private int cooldown() { return fixture.data.getCooldown(Q); }
+        private String caseId() { return compareHaste ? stance.id + "_" + hastePoints : stance.id; }
         private Integer ammo() { return stance.artillery() ? YikeStance.shots(fixture.player) : null; }
     }
 

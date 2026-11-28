@@ -6,7 +6,7 @@ import net.minecraft.world.phys.Vec3;
 import static com.myriad.combat.DamageCalc.Kind.*;
 /** Independent reusable branch. */
 public final class SpiritChimeSkill extends AbilitySkill {
-    private static final SupportAmount HEAL = new SupportAmount("heal", 18, 8.4f, .15f);
+    private static final SupportAmount HEAL = new SupportAmount(SupportEffect.HEAL, SupportScaling.TOTAL_SPELL, 18, 8.4f, .15f);
 
     @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(HEAL); }
 

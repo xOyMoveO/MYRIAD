@@ -9,7 +9,7 @@ import java.util.*;
 
 /** Rolling horizontal path length, rather than net displacement or stance transitions. */
 public final class SteadyBarrier extends AbilitySkill {
-    private static final SupportAmount SHIELD = new SupportAmount("shield", 65, 18, .25f);
+    private static final SupportAmount SHIELD = new SupportAmount(SupportEffect.SHIELD, SupportScaling.TOTAL_SPELL, 65, 18, .25f);
 
     @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(SHIELD); }
 

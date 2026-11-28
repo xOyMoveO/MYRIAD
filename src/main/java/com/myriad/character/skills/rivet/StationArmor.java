@@ -8,7 +8,7 @@ import java.util.*;
 
 /** Grounded time is cumulative inside the station; damage exhaustion owns the ten-second lock. */
 public final class StationArmor extends RivetSkill {
-    private static final SupportAmount SHIELD = new SupportAmount("shield", 68, 21.6f, .4f);
+    private static final SupportAmount SHIELD = new SupportAmount(SupportEffect.SHIELD, SupportScaling.TOTAL_SPELL, 68, 21.6f, .4f);
 
     @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(SHIELD); }
 

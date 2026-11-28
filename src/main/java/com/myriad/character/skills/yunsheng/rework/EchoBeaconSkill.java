@@ -8,7 +8,7 @@ import java.util.List;
 import static com.myriad.combat.DamageCalc.Kind.*;
 /** Independent reusable branch. */
 public final class EchoBeaconSkill extends AbilitySkill {
-    private static final SupportAmount SHIELD = new SupportAmount("shield", 65, 20.7f, .3f);
+    private static final SupportAmount SHIELD = new SupportAmount(SupportEffect.SHIELD, SupportScaling.TOTAL_SPELL, 65, 20.7f, .3f);
 
     @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(SHIELD); }
 

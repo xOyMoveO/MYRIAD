@@ -4,7 +4,8 @@ import java.util.List;
 public final class QiaoFanSkill extends AbilitySkill {
     public static final int COUNTER_SHIELD_TICKS = 40, COUNTER_STUN_TICKS = 6, DRAWN_SLOW_TICKS = 20;
     public static final float DRAWN_SLOW = .30f;
-    private static final SupportAmount SHIELD = new SupportAmount("shield", 50, 12.5f, .25f);
+    private static final SupportAmount SHIELD = new SupportAmount(SupportEffect.SHIELD, SupportScaling.BONUS_PHYSICAL,
+            57.5f, 12.5f, 1f / 3);
 
     @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(SHIELD); }
 

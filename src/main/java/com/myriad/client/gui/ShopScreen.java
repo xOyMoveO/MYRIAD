@@ -392,7 +392,7 @@ public class ShopScreen extends Screen {
             gui.text(font, name, center - font.width(name) / 2, ty, 0xFF78E6D0);
             ty += 14;
             price = TacticalSupplySystem.supplyPrice(selectedId);
-            for (var line : font.split(Component.translatable("item.myriad." + selectedId + ".desc"), w - 16)) {
+            for (var line : font.split(TacticalSupplySystem.supplyDescription(selectedId), w - 16)) {
                 gui.text(font, line, x + 8, ty, 0xFFCCCCCC);
                 ty += 11;
             }

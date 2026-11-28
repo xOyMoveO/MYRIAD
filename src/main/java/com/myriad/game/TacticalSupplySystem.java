@@ -38,6 +38,10 @@ public final class TacticalSupplySystem {
 
     static final int BLOOD_DURATION = 8 * 20;
     static final int MANA_DURATION = 5 * 20;
+    static final int BLOOD_PULSE_BASE = 8;
+    static final int MANA_PULSE_BASE = 16;
+    static final float BLOOD_PULSE_MAX_HEALTH_PERCENT = 1.25f;
+    static final int MANA_PULSE_MAX_MANA_PERCENT = 2;
     static final int WARD_DURATION = 120 * 20;
     static final int TRAP_DURATION = 90 * 20;
     static final double WARD_RADIUS = 20.0;
@@ -72,6 +76,25 @@ public final class TacticalSupplySystem {
     public static int supplyPrice(String id) {
         SupplyOffer offer = offer(id);
         return offer == null ? 0 : offer.price;
+    }
+
+    public static Component supplyDescription(String id) {
+        String key = "item.myriad." + id + ".desc";
+        return switch (id) {
+            case "blood_pill" -> bloodText(key);
+            case "mana_pill" -> manaText(key);
+            default -> Component.translatable(key);
+        };
+    }
+
+    private static Component bloodText(String key) {
+        return Component.translatable(key, BLOOD_DURATION / 20, BLOOD_PULSE_BASE, BLOOD_PULSE_MAX_HEALTH_PERCENT,
+                PlayerDataProvider.COMBAT_WINDOW_TICKS / 20,
+                (int) Math.round(100 * PlayerDataProvider.IN_COMBAT_HEALTH_REGEN_MULTIPLIER));
+    }
+
+    private static Component manaText(String key) {
+        return Component.translatable(key, MANA_DURATION / 20, MANA_PULSE_BASE, MANA_PULSE_MAX_MANA_PERCENT);
     }
 
     /** 使用对局金币购买补给；视野饰品互斥，购买时会自动替换。 */
@@ -123,14 +146,23 @@ public final class TacticalSupplySystem {
         };
     }
 
-    public static void clearRegeneration(UUID playerId) {
+    public static void clearRegeneration(ServerPlayer player) {
+        UUID playerId = player.getUUID();
         BLOOD_REMAINING.remove(playerId);
         MANA_REMAINING.remove(playerId);
         TRUE_SIGHT_UNTIL.remove(playerId);
+        clearRegenerationBuffs(player);
+    }
+
+    private static void clearRegenerationBuffs(ServerPlayer player) {
+        PlayerData data = PlayerDataProvider.get(player);
+        data.setBuff("blood_pill", 0);
+        data.setBuff("mana_pill", 0);
     }
 
     public static void clearPlayer(ServerPlayer player) {
         clearFor(List.of(player.getUUID()));
+        clearRegenerationBuffs(player);
     }
 
     public static boolean tryUse(ServerPlayer player, ItemStack stack) {
@@ -146,7 +178,7 @@ public final class TacticalSupplySystem {
         if (data == null) return true;
 
         if (stack.is(ModItems.BLOOD_PILL.get())) {
-            if (BLOOD_REMAINING.containsKey(player.getUUID()) || player.getHealth() >= player.getMaxHealth()) {
+            if (!player.isAlive() || BLOOD_REMAINING.containsKey(player.getUUID()) || player.getHealth() >= player.getMaxHealth()) {
                 player.sendSystemMessage(Component.translatable("message.myriad.supply_cannot_use"));
                 return true;
             }
@@ -154,12 +186,12 @@ public final class TacticalSupplySystem {
             data.setBuff("blood_pill", BLOOD_DURATION);
             consume(player, stack);
             playUse(player, ParticleTypes.HEART);
-            player.sendSystemMessage(Component.translatable("message.myriad.blood_pill_used"));
+            player.sendSystemMessage(bloodText("message.myriad.blood_pill_used"));
             return true;
         }
         if (stack.is(ModItems.MANA_PILL.get())) {
             float maxMana = (float) player.getAttributeValue(ModAttributes.MAX_MANA);
-            if (MANA_REMAINING.containsKey(player.getUUID()) || data.getMana() >= maxMana) {
+            if (!player.isAlive() || MANA_REMAINING.containsKey(player.getUUID()) || data.getMana() >= maxMana) {
                 player.sendSystemMessage(Component.translatable("message.myriad.supply_cannot_use"));
                 return true;
             }
@@ -167,7 +199,7 @@ public final class TacticalSupplySystem {
             data.setBuff("mana_pill", MANA_DURATION);
             consume(player, stack);
             playUse(player, ParticleTypes.ENCHANT);
-            player.sendSystemMessage(Component.translatable("message.myriad.mana_pill_used"));
+            player.sendSystemMessage(manaText("message.myriad.mana_pill_used"));
             return true;
         }
         if (stack.is(ModItems.TRUE_SIGHT_CHARM.get())) {
@@ -245,7 +277,10 @@ public final class TacticalSupplySystem {
         if (health != null) {
             if (player.isAlive() && now >= health.nextTick() && now <= health.endTick()
                     && player.getHealth() < player.getMaxHealth()) {
-                com.myriad.combat.CombatTelemetry.heal(player, bloodPerSecond(data.getModMaxHealth()), "blood_pill");
+                float pulse = bloodPerSecond(player.getMaxHealth());
+                if (PlayerDataProvider.isInCombat(now, data.getLastCombatGameTime()))
+                    pulse *= (float) PlayerDataProvider.IN_COMBAT_HEALTH_REGEN_MULTIPLIER;
+                com.myriad.combat.CombatTelemetry.heal(player, pulse, "blood_pill");
                 changed = true;
             }
             if (!player.isAlive() || now >= health.endTick() || player.getHealth() >= player.getMaxHealth()) {
@@ -269,8 +304,13 @@ public final class TacticalSupplySystem {
         if (changed) PlayerDataProvider.syncToClient(player);
     }
 
-    static float bloodPerSecond(float maxHealth) { return 3 + .003f * maxHealth; }
-    static float manaPerSecond(float maxMana) { return 10 + .02f * maxMana; }
+    static float bloodPerSecond(float maxHealth) {
+        return BLOOD_PULSE_BASE + BLOOD_PULSE_MAX_HEALTH_PERCENT / 100 * maxHealth;
+    }
+
+    static float manaPerSecond(float maxMana) {
+        return MANA_PULSE_BASE + MANA_PULSE_MAX_MANA_PERCENT / 100f * maxMana;
+    }
 
     private static void tickWard(ServerLevel level, Deployable ward) {
         AABB area = new AABB(ward.pos, ward.pos).inflate(WARD_RADIUS);

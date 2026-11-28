@@ -10,7 +10,7 @@ import java.util.*;
 
 /** The fixed region survives anchor replacement and terrain destruction, but belongs to its caster's lifecycle. */
 public final class HoldProtocol extends RivetSkill {
-    private static final SupportAmount SHIELD = new SupportAmount("shield", 142, 62.5f, .6f);
+    private static final SupportAmount SHIELD = new SupportAmount(SupportEffect.SHIELD, SupportScaling.TOTAL_SPELL, 142, 62.5f, .6f);
 
     @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(SHIELD); }
 

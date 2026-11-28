@@ -25,7 +25,7 @@ import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
 
 public final class BalanceSnapshot {
-    private static final int FORMAT_VERSION = 1;
+    private static final int FORMAT_VERSION = 2;
     private static final String ARCHIVED_LANGUAGE = "tools/balance/archived/zh_cn.json";
     private static final Pattern LEGACY_RANK_GROWTH = Pattern.compile("\\+([0-9]+(?:\\.[0-9]+)?)\\(r-1\\)\\s*\\+\\s*[0-9.]+S");
 
@@ -42,6 +42,7 @@ public final class BalanceSnapshot {
         var rules = new JsonObject();
         rules.add("roles", roles);
         rules.add("skillRules", RosterSnapshot.commonSkillRules());
+        rules.add("attributePurchases", RosterSnapshot.attributePurchases());
         rules.add("battlefield", BattlefieldSnapshot.export(root));
 
         JsonElement dirty = args[3].equals("unknown") ? JsonNull.INSTANCE : SnapshotJson.json(Boolean.parseBoolean(args[3]));

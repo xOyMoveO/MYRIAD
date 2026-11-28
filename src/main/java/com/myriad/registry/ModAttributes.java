@@ -82,9 +82,10 @@ public final class ModAttributes {
     public static final net.minecraft.core.Holder.Reference<Attribute> PERCENT_MAGIC_PEN =
             register("percent_magic_pen", () -> ranged("attribute.myriad.percent_magic_pen", 0.0, 0.0, 60.0));
 
+    public static final double MAX_ATTACK_SPEED = 2.0;
     /** 攻击速度：模组独立属性（不受手持物品影响）。 */
     public static final net.minecraft.core.Holder.Reference<Attribute> ATTACK_SPEED =
-            register("attack_speed", () -> ranged("attribute.myriad.attack_speed", 2.0, 0.0, 2.0));
+            register("attack_speed", () -> ranged("attribute.myriad.attack_speed", 2.0, 0.0, MAX_ATTACK_SPEED));
 
     /** 法力上限 */
     public static final net.minecraft.core.Holder.Reference<Attribute> MAX_MANA =

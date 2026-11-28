@@ -26,7 +26,8 @@ def verify(snapshot, report):
     rules = snapshot["rules"]
     roles = named(rules["roles"])
     skills = {item["id"] for role in roles.values() for item in role["skills"]}
-    equal(snapshot["formatVersion"], 1, "format")
+    if snapshot["formatVersion"] not in (1, 2):
+        raise SystemExit(f"Unsupported snapshot version {snapshot['formatVersion']}")
     equal(len(roles), 15, "distinct roles")
     equal(len(skills), 120, "distinct skills")
     equal(len(report["roster"]["roleResources"]), 7, "definition resources")

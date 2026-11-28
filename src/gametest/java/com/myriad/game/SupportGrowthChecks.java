@@ -1,6 +1,7 @@
 package com.myriad.game;
 
 import com.myriad.character.ability.AbilityRuntime;
+import com.myriad.character.ability.AbilitySkill.SupportScaling;
 import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.player.ModShieldSystem;
 import com.myriad.player.PlayerDataProvider;
@@ -11,7 +12,11 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import java.util.List;
 
 final class SupportGrowthChecks {
-    private record Expected(String id, String effect, double first, double last, double wisdom) {}
+    private record Expected(String id, String effect, double first, double last, double perPoint, SupportScaling scaling) {
+        Expected(String id, String effect, double first, double last, double perPoint) {
+            this(id, effect, first, last, perPoint, SupportScaling.TOTAL_SPELL);
+        }
+    }
     private static final List<Expected> EFFECTS = List.of(
             new Expected("g2_chixiao_pb", "shield", 92, 197.6, 8),
             new Expected("g2_chixiao_ub", "shield", 251, 426, 14),
@@ -36,7 +41,7 @@ final class SupportGrowthChecks {
             new Expected("rivet_station_armor", "shield", 80, 166.4, 8),
             new Expected("rivet_emergency_strut", "shield", 110, 275, 10),
             new Expected("rivet_hold_protocol", "shield", 160, 285, 12),
-            new Expected("shuo_qiaofan", "shield", 57.5, 107.5, 5),
+            new Expected("shuo_qiaofan", "shield", 57.5, 107.5, 5, SupportScaling.BONUS_PHYSICAL),
             new Expected("g1_xuanchen_pa", "shield", 47.5, 119.5, 5),
             new Expected("g1_xuanchen_n2", "shield", 108, 233, 12),
             new Expected("g1_xuanchen_mb", "shield", 70.5, 194.7, 7),
@@ -56,14 +61,18 @@ final class SupportGrowthChecks {
         h.assertTrue(count == EFFECTS.size(), "Every support amount has a reference");
         for (var expected : EFFECTS) {
             var skill = FirstGroupSkills.byId(expected.id);
-            var amount = skill.supportAmounts().stream().filter(candidate -> candidate.effect().equals(expected.effect))
+            var amount = skill.supportAmounts().stream().filter(candidate -> candidate.effect().id().equals(expected.effect))
                     .findFirst().orElseThrow();
+            h.assertTrue(amount.scaling() == expected.scaling, "Declared support scaling: " + expected.id);
             for (int rank = 1; rank <= skill.maxRank(); rank++) {
                 double zero = expected.first + (expected.last - expected.first) * (rank - 1) / (skill.maxRank() - 1);
-                for (int wisdom : new int[]{0, 1, 4}) {
-                    double power = 30 + 20 * wisdom;
-                    h.assertTrue(Math.abs(amount.value(rank, power) - zero - expected.wisdom * wisdom) < .002,
-                            "Support amount at rank " + rank + ": " + expected.id);
+                for (int points : new int[]{0, 1, 4}) {
+                    double expectedSpell = expected.scaling == SupportScaling.TOTAL_SPELL ? expected.perPoint * points : 0;
+                    double expectedPhysical = expected.scaling == SupportScaling.BONUS_PHYSICAL ? expected.perPoint * points : 0;
+                    h.assertTrue(Math.abs(amount.value(rank, 30 + 20 * points, 0) - zero - expectedSpell) < .002,
+                            "Support amount with wisdom at rank " + rank + ": " + expected.id);
+                    h.assertTrue(Math.abs(amount.value(rank, 30, 15 * points) - zero - expectedPhysical) < .002,
+                            "Support amount with strength at rank " + rank + ": " + expected.id);
                 }
             }
         }

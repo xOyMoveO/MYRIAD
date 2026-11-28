@@ -90,7 +90,9 @@ final class NightDashRangeChecks {
             }
         };
         p.connection.handleAcceptPlayerLoad(new net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket());p.setNoGravity(true);Vec3 origin=Vec3.atBottomCenterOf(floor.above());p.setPos(origin);p.setYRot(0);p.setXRot(index%2==0?89:0);
-        var data=PlayerDataProvider.get(p);data.setCharacterId("yingxiao");p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(100);
+        var data=PlayerDataProvider.get(p);data.setCharacterId("yingxiao");
+        com.myriad.character.rework.FirstGroupGrowth.initialize(p, data);
+        p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(100);
         var skill=FirstGroupSkills.node("yingxiao",index%2==0?4:5);data.setSkillLevel(skill.getId(),1);
         var c=AbilityRuntime.context(p,skill);Vec3 endpoint=origin.add(0,0,index%2==0?ShadowAssaultSkill.DASH_DISTANCE:ShadowReturnSkill.DASH_DISTANCE);c.point=endpoint;
         var target=h.spawn(EntityTypes.PIG,new BlockPos(30,191+index*8,7));target.setPos(origin.add(0,0,index%2==0?7.5:6.1));

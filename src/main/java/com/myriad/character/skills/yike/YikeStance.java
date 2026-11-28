@@ -8,7 +8,6 @@ import com.myriad.combat.KnockbackBuffer;
 import com.myriad.combat.SilenceSystem;
 import com.myriad.game.TrainingMode;
 import com.myriad.player.PlayerDataProvider;
-import com.myriad.registry.ModAttributes;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -261,8 +260,7 @@ public final class YikeStance {
         var q = s.q;
         if (s.fired && q != null && !TrainingMode.isNoCooldown(p)) {
             var d = PlayerDataProvider.get(p);
-            double reduction = Math.clamp(p.getAttributeValue(ModAttributes.COOLDOWN_REDUCTION), 0, 60);
-            int full = Math.max(1, (int) (q.getCooldownTicks(Math.max(1, d.skillLevel(q.getId()))) * (1 - reduction / 100)));
+            int full = AbilityRuntime.effectiveCooldownTicks(p, d, q.getCooldownTicks(Math.max(1, d.skillLevel(q.getId()))));
             d.setCooldown(q.getId(), Math.max(d.getCooldown(q.getId()), full));
         }
         YikeVfx.event(s.deployment, "exit", p.getEyePosition(), p.getEyePosition().add(s.aim), 0, 1);

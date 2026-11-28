@@ -4,7 +4,9 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.myriad.character.CharacterType;
 import com.myriad.character.ability.AbilityFormulaText;
+import com.myriad.character.ability.AbilityRuntime;
 import com.myriad.character.ability.AbilitySkill;
+import com.myriad.character.rework.FirstGroupGrowth;
 import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.character.skills.yike.RainbowShell;
 import com.myriad.character.skills.yike.YikeStance.ShotForm;
@@ -131,10 +133,14 @@ public record SkillHoverDetails(String name, String group, String rank, boolean 
                     if (!value.isEmpty()) rows.add(value);
                 }
                 double power = data.attrs().getOrDefault(ModAttributes.SPELL_POWER.value().getDescriptionId(),
-                        com.myriad.character.rework.FirstGroupGrowth.baselineSpellPower());
+                        FirstGroupGrowth.baselineSpellPower());
+                var role = CharacterType.byId(skill.role());
+                double attack = data.attrs().getOrDefault(ModAttributes.PHYSICAL_ATTACK.value().getDescriptionId(),
+                        FirstGroupGrowth.baselinePhysicalAttack(role));
+                double bonusPhysical = FirstGroupGrowth.bonusPhysicalAttack(role, attack);
                 for (var amount : skill.supportAmounts()) {
                     if (skill.getId().equals("shuo_qiaofan") && variant.equals("drawn")) continue;
-                    rows.add(SkillTooltipDescriptions.supportLine(amount, rank, power));
+                    rows.add(SkillTooltipDescriptions.supportLine(amount, rank, power, bonusPhysical));
                 }
                 for (int i = 0; i < skill.damageFormulas().size(); i++) {
                     final int index = i;
@@ -171,9 +177,11 @@ public record SkillHoverDetails(String name, String group, String rank, boolean 
     private static String cooldown(AbilitySkill skill, PlayerDataPayload data, int rank, boolean preview, boolean assigned) {
         if (data.training() && data.noCooldown()) return label("train_cd");
         int ticks = skill instanceof RainbowShell shell ? shell.cooldownTicks(rank, false) : skill.getCooldownTicks(rank);
-        double reduction = ClientDataHolder.attrValue(ModAttributes.COOLDOWN_REDUCTION.value().getDescriptionId());
-        if (ticks > 0 && Double.isFinite(reduction))
-            ticks = Math.max(1, (int)(ticks * (1 - Math.clamp(reduction, 0, ModAttributes.MAX_COOLDOWN_REDUCTION) / 100)));
+        if (skill.role().equals(data.characterId())) {
+            double haste = FirstGroupGrowth.skillHaste(data.buffs().getOrDefault("g1_attribute_cooldown", 0));
+            double reduction = ClientDataHolder.attrValue(ModAttributes.COOLDOWN_REDUCTION.value().getDescriptionId());
+            ticks = AbilityRuntime.effectiveCooldownTicks(ticks, haste, reduction);
+        }
         String value = label(preview ? "preview_cd" : "cd", seconds(ticks));
         int remaining = !preview && assigned ? ClientDataHolder.cooldownTicks(skill.slot()) : 0;
         return remaining > 0 ? value + " · " + label("left", seconds(remaining)) : value;
