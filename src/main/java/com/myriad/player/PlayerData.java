@@ -43,11 +43,17 @@ public class PlayerData {
     private int matchGoldEarned = 0;
     private java.util.UUID queueRound;
     private boolean openingPurseClaimed;
+    private final java.util.Set<java.util.UUID> offlineAssistReceipts = new java.util.HashSet<>();
+
+    public boolean claimOfflineAssist(java.util.UUID receipt) {
+        return offlineAssistReceipts.add(receipt);
+    }
 
     public boolean belongsToQueueRound(java.util.UUID id) { return id.equals(queueRound); }
     public void beginQueueRound(java.util.UUID id) {
         queueRound = id;
         openingPurseClaimed = false;
+        offlineAssistReceipts.clear();
     }
     public boolean openingPurseClaimed() { return openingPurseClaimed; }
     public static final int OPENING_PURSE_GOLD = 500;
@@ -579,6 +585,8 @@ public class PlayerData {
         this.matchGoldEarned = old.matchGoldEarned;
         this.queueRound = old.queueRound;
         this.openingPurseClaimed = old.openingPurseClaimed;
+        this.offlineAssistReceipts.clear();
+        this.offlineAssistReceipts.addAll(old.offlineAssistReceipts);
         this.faction = old.faction;
         this.mana = old.mana;
         this.modMaxHealth = old.modMaxHealth;

@@ -45,3 +45,7 @@ python tools/fabric/prepare-ci-release.py
 ## 落霞与伊珂纵向对照
 
 [两个复跑场景](vertical-scenarios.md)说明如何用同一配对快照、服务端 GameTest 事件和客户端技能介绍卡核对射程及炮台条件值。
+
+## 购物与对局经济
+
+[第 4 批服务端结算与复跑入口](economy-runtime.md)说明分项购物资格、助攻候选池、开局锁定席位及阵亡复活规则。

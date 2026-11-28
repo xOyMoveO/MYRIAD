@@ -53,7 +53,8 @@ public final class HeroRespawnSystem {
         }
     }
     static int waitTicks(int heroLevel, boolean respawnRune) {
-        int ticks = (2 * Math.max(1, Math.min(15, heroLevel)) + 7) * 20;
+        int level = Math.clamp(heroLevel, 1, 20);
+        int ticks = (2 * Math.min(15, level) + 7) * 20 + Math.max(0, level - 15) * 32;
         return respawnRune ? Math.max(20, ticks / 2) : ticks;
     }
 

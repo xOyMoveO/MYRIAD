@@ -177,13 +177,14 @@ public class ShopScreen extends Screen {
     private String purchaseBlockReason() {
         if (purchasePending) return "screen.myriad.shop.pending";
         var player = net.minecraft.client.Minecraft.getInstance().player;
-        if (player == null || ClientDataHolder.get() == null || !ClientDataHolder.modEnabled()
-                || (!player.isAlive() || player.isSpectator()) && !com.myriad.client.UiFeedback.shopAllowed)
+        var data = ClientDataHolder.get();
+        if (player == null || data == null || !data.modEnabled())
             return "screen.myriad.shop.unavailable";
         if (selectedId == null) return "screen.myriad.shop.select_hint";
-        if (!com.myriad.client.UiFeedback.shopAllowed) return "message.myriad.shop_base_only";
+        var access = com.myriad.client.UiFeedback.shopAccess();
         if (TacticalSupplySystem.isSupply(selectedId)) {
-            if (!canAfford(TacticalSupplySystem.supplyPrice(selectedId))) return "message.myriad.equip_no_gold";
+            String reason = ShopPurchaseRules.supplyError(access, selectedId, data.gold(), data.training() && data.noGoldCost());
+            if (reason != null) return reason;
             if (selectedId.equals("blood_pill") || selectedId.equals("mana_pill")) {
                 int pills = 0;
                 for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
@@ -195,6 +196,7 @@ public class ShopScreen extends Screen {
             }
             return null;
         }
+        if (!access.equipment()) return "message.myriad.equipment_base_only";
         EquipDef def = EquipmentRegistry.get(selectedId);
         if (def == null) return "screen.myriad.shop.unavailable";
         List<String> remaining = new ArrayList<>(ClientDataHolder.equipment());

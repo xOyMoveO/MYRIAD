@@ -432,10 +432,10 @@ public final class CombatRegressionTests {
         var phase=GameManager.class.getDeclaredField("phase");phase.setAccessible(true);phase.set(manager,GameManager.Phase.PLAYING);
         var bases=laneFixtureLayout().fountains;bases.put(Faction.GUARDIAN,a);
         player.setPos(a.getX()+.5,a.getY(),a.getZ()+.5);
-        helper.assertTrue(BaseRules.canShop(player),"Own base permits equipment buying");
+        helper.assertTrue(BaseRules.canBuyEquipment(player),"Own base permits equipment buying");
         BaseRules.tick(player);
         player.setPos(a.getX()+12,a.getY(),a.getZ()+.5);
-        helper.assertTrue(!BaseRules.canShop(player),"Equipment buying must be rejected outside 10 blocks");
+        helper.assertTrue(!BaseRules.canBuyEquipment(player),"Equipment buying must be rejected outside 10 blocks");
         var data=com.myriad.player.PlayerDataProvider.get(player);int gold=data.getGold();
         helper.assertTrue(!com.myriad.player.EquipmentSystem.buy(player,data,"not_an_equipment")&&data.getGold()==gold,
                 "Rejected purchase cannot spend gold");

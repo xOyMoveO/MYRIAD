@@ -147,7 +147,7 @@ public final class FirstGroupGrowth {
     }
     public static boolean buy(ServerPlayer p,PlayerData d,String key){
         if(!com.myriad.game.ModState.isEnabled()||!FirstGroupSkills.active(d.getCharacterId())||!ATTRIBUTES.contains(key))return false;
-        if(!TrainingGround.canFight(p)||!BaseRules.canShop(p))return false;
+        if(!BaseRules.canBuyAttributes(p))return false;
         int rank=d.firstGroupAttribute(key);
         boolean free=TrainingMode.isNoGoldCost(p);
         String error=purchaseError(CharacterType.byId(d.getCharacterId()),key,rank,d.getGold(),free);

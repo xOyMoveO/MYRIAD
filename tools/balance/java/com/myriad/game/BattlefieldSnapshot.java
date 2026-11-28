@@ -534,20 +534,32 @@ final class BattlefieldSnapshot {
         result.add("passiveGoldInterval", at(GameManager.PASSIVE_GOLD_INTERVAL_TICKS, "ticks",
                 GameManager.class, "PASSIVE_GOLD_INTERVAL_TICKS", "开战后经过刻数的倍数", "wage_pulse", REAL));
         result.add("shopRadius", at(BaseRules.SHOP_RADIUS, "blocks", BaseRules.class, "SHOP_RADIUS",
-                "普通参赛者存活且在己方主世界基地；阵亡等待及训练权限由 canShop 决定",
+                "补给需处于己方主世界泉水范围；按三维距离计，含 10 格边界",
                 "purchase", NONE));
+        result.add("attributeShopAccess", at("participant_alive_or_waiting", "rule_id", BaseRules.class, "canBuyAttributes",
+                "正式对局开战后参赛者可在线上或泉水购点，阵亡等待仍可购点；训练沿用个人设置", "purchase", NONE));
+        result.add("supplyShopAccess", at("participant_alive_at_own_fountain", "rule_id", BaseRules.class, "canBuySupplies",
+                "正式对局开战后仅存活且在己方泉水范围的参赛者可购补给；训练沿用个人设置", "purchase", NONE));
         result.add("heroKillRewards", heroKills());
         result.add("assistContactWindow", at(MatchAssists.CONTACT_TICKS, "ticks", MatchAssists.class, "CONTACT_TICKS",
                 "队列局战绩助攻：伤害或有效控制", "hero_death", REAL));
         result.add("assistProtectionWindow", at(MatchAssists.RESCUE_TICKS, "ticks", MatchAssists.class, "RESCUE_TICKS",
                 "队列局战绩助攻：保护最终击杀者", "hero_death", REAL));
-        result.add("assistPool", gap("not_applicable", "gold_and_xp", source(GameManager.class, "recordHeroDeath"),
-                "现行助攻只计入战绩", "hero_death", NONE, "经济和经验池尚未进入服务端规则。"));
-        result.add("farmReward", field("online_participant_averages", "rule_id", source(MatchBalance.class, "farmReward"),
-                "对局中且两方均有符合资格的在线参赛者；训练、空名单使用基础值", "farm_reward", NONE));
+        result.add("assistPool", at(Map.of("gold", MatchBalance.ASSIST_GOLD_POOL, "xp", MatchBalance.ASSIST_XP_POOL),
+                "gold_and_xp", MatchBalance.class, "ASSIST_GOLD_POOL,ASSIST_XP_POOL",
+                "第 5 批待选的候选奖池；金币为实际入账额。两个池分别按锁定名单均分并按序补余数。"
+                        + "仅在线时到账；同局重连领取离线期间所得份额", "hero_death", NONE));
+        result.add("farmReward", field("locked_seat_averages", "rule_id", source(GameManager.class, "farmBonus"),
+                "开战后使用双方锁定席位；掉线冻结累计收入和等级；训练及任一队零席位使用基础值", "farm_reward", NONE));
+        result.add("farmGoldGapWeight", constant(MatchBalance.FARM_GOLD_GAP_WEIGHT, "ratio", MatchBalance.class, "FARM_GOLD_GAP_WEIGHT"));
+        result.add("farmLevelGapWeight", constant(MatchBalance.FARM_LEVEL_GAP_WEIGHT, "ratio_per_level", MatchBalance.class, "FARM_LEVEL_GAP_WEIGHT"));
+        result.add("farmCatchUpCap", constant(MatchBalance.FARM_CATCH_UP_CAP, "ratio", MatchBalance.class, "FARM_CATCH_UP_CAP"));
+        result.add("farmGoldIncomeFloor", constant(MatchBalance.FARM_GOLD_INCOME_FLOOR, "gold", MatchBalance.class, "FARM_GOLD_INCOME_FLOOR"));
+        result.add("passiveGoldCatchUpWeight", at(MatchBalance.PASSIVE_GOLD_CATCH_UP_WEIGHT, "ratio", MatchBalance.class,
+                "PASSIVE_GOLD_CATCH_UP_WEIGHT", "沿用工资追赶倍率，仅调整工资的追赶部分。第 5 批待选", "wage_pulse", NONE));
         result.add("farmRewardDynamicInputs", gap("missing_input", "team_income_and_hero_levels",
-                source(MatchBalance.class, "farmReward"), "追赶结算", "farm_reward", NONE,
-                "给出双方当前在线名单、累计收入和等级后才可计算实际收益。"));
+                source(GameManager.class, "farmBonus"), "追赶结算", "farm_reward", NONE,
+                "需要开战锁定席位，以及事件前各席位的累计收入和等级。"));
         result.add("spiritVeinPulse", at(GameRules.VEIN_INCOME_PULSE_TICKS, "ticks", GameRules.class, "VEIN_INCOME_PULSE_TICKS",
                 "已开启且完全控制灵脉", "vein_income", REAL));
         result.add("xpToNextByLevel", constant(IntStream.range(1, 20).map(LevelSystem::xpToNext).toArray(),

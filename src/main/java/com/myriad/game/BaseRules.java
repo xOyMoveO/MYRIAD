@@ -1,38 +1,53 @@
 package com.myriad.game;
 import java.util.*;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.attributes.*;
 import net.minecraft.resources.Identifier;
 import com.myriad.player.PlayerDataProvider;
+import com.myriad.network.UiFeedbackPayload;
 
 /** Server-authoritative home shop and departure haste. No client position claims. */
 public final class BaseRules {
     static final double SHOP_RADIUS = 10.0;
     private static final Identifier HASTE=Identifier.parse("myriad:base_haste");
-    private static final class State { boolean inside; Boolean shopAllowed; long until,combatUntil; }
+    private static final class State { boolean inside; UiFeedbackPayload.ShopAccess shopAccess; long until,combatUntil; }
     private static final Map<UUID,State> STATES=new HashMap<>();
-    public static boolean inside(ServerPlayer player){
-        var manager=GameManager.get();var faction=manager==null?null:manager.factionOf(player);
-        var base=faction==null?null:LaneSystem.respawnPoint(faction);
-        return player.level().dimension()==net.minecraft.world.level.Level.OVERWORLD && base!=null
-                && player.position().distanceToSqr(net.minecraft.world.phys.Vec3.atBottomCenterOf(base))<=SHOP_RADIUS*SHOP_RADIUS;
+    private static Faction factionOf(ServerPlayer player) {
+        var manager = GameManager.get();
+        return manager == null ? null : manager.factionOf(player);
     }
-    public static boolean canShop(ServerPlayer player){
+
+    private static boolean inside(ServerPlayer player, BlockPos base) {
+        return player.level().dimension() == net.minecraft.world.level.Level.OVERWORLD && base != null
+                && player.position().distanceToSqr(net.minecraft.world.phys.Vec3.atBottomCenterOf(base)) <= SHOP_RADIUS * SHOP_RADIUS;
+    }
+    public static boolean canBuyEquipment(ServerPlayer player){
         if(!ModState.isEnabled())return false;
         if(TrainingMode.isEnabled(player))return true;
         var match=GameManager.get();
         return match!=null && match.isParticipant(player.getUUID())
-                && (HeroRespawnSystem.isWaiting(player) || player.isAlive()&&!player.isSpectator()&&inside(player));
+                && (HeroRespawnSystem.isWaiting(player) || player.isAlive()&&!player.isSpectator()&&inside(player, LaneSystem.respawnPoint(factionOf(player))));
     }
+    public static boolean canBuyAttributes(ServerPlayer player) {
+        return TrainingGround.canFight(player) && (TrainingMode.isEnabled(player)
+                || HeroRespawnSystem.isWaiting(player) || player.isAlive() && !player.isSpectator());
+    }
+
+    public static boolean canBuySupplies(ServerPlayer player) {
+        return TrainingGround.canFight(player) && (TrainingMode.isEnabled(player)
+                || !HeroRespawnSystem.isWaiting(player) && player.isAlive() && !player.isSpectator() && inside(player, LaneSystem.fountainPoint(factionOf(player))));
+    }
+
     public static void tick(ServerPlayer player){
         RecallSystem.tick(player);
         long now=player.level().getGameTime();var s=STATES.computeIfAbsent(player.getUUID(),id->new State());
-        boolean inside=inside(player);
-        boolean shopAllowed = ModState.isEnabled() && canShop(player);
-        if (s.shopAllowed == null || s.shopAllowed != shopAllowed) {
-            s.shopAllowed = shopAllowed;
-            com.myriad.network.UiFeedbackPayload.shopAccess(player, shopAllowed);
+        boolean inside = inside(player, LaneSystem.respawnPoint(factionOf(player)));
+        var access = new UiFeedbackPayload.ShopAccess(canBuyAttributes(player), canBuySupplies(player), canBuyEquipment(player));
+        if (!access.equals(s.shopAccess)) {
+            s.shopAccess = access;
+            UiFeedbackPayload.shopAccess(player, access);
         }
         boolean active=ModState.isEnabled() && !TrainingGround.isTraining(player) && TrainingGround.canFight(player);
         if(active&&s.inside&&!inside&&now>=s.combatUntil&&player.isAlive()&&!player.isSpectator())s.until=now+160;
