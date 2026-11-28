@@ -11,13 +11,13 @@ public final class ShopPurchaseRules {
 
     public static String attributeError(ShopAccess access, CharacterType role, String key,
             int rank, int gold, boolean free) {
-        return attributeError(access, role, key, rank, gold, free, 0, FirstGroupGrowth.OPENING_MOVEMENT_SPEED_GAIN);
+        return attributeError(access, role, 1, key, rank, gold, free, 0, FirstGroupGrowth.OPENING_MOVEMENT_SPEED_GAIN);
     }
 
-    public static String attributeError(ShopAccess access, CharacterType role, String key,
+    public static String attributeError(ShopAccess access, CharacterType role, int level, String key,
             int rank, int gold, boolean free, int specialization, double movementPerPoint) {
         if (!access.attributes()) return "screen.myriad.shop.unavailable";
-        return FirstGroupGrowth.purchaseError(role, key, rank, gold, free, specialization, movementPerPoint);
+        return FirstGroupGrowth.purchaseError(role, level, key, rank, gold, free, specialization, movementPerPoint);
     }
 
     public static String supplyError(ShopAccess access, String id, int gold, boolean free) {

@@ -121,11 +121,12 @@ public record SkillHoverDetails(String name, String group, String rank, boolean 
                     rows.add(SkillTooltipDescriptions.rainbowArtilleryLine(ShotForm.MOBILE));
                 }
                 var fields = METRICS.getOrDefault(metricId, List.of());
+                PlayerDataPayload live = skill.role().equals(data.characterId()) ? data : null;
                 for (int index = 0; index < fields.size(); index++) {
                     var metric = fields.get(index);
                     String value;
                     if (metric.damage != null) {
-                        value = SkillTooltipDescriptions.hoverDamage(skill, metric.damage, rank, data);
+                        value = SkillTooltipDescriptions.hoverDamage(skill, metric.damage, rank, live);
                     } else if (metric.support != null) {
                         continue; // All support amounts are rendered from the combat definition below.
                     } else {
@@ -134,10 +135,11 @@ public record SkillHoverDetails(String name, String group, String rank, boolean 
                     }
                     if (!value.isEmpty()) rows.add(value);
                 }
-                double power = data.attrs().getOrDefault(ModAttributes.SPELL_POWER.value().getDescriptionId(),
+                var attrs = live == null ? Map.<String, Double>of() : live.attrs();
+                double power = attrs.getOrDefault(ModAttributes.SPELL_POWER.value().getDescriptionId(),
                         FirstGroupGrowth.baselineSpellPower());
                 var role = CharacterType.byId(skill.role());
-                double attack = data.attrs().getOrDefault(ModAttributes.PHYSICAL_ATTACK.value().getDescriptionId(),
+                double attack = attrs.getOrDefault(ModAttributes.PHYSICAL_ATTACK.value().getDescriptionId(),
                         FirstGroupGrowth.baselinePhysicalAttack(role));
                 double bonusPhysical = FirstGroupGrowth.bonusPhysicalAttack(role, attack);
                 for (var amount : skill.supportAmounts()) {
@@ -148,7 +150,7 @@ public record SkillHoverDetails(String name, String group, String rank, boolean 
                     final int index = i;
                     if (fields.stream().anyMatch(metric -> java.util.Objects.equals(metric.damage, index))) continue;
                     if (shuo && !combatFormSegment(skill.getId(), i, variant)) continue;
-                    String line = SkillTooltipDescriptions.hoverDamage(skill, i, rank, data);
+                    String line = SkillTooltipDescriptions.hoverDamage(skill, i, rank, live);
                     if (!line.isEmpty()) rows.add(line);
                 }
             }

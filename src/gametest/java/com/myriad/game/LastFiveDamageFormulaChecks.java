@@ -117,6 +117,13 @@ final class LastFiveDamageFormulaChecks {
                     near(h, high, baseline + 10 * (strength + segment.wisdom()), detail + " ten of each");
                     near(h, high - formula.value(rank, attack + 135, 230, 135, 10), strength, detail + " remove one strength");
                     near(h, high - formula.value(rank, attack + 150, 210, 150, 9), segment.wisdom(), detail + " remove one wisdom");
+                    double growthAttack = RoleStatGrowthChecks.attackGrowth(role, 20);
+                    double growthSpell = RoleStatGrowthChecks.spellGrowth(role, 20);
+                    double grown = baseline + growthAttack / 15 * strength + growthSpell / 20 * segment.wisdom();
+                    near(h, formula.value(rank, attack + growthAttack, 30 + growthSpell, growthAttack, 0),
+                            grown, detail + " level twenty zero purchases");
+                    near(h, formula.value(rank, attack + growthAttack + 15, 50 + growthSpell, growthAttack + 15, 1),
+                            grown + strength + segment.wisdom(), detail + " level twenty with one strength and wisdom");
                     near(h, formula.perPoint(rank), strength + segment.wisdom(), detail + " preview increment");
                 }
             }
@@ -125,11 +132,13 @@ final class LastFiveDamageFormulaChecks {
 
     static void checkShuoDraws(GameTestHelper h) {
         var fixtures = new ArrayList<DrawFixture>();
+        double growthAttack = RoleStatGrowthChecks.attackGrowth(CharacterType.SHUO, 20);
         for (int purchase = 0; purchase < 3; purchase++) {
+            double bonusAttack = growthAttack + (purchase == 1 ? 15 : 0);
             for (int ticks : new int[]{25, 50}) {
                 Vec3 position = Vec3.atBottomCenterOf(h.absolutePos(new BlockPos(50, 177 + purchase * 6, ticks == 25 ? 10 : 15)));
                 ServerPlayer p = shuo(h, position, purchase, "shuo_cangfeng");
-                double full = purchase == 1 ? 58 : 52;
+                double full = 52 + .4 * bonusAttack;
                 fixtures.add(new DrawFixture(p, ticks * 2, ticks == 25 ? full / 2 : full));
             }
             Vec3 position = Vec3.atBottomCenterOf(h.absolutePos(new BlockPos(50, 177 + purchase * 6, 5)));
@@ -139,7 +148,7 @@ final class LastFiveDamageFormulaChecks {
                 ShuoCombat.guard(AbilityRuntime.context(p, FirstGroupSkills.node("shuo", 3)));
                 h.assertTrue(ShuoCombat.parry(p, p.damageSources().mobAttack(enemy), Kind.PHYSICAL),
                         "Jianqie's active guard must absorb a frontal hit");
-                near(h, ShuoCombat.draw(p, ShuoViewPayload.DRAW, 9), purchase == 1 ? 77.5 : 70, "Guarded Shuo draw");
+                near(h, ShuoCombat.draw(p, ShuoViewPayload.DRAW, 9), 70 + .5 * bonusAttack, "Level-twenty guarded Shuo draw");
                 near(h, ShuoCombat.draw(p, ShuoViewPayload.DRAW, 9), 0, "Guarded draw is consumed once");
             } finally {
                 AbilityRuntime.clear(p);

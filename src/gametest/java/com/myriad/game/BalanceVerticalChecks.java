@@ -198,7 +198,7 @@ final class BalanceVerticalChecks {
         data.setGold(price + 17);
         double attack = player.getAttributeValue(ModAttributes.ATTACK_SPEED);
         double movement = player.getAttributeValue(Attributes.MOVEMENT_SPEED);
-        double gain = FirstGroupGrowth.nextAttackSpeedGain(partialRank, 0);
+        double gain = FirstGroupGrowth.nextAttackSpeedGain(CharacterType.LINGYUAN, data.getLevel(), partialRank, 0);
         boolean partial = FirstGroupGrowth.buy(player, data, "speed");
         helper.assertTrue(partial && data.getGold() == 17 && data.firstGroupAttribute("speed") == partialRank + 1
                 && player.getAttributeValue(ModAttributes.ATTACK_SPEED) == 2 && Math.abs(attack + gain - 2) < .00001
@@ -222,7 +222,7 @@ final class BalanceVerticalChecks {
             helper.assertTrue(!cappedPaid && !cappedFree && data.getGold() == 17 && data.firstGroupAttribute("speed") == fullRank
                     && "message.myriad.g1.attribute_no_gain".equals(FirstGroupGrowth.purchaseError(CharacterType.LINGYUAN,
                             "speed", fullRank, data.getGold(), false))
-                    && FirstGroupGrowth.nextAttackSpeedGain(fullRank, 0) == 0,
+                    && FirstGroupGrowth.nextAttackSpeedGain(CharacterType.LINGYUAN, data.getLevel(), fullRank, 0) == 0,
                     "A temporary debuff does not reopen a capped attack speed purchase");
             System.out.printf("MYRIAD_COMBAT case=speed_purchase state=full paid=%b free=%b rank=%d gold=%d%n",
                     cappedPaid, cappedFree, data.firstGroupAttribute("speed"), data.getGold());

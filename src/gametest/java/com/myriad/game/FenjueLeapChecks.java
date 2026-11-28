@@ -92,7 +92,7 @@ final class FenjueLeapChecks {
                         if(f.index!=2){
                             h.assertTrue(f.peak[0]>=5-1E-5,"Actual motion reaches five blocks above takeoff, including downhill");
                             h.assertTrue(f.p.position().distanceTo(f.target)<.06&&!AbilityRuntime.moving(f.p),"Actual 14-block landing reached without overshoot: case="+f.index+" pos="+f.p.position()+" expected="+f.target+" peak="+f.peak[0]);
-                            double landing=f.index==1?170+20.0/3:170;
+                            double landing=170 + (247 + (f.index == 1 ? 15 : 0)) * 4.0 / 9;
                             h.assertTrue(f.losses.size()==1&&Math.abs(f.losses.getFirst().hp()-landing)<.02,
                                     "One landing hit with the cast snapshot and no early field damage, build "+f.index+" losses="+f.losses);
                             h.assertTrue(f.cues.stream().filter(c->c.action()==SEA_LAND).count()==1,"Exactly one actual landing hand cue");
@@ -112,14 +112,14 @@ final class FenjueLeapChecks {
                             continue;
                         }
                         h.assertTrue(f.losses.size()==5,"One landing and exactly four pulses, build "+f.index+" losses="+f.losses);
-                        double pulse=f.index==1?36+4.0/3:36;
+                        double pulse=36 + (247 + (f.index == 1 ? 15 : 0)) * 4.0 / 45;
                         long landed=f.losses.getFirst().tick();
                         for(int i=1;i<=4;i++){
                             Hit hit=f.losses.get(i);
                             h.assertTrue(hit.tick()-landed==20L*i&&Math.abs(hit.hp()-pulse)<.02,
                                     "Pulses use a 20-real-tick cadence and the original cast snapshot, build "+f.index+" losses="+f.losses);
                         }
-                        double expected=f.index==1?326:314;
+                        double expected=f.index==1?523.6:511.6;
                         h.assertTrue(Math.abs(1000-f.victim.getHealth()-expected)<.02,"Five hits add one ultimate purchase budget, build "+f.index);
                     }
                     var field=fixtures.getFirst();
@@ -131,7 +131,7 @@ final class FenjueLeapChecks {
                             Map.of("scenario","fenjue.sea_stay_leave","primary",field.losses,"stay",staying,"leave",leaving)));
                     for(var f:fixtures)System.out.println("MYRIAD_ROSTER_112 "+new com.google.gson.Gson().toJson(
                             Map.of("scenario","fenjue.fire_sea_timeline","build",f.index,"hits",f.losses)));
-                    System.out.println("[MYRIAD-DAMAGE-FIRE-SEA] PASS: physical landing plus four pulses, raw totals 314/326/314, original cast snapshot survives later investment");
+                    System.out.println("[MYRIAD-DAMAGE-FIRE-SEA] PASS: physical landing plus four pulses, level-20 raw totals 511.6/523.6/511.6, original cast snapshot survives later investment");
                     done[0]=true;GameTestSounds.removeListener(listener);fixtures.forEach(f->cleanup(h,f));
                     complete.run();
                 }

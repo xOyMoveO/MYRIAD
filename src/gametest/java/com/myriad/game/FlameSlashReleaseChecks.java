@@ -24,6 +24,9 @@ import static com.myriad.character.ability.AbilityVfxGeometry.*;
 
 /** Public cast, real tick-separated hits and target movement/lifecycle cancellation. */
 final class FlameSlashReleaseChecks {
+    private static final float AFTER_FIRST_STROKE = 886.25f;
+    private static final float AFTER_BOTH_STROKES = 772.5f;
+
     static void verify(GameTestHelper h){new Fixture(h).start();}
     private static final class Fixture {
         final GameTestHelper h;
@@ -102,15 +105,15 @@ final class FlameSlashReleaseChecks {
                 after(2,()->{AbilityRuntime.tick(actor);hp(0,1000,"No early damage");});
                 after(3,()->{
                     AbilityRuntime.tick(actor);AbilityRuntime.tick(actor);
-                    hp(0,948,"First stroke is exactly half of the zero-purchase 104");hp(1,948,"First blade hits visible far target beyond old range");
+                    hp(0,AFTER_FIRST_STROKE,"First stroke is half of the level-twenty zero-purchase 227.5 damage");hp(1,AFTER_FIRST_STROKE,"First blade hits visible far target beyond old range");
                     for(int i=2;i<targets.size();i++)hp(i,1000,"Rear/side/outside arc unaffected");
                 });
                 after(7,()->{
                     AbilityRuntime.tick(actor);AbilityRuntime.tick(actor);
-                    hp(0,896,"Second stroke completes the single-target total, once only");hp(1,896,"Second blade reaches the visible far target");
+                    hp(0,AFTER_BOTH_STROKES,"Second stroke completes the single-target total, once only");hp(1,AFTER_BOTH_STROKES,"Second blade reaches the visible far target");
                     for(int i=2;i<targets.size();i++)hp(i,1000,"No rear, side or beyond-arc hit after turning");
                 });
-                after(9,()->{AbilityRuntime.tick(actor);hp(0,896,"No third hit during visual tail");runAim(index+1);});
+                after(9,()->{AbilityRuntime.tick(actor);hp(0,AFTER_BOTH_STROKES,"No third hit during visual tail");runAim(index+1);});
             });
         }
         void movement(){
@@ -122,29 +125,30 @@ final class FlameSlashReleaseChecks {
             }
             after(1,()->{
                 cast();
-                after(3,()->{AbilityRuntime.tick(actor);hp(0,948,"Exit target first stroke");hp(1,1000,"Entering target not in first stroke");hp(2,1000,"Wall blocks first stroke");
+                after(3,()->{AbilityRuntime.tick(actor);hp(0,AFTER_FIRST_STROKE,"Exit target first stroke");hp(1,1000,"Entering target not in first stroke");hp(2,1000,"Wall blocks first stroke");
                     place(0,eye.add(f.scale(3)).add(-6,0,0));place(1,eye.add(f.scale(3)));actor.setPos(actor.position().add(5,0,0));
                 });
-                after(7,()->{AbilityRuntime.tick(actor);hp(0,948,"Exiting target avoids second stroke");hp(1,948,"New target receives only second stroke");hp(2,1000,"Wall still blocks second stroke");});
+                after(7,()->{AbilityRuntime.tick(actor);hp(0,AFTER_FIRST_STROKE,"Exiting target avoids second stroke");hp(1,AFTER_FIRST_STROKE,"New target receives only second stroke");hp(2,1000,"Wall still blocks second stroke");});
                 after(9,()->cancel(0));
             });
         }
         void cancel(int test){
             if(test==4){
-                h.assertTrue(FirstGroupSkills.node("fenjue", 2).damageFormulas().getFirst().value(1, 65, 100, 0, 0) == 52,"Tooltip computes actual per-stroke damage");
-                System.out.println("[MYRIAD-FLAME-3D-RELEASE] PASS: horizontal/sloped/vertical public casts, two 52-point zero-purchase hits, visible 6.5-block target, exclusions and cast-locked direction");
+                h.assertTrue(FirstGroupSkills.node("fenjue", 2).damageFormulas().getFirst()
+                        .value(1, 312, 100, 247, 0) == 113.75f,"Tooltip computes each level-twenty stroke");
+                System.out.println("[MYRIAD-FLAME-3D-RELEASE] PASS: horizontal/sloped/vertical public casts, two 113.75-point level-twenty hits, visible 6.5-block target, exclusions and cast-locked direction");
                 System.out.println("[MYRIAD-FLAME-FORWARD-RELEASE] PASS: tick 3/7, no early/duplicate/tail damage, target enters/exits, fixed origin, walls, one cost/CD; death/role/reset/mod-off cancel");
                 cleanup();return;
             }
             reset(0,0);place(0,actor.getEyePosition().add(0,0,3));
             after(1,()->{cast();
-                after(3,()->{AbilityRuntime.tick(actor);hp(0,948,"First hit before lifecycle change");
+                after(3,()->{AbilityRuntime.tick(actor);hp(0,AFTER_FIRST_STROKE,"First hit before lifecycle change");
                     switch(test){case 0->AbilityRuntime.clear(actor);case 1->PlayerDataProvider.get(actor).setCharacterId("yingxiao");case 2->actor.setHealth(0);case 3->ModState.setEnabled(false);}
                     AbilityRuntime.tick(actor);
                     if(test==2)actor.setHealth(1000);
                     if(test==3)ModState.setEnabled(true);
                 });
-                after(8,()->{AbilityRuntime.tick(actor);hp(0,948,"Cancelled owner cannot apply second hit, case="+test);cancel(test+1);});
+                after(8,()->{AbilityRuntime.tick(actor);hp(0,AFTER_FIRST_STROKE,"Cancelled owner cannot apply second hit, case="+test);cancel(test+1);});
             });
         }
         void cleanup(){

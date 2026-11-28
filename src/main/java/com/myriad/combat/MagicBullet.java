@@ -248,7 +248,7 @@ public final class MagicBullet {
 
     public static float rawDamage(CharacterType role, double totalSpellPower) {
         double ratio = spellPowerRatio(role);
-        // Before the fix the mage path fed innate physical attack / 0.5 into the final role ratio.
+        // Retain the original level-one damage and scale all spell power above that baseline.
         double baselineDamage = FirstGroupGrowth.baselinePhysicalAttack(role) * ratio / STANDARD_SPELL_RATIO;
         double extraSpellPower = totalSpellPower - FirstGroupGrowth.baselineSpellPower();
         return (float) (baselineDamage + ratio * extraSpellPower);

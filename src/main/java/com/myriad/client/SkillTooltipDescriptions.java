@@ -241,12 +241,13 @@ public final class SkillTooltipDescriptions {
         if (index < 0 || index >= formulas.size()) return "";
         var formula = formulas.get(index);
         var role = CharacterType.byId(skill.role());
-        double attack = data.attrs().getOrDefault(ModAttributes.PHYSICAL_ATTACK.value().getDescriptionId(),
+        var attrs = data == null ? java.util.Map.<String, Double>of() : data.attrs();
+        double attack = attrs.getOrDefault(ModAttributes.PHYSICAL_ATTACK.value().getDescriptionId(),
                 FirstGroupGrowth.baselinePhysicalAttack(role));
-        double spell = data.attrs().getOrDefault(ModAttributes.SPELL_POWER.value().getDescriptionId(),
+        double spell = attrs.getOrDefault(ModAttributes.SPELL_POWER.value().getDescriptionId(),
                 FirstGroupGrowth.baselineSpellPower());
         double bonusPhysical = FirstGroupGrowth.bonusPhysicalAttack(role, attack);
-        int wisdom = data.buffs().getOrDefault("g1_attribute_wisdom", 0);
+        int wisdom = data == null ? 0 : data.buffs().getOrDefault("g1_attribute_wisdom", 0);
         double value = formula.value(rank, attack, spell, bonusPhysical, wisdom);
         if (!Double.isFinite(value)) return "";
         String kind = text("skill.myriad.damage." + formula.kind().name().toLowerCase(Locale.ROOT));

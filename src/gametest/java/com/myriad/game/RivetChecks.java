@@ -123,7 +123,10 @@ final class RivetChecks {
         int points=d.getSkillPoints();PlayerDataProvider.upgradeSkill(f.p,node(1-passive).getId());PlayerDataProvider.upgradeSkill(f.p,node(major==4?5:4).getId());PlayerDataProvider.upgradeSkill(f.p,node(ultimate==6?7:6).getId());
         h.assertTrue(points==d.getSkillPoints(),"All three opposite branches are rejected without spending points: "+i);
         CharacterType.applyInitialAttributes(f.p,CharacterType.byId("rivet"));FirstGroupGrowth.initialize(f.p,d);PlayerHealthSystem.fill(f.p);d.setMana(700);
-        h.assertTrue(d.getModMaxHealth()==2790&&f.p.getAttributeValue(ModAttributes.MANA_REGEN)==4,"Level twenty reaches 2790 health and retains four mana per second: "+i);
+        h.assertTrue(d.getModMaxHealth()==2790&&Math.abs(f.p.getAttributeValue(ModAttributes.MANA_REGEN)-10.65)<.00001,
+                "Level twenty reaches 2790 health and 10.65 mana per second: "+i);
+        // Fixed attack lets the wall, carry and critical-hit cases isolate their geometry and effects.
+        f.p.getAttribute(ModAttributes.PHYSICAL_ATTACK).setBaseValue(65);
         f.p.getAttribute(ModAttributes.CRIT_CHANCE).setBaseValue(0);f.p.setOnGround(true);f.target.setPos(f.origin.add(0,0,2.35));
         if(!Set.of(8,9,10,14,26,27,31,32,33,34,35,37,48,49,50,51,55).contains(i))wall(f,4,3);
         if(i==11){clearWall(f,4);block(f,0,0,4,Blocks.STONE);block(f,0,1,4,Blocks.STONE);}

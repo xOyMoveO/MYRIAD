@@ -67,7 +67,8 @@ final class NightExecutionChecks {
                         h.assertTrue(rear.dot(facing)<-.8,"Blink uses the victim's latest facing and really lands behind");
                         var aim=f.target.getBoundingBox().getCenter().subtract(f.player.getEyePosition()).normalize();
                         h.assertTrue(f.player.getLookAngle().dot(aim)>.999,"Arrival faces the victim for the forward stab");
-                        h.assertTrue(Math.abs(f.target.getHealth()-781)<.05,"The zero-purchase 219 physical damage is applied once, not a dash plus a blink hit");
+                        h.assertTrue(Math.abs(f.target.getHealth()-492.2)<.05,
+                                "Level-twenty zero-purchase physical damage of 507.8 applies exactly once");
                         h.assertTrue(f.cues.stream().filter(c->c.action()==STRIKE).count()==1&&!SkillChargeSystem.active(f.player),"Arrival pose is confirmed once after releasing the real charge lock");
                         for(int i=1;i<5;i++){
                             var invalid=fixtures.get(i);
@@ -77,7 +78,7 @@ final class NightExecutionChecks {
                         }
                     }
                     if(elapsed==22){
-                        h.assertTrue(Math.abs(fixtures.getFirst().target.getHealth()-781)<.05,"No lingering follow-up damage after the blink");
+                        h.assertTrue(Math.abs(fixtures.getFirst().target.getHealth()-492.2)<.05,"No lingering follow-up damage after the blink");
                         done[0]=true;fixtures.forEach(f->cleanup(h,f));
                         System.out.println("[MYRIAD-NIGHT-BLINK] PASS: actual selected R, 16 ticks, live rear-facing safe teleport + one hit/arrival, original payment; stun/dead/range/blocked/rejected paths and private cue cancellation");
                     }

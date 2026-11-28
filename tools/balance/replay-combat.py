@@ -1,10 +1,12 @@
-"""Recompute the fixed #107 combat scenarios from paired snapshots and compare GameTest evidence."""
+"""Recompute public combat scenarios from snapshots and compare GameTest evidence."""
 import argparse
 import hashlib
 import json
 from math import ceil, floor, isclose
 from pathlib import Path
 from xml.etree import ElementTree
+
+from combo_calibration import attribute_at_level
 
 
 POINTS = (0, 4, 8, 12)
@@ -36,8 +38,8 @@ def first_cooldown(skill_definition):
     return get(skill_definition["ranks"][0], "cooldown")
 
 
-def stats(roles, role, stat):
-    return get(roles[role]["attributes"], stat)
+def stats(roles, role, stat, level=1):
+    return attribute_at_level(roles[role]["attributes"], stat, level)
 
 
 def calculate(rules, purchase_rules, new):
@@ -101,12 +103,12 @@ def calculate(rules, purchase_rules, new):
                attack_delta=0, movement_delta=move_step)
         record("speed_purchase", "full", paid=False, free=not new, rank=full_rank + (0 if new else 1), gold=17)
 
-    def attack_stats(role, build):
-        innate = stats(roles, role, "physicalAttack")
+    def attack_stats(role, build, level=1):
+        innate = stats(roles, role, "physicalAttack", level)
         purchased = gain["physicalAttackPerStrength"] if "strength" in build else 0
         bonus = get(common, "azureHornPhysicalAttack") if new else .15
         attack = (innate + purchased) * (1 + bonus if "azure" in build else 1)
-        return attack, attack - innate if new else purchased
+        return attack, attack - stats(roles, role, "physicalAttack", 1) if new else purchased
 
     def amount(formula, *, attack_bonus=0, spell_power=0):
         if "spellScale" in formula:
@@ -140,6 +142,16 @@ def calculate(rules, purchase_rules, new):
         nominal = amount(dew, spell_power=spell)
         record("qingluo_verdant_dew", build, spellPower=spell, amount=nominal,
                effective=min(nominal, 12) if build == "overflow" else nominal)
+    if new and get(common, "bonusPhysicalAttack") == "effective_minus_level_one_innate":
+        for build in ("zero", "strength_azure"):
+            _, bonus = attack_stats("shuo", build, 20)
+            shield = amount(effect(shuo, "shield"), attack_bonus=bonus)
+            riposte = amount(effect(shuo, "riposte"), attack_bonus=bonus)
+            record("shuo_qiaofan_shield", f"lv20_{build}", bonusAttack=bonus, shield=shield, riposte=riposte)
+        for build, bonus in (("zero", 0), ("wisdom_buff", gain["spellPowerPerWisdom"] + 16)):
+            spell = stats(roles, "qingluo", "spellPower", 20) + bonus
+            nominal = amount(dew, spell_power=spell)
+            record("qingluo_verdant_dew", f"lv20_{build}", spellPower=spell, amount=nominal, effective=nominal)
 
     arena = rules["battlefield"]
     available = arena["controls"]["basicActionAvailability"] if new else {}
@@ -197,8 +209,10 @@ def parse(item):
 def read_engine(directory):
     observed, runs, yike = {}, [], {}
     for name in FILTERS:
-        log = directory / f"{name}.log"
-        xml = directory / f"{name}.xml"
+        if (directory / name).is_dir():
+            log, xml = directory / name / "stdout.txt", directory / name / "report.xml"
+        else:
+            log, xml = directory / f"{name}.log", directory / f"{name}.xml"
         text = log.read_text(encoding="utf-8")
         cases = list(ElementTree.parse(xml).getroot().iter("testcase"))
         passed = (f"Will run tests matching myriad:{name} (1 tests)" in text
@@ -246,10 +260,13 @@ def main():
         parser.add_argument(f"--{option}", type=Path, required=True)
     args = parser.parse_args()
     old, new = load(args.baseline), load(args.snapshot)
-    if old["formatVersion"] != 1 or new["formatVersion"] != 2:
-        parser.error("expected a #106 version 1 baseline and a #107 version 2 snapshot")
+    if old["formatVersion"] not in (1, 2) or new["formatVersion"] not in (2, 3):
+        parser.error("expected a version 1 or 2 baseline and a version 2 or 3 snapshot")
     purchase_rules = new["rules"]["attributePurchases"]
-    before, after = calculate(old["rules"], purchase_rules, False), calculate(new["rules"], purchase_rules, True)
+    old_purchase_rules = old["rules"].get("attributePurchases", purchase_rules)
+    before = calculate(old["rules"], old_purchase_rules if old["formatVersion"] == 2 else purchase_rules,
+                       old["formatVersion"] == 2)
+    after = calculate(new["rules"], purchase_rules, True)
     observed, runs = read_engine(args.logs)
     rows = []
     for (case, variant), expected in after.items():

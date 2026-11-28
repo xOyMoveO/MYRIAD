@@ -40,6 +40,45 @@ public final class FirstGroupGrowth {
     public static final double DEFENSE_GAIN = 5.0;
     private static final List<Long> PRICES = purchasePrices();
 
+    public record InnateStats(double physicalAttack, double spellPower, double physicalDefense,
+                              double magicResistance, double attackSpeed, double healthRegen, double manaRegen) {}
+
+    private record PerLevel(int physicalAttack, int spellPower, int physicalDefense, int magicResistance,
+                            double attackSpeed, double healthRegen, double manaRegen) {}
+
+    public static InnateStats innateStats(CharacterType role, int level) {
+        int upgrades = Math.clamp(level, 1, 20) - 1;
+        if (upgrades == 0) {
+            return new InnateStats(baselinePhysicalAttack(role), baselineSpellPower(), BASE_DEFENSE, BASE_DEFENSE,
+                    BASE_ATTACK_SPEED, BASE_HEALTH_REGEN, BASE_MANA_REGEN);
+        }
+        var growth = switch (role) {
+            case YINGXIAO -> new PerLevel(19, 0, 6, 5, .030, .35, .30);
+            case SULAN    -> new PerLevel(17, 0, 7, 6, .040, .45, .50);
+            case SHUO     -> new PerLevel(16, 0, 8, 6, .030, .50, .30);
+            case TIANXING -> new PerLevel(6, 12, 6, 6, .035, .50, .40);
+            case KEHENG   -> new PerLevel(4, 15, 6, 5, .025, .40, .50);
+            case RIVET    -> new PerLevel(12, 0, 10, 8, .018, .75, .35);
+            case CHIXIAO  -> new PerLevel(13, 0, 10, 7, .022, .70, .35);
+            case FENJUE   -> new PerLevel(13, 0, 9, 8, .020, .65, .45);
+            case YIKE     -> new PerLevel(3, 18, 5, 4, .015, .30, .50);
+            case LINGYUAN -> new PerLevel(4, 14, 6, 6, .025, .50, .35);
+            case HANZE    -> new PerLevel(0, 14, 8, 8, .015, .65, .45);
+            case XUANCHEN -> new PerLevel(0, 19, 5, 6, .015, .35, .55);
+            case LUOXIA   -> new PerLevel(20, 0, 6, 4, .045, .35, .30);
+            case QINGLUO  -> new PerLevel(0, 15, 7, 8, .012, .40, .60);
+            case YUNSHENG -> new PerLevel(0, 16, 7, 7, .015, .40, .60);
+        };
+        return new InnateStats(
+                baselinePhysicalAttack(role) + growth.physicalAttack() * upgrades,
+                baselineSpellPower() + growth.spellPower() * upgrades,
+                BASE_DEFENSE + growth.physicalDefense() * upgrades,
+                BASE_DEFENSE + growth.magicResistance() * upgrades,
+                BASE_ATTACK_SPEED + growth.attackSpeed() * upgrades,
+                BASE_HEALTH_REGEN + growth.healthRegen() * upgrades,
+                BASE_MANA_REGEN + growth.manaRegen() * upgrades);
+    }
+
     private static List<Long> purchasePrices() {
         var prices = new ArrayList<Long>();
         long price = STARTING_PRICE;
@@ -66,11 +105,13 @@ public final class FirstGroupGrowth {
         return HASTE_PER_POINT * purchasedPoints;
     }
 
-    public static double nextAttackSpeedGain(int rank, int specialization) {
-        var attr = ModAttributes.ATTACK_SPEED.value();
-        double raw = BASE_ATTACK_SPEED + SPEED_ATTACK_GAIN * rank;
-        return attr.sanitizeValue(raw + SPEED_ATTACK_GAIN + FLURRY.value(rank + 1, specialization))
-                - attr.sanitizeValue(raw + FLURRY.value(rank, specialization));
+    public static double nextAttackSpeedGain(CharacterType role, int level, int rank, int specialization) {
+        return nextAttackSpeedGain(innateStats(role, level), rank, specialization);
+    }
+
+    private static double nextAttackSpeedGain(InnateStats innate, int rank, int specialization) {
+        return nextGain(ModAttributes.ATTACK_SPEED, innate.attackSpeed(), SPEED_ATTACK_GAIN, rank,
+                FLURRY.value(rank, specialization), FLURRY.value(rank + 1, specialization));
     }
 
     public static double nextMovementSpeedGain(int rank, double perPoint) {
@@ -101,32 +142,39 @@ public final class FirstGroupGrowth {
     }
 
     private static double nextGain(Holder<Attribute> attribute, double base, double perPoint, int rank) {
-        return attribute.value().sanitizeValue(base + perPoint * ((double) rank + 1))
-                - attribute.value().sanitizeValue(base + perPoint * rank);
+        return nextGain(attribute, base, perPoint, rank, 0, 0);
     }
 
-    private static boolean improvesPermanentStats(CharacterType role, String key, int rank,
+    private static double nextGain(Holder<Attribute> attribute, double base, double perPoint, int rank,
+                                   double specialization, double nextSpecialization) {
+        return attribute.value().sanitizeValue(base + perPoint * ((double) rank + 1) + nextSpecialization)
+                - attribute.value().sanitizeValue(base + perPoint * rank + specialization);
+    }
+
+    private static boolean improvesPermanentStats(InnateStats innate, String key, int rank,
                                                   int specialization, double movementPerPoint) {
         return switch (key) {
-            case "strength" -> nextGain(ModAttributes.PHYSICAL_ATTACK, baselinePhysicalAttack(role), purchasedPhysicalAttack(1), rank) > 0;
-            case "wisdom" -> nextGain(ModAttributes.SPELL_POWER, baselineSpellPower(), purchasedSpellPower(1), rank) > 0;
-            case ATTACK_SPEED -> nextAttackSpeedGain(rank, specialization) > 0;
+            case "strength" -> nextGain(ModAttributes.PHYSICAL_ATTACK, innate.physicalAttack(), purchasedPhysicalAttack(1), rank) > 0;
+            case "wisdom" -> nextGain(ModAttributes.SPELL_POWER, innate.spellPower(), purchasedSpellPower(1), rank) > 0;
+            case ATTACK_SPEED -> nextAttackSpeedGain(innate, rank, specialization) > 0;
             case MOVEMENT_SPEED -> nextMovementSpeedGain(rank, movementPerPoint) > 0;
-            case "defense" -> nextGain(ModAttributes.PHYSICAL_DEFENSE, BASE_DEFENSE, DEFENSE_GAIN, rank) > 0
-                    || nextGain(ModAttributes.MAGIC_RESISTANCE, BASE_DEFENSE, DEFENSE_GAIN, rank) > 0;
+            case "defense" -> nextGain(ModAttributes.PHYSICAL_DEFENSE, innate.physicalDefense(), DEFENSE_GAIN, rank,
+                    STEELBONE.value(rank, specialization), STEELBONE.value(rank + 1, specialization)) > 0
+                    || nextGain(ModAttributes.MAGIC_RESISTANCE, innate.magicResistance(), DEFENSE_GAIN, rank,
+                    SPIRIT_ARMOR.value(rank, specialization), SPIRIT_ARMOR.value(rank + 1, specialization)) > 0;
             case "cooldown" -> true;
             default -> false;
         };
     }
 
     public static String purchaseError(CharacterType role, String key, int rank, int gold, boolean free) {
-        return purchaseError(role, key, rank, gold, free, 0, OPENING_MOVEMENT_SPEED_GAIN);
+        return purchaseError(role, 1, key, rank, gold, free, 0, OPENING_MOVEMENT_SPEED_GAIN);
     }
 
-    public static String purchaseError(CharacterType role, String key, int rank, int gold, boolean free,
+    public static String purchaseError(CharacterType role, int level, String key, int rank, int gold, boolean free,
                                        int specialization, double movementPerPoint) {
         if (rank == Integer.MAX_VALUE) return "message.myriad.g1.attribute_rank_overflow";
-        if (!improvesPermanentStats(role, key, rank, specialization, movementPerPoint))
+        if (!improvesPermanentStats(innateStats(role, level), key, rank, specialization, movementPerPoint))
             return "message.myriad.g1.attribute_no_gain";
         if (free) return null;
         long price = price(key, rank);
@@ -142,7 +190,7 @@ public final class FirstGroupGrowth {
         return 20.0 * wisdomPoints;
     }
 
-    /** Innate physical attack for the active roster, before purchases and modifiers. */
+    /** Level-one innate physical attack, the reference for bonus physical damage. */
     public static double baselinePhysicalAttack(CharacterType role) {
         return role == CharacterType.LUOXIA ? role.initialAd() : 65.0;
     }
@@ -151,7 +199,7 @@ public final class FirstGroupGrowth {
         return effectiveAttack - baselinePhysicalAttack(role);
     }
 
-    /** The active roster has no innate spell power growth with character level. */
+    /** Level-one innate spell power, also used to preserve migrated damage baselines. */
     public static double baselineSpellPower() {
         return 30.0;
     }
@@ -196,7 +244,7 @@ public final class FirstGroupGrowth {
         if(!BaseRules.canBuyAttributes(p))return false;
         int rank=d.firstGroupAttribute(key);
         boolean free=TrainingMode.isNoGoldCost(p);
-        String error=purchaseError(CharacterType.byId(d.getCharacterId()),key,rank,d.getGold(),free,
+        String error=purchaseError(CharacterType.byId(d.getCharacterId()),d.getLevel(),key,rank,d.getGold(),free,
                 d.specialization(key),movementSpeedPerPoint(p));
         if(error!=null){p.sendSystemMessage(Component.translatable(error));return false;}
         if(!free)d.spendGold((int)price(key,rank));
@@ -213,11 +261,16 @@ public final class FirstGroupGrowth {
         }
         d.setLevel(Math.clamp(d.getLevel(),1,20));d.ensureLevelRewards(d.getLevel());
         var role=CharacterType.byId(d.getCharacterId());
-        base(p,ModAttributes.PHYSICAL_ATTACK,baselinePhysicalAttack(role));
-        base(p,ModAttributes.SPELL_POWER,baselineSpellPower());
-        base(p,ModAttributes.ATTACK_SPEED,BASE_ATTACK_SPEED);base(p,Attributes.MOVEMENT_SPEED,BASE_MOVEMENT_SPEED);
-        base(p,ModAttributes.PHYSICAL_DEFENSE,BASE_DEFENSE);base(p,ModAttributes.MAGIC_RESISTANCE,BASE_DEFENSE);
-        base(p,ModAttributes.MAX_MANA,maxMana(role,d.getLevel()));base(p,ModAttributes.MANA_REGEN,BASE_MANA_REGEN);base(p,ModAttributes.HEALTH_REGEN,BASE_HEALTH_REGEN);
+        var innate = innateStats(role, d.getLevel());
+        base(p, ModAttributes.PHYSICAL_ATTACK, innate.physicalAttack());
+        base(p, ModAttributes.SPELL_POWER, innate.spellPower());
+        base(p, ModAttributes.ATTACK_SPEED, innate.attackSpeed());
+        base(p, ModAttributes.PHYSICAL_DEFENSE, innate.physicalDefense());
+        base(p, ModAttributes.MAGIC_RESISTANCE, innate.magicResistance());
+        base(p, ModAttributes.MANA_REGEN, innate.manaRegen());
+        base(p, ModAttributes.HEALTH_REGEN, innate.healthRegen());
+        base(p, Attributes.MOVEMENT_SPEED, BASE_MOVEMENT_SPEED);
+        base(p, ModAttributes.MAX_MANA, maxMana(role, d.getLevel()));
         d.setMana((float)Math.min(d.getMana(),p.getAttributeValue(ModAttributes.MAX_MANA)));
         base(p,ModAttributes.CRIT_DAMAGE,BASE_CRIT_DAMAGE);
         apply(p,d);

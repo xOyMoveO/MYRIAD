@@ -12,8 +12,7 @@ import com.myriad.game.GameRules;
 /**
  * 等级与经验系统（策划案第九节）。
  * <p>
- * 每升1级：生命上限 +2%、攻击力 +3%。
- * 分组重做角色最高 20 级；尚未重做角色沿用现有等级配置。
+ * 现役角色最高 20 级，固有属性按角色的每级成长线性叠加。
  */
 public final class LevelSystem {
     private LevelSystem() {}
@@ -90,7 +89,7 @@ public final class LevelSystem {
 
     /**
      * 按当前等级重算角色成长加成（覆盖式，等级变化时调用）。
-     * 成长属性按角色配置（CharacterType.growthXxx），每级数值加法。
+     * 现役角色的成长由 FirstGroupGrowth 统一重算。
      */
     public static void applyLevelAttributes(ServerPlayer player, int level) {
         PlayerData data = PlayerDataProvider.get(player);

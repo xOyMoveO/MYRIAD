@@ -105,6 +105,9 @@ final class FirstGroupRegressionChecks {
                 FirstGroupGrowth.initialize(p,d); PlayerHealthSystem.fill(p);
                 h.assertTrue(Math.abs(d.getModMaxHealth()-FirstGroupGrowth.health(role,1)) < .01,
                         "New HP baseline must reach the actual health pool");
+                int openingAttack = "luoxia".equals(role) ? 100 : 65;
+                h.assertTrue(p.getAttributeValue(ModAttributes.PHYSICAL_ATTACK) == openingAttack
+                        && p.getAttributeValue(ModAttributes.SPELL_POWER) == 30, "Opening AD and spell power");
                 p.setHealth(100); d.setMana(123);
                 LevelSystem.addXp(p,d,LevelSystem.xpToNext(1));
                 h.assertTrue(d.getLevel()==2 && d.getSkillPoints()==2, "Level-up awards exactly one skill point");
@@ -112,18 +115,21 @@ final class FirstGroupRegressionChecks {
                 d.setLevel(20); LevelSystem.applyLevelAttributes(p,20);
                 h.assertTrue(LevelSystem.maxLevel(d)==20 && Math.abs(d.getModMaxHealth()-FirstGroupGrowth.health(role,20))<.01,
                         "First batch reaches level 20 with its designed HP");
-                int baseAttack = "luoxia".equals(role) ? 100 : 65;
+                var type = CharacterType.byId(role);
+                double attackGrowth = RoleStatGrowthChecks.attackGrowth(type, 20);
+                double baseAttack = openingAttack + attackGrowth;
+                double spellPower = 30 + RoleStatGrowthChecks.spellGrowth(type, 20);
                 h.assertTrue(p.getAttributeValue(ModAttributes.PHYSICAL_ATTACK)==baseAttack
-                        && p.getAttributeValue(ModAttributes.SPELL_POWER)==30, "No hidden AD/AP growth");
+                        && p.getAttributeValue(ModAttributes.SPELL_POWER)==spellPower, "Defined level-20 AD and spell power");
                 d.setFirstGroupAttribute("strength",2); FirstGroupGrowth.apply(p,d);
                 h.assertTrue(p.getAttributeValue(ModAttributes.PHYSICAL_ATTACK)==baseAttack + 2 * 15
-                        && p.getAttributeValue(ModAttributes.SPELL_POWER)==30, "Strength buys 15 physical attack per point");
+                        && p.getAttributeValue(ModAttributes.SPELL_POWER)==spellPower, "Strength buys 15 physical attack per point");
                 var physicalFormula=AbilityDamageFormula.bonusPhysical(45,15,.50f);
                 var context=AbilityRuntime.context(p,skills.get(2));
                 float baseSpell=context.spellPowerValue(45,15,.55f);
                 float basePhysical=physicalFormula.value(context);
-                h.assertTrue(context.totalPhysicalAttack==baseAttack+30 && context.totalSpellPower==30
-                        && context.bonusPhysicalAttack==30 && context.purchasedSpellPower==0,
+                h.assertTrue(context.totalPhysicalAttack==baseAttack+30 && context.totalSpellPower==spellPower
+                        && context.bonusPhysicalAttack==attackGrowth+30 && context.purchasedSpellPower==0,
                         "Cast context distinguishes total, bonus physical and purchased spell attributes");
                 d.setFirstGroupAttribute("strength",3); FirstGroupGrowth.apply(p,d);
                 var strong=AbilityRuntime.context(p,skills.get(2));
@@ -132,7 +138,7 @@ final class FirstGroupRegressionChecks {
                         "Strength grows the physical formula independently of the spell formula");
                 d.setFirstGroupAttribute("wisdom",2); FirstGroupGrowth.apply(p,d);
                 h.assertTrue(p.getAttributeValue(ModAttributes.PHYSICAL_ATTACK)==baseAttack + 3 * 15
-                        && p.getAttributeValue(ModAttributes.SPELL_POWER)==70, "Wisdom buys 20 spell power per point");
+                        && p.getAttributeValue(ModAttributes.SPELL_POWER)==spellPower+40, "Wisdom buys 20 spell power per point");
                 var wise=AbilityRuntime.context(p,skills.get(2));
                 h.assertTrue(wise.spellPowerValue(45,15,.55f)>baseSpell
                         && physicalFormula.value(wise)==physicalFormula.value(strong),

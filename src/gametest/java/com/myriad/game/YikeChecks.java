@@ -264,6 +264,11 @@ final class YikeChecks {
         f.origin=Vec3.atBottomCenterOf(at.above());f.p.setPos(f.origin);f.p.setYRot(0);f.p.setXRot(0);f.p.setNoGravity(true);
         var d=PlayerDataProvider.get(f.p);d.setCharacterId("yike");d.setLevel(20);
         CharacterType.applyInitialAttributes(f.p,CharacterType.YIKE);FirstGroupGrowth.initialize(f.p,d);PlayerHealthSystem.fill(f.p);
+        // Use opening combat stats to compare fixed damage and recovery timelines with max-rank skills.
+        f.p.getAttribute(ModAttributes.PHYSICAL_ATTACK).setBaseValue(65);
+        f.p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(30);
+        f.p.getAttribute(ModAttributes.ATTACK_SPEED).setBaseValue(.70);
+        f.p.getAttribute(ModAttributes.MANA_REGEN).setBaseValue(4);
         d.setSkillLevel(node(0).getId(),1);d.setSkillLevel(node(2).getId(),1);d.setSkillLevel(node(3).getId(),1);d.setSkillLevel(node(4).getId(),1);d.setSkillLevel(node(6).getId(),1);d.setMana(700);
         f.p.getInventory().setItem(0,ModItems.HONG_LIE.get().getDefaultInstance());
         JiarenManager.create(f.p);f.target=f.level.getEntitiesOfClass(Villager.class,new net.minecraft.world.phys.AABB(f.origin,f.origin.add(0,2,4)).inflate(1),v->JiarenManager.isJiaren(v.getUUID())).getFirst();

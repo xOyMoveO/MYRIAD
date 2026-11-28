@@ -260,7 +260,7 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     snapshot = load(args.snapshot)
-    if snapshot["formatVersion"] not in (1, 2):
+    if snapshot["formatVersion"] not in (1, 2, 3):
         parser.error(f"unsupported snapshot version {snapshot['formatVersion']}")
     report = {"reportVersion": 1,
               "snapshot": {**{key: snapshot[key] for key in ("formatVersion", "sourceSha", "sourceDirty", "rulesSha256")},

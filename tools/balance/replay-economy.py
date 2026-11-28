@@ -10,6 +10,8 @@ from pathlib import Path
 from shlex import quote
 from zipfile import ZipFile
 
+from combo_calibration import attribute_at_level
+
 
 ATTRIBUTES = ("strength", "wisdom", "speed", "defense", "cooldown")
 TEAMS = ("guardian", "destruction")
@@ -1058,9 +1060,10 @@ def defense_trials(scenario, rules, s0):
         level, budget = seat["level"], seat["frontierBudget"]
         for role in ("luoxia", "yingxiao", "keheng", "qingluo"):
             stats = rules.roles[role]["attributes"]
-            hp = value(stats, "health")[level - 1]
-            base = {"physical": value(stats, "physicalDefense"), "spell": value(stats, "magicResistance")}
-            reference_hp = 575 + 75 * (level - 1)
+            hp = attribute_at_level(stats, "health", level)
+            base = {"physical": attribute_at_level(stats, "physicalDefense", level),
+                    "spell": attribute_at_level(stats, "magicResistance", level)}
+            reference_hp = attribute_at_level(rules.roles["luoxia"]["attributes"], "health", level)
             for ranks in settings["defenseRanks"]:
                 cost = sum(rules.price(rank) for rank in range(ranks))
                 variants = {}

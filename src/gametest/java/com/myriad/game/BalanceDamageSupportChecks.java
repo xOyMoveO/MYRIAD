@@ -15,8 +15,10 @@ import java.util.List;
 import java.util.Locale;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.phys.Vec3;
 
@@ -35,6 +37,7 @@ final class BalanceDamageSupportChecks {
     private static final Build WHIFF = new Build("whiff", "", false);
     private static final Build WISDOM = new Build("wisdom", "wisdom", false);
     private static final Build OVERFLOW = new Build("overflow", "wisdom", false);
+    private static final Build WISDOM_BUFF = new Build("wisdom_buff", "wisdom", false);
 
     private BalanceDamageSupportChecks() {}
 
@@ -53,15 +56,19 @@ final class BalanceDamageSupportChecks {
             ModState.setEnabled(enabled);
         };
         try {
-            shield(h, ZERO, 62, 57.5);
-            shield(h, STRENGTH, 69.5, 62.5);
-            shield(h, AZURE, 66.875, 60.75);
-            shield(h, DEFENSE, 62, 57.5);
-            shield(h, WHIFF, 0, 0);
-            heal(h, ZERO, 85, 85);
-            heal(h, STRENGTH, 85, 85);
-            heal(h, WISDOM, 95, 95);
-            heal(h, OVERFLOW, 95, 12);
+            shield(h, 1, ZERO, 62, 57.5);
+            shield(h, 1, STRENGTH, 69.5, 62.5);
+            shield(h, 1, AZURE, 66.875, 60.75);
+            shield(h, 1, DEFENSE, 62, 57.5);
+            shield(h, 1, WHIFF, 0, 0);
+            shield(h, 20, ZERO, 214, 57.5 + 304.0 / 3);
+            shield(h, 20, STRENGTH_AZURE, 250.3, 57.5 + 376.6 / 3);
+            heal(h, 1, ZERO, 85, 85);
+            heal(h, 1, STRENGTH, 85, 85);
+            heal(h, 1, WISDOM, 95, 95);
+            heal(h, 1, OVERFLOW, 95, 12);
+            heal(h, 20, ZERO, 227.5, 227.5);
+            heal(h, 20, WISDOM_BUFF, 245.5, 245.5);
             prepareSweep(h, sweeps, ZERO, 65, 104);
             prepareSweep(h, sweeps, STRENGTH, 80, 111.5);
             prepareSweep(h, sweeps, AZURE, 74.75, 108.875);
@@ -124,7 +131,7 @@ final class BalanceDamageSupportChecks {
         cast(caster, skill);
     }
 
-    private static void shield(GameTestHelper h, Build build, double damage, double shield) {
+    private static void shield(GameTestHelper h, int level, Build build, double damage, double shield) {
         var start = position(h, 0);
         var caster = actor(h, CharacterType.SHUO, start);
         // Hero attacks reach the player damage path even in the GameTest world's difficulty.
@@ -133,6 +140,7 @@ final class BalanceDamageSupportChecks {
         target.getAttribute(ModAttributes.PHYSICAL_DEFENSE).setBaseValue(0);
         h.getLevel().addNewPlayer(target);
         try {
+            if (level != 1) TrainingActions.apply(caster, "level:" + level, true);
             apply(h, caster, build);
             var skill = FirstGroupSkills.node("shuo", 3);
             var data = PlayerDataProvider.get(caster);
@@ -158,8 +166,8 @@ final class BalanceDamageSupportChecks {
                 near(h, formula.value(1, 30, bonus), granted, "Sheath Reversal amount on the formula card");
             }
             System.out.printf(Locale.ROOT, "MYRIAD_COMBAT case=shuo_qiaofan_shield build=%s bonusAttack=%.4f shield=%.4f riposte=%.4f%n",
-                    build.name(), bonus, granted, taken);
-            if (build == ZERO || build == DEFENSE) shieldSequence(h, caster, target, build);
+                    buildLabel(build, level), bonus, granted, taken);
+            if (level == 1 && (build == ZERO || build == DEFENSE)) shieldSequence(h, caster, target, build);
         } finally {
             remove(h, caster);
             remove(h, target);
@@ -189,10 +197,15 @@ final class BalanceDamageSupportChecks {
                 build.name(), physical, magic, trueAbsorbed, lost);
     }
 
-    private static void heal(GameTestHelper h, Build build, double amount, double effective) {
+    private static void heal(GameTestHelper h, int level, Build build, double amount, double effective) {
         var caster = actor(h, CharacterType.QINGLUO, position(h, 0));
         try {
+            if (level != 1) TrainingActions.apply(caster, "level:" + level, true);
             apply(h, caster, build);
+            if (build == WISDOM_BUFF) {
+                caster.getAttribute(ModAttributes.SPELL_POWER).addTransientModifier(new AttributeModifier(
+                        Identifier.parse("myriad:test_growth_spell_buff"), 16, AttributeModifier.Operation.ADD_VALUE));
+            }
             var skill = FirstGroupSkills.node("qingluo", 2);
             var formula = skill.supportAmounts().getFirst();
             double spellPower = caster.getAttributeValue(ModAttributes.SPELL_POWER);
@@ -206,10 +219,14 @@ final class BalanceDamageSupportChecks {
             double restored = caster.getHealth() - health;
             near(h, restored, effective, "Verdant Dew actual HP restoration " + build.name());
             System.out.printf(Locale.ROOT, "MYRIAD_COMBAT case=qingluo_verdant_dew build=%s spellPower=%.4f amount=%.4f effective=%.4f%n",
-                    build.name(), spellPower, preview, restored);
+                    buildLabel(build, level), spellPower, preview, restored);
         } finally {
             remove(h, caster);
         }
+    }
+
+    private static String buildLabel(Build build, int level) {
+        return level == 1 ? build.name() : "lv" + level + "_" + build.name();
     }
 
     private static void apply(GameTestHelper h, ServerPlayer caster, Build build) {

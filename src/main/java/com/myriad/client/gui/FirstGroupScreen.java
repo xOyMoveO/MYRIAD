@@ -131,7 +131,7 @@ public final class FirstGroupScreen extends Screen {
         if (id.startsWith(ATTRIBUTE_PREFIX)) {
             String key = id.substring(ATTRIBUTE_PREFIX.length());
             if (!FirstGroupGrowth.ATTRIBUTES.contains(key)) return "message.myriad.g1.invalid_skill";
-            return ShopPurchaseRules.attributeError(UiFeedback.shopAccess(), CharacterType.byId(data.characterId()),
+            return ShopPurchaseRules.attributeError(UiFeedback.shopAccess(), CharacterType.byId(data.characterId()), data.level(),
                     key, data.buffs().getOrDefault(id, 0), data.gold(), data.training() && data.noGoldCost(),
                     data.buffs().getOrDefault(AttributeSpecializations.COUNTER_PREFIX + key, 0), movementSpeedPerPoint(data));
         }
@@ -525,9 +525,11 @@ public final class FirstGroupScreen extends Screen {
 
     private static String attributeDetail(String key, int rank) {
         if (key.equals(FirstGroupGrowth.ATTACK_SPEED)) {
+            var data = ClientDataHolder.get();
             int selected = ClientDataHolder.syncedCounter(AttributeSpecializations.COUNTER_PREFIX + key);
+            double gain = FirstGroupGrowth.nextAttackSpeedGain(CharacterType.byId(data.characterId()), data.level(), rank, selected);
             return text("screen.myriad.g1.attribute_attack_speed_next",
-                    String.format(java.util.Locale.ROOT, "%.2f", FirstGroupGrowth.nextAttackSpeedGain(rank, selected)));
+                    String.format(java.util.Locale.ROOT, "%.3f", gain));
         }
         if (key.equals(FirstGroupGrowth.MOVEMENT_SPEED)) {
             double perPoint = movementSpeedPerPoint(ClientDataHolder.get());
