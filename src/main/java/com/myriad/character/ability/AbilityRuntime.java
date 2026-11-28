@@ -1,5 +1,7 @@
 package com.myriad.character.ability;
 
+import com.myriad.character.rework.AttributeSpecializations;
+
 import com.myriad.character.*;
 import com.myriad.character.rework.FirstGroupGrowth;
 import com.myriad.character.rework.FirstGroupSkills;
@@ -54,7 +56,8 @@ public final class AbilityRuntime {
     }
 
     public static int effectiveCooldownTicks(ServerPlayer player, PlayerData data, int baseTicks) {
-        return effectiveCooldownTicks(baseTicks, FirstGroupGrowth.skillHaste(data.firstGroupAttribute("cooldown")),
+        return effectiveCooldownTicks(baseTicks, AttributeSpecializations.skillHaste(
+                data.firstGroupAttribute("cooldown"), data.specialization("cooldown")),
                 player.getAttributeValue(ModAttributes.COOLDOWN_REDUCTION));
     }
     private interface Task {boolean tick(long now);default void cancel(){}}
@@ -448,7 +451,8 @@ public final class AbilityRuntime {
         public void shield(LivingEntity target,float amount,int ticks,Runnable onGain,
                            Consumer<net.minecraft.world.damagesource.DamageSource> onAbsorb){if(!SkillTargets.ally(player,target))return;
             float before=ModShieldSystem.value(target);
-            ModShieldSystem.grantMaxSource(target,shieldSource(),amount,ticks,onAbsorb,player.getUUID());
+            ModShieldSystem.grantMaxSource(target,shieldSource(),
+                    AttributeSpecializations.allySupport(data, player, target, amount),ticks,onAbsorb,player.getUUID());
             float gained=Math.max(0,ModShieldSystem.value(target)-before);
             if(gained>0){AbilityVisuals.shield(this,target);
                 if(!skill.role().equals("yingxiao"))AbilityVisuals.maintainShield(this,target,ticks);
@@ -456,6 +460,7 @@ public final class AbilityRuntime {
             }
         public void heal(LivingEntity target,float amount){
             if(!target.isAlive()||target.level()!=player.level()||!SkillTargets.ally(player,target)||amount<=0)return;
+            amount = AttributeSpecializations.allySupport(data, player, target, amount);
             float before=target.getHealth();CombatTelemetry.heal(target,Math.min(amount,Math.max(0,target.getMaxHealth()-before)),skill.role()+"_skill");
             float gained=Math.max(0,target.getHealth()-before);
             com.myriad.game.MatchAssists.healed(player,target,gained);

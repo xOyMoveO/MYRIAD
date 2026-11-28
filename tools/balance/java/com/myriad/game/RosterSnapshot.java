@@ -1,5 +1,7 @@
 package com.myriad.game;
 
+import com.myriad.character.rework.AttributeSpecializations;
+
 import static com.myriad.game.SnapshotJson.field;
 import static com.myriad.game.SnapshotJson.gap;
 import static com.myriad.game.SnapshotJson.json;
@@ -258,17 +260,32 @@ final class RosterSnapshot {
         var rules = new JsonObject();
         rules.add("pricing", field(Map.of("startingGold", FirstGroupGrowth.STARTING_PRICE,
                         "stepNumerator", FirstGroupGrowth.PRICE_STEP_DIVISOR + 1, "stepDenominator", FirstGroupGrowth.PRICE_STEP_DIVISOR,
-                        "rounding", "nearest_gold_each_step", "freeTrainingCounts", true), "rule_set",
-                source(FirstGroupGrowth.class, "price"), "按本项已购点数计档", "on_purchase", NO_CLOCK));
+                        "rounding", "nearest_gold_each_step", "freeTrainingCounts", true,
+                        "movementSpeedGold", FirstGroupGrowth.MOVEMENT_SPEED_PRICE), "rule_set",
+                source(FirstGroupGrowth.class, "price"), "移速固定价，其余按本项已购点数计档", "on_purchase", NO_CLOCK));
         rules.add("permanentGain", field(Map.of("physicalAttackPerStrength", FirstGroupGrowth.purchasedPhysicalAttack(1),
                         "spellPowerPerWisdom", FirstGroupGrowth.purchasedSpellPower(1),
                         "defensePerPoint", FirstGroupGrowth.DEFENSE_GAIN, "attackSpeedPerPoint", FirstGroupGrowth.SPEED_ATTACK_GAIN,
-                        "movementSpeedPerPoint", FirstGroupGrowth.SPEED_MOVEMENT_GAIN,
+                        "movementSpeedPerPoint", FirstGroupGrowth.OPENING_MOVEMENT_SPEED_GAIN,
+                        "lateMovementSpeedPerPoint", FirstGroupGrowth.LATE_MOVEMENT_SPEED_GAIN,
+                        "movementSpeedUpgradeTick", FirstGroupGrowth.MOVEMENT_SPEED_UPGRADE_TICK,
                         "attackSpeedMax", ModAttributes.MAX_ATTACK_SPEED,
                         "movementSpeedMax", Attributes.MOVEMENT_SPEED.value().sanitizeValue(Double.MAX_VALUE)), "rule_set",
                 source(FirstGroupGrowth.class, "purchaseError"),
                 "按固有值和已有购点判断。至少一项永久分量有增益才按当前档全价成交，训练免金仍记点",
                 "before_purchase", NO_CLOCK));
+        var options = new LinkedHashMap<String, Object>();
+        for (String attribute : FirstGroupGrowth.ATTRIBUTES) {
+            for (var option : AttributeSpecializations.choices(attribute)) {
+                options.put(option.id, Map.of("attribute", attribute, "initial", option.initial, "improved", option.improved));
+            }
+        }
+        rules.add("specializations", field(Map.of("unlockRank", AttributeSpecializations.UNLOCK_RANK,
+                        "upgradeRank", AttributeSpecializations.UPGRADE_RANK, "cost", 0, "options", options,
+                        "pursuitHits", AttributeSpecializations.PURSUIT_HITS,
+                        "pursuitCooldownTicks", AttributeSpecializations.PURSUIT_COOLDOWN_TICKS),
+                "rule_set", source(AttributeSpecializations.class, "choose"), "每项本局锁定一项",
+                "on_selection_or_purchase", REAL));
         return rules;
     }
 

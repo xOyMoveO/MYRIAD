@@ -34,7 +34,8 @@ public final class CultivationIcons {
     public static void attribute(GuiGraphicsExtractor g,String id,Box b){
         if(optional(g,"attributes",id,b))return;
         String fallback=switch(id){case "strength"->"physical_attack";case "wisdom"->"spell_power";
-            case "speed"->"movement_speed";case "defense"->"physical_defense";default->"cooldown_reduction";};
+            case "speed"->"attack_speed";case "movement_speed"->"movement_speed";
+            case "defense"->"physical_defense";default->"cooldown_reduction";};
         String path="attributes/"+fallback;
         if(SkillIcon.hasResource("textures/gui/sprites/"+path+".png"))
             g.blitSprite(RenderPipelines.GUI_TEXTURED,Identifier.fromNamespaceAndPath("myriad",path),b.x(),b.y(),b.w(),b.h());

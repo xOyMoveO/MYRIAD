@@ -2,6 +2,7 @@ package com.myriad.network;
 
 import com.myriad.character.rework.FirstGroupGrowth;
 import com.myriad.character.rework.FirstGroupSkills;
+import com.myriad.character.rework.AttributeSpecializations;
 import com.myriad.game.TrainingMode;
 import com.myriad.player.PlayerDataProvider;
 import java.util.Map;
@@ -50,11 +51,14 @@ public record ProgressAction(long sequence, String role, String id, int previous
     private boolean apply(ServerPlayer player) {
         var data = PlayerDataProvider.get(player);
         if (data == null || !role.equals(data.getCharacterId()) || !FirstGroupSkills.active(role)) return false;
+        var specialization = AttributeSpecializations.fromAction(id);
+        if (specialization != null)
+            return quote == 0 && AttributeSpecializations.choose(player, data, specialization, previousRank);
         if (id.startsWith(ATTRIBUTE)) {
             String attribute = id.substring(ATTRIBUTE.length());
             if (!FirstGroupGrowth.ATTRIBUTES.contains(attribute)) return false;
             int rank = data.firstGroupAttribute(attribute);
-            long price = TrainingMode.isNoGoldCost(player) ? 0 : FirstGroupGrowth.price(rank);
+            long price = TrainingMode.isNoGoldCost(player) ? 0 : FirstGroupGrowth.price(attribute, rank);
             if (rank != previousRank || price != quote) {
                 player.sendSystemMessage(Component.translatable("message.myriad.quote_changed", price));
                 return false;

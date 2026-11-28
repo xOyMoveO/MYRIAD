@@ -167,13 +167,14 @@ final class BalanceCalibrationDamageChecks {
         helper.assertTrue(data.getLevel() == build.level && data.getXp() == build.xp, "Real level progression to fixture level for " + id);
         int alreadySpent = 0;
         for (String attribute : FirstGroupGrowth.ATTRIBUTES) {
-            for (int rank = 0; rank < data.firstGroupAttribute(attribute); rank++) alreadySpent += FirstGroupGrowth.price(rank);
+            for (int rank = 0; rank < data.firstGroupAttribute(attribute); rank++) alreadySpent += FirstGroupGrowth.price(attribute, rank);
         }
         data.setGold(build.gold - alreadySpent);
         data.resetMatchGoldEarned(build.gold);
         for (int index = 0; index < FirstGroupGrowth.ATTRIBUTES.size(); index++) {
             String attribute = FirstGroupGrowth.ATTRIBUTES.get(index);
-            for (int rank = data.firstGroupAttribute(attribute); rank < build.points.get(index); rank++)
+            int targetRank = index < build.points.size() ? build.points.get(index) : 0;
+            for (int rank = data.firstGroupAttribute(attribute); rank < targetRank; rank++)
                 helper.assertTrue(FirstGroupGrowth.buy(actor, data, attribute), "Fixture buys " + id + " " + attribute);
         }
         for (int index = 0; index < nodes.size(); index++) {

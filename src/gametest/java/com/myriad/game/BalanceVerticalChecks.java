@@ -177,43 +177,43 @@ final class BalanceVerticalChecks {
                     "Free " + attribute + " advances only that attribute's purchase rank");
             TrainingMode.setNoGoldCost(false);
             data.setGold(2000);
+            boolean movementSpeed = attribute.equals(FirstGroupGrowth.MOVEMENT_SPEED);
             for (int rank = 1; rank < openingPrices.length; rank++) {
                 int before = data.getGold();
-                helper.assertTrue(FirstGroupGrowth.price(rank) == openingPrices[rank]
-                        && FirstGroupGrowth.buy(player, data, attribute) && data.getGold() == before - openingPrices[rank]
+                int price = movementSpeed ? 600 : openingPrices[rank];
+                helper.assertTrue(FirstGroupGrowth.price(attribute, rank) == price
+                        && FirstGroupGrowth.buy(player, data, attribute) && data.getGold() == before - price
                         && data.firstGroupAttribute(attribute) == rank + 1, "Purchase advances exact quote for " + attribute);
             }
-            helper.assertTrue(FirstGroupGrowth.price(0) == openingPrices[0], "All attributes start at 360 gold");
+            int firstPrice = movementSpeed ? 600 : openingPrices[0];
+            helper.assertTrue(FirstGroupGrowth.price(attribute, 0) == firstPrice, "Opening price for " + attribute);
             System.out.printf("MYRIAD_COMBAT case=training_price attribute=%s starting_price=%d free=%b rank=%d gold=%d%n",
-                    attribute, FirstGroupGrowth.price(0), free, data.firstGroupAttribute(attribute), data.getGold());
+                    attribute, firstPrice, free, data.firstGroupAttribute(attribute), data.getGold());
         }
 
-        // The fixture uses high ranks to reach both permanent attribute limits.
-        int partialRank = 22;
+        int partialRank = 21;
         data.setFirstGroupAttribute("speed", partialRank);
         FirstGroupGrowth.apply(player, data);
         int price = Math.toIntExact(FirstGroupGrowth.price(partialRank));
         data.setGold(price + 17);
         double attack = player.getAttributeValue(ModAttributes.ATTACK_SPEED);
         double movement = player.getAttributeValue(Attributes.MOVEMENT_SPEED);
-        var gain = FirstGroupGrowth.nextSpeedGain(partialRank);
+        double gain = FirstGroupGrowth.nextAttackSpeedGain(partialRank, 0);
         boolean partial = FirstGroupGrowth.buy(player, data, "speed");
         helper.assertTrue(partial && data.getGold() == 17 && data.firstGroupAttribute("speed") == partialRank + 1
-                && attack == 2 && player.getAttributeValue(ModAttributes.ATTACK_SPEED) == attack && gain.attackSpeed() == 0
-                && Math.abs(gain.movementSpeed() - .0015) < .00001
-                && Math.abs(player.getAttributeValue(Attributes.MOVEMENT_SPEED) - movement - gain.movementSpeed()) < .00001,
-                "Speed still pays its full quote and grants only the remaining permanent movement speed");
+                && player.getAttributeValue(ModAttributes.ATTACK_SPEED) == 2 && Math.abs(attack + gain - 2) < .00001
+                && Math.abs(player.getAttributeValue(Attributes.MOVEMENT_SPEED) - movement) < .00001,
+                "The last partial attack speed point costs its full quote and grants no movement speed");
         System.out.printf(java.util.Locale.ROOT,
                 "MYRIAD_COMBAT case=speed_purchase state=partial buy=%b rank=%d price=%d gold=%d attack_delta=%.4f movement_delta=%.4f%n",
-                partial, data.firstGroupAttribute("speed"), price, data.getGold(), gain.attackSpeed(), gain.movementSpeed());
+                partial, data.firstGroupAttribute("speed"), price, data.getGold(), gain, 0.0);
 
         var temporary = net.minecraft.resources.Identifier.parse("myriad:test_speed_debuff");
-        var moveAttribute = player.getAttribute(Attributes.MOVEMENT_SPEED);
-        int fullRank = (int) Math.ceil((Attributes.MOVEMENT_SPEED.value().sanitizeValue(Double.MAX_VALUE)
-                - FirstGroupGrowth.BASE_MOVEMENT_SPEED) / FirstGroupGrowth.SPEED_MOVEMENT_GAIN);
+        int fullRank = partialRank + 1;
         data.setFirstGroupAttribute("speed", fullRank);
         FirstGroupGrowth.apply(player, data);
-        moveAttribute.addTransientModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(temporary, -.75,
+        var attackAttribute = player.getAttribute(ModAttributes.ATTACK_SPEED);
+        attackAttribute.addTransientModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(temporary, -.75,
                 net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
         try {
             boolean cappedPaid = FirstGroupGrowth.buy(player, data, "speed");
@@ -222,12 +222,12 @@ final class BalanceVerticalChecks {
             helper.assertTrue(!cappedPaid && !cappedFree && data.getGold() == 17 && data.firstGroupAttribute("speed") == fullRank
                     && "message.myriad.g1.attribute_no_gain".equals(FirstGroupGrowth.purchaseError(CharacterType.LINGYUAN,
                             "speed", fullRank, data.getGold(), false))
-                    && FirstGroupGrowth.nextSpeedGain(fullRank).equals(new FirstGroupGrowth.SpeedGain(0, 0)),
-                    "Temporary slowing does not reopen either permanent gain, and both wallet and purchase rank are unchanged");
+                    && FirstGroupGrowth.nextAttackSpeedGain(fullRank, 0) == 0,
+                    "A temporary debuff does not reopen a capped attack speed purchase");
             System.out.printf("MYRIAD_COMBAT case=speed_purchase state=full paid=%b free=%b rank=%d gold=%d%n",
                     cappedPaid, cappedFree, data.firstGroupAttribute("speed"), data.getGold());
         } finally {
-            moveAttribute.removeModifier(temporary);
+            attackAttribute.removeModifier(temporary);
             TrainingMode.setNoGoldCost(false);
         }
     }

@@ -165,6 +165,15 @@ final class SkillChoiceUiChecks {
                     "Every attribute icon can be selected and purchased");
             h.assertTrue(contains(row, details) && details.x() > reached.right() && details.w() >= 110,
                     "Attribute count and price have room beside the item icon");
+            int specializationScroll = layout.reveal(layout.specializationButton(layout.attributeDetails(index, 0), 1),
+                    0, layout.attributeMaximum());
+            var specializationDetails = layout.attributeDetails(index, specializationScroll);
+            var left = layout.specializationButton(specializationDetails, 1);
+            var right = layout.specializationButton(specializationDetails, 2);
+            h.assertTrue(!left.overlaps(right) && contains(specializationDetails, left) && contains(specializationDetails, right)
+                            && layout.canHit(left, left.x() + left.w() / 2, left.y() + left.h() / 2)
+                            && layout.canHit(right, right.x() + right.w() / 2, right.y() + right.h() / 2),
+                    "Both specialization choices fit and can be revealed");
         }
         int count = TacticalSupplySystem.supplyIds().size();
         int max = layout.supplyMaximum(count);

@@ -3,11 +3,17 @@ package com.myriad.game;
 import com.google.gson.JsonObject;
 import com.myriad.Myriad;
 import com.myriad.character.CharacterType;
+import com.myriad.character.ability.AbilityRuntime;
+import com.myriad.character.rework.AttributeSpecializations;
+import com.myriad.character.rework.AttributeSpecializations.Option;
 import com.myriad.character.rework.FirstGroupGrowth;
+import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.combat.DamageCalc;
 import com.myriad.network.ProgressAction;
 import com.myriad.player.PlayerData;
 import com.myriad.player.PlayerDataProvider;
+import com.myriad.player.ModShieldSystem;
+import com.myriad.registry.ModAttributes;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -20,6 +26,7 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.phys.Vec3;
 
 /** Server rule checks for small rounds entered through the public lobby queue. */
@@ -243,7 +250,180 @@ final class SmallModeBalanceChecks {
                 "the quote guard rejects unaffordable prices before the signed-long overflow sentinel");
         results.add(Map.of("event", "later-purchases", "walletBefore", funded, "secondStrengthPrice", 432,
                 "firstWisdomPrice", 360, "walletAfter", buyerData.getGold(), "firstOverflowRank", overflow));
+        checkMovementSpeed(suite, buyer);
+        checkSpecializations(suite, roster, buyer, leader);
         return Map.of("kind", "combat", "mode", mode, "seats", roster.size(), "roles", roles, "events", results);
+    }
+
+    private void checkSpecializations(ArenaFixtureChecks.Suite suite, List<ServerPlayer> roster,
+                                      ServerPlayer buyer, ServerPlayer rival) {
+        var buyerData = data(buyer);
+        for (var key : FirstGroupGrowth.ATTRIBUTES) {
+            var options = AttributeSpecializations.choices(key);
+            if (key.equals(FirstGroupGrowth.MOVEMENT_SPEED)) {
+                suite.check(options.isEmpty(), "Fixed-price Movement Speed has no additional branches");
+                continue;
+            }
+            suite.check(options.size() == 2, "Exactly two options for " + key);
+            checkOption(suite, buyer, options.get(0), options.get(1));
+            checkOption(suite, rival, options.get(1), options.get(0));
+        }
+        var clone = new PlayerData();
+        clone.copyStateFrom(buyerData);
+        var saved = PlayerData.CODEC.encodeStart(com.mojang.serialization.JsonOps.INSTANCE, buyerData).getOrThrow();
+        var restored = PlayerData.CODEC.parse(com.mojang.serialization.JsonOps.INSTANCE, saved).getOrThrow();
+        suite.check(FirstGroupGrowth.ATTRIBUTES.stream().filter(key -> !key.equals(FirstGroupGrowth.MOVEMENT_SPEED))
+                        .allMatch(key -> clone.specialization(key) == 1
+                        && restored.specialization(key) == 1 && restored.firstGroupAttribute(key) == 8)
+                        && restored.firstGroupAttribute(FirstGroupGrowth.MOVEMENT_SPEED) == 2
+                        && clone.firstGroupAttribute(FirstGroupGrowth.MOVEMENT_SPEED) == 2,
+                "Death clone and saved attachment keep the choice separate from rank");
+        data(rival).setGold(600);
+        double before = rival.getAttributeValue(Attributes.MOVEMENT_SPEED);
+        buy(suite, rival, FirstGroupGrowth.MOVEMENT_SPEED, 0, 600);
+        suite.check(data(rival).getGold() == 0 && Math.abs(measure(rival, Option.LIGHTFOOT) - .005) < 1e-6
+                        && Math.abs(rival.getAttributeValue(Attributes.MOVEMENT_SPEED) - before
+                                    - FirstGroupGrowth.movementSpeedPerPoint(rival)) < 1e-6,
+                "Independent movement speed stacks with the existing Lightfoot specialization");
+        checkPursuit(suite, buyer, rival);
+        roster.stream().filter(player -> player != rival && GameManager.get().factionOf(player) == GameManager.get().factionOf(rival))
+                .findFirst().ifPresent(ally -> checkBlessing(suite, rival, ally));
+    }
+
+    private void checkOption(ArenaFixtureChecks.Suite suite, ServerPlayer player, Option option, Option other) {
+        var state = data(player);
+        state.setFirstGroupAttribute(option.attribute, 0);
+        state.setGold(6000);
+        for (int rank = 0; rank < 4; rank++) {
+            if (rank == 3) {
+                select(suite, player, option, rank, 0);
+                suite.check(state.specialization(option.attribute) == 0, "Rank three rejects " + option.id);
+            }
+            buy(suite, player, option.attribute, rank, FirstGroupGrowth.price(rank));
+        }
+        select(suite, player, option, 4, 1);
+        select(suite, player, option, 3, 0);
+        suite.check(state.specialization(option.attribute) == 0, "Forged or stale choices fail for " + option.id);
+        select(suite, player, option, 4, 0);
+        select(suite, player, other, 4, 0);
+        suite.check(state.specialization(option.attribute) == option.choice && state.getGold() == 4068
+                        && state.getBuff(AttributeSpecializations.COUNTER_PREFIX + option.attribute) == option.choice
+                        && Math.abs(measure(player, option) - option.initial) < 1e-6,
+                "Rank four grants a free locked first tier for " + option.id);
+        for (int rank = 4; rank < 8; rank++) buy(suite, player, option.attribute, rank, FirstGroupGrowth.price(rank));
+        suite.check(state.specialization(option.attribute) == option.choice && state.getGold() == 64
+                        && Math.abs(measure(player, option) - option.improved) < 1e-6,
+                "Rank eight automatically upgrades " + option.id + " at the same total price");
+    }
+
+    private void select(ArenaFixtureChecks.Suite suite, ServerPlayer player, Option option, int rank, long quote) {
+        suite.receive(player, new ProgressAction(++purchaseSequence, data(player).getCharacterId(), option.actionId(), rank, quote));
+    }
+
+    private static double measure(ServerPlayer player, Option option) {
+        int rank = data(player).firstGroupAttribute(option.attribute);
+        return switch (option) {
+            case ARMOR_PIERCE -> player.getAttributeValue(ModAttributes.FLAT_ARMOR_PEN);
+            case MAGIC_PIERCE -> player.getAttributeValue(ModAttributes.FLAT_MAGIC_PEN);
+            case FLURRY -> player.getAttributeValue(ModAttributes.ATTACK_SPEED)
+                    - FirstGroupGrowth.BASE_ATTACK_SPEED - rank * FirstGroupGrowth.SPEED_ATTACK_GAIN;
+            case LIGHTFOOT -> player.getAttributeValue(Attributes.MOVEMENT_SPEED)
+                    - FirstGroupGrowth.BASE_MOVEMENT_SPEED
+                    - data(player).firstGroupAttribute(FirstGroupGrowth.MOVEMENT_SPEED) * FirstGroupGrowth.movementSpeedPerPoint(player);
+            case STEELBONE -> player.getAttributeValue(ModAttributes.PHYSICAL_DEFENSE)
+                    - FirstGroupGrowth.BASE_DEFENSE - rank * FirstGroupGrowth.DEFENSE_GAIN;
+            case SPIRIT_ARMOR -> player.getAttributeValue(ModAttributes.MAGIC_RESISTANCE)
+                    - FirstGroupGrowth.BASE_DEFENSE - rank * FirstGroupGrowth.DEFENSE_GAIN;
+            case BREATH -> player.getAttributeValue(ModAttributes.MANA_REGEN) - FirstGroupGrowth.BASE_MANA_REGEN;
+            case COMBO -> AttributeSpecializations.skillHaste(rank, data(player).specialization("cooldown"))
+                    - FirstGroupGrowth.skillHaste(rank);
+            case BLESSING, PURSUIT -> option.value(data(player));
+        };
+    }
+
+    private static void checkPursuit(ArenaFixtureChecks.Suite suite, ServerPlayer victim, ServerPlayer attacker) {
+        long now = suite.server.overworld().getGameTime();
+        victim.setHealth(victim.getMaxHealth());
+        ModShieldSystem.clearFor(victim);
+        var attack = DamageCalc.Kind.MAGIC;
+        float expectedExtra = DamageCalc.applyMitigation(attacker, victim, 32, DamageCalc.Kind.PHYSICAL);
+        float normal = landedBasic(attacker, victim, attack);
+        victim.damageCooldownTime = 0;
+        DamageCalc.dealUncriticalSkillDamage(attacker, victim, 30, attack, 0);
+        suite.check(Math.abs(landedBasic(attacker, victim, attack) - normal) < .002,
+                "A spell does not add a Pursuit stack");
+        suite.check(Math.abs(landedBasic(attacker, victim, attack) - normal - expectedExtra) < .002,
+                "The third landed spell-power basic adds a separately mitigated physical component");
+        for (int i = 0; i < 3; i++) {
+            suite.clock(now + 119);
+            suite.check(Math.abs(landedBasic(attacker, victim, attack) - normal) < .002,
+                    "Pursuit cannot re-trigger on the same target before six seconds");
+        }
+        suite.clock(now + 120);
+        landedBasic(attacker, victim, attack);
+        landedBasic(attacker, victim, attack);
+        suite.check(Math.abs(landedBasic(attacker, victim, attack) - normal - expectedExtra) < .002,
+                "Pursuit can start a new sequence at six seconds");
+    }
+
+    private static float landedBasic(ServerPlayer attacker, ServerPlayer victim, DamageCalc.Kind kind) {
+        victim.damageCooldownTime = 0;
+        float health = victim.getHealth();
+        DamageCalc.dealBasicDamage(attacker, victim, 30, kind);
+        return health - victim.getHealth();
+    }
+
+    private static void checkBlessing(ArenaFixtureChecks.Suite suite, ServerPlayer caster, ServerPlayer ally) {
+        var cast = AbilityRuntime.context(caster, FirstGroupSkills.node(data(caster).getCharacterId(), 2));
+        ModShieldSystem.clearFor(ally);
+        ModShieldSystem.clearFor(caster);
+        caster.setHealth(caster.getMaxHealth() - 200);
+        ally.setHealth(ally.getMaxHealth() - 200);
+        float own = caster.getHealth(), friend = ally.getHealth();
+        cast.heal(caster, 100);
+        cast.heal(ally, 100);
+        cast.shield(caster, 100, 40);
+        cast.shield(ally, 100, 40);
+        suite.check(Math.abs(caster.getHealth() - own - 100) < .002 && Math.abs(ally.getHealth() - friend - 110) < .002
+                        && Math.abs(ModShieldSystem.value(caster) - 100) < .002 && Math.abs(ModShieldSystem.value(ally) - 110) < .002,
+                "Blessing amplifies real ally healing and shielding once while self support stays at base");
+    }
+
+    private void checkMovementSpeed(ArenaFixtureChecks.Suite suite, ServerPlayer buyer) {
+        var state = data(buyer);
+        String movement = FirstGroupGrowth.MOVEMENT_SPEED;
+        long oldTime = suite.server.overworld().getGameTime();
+        long upgrade = GameManager.get().getMatchStartTime() + FirstGroupGrowth.MOVEMENT_SPEED_UPGRADE_TICK;
+        try {
+            suite.clock(upgrade - 1);
+            state.setGold(1800);
+            double base = buyer.getAttributeValue(Attributes.MOVEMENT_SPEED);
+            double attackSpeed = buyer.getAttributeValue(ModAttributes.ATTACK_SPEED);
+            buy(suite, buyer, movement, 0, 360);
+            suite.check(state.firstGroupAttribute(movement) == 0 && state.getGold() == 1800,
+                    "The server rejects an incorrect price for Movement Speed");
+            buy(suite, buyer, movement, 0, 600);
+            suite.check(state.getGold() == 1200 && Math.abs(buyer.getAttributeValue(Attributes.MOVEMENT_SPEED) - base - .0025) < 1e-6
+                            && buyer.getAttributeValue(ModAttributes.ATTACK_SPEED) == attackSpeed,
+                    "The first movement purchase adds .0025 independently of attack speed");
+            suite.clock(upgrade);
+            PlayerDataProvider.onPlayerTick(buyer);
+            suite.check(state.getGold() == 1200 && Math.abs(buyer.getAttributeValue(Attributes.MOVEMENT_SPEED) - base - .005) < 1e-6
+                            && com.myriad.network.BattleSnapshots.of(buyer).lastAttributes()
+                                    .get(FirstGroupGrowth.MOVEMENT_SPEED_RATE_KEY) == .005,
+                    "On the exact eight-minute tick the existing point and the client preview update");
+            buy(suite, buyer, movement, 1, 600);
+            suite.check(state.getGold() == 600 && state.firstGroupAttribute(movement) == 2
+                            && Math.abs(buyer.getAttributeValue(Attributes.MOVEMENT_SPEED) - base - .010) < 1e-6,
+                    "A later point still costs 600 and grants .005");
+            buy(suite, buyer, FirstGroupGrowth.ATTACK_SPEED, 0, 360);
+            suite.check(state.getGold() == 240 && state.firstGroupAttribute(FirstGroupGrowth.ATTACK_SPEED) == 1
+                            && Math.abs(buyer.getAttributeValue(ModAttributes.ATTACK_SPEED) - attackSpeed - .06) < 1e-6
+                            && Math.abs(buyer.getAttributeValue(Attributes.MOVEMENT_SPEED) - base - .010) < 1e-6,
+                    "An attack speed purchase adds no basic movement speed");
+        } finally {
+            suite.clock(oldTime);
+        }
     }
 
     private static Map<String, Object> remake(ArenaFixtureChecks.Suite suite, List<ServerPlayer> roster,

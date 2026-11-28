@@ -171,11 +171,12 @@ final class RosterBChecks {
                 h.assertTrue(d.skillLevel(skill.getId())==(skill.isPassive()?5:1)&&d.getSkillPoints()==(skill.isPassive()?20:19),"Every real candidate learns through registered input: "+skill.getId());
                 int other=FirstGroupSkills.opposite(skill.index());if(other>=0){ShuoPilotChecks.learn(h, p, FirstGroupSkills.node(role,other).getId());h.assertTrue(d.skillLevel(FirstGroupSkills.node(role,other).getId())==0&&d.getSkillPoints()==(skill.isPassive()?20:19),"Opposite branch receiver rejects without spending: "+skill.getId());}
             }
-            FirstGroupGrowth.initialize(p,d);d.setGold(2000);
+            FirstGroupGrowth.initialize(p,d);d.setGold(2400);
             for(String key:FirstGroupGrowth.ATTRIBUTES)receive(h,p,new NetworkSetup.CraftEquipPayload("g1_attribute_"+key));
-            h.assertTrue(FirstGroupGrowth.ATTRIBUTES.stream().allMatch(key->d.firstGroupAttribute(key)==1)&&d.getGold()==200,"Five actual purchase inputs charge exactly 5x360 gold: "+role);
+            h.assertTrue(FirstGroupGrowth.ATTRIBUTES.stream().allMatch(key->d.firstGroupAttribute(key)==1)&&d.getGold()==0,
+                    "Six actual purchase inputs charge 5x360 plus 600 gold: "+role);
             near(h,p.getAttributeValue(ModAttributes.PHYSICAL_ATTACK),80,"Purchased strength "+role);near(h,p.getAttributeValue(ModAttributes.SPELL_POWER),50,"Purchased wisdom "+role);
-            near(h,p.getAttributeValue(ModAttributes.ATTACK_SPEED),.76,"Purchased attack speed "+role);h.assertTrue(Math.abs(p.getAttributeValue(Attributes.MOVEMENT_SPEED)-.1015)<.00001,"Purchased movement speed "+role);
+            near(h,p.getAttributeValue(ModAttributes.ATTACK_SPEED),.76,"Purchased attack speed "+role);h.assertTrue(Math.abs(p.getAttributeValue(Attributes.MOVEMENT_SPEED)-.1025)<.00001,"Purchased movement speed "+role);
             near(h,p.getAttributeValue(ModAttributes.PHYSICAL_DEFENSE),50,"Purchased physical defense "+role);near(h,p.getAttributeValue(ModAttributes.MAGIC_RESISTANCE),50,"Purchased magic resistance "+role);
             near(h,p.getAttributeValue(ModAttributes.COOLDOWN_REDUCTION),0,"Purchased haste leaves legacy percentage unchanged "+role);
             near(h,FirstGroupGrowth.skillHaste(d.firstGroupAttribute("cooldown")),12.5,"One actual purchase grants haste "+role);

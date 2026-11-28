@@ -6,6 +6,8 @@ import com.myriad.character.CharacterType;
 import com.myriad.character.ability.AbilityFormulaText;
 import com.myriad.character.ability.AbilityRuntime;
 import com.myriad.character.ability.AbilitySkill;
+import com.myriad.character.rework.AttributeSpecializations;
+import com.myriad.character.rework.AttributeSpecializations.Option;
 import com.myriad.character.rework.FirstGroupGrowth;
 import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.client.ClientDataHolder;
@@ -62,7 +64,7 @@ public final class FirstGroupScreen extends Screen {
         if (!minecraft.isWindowActive()) selection.clearPair();
     }
 
-    private enum ActionKind { CLOSE, PAGE, ITEM, CONFIRM, SUPPLY }
+    private enum ActionKind { CLOSE, PAGE, ITEM, CONFIRM, SUPPLY, SPECIALIZATION }
     private record Action(Box box, String id, ActionKind kind, boolean content) {}
     private record TooltipTarget(String id, Box anchor, List<String> lines) {}
     private record TextLine(FormattedCharSequence text, int color) {}
@@ -120,11 +122,18 @@ public final class FirstGroupScreen extends Screen {
         } else if (supplySnapshot == data && System.nanoTime() - supplySubmitted < 1_500_000_000L) {
             return "screen.myriad.g1.processing";
         }
+        var option = AttributeSpecializations.fromAction(id);
+        if (option != null) {
+            if (!UiFeedback.shopAccess().attributes()) return "screen.myriad.shop.unavailable";
+            return AttributeSpecializations.choiceError(data.buffs().getOrDefault(ATTRIBUTE_PREFIX + option.attribute, 0),
+                    data.buffs().getOrDefault(AttributeSpecializations.COUNTER_PREFIX + option.attribute, 0));
+        }
         if (id.startsWith(ATTRIBUTE_PREFIX)) {
             String key = id.substring(ATTRIBUTE_PREFIX.length());
             if (!FirstGroupGrowth.ATTRIBUTES.contains(key)) return "message.myriad.g1.invalid_skill";
             return ShopPurchaseRules.attributeError(UiFeedback.shopAccess(), CharacterType.byId(data.characterId()),
-                    key, data.buffs().getOrDefault(id, 0), data.gold(), data.training() && data.noGoldCost());
+                    key, data.buffs().getOrDefault(id, 0), data.gold(), data.training() && data.noGoldCost(),
+                    data.buffs().getOrDefault(AttributeSpecializations.COUNTER_PREFIX + key, 0), movementSpeedPerPoint(data));
         }
         if (TacticalSupplySystem.isSupply(id)) {
             return ShopPurchaseRules.supplyError(UiFeedback.shopAccess(), id, data.gold(),
@@ -145,8 +154,11 @@ public final class FirstGroupScreen extends Screen {
             long sequence = progressGate().begin(System.nanoTime());
             if (sequence == 0) return;
             boolean attribute = id.startsWith(ATTRIBUTE_PREFIX);
-            int previous = attribute ? data.buffs().getOrDefault(id, 0) : data.skillLevels().getOrDefault(id, 0);
-            long quote = attribute && !(data.training() && data.noGoldCost()) ? FirstGroupGrowth.price(previous) : 0;
+            var option = AttributeSpecializations.fromAction(id);
+            int previous = option != null ? data.buffs().getOrDefault(ATTRIBUTE_PREFIX + option.attribute, 0)
+                    : attribute ? data.buffs().getOrDefault(id, 0) : data.skillLevels().getOrDefault(id, 0);
+            long quote = attribute && !(data.training() && data.noGoldCost())
+                    ? FirstGroupGrowth.price(id.substring(ATTRIBUTE_PREFIX.length()), previous) : 0;
             Packets.sendToServer(new com.myriad.network.ProgressAction(sequence, data.characterId(), id, previous, quote));
         }
         actions.clear();
@@ -177,7 +189,7 @@ public final class FirstGroupScreen extends Screen {
                 String id = selection.selected();
                 if (selection.confirm(id, twice, !id.isEmpty() && error(id) == null)) submit(id);
             }
-            case SUPPLY -> {
+            case SUPPLY, SPECIALIZATION -> {
                 if (!twice && error(action.id) == null) submit(action.id);
             }
         }
@@ -501,21 +513,31 @@ public final class FirstGroupScreen extends Screen {
         return data.training() && data.noGoldCost() ? 0 : TacticalSupplySystem.supplyPrice(id);
     }
 
-    private static String nextAttributePrice(int rank) {
-        long price = FirstGroupGrowth.price(rank);
+    private static String nextAttributePrice(String key, int rank) {
+        long price = FirstGroupGrowth.price(key, rank);
         return price == FirstGroupGrowth.PRICE_OVERFLOW ? text("message.myriad.g1.attribute_price_overflow")
                 : text("screen.myriad.g1.attribute_next_price", price);
     }
 
+    private static double movementSpeedPerPoint(NetworkSetup.PlayerDataPayload data) {
+        return data.attrs().getOrDefault(FirstGroupGrowth.MOVEMENT_SPEED_RATE_KEY, FirstGroupGrowth.OPENING_MOVEMENT_SPEED_GAIN);
+    }
+
     private static String attributeDetail(String key, int rank) {
-        if (key.equals("speed")) {
-            var gain = FirstGroupGrowth.nextSpeedGain(rank);
-            return text("screen.myriad.g1.attribute_speed_next",
-                    String.format(java.util.Locale.ROOT, "%.2f", gain.attackSpeed()),
-                    String.format(java.util.Locale.ROOT, "%.4f", gain.movementSpeed()));
+        if (key.equals(FirstGroupGrowth.ATTACK_SPEED)) {
+            int selected = ClientDataHolder.syncedCounter(AttributeSpecializations.COUNTER_PREFIX + key);
+            return text("screen.myriad.g1.attribute_attack_speed_next",
+                    String.format(java.util.Locale.ROOT, "%.2f", FirstGroupGrowth.nextAttackSpeedGain(rank, selected)));
+        }
+        if (key.equals(FirstGroupGrowth.MOVEMENT_SPEED)) {
+            double perPoint = movementSpeedPerPoint(ClientDataHolder.get());
+            return text("screen.myriad.g1.attribute_movement_speed_next",
+                    String.format(java.util.Locale.ROOT, "%.4f", FirstGroupGrowth.nextMovementSpeedGain(rank, perPoint)));
         }
         if (key.equals("cooldown")) {
-            return text("screen.myriad.g1.attribute_haste_current", AbilityFormulaText.amount(FirstGroupGrowth.skillHaste(rank)));
+            int selected = ClientDataHolder.syncedCounter(AttributeSpecializations.COUNTER_PREFIX + key);
+            return text("screen.myriad.g1.attribute_haste_current", AbilityFormulaText.amount(
+                    AttributeSpecializations.skillHaste(rank, selected)));
         }
         return "";
     }
@@ -530,15 +552,31 @@ public final class FirstGroupScreen extends Screen {
         if (key.equals("cooldown")) lines.add(text("screen.myriad.g1.attribute_effect.cooldown",
                 AbilityFormulaText.amount(FirstGroupGrowth.HASTE_PER_POINT), AbilityRuntime.SKILL_HASTE_REFERENCE,
                 AbilityRuntime.MIN_POSITIVE_COOLDOWN));
-        else if (!key.equals("speed")) lines.add(text("screen.myriad.g1.attribute_effect." + key));
+        else if (!key.equals(FirstGroupGrowth.ATTACK_SPEED)) lines.add(text("screen.myriad.g1.attribute_effect." + key));
         String detail = attributeDetail(key, rank);
         if (!detail.isEmpty()) lines.add(detail);
-        lines.add(nextAttributePrice(rank));
+        lines.add(nextAttributePrice(key, rank));
+        var options = AttributeSpecializations.choices(key);
+        if (!options.isEmpty()) lines.add(text("screen.myriad.specialization.rules",
+                AttributeSpecializations.UNLOCK_RANK, AttributeSpecializations.UPGRADE_RANK));
+        int selected = ClientDataHolder.syncedCounter(AttributeSpecializations.COUNTER_PREFIX + key);
+        for (var option : options) {
+            lines.add(text(option.nameKey()) + " · " + specializationEffect(option)
+                    + (selected == option.choice ? " · " + text("screen.myriad.specialization.active") : ""));
+        }
         if (data.training() && data.noGoldCost()) lines.add(text("screen.myriad.g1.attribute_free"));
         String reason = error(id);
         if (reason != null && !reason.equals("message.myriad.g1.attribute_price_overflow")) lines.add(text(reason));
         lines.add(text("screen.myriad.g1.attribute_click_hint"));
         return lines;
+    }
+
+    private static String specializationEffect(Option option) {
+        return text(option.nameKey() + ".effect", specializationNumber(option.initial), specializationNumber(option.improved));
+    }
+
+    private static String specializationNumber(double value) {
+        return java.math.BigDecimal.valueOf(value).stripTrailingZeros().toPlainString();
     }
 
     private void drawAttributes(GuiGraphicsExtractor g, SkillChoiceLayout layout, int mx, int my) {
@@ -568,11 +606,31 @@ public final class FirstGroupScreen extends Screen {
                 textIn(g, acquired, details.x(), lineY, details.w(), JADE);
                 lineY += LINE_HEIGHT;
             }
-            int quoteLines = Math.max(1, (details.bottom() - lineY + 2) / LINE_HEIGHT);
-            wrapped(g, nextAttributePrice(rank), new Box(details.x(), lineY, details.w(), quoteLines * LINE_HEIGHT), quoteLines, GOLD);
-            if (sameLine && quoteLines > 1 && font.width(nextAttributePrice(rank)) <= details.w()) {
+            var options = AttributeSpecializations.choices(key);
+            boolean showSpecializations = !options.isEmpty() && rank >= AttributeSpecializations.UNLOCK_RANK;
+            int reserved = showSpecializations ? 17 : 0;
+            int quoteLines = Math.max(1, (details.bottom() - reserved - lineY + 2) / LINE_HEIGHT);
+            String quote = nextAttributePrice(key, rank);
+            wrapped(g, quote, new Box(details.x(), lineY, details.w(), quoteLines * LINE_HEIGHT), quoteLines, GOLD);
+            if (!showSpecializations && sameLine && quoteLines > 1 && font.width(quote) <= details.w()) {
                 String detail = attributeDetail(key, rank);
                 if (!detail.isEmpty()) textIn(g, detail, details.x(), details.bottom() - font.lineHeight, details.w(), MUTED);
+            }
+            if (showSpecializations) {
+                int chosen = ClientDataHolder.syncedCounter(AttributeSpecializations.COUNTER_PREFIX + key);
+                for (var option : options) {
+                    var control = layout.specializationButton(details, option.choice);
+                    String action = option.actionId();
+                    boolean active = chosen == option.choice;
+                    String optionName = text(option.nameKey());
+                    String label = active && rank >= AttributeSpecializations.UPGRADE_RANK ? optionName + " II" : optionName;
+                    button(g, new Action(control, action, ActionKind.SPECIALIZATION, true),
+                            label, active || error(action) == null, active, layout, mx, my);
+                    offer(action, control, () -> List.of(optionName, specializationEffect(option),
+                            text(active ? "screen.myriad.specialization.active" : chosen != 0
+                                    ? "screen.myriad.specialization.chosen" : "screen.myriad.specialization.choose")),
+                            mx, my, view);
+                }
             }
             offer(id + ":tile", icon, () -> attributeLines(key), mx, my, view);
         }
@@ -642,7 +700,7 @@ public final class FirstGroupScreen extends Screen {
             String key = id.substring(ATTRIBUTE_PREFIX.length());
             name = text("screen.myriad.g1.attribute." + key);
             var data = ClientDataHolder.get();
-            long price = FirstGroupGrowth.price(ClientDataHolder.syncedCounter(id));
+            long price = FirstGroupGrowth.price(key, ClientDataHolder.syncedCounter(id));
             if (data.training() && data.noGoldCost()) label = text("screen.myriad.g1.buy", 0);
             else if (price == FirstGroupGrowth.PRICE_OVERFLOW) label = text("screen.myriad.g1.attribute_price_limit");
             else label = text("screen.myriad.g1.buy", price);

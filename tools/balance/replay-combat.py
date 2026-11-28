@@ -77,16 +77,29 @@ def calculate(rules, purchase_rules, new):
             record("yike_cooldown", f"{form}_{points}", cooldown=committed, interval=cadence,
                    exit_cooldown=ticks(shell_base, points) if form != "normal" else None)
 
+    split_speed = new and "movementSpeedGold" in pricing
     for attribute in ATTRIBUTES:
         record("training_price", attribute, starting_price=price(0), free=pricing["freeTrainingCounts"],
                rank=4, gold=2000 - sum(price(rank) for rank in range(1, 4)))
+    if split_speed:
+        move_price = pricing["movementSpeedGold"]
+        record("training_price", "movement_speed", starting_price=move_price, free=pricing["freeTrainingCounts"],
+               rank=4, gold=2000 - 3 * move_price)
     speed, move = stats(roles, "lingyuan", "attackSpeed"), stats(roles, "lingyuan", "movementSpeed")
-    speed_step, move_step = gain["attackSpeedPerPoint"], gain["movementSpeedPerPoint"]
-    partial_rank = ceil((gain["attackSpeedMax"] - speed) / speed_step)
-    full_rank = ceil((gain["movementSpeedMax"] - move) / move_step)
-    record("speed_purchase", "partial", buy=True, rank=partial_rank + 1, price=price(partial_rank), gold=17,
-           attack_delta=0, movement_delta=move_step)
-    record("speed_purchase", "full", paid=False, free=not new, rank=full_rank + (0 if new else 1), gold=17)
+    speed_step = gain["attackSpeedPerPoint"]
+    attack_cap = gain["attackSpeedMax"]
+    attack_cap_rank = ceil((attack_cap - speed) / speed_step)
+    if split_speed:
+        partial_rank = attack_cap_rank - 1
+        record("speed_purchase", "partial", buy=True, rank=attack_cap_rank, price=price(partial_rank), gold=17,
+               attack_delta=attack_cap - (speed + partial_rank * speed_step), movement_delta=0)
+        record("speed_purchase", "full", paid=False, free=False, rank=attack_cap_rank, gold=17)
+    else:
+        move_step = .0015 if "movementSpeedGold" in pricing else gain["movementSpeedPerPoint"]
+        full_rank = ceil((gain["movementSpeedMax"] - move) / move_step)
+        record("speed_purchase", "partial", buy=True, rank=attack_cap_rank + 1, price=price(attack_cap_rank), gold=17,
+               attack_delta=0, movement_delta=move_step)
+        record("speed_purchase", "full", paid=False, free=not new, rank=full_rank + (0 if new else 1), gold=17)
 
     def attack_stats(role, build):
         innate = stats(roles, role, "physicalAttack")
@@ -243,7 +256,7 @@ def main():
         actual = observed.pop((case, variant), None)
         same = actual is not None and expected.keys() == actual.keys() and all(
             matches(value, actual[key]) for key, value in expected.items())
-        rows.append({"case": case, "variant": variant, "before": before[(case, variant)], "offline": expected,
+        rows.append({"case": case, "variant": variant, "before": before.get((case, variant)), "offline": expected,
                      "engine": actual, "matched": same})
     matched = sum(row["matched"] for row in rows)
     report = {"scenarioVersion": 1, "baseline": metadata(args.baseline, old), "snapshot": metadata(args.snapshot, new),
