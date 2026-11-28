@@ -180,6 +180,7 @@ java -version
 | [src/main/java/com/myriad](src/main/java/com/myriad/) | 角色、战斗、对局、地图、网络与客户端代码 |
 | [src/main/resources](src/main/resources/) | 模组声明、语言、模型、纹理、音效与技能定义 |
 | [GLOSSARY.md](GLOSSARY.md) | 技能分支、缓时、战术锚点等领域术语 |
+| [数值平衡实施规格](docs/balance/implementation-handoff.md) | 角色与战场的后续实施批次、验收算例和四角色原型证据 |
 
 ## 许可
 
