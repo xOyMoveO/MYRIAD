@@ -257,9 +257,11 @@ class Replay:
             absorbed += used
             left -= used
         target.absorbed += absorbed
-        target.hp = max(0, target.hp - left)
+        health_loss = min(target.hp, left)
+        target.hp -= health_loss
         label = f"ally_{self.allies.index(target) + 1}" if any(target is ally for ally in self.allies) else "self"
-        self.record("incoming", target=label, damageKind=kind, rawHp=raw, absorbedHp=absorbed, hpLeft=target.hp)
+        self.record("incoming", target=label, damageKind=kind, rawHp=raw, absorbedHp=absorbed,
+                    healthLossHp=health_loss, hpLeft=target.hp)
 
     def damage(self, enemy, raw, kind, skill, label=None, rapid=False, indirect=False, token=None):
         if enemy.hp <= 0:
@@ -769,6 +771,8 @@ def case_report(rules, defaults, config, combination, mode, delay, script=None, 
     result.update({"events": replay.events, "combination": combination, "ranks": replay.ranks, "opponent": mode,
                    "delay": delay, "initial": replay.initial, "actorStats": replay.stats,
                    "targetStats": replay.target_stats, "initialGoldSpent": purchase_cost(replay.pricing, replay.initial["purchases"]),
+                   "incomingHealthLostHp": sum(row.get("healthLossHp", 0) for row in replay.events
+                                               if row["event"] == "incoming" and row["target"] == "self"),
                    "coverageGaps": {key: gap for key, gap in gaps.items() if key in abilities or key in ("contact", "wait")}})
     return result
 
