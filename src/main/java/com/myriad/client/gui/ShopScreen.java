@@ -177,13 +177,14 @@ public class ShopScreen extends Screen {
     private String purchaseBlockReason() {
         if (purchasePending) return "screen.myriad.shop.pending";
         var player = net.minecraft.client.Minecraft.getInstance().player;
-        if (player == null || ClientDataHolder.get() == null || !ClientDataHolder.modEnabled())
+        var data = ClientDataHolder.get();
+        if (player == null || data == null || !data.modEnabled())
             return "screen.myriad.shop.unavailable";
         if (selectedId == null) return "screen.myriad.shop.select_hint";
         var access = com.myriad.client.UiFeedback.shopAccess();
         if (TacticalSupplySystem.isSupply(selectedId)) {
-            if (!access.supplies()) return "message.myriad.shop_base_only";
-            if (!canAfford(TacticalSupplySystem.supplyPrice(selectedId))) return "message.myriad.equip_no_gold";
+            String reason = ShopPurchaseRules.supplyError(access, selectedId, data.gold(), data.training() && data.noGoldCost());
+            if (reason != null) return reason;
             if (selectedId.equals("blood_pill") || selectedId.equals("mana_pill")) {
                 int pills = 0;
                 for (int i = 0; i < player.getInventory().getContainerSize(); i++) {

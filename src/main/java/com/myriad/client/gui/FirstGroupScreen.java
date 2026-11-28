@@ -123,14 +123,12 @@ public final class FirstGroupScreen extends Screen {
         if (id.startsWith(ATTRIBUTE_PREFIX)) {
             String key = id.substring(ATTRIBUTE_PREFIX.length());
             if (!FirstGroupGrowth.ATTRIBUTES.contains(key)) return "message.myriad.g1.invalid_skill";
-            if (!UiFeedback.shopAccess().attributes()) return "screen.myriad.shop.unavailable";
-            return FirstGroupGrowth.purchaseError(CharacterType.byId(data.characterId()), key,
-                    data.buffs().getOrDefault(id, 0), data.gold(), data.training() && data.noGoldCost());
+            return ShopPurchaseRules.attributeError(UiFeedback.shopAccess(), CharacterType.byId(data.characterId()),
+                    key, data.buffs().getOrDefault(id, 0), data.gold(), data.training() && data.noGoldCost());
         }
         if (TacticalSupplySystem.isSupply(id)) {
-            if (!UiFeedback.shopAccess().supplies()) return "message.myriad.shop_base_only";
-            return !(data.training() && data.noGoldCost()) && data.gold() < TacticalSupplySystem.supplyPrice(id)
-                    ? "message.myriad.equip_no_gold" : null;
+            return ShopPurchaseRules.supplyError(UiFeedback.shopAccess(), id, data.gold(),
+                    data.training() && data.noGoldCost());
         }
         return FirstGroupSkills.learnError(data.characterId(), data.skillLevels(), data.skillPoints(), data.level(), id, !data.buffs().containsKey("g1_legacy_skill_budget"));
     }

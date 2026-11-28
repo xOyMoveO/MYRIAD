@@ -28,6 +28,6 @@ bash ./gradlew runGameTestServer -PmyriadGameTests -PgameTestFilter=myriad:match
 bash ./gradlew runGameTestServer -PmyriadGameTests -PgameTestFilter=myriad:early_remake
 ```
 
-`match_economy` 对照服务器的购买请求、实际余额和物品、下发给购买界面的资格、阵亡期间工资与服务器复活截止刻。`match_assists` 对照钱包、经验、战绩和掉线重连、检查点复读。每次运行单独保留日志与 XML。客户端购买界面的画面以及六人正式对局仍待实机验收。
+`match_economy` 对照服务器的购买请求、实际余额和物品、权限包编解码与界枢／商店共用的按钮判断、阵亡期间工资与服务器复活截止刻。`match_assists` 对照钱包、经验、战绩和掉线重连、检查点复读。每次运行单独保留日志与 XML。客户端购买界面的画面以及六人正式对局仍待实机验收。
 
 同输入的采购和经济对照见[离线账本](economy-replay.md)。快照记录购物权限、试测池额、追赶系数和逐级复活时长。第 4 批的账本以固定兵、野、塔事件对照。防御每点 +5 双抗、助攻池额与工资追赶倍率继续留给第 5 批复测。

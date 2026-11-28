@@ -1,11 +1,14 @@
 package com.myriad.game;
 
+import com.myriad.character.CharacterType;
 import com.myriad.character.rework.FirstGroupGrowth;
+import com.myriad.client.gui.ShopPurchaseRules;
 import com.myriad.network.ProgressAction;
 import com.myriad.network.UiFeedbackPayload;
 import com.myriad.player.PlayerData;
 import com.myriad.registry.ModItems;
 import com.myriad.player.PlayerDataProvider;
+import io.netty.buffer.Unpooled;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +17,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.Connection;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
@@ -150,7 +154,7 @@ final class MatchEconomyChecks {
             } finally {
                 if (previous == null) fountains.remove(Faction.GUARDIAN); else fountains.put(Faction.GUARDIAN, previous);
             }
-            System.out.println("[MYRIAD-ECONOMY] PASS: actual purchases, training ledger isolation, catch-up, and existing guide refresh");
+            System.out.println("[MYRIAD-ECONOMY] PASS: shop wire codec and screen decisions, actual purchases, training ledger isolation, catch-up, and guide refresh");
             helper.succeed();
         } catch (ReflectiveOperationException failure) {
             throw new IllegalStateException(failure);
@@ -176,6 +180,17 @@ final class MatchEconomyChecks {
         var expected = new UiFeedbackPayload.ShopAccess(attributes, supplies, equipment);
         helper.assertTrue(!sent.isEmpty() && sent.getLast().equals(expected),
                 "Clientbound shop access matches server eligibility for every category");
+        var received = sent.getLast();
+        int gold = 500;
+        String attributeError = ShopPurchaseRules.attributeError(received, CharacterType.SHUO, "strength", 0, gold, false);
+        String supplyError = ShopPurchaseRules.supplyError(received, "blood_pill", gold, false);
+        helper.assertTrue(attributes == (attributeError == null) && supplies == (supplyError == null),
+                "Personal and shop screen purchase checks consume the correct independent permissions");
+        if (supplies) {
+            helper.assertTrue("message.myriad.equip_no_gold".equals(ShopPurchaseRules.supplyError(received, "blood_pill", 59, false))
+                    && ShopPurchaseRules.supplyError(received, "blood_pill", 60, false) == null,
+                    "Both purchase screens require 60 gold when the supply permission is present");
+        }
     }
 
     private static void verifyShoppingAndRespawn(GameTestHelper helper, GameManager manager, ServerLevelData clock,
@@ -278,8 +293,17 @@ final class MatchEconomyChecks {
             @Override public void send(Packet<?> packet) {
                 if (packet instanceof ClientboundCustomPayloadPacket custom
                         && custom.payload() instanceof UiFeedbackPayload feedback) {
-                    var shop = UiFeedbackPayload.ShopAccess.fromKind(feedback.kind());
-                    if (shop != null) access.add(shop);
+                    var wire = new FriendlyByteBuf(Unpooled.buffer());
+                    try {
+                        UiFeedbackPayload.CODEC.encode(wire, feedback);
+                        var decoded = UiFeedbackPayload.CODEC.decode(wire);
+                        helper.assertTrue(feedback.equals(decoded) && !wire.isReadable(),
+                                "Actual shop eligibility packet survives the clientbound wire codec");
+                        var shop = UiFeedbackPayload.ShopAccess.fromKind(decoded.kind());
+                        if (shop != null) access.add(shop);
+                    } finally {
+                        wire.release();
+                    }
                 }
             }
         };
