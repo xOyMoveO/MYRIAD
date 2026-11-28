@@ -44,6 +44,7 @@ def verify(snapshot, report):
     equal(value(luoxia["basicAttack"], "rawDamage"), 100, "Luoxia normal bow initial damage")
     heavy_arrow = named(luoxia["skills"])["luoxia_last_sun"]
     equal(effect(heavy_arrow, "arrow_range")["value"], 28, "Luoxia heavy arrow range")
+    equal(effect(heavy_arrow, "arrow_range")["unit"], "blocks", "Luoxia heavy arrow range unit")
     equal(effect(heavy_arrow, "commit_windup")["value"], 10, "Luoxia heavy arrow action ticks")
 
     yike_q = named(roles["yike"]["skills"])["yike_rainbow_shell"]
@@ -75,6 +76,9 @@ def verify(snapshot, report):
     battlefield = rules["battlefield"]
     arena = battlefield["maps"]["3v3"]
     equal(value(arena, "firstWave"), 700, "3v3 first wave")
+    equal(arena["firstWave"]["unit"], effect(heavy_arrow, "commit_windup")["unit"], "shared tick unit")
+    equal(arena["firstWave"]["clock"], "real_tick", "3v3 first wave timing basis")
+    equal(effect(heavy_arrow, "commit_windup")["clock"], "action_tick", "Luoxia windup timing basis")
     equal(len(arena["camps"]), 13, "3v3 configured camps")
     equal(value(arena, "towerTiers"), [1, 3], "3v3 installed tower tiers")
     equal(len(arena["fountains"]), 2, "3v3 fountains")

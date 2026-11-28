@@ -22,7 +22,7 @@ import net.minecraft.core.BlockPos;
 final class BattlefieldSnapshot {
     private static final String REAL = "real_tick";
     private static final String ACTION = "action_tick";
-    private static final String NONE = "not_applicable";
+    private static final String NONE = "not_timed";
     private static final String CHERRY = "maps/cherry-rift-frontline/3v3-flat/";
     private static final String ATTACK_TIMINGS = "src/main/resources/data/myriad/cherry_rift/attack_timings.json";
 
@@ -211,17 +211,17 @@ final class BattlefieldSnapshot {
             result.add(Integer.toString(tier), tower);
         }
         result.add("escortedRadius", constant(LaneSystem.TOWER_ESCORTED_RADIUS, "blocks", LaneSystem.class, "TOWER_ESCORTED_RADIUS"));
-        result.add("unescortedHeroDamageMultiplier", at(LaneSystem.TOWER_UNESCORTED_MULTIPLIER, "multiplier", LaneSystem.class,
+        result.add("unescortedHeroDamageMultiplier", at(LaneSystem.TOWER_UNESCORTED_MULTIPLIER, "ratio", LaneSystem.class,
                 "TOWER_UNESCORTED_MULTIPLIER", "攻击者方兵线未进护送范围，含水晶", "incoming_hit", NONE));
         var protection = new JsonArray();
         for (int elapsed : new int[]{0, 6000, 10200, 14400, 24000}) {
             var sample = new JsonObject();
             sample.addProperty("elapsedTicks", elapsed);
-            sample.add("incomingMultiplier", at(MatchBalance.towerDamageTakenScale(elapsed), "multiplier",
+            sample.add("incomingMultiplier", at(MatchBalance.towerDamageTakenScale(elapsed), "ratio",
                     MatchBalance.class, "towerDamageTakenScale", "防御塔入伤", "incoming_hit", REAL));
-            sample.add("heroAttackMultiplierFirstHit", at(MatchBalance.towerScale(elapsed, 0), "multiplier",
+            sample.add("heroAttackMultiplierFirstHit", at(MatchBalance.towerScale(elapsed, 0), "ratio",
                     MatchBalance.class, "towerScale", "首次锁定英雄", "attack", REAL));
-            sample.add("heroAttackMultiplierFourStacks", at(MatchBalance.towerScale(elapsed, 4), "multiplier",
+            sample.add("heroAttackMultiplierFourStacks", at(MatchBalance.towerScale(elapsed, 4), "ratio",
                     MatchBalance.class, "towerScale", "对同一英雄连续命中，累计四层", "attack", REAL));
             protection.add(sample);
         }
@@ -260,7 +260,7 @@ final class BattlefieldSnapshot {
         var result = new JsonObject();
         var growth = new JsonObject();
         for (int generation : new int[]{0, 1, 2, 3, 8}) {
-            growth.add(Integer.toString(generation), at(MonsterManager.growthMultiplier(generation), "multiplier",
+            growth.add(Integer.toString(generation), at(MonsterManager.growthMultiplier(generation), "ratio",
                     MonsterManager.class, "growthMultiplier", "营地自开局起的成功生成次数，从零编号",
                     "monster_spawn", NONE));
         }
@@ -399,7 +399,7 @@ final class BattlefieldSnapshot {
         var result = new JsonObject();
         result.add("openingPurse", at(PlayerData.OPENING_PURSE_GOLD, "gold", PlayerData.class, "OPENING_PURSE_GOLD",
                 "本轮首次领用", "match_opening", NONE));
-        result.add("globalIncomeMultiplier", constant(GlobalBalance.GOLD_INCOME_SCALE, "multiplier", GlobalBalance.class, "GOLD_INCOME_SCALE"));
+        result.add("globalIncomeMultiplier", constant(GlobalBalance.GOLD_INCOME_SCALE, "ratio", GlobalBalance.class, "GOLD_INCOME_SCALE"));
         result.add("passiveGoldBase", at(GameManager.PASSIVE_GOLD_BASE, "gold", GameManager.class, "PASSIVE_GOLD_BASE",
                 "参赛者含阵亡等待，应用追赶和全局倍率", "wage_pulse", REAL));
         result.add("passiveGoldInterval", at(GameManager.PASSIVE_GOLD_INTERVAL_TICKS, "ticks",

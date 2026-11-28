@@ -65,29 +65,29 @@ final class SkillEffects {
                 add(effects, skill, "marks_to_trigger", "trigger", EngravedEchoSkill.TRIGGER_STACKS,
                         "stack", "TRIGGER_STACKS", "同一敌方英雄，当前窗口内按每次施法去重", "on_effective_hit", NONE);
                 add(effects, skill, "mark_window", "timing", EngravedEchoSkill.WINDOW_TICKS,
-                        "tick", "WINDOW_TICKS", "首个有效直接技能命中建立窗口", "on_first_mark", REAL);
+                        "ticks", "WINDOW_TICKS", "首个有效直接技能命中建立窗口", "on_first_mark", REAL);
                 inapplicable(effects, skill, "control", "仅叠刻痕并造成伤害");
                 inapplicable(effects, skill, "heal", "该被动无治疗");
                 inapplicable(effects, skill, "shield", "该被动无护盾");
             }
             case ConstantStepSkill ignored -> {
                 add(effects, skill, "internal_cooldown", "timing", ConstantStepSkill.COOLDOWN_TICKS,
-                        "tick", "COOLDOWN_TICKS", "自己领域入场时护盾触发", "on_shield_grant", REAL);
+                        "ticks", "COOLDOWN_TICKS", "自己领域入场时护盾触发", "on_shield_grant", REAL);
                 add(effects, skill, "shield_duration", "shield_duration", ConstantStepSkill.SHIELD_TICKS,
-                        "tick", "SHIELD_TICKS", "自身护盾", "on_shield_grant", REAL);
+                        "ticks", "SHIELD_TICKS", "自身护盾", "on_shield_grant", REAL);
                 inapplicable(effects, skill, "control", "入场只给自身护盾，控制来自领域本身所归属技能");
                 inapplicable(effects, skill, "damage", "该被动无伤害");
                 inapplicable(effects, skill, "heal", "该被动无治疗");
             }
             case DelayedNeedleSkill ignored -> {
-                add(effects, skill, "release_windup", "windup", DelayedNeedleSkill.WINDUP_TICKS, "tick",
+                add(effects, skill, "release_windup", "windup", DelayedNeedleSkill.WINDUP_TICKS, "ticks",
                         "WINDUP_TICKS", "已扣蓝开始冷却，延迟出针", "after_cast_commit", ACTION);
-                add(effects, skill, "needle_range", "range", DelayedNeedleSkill.RANGE, "block",
+                add(effects, skill, "needle_range", "range", DelayedNeedleSkill.RANGE, "blocks",
                         "RANGE", "撞击首个合法敌方单位或地形可提前截断", "on_projectile_launch", NONE);
                 add(effects, skill, "target_action_rate", "action_slow", rankValues(skill, DelayedNeedleSkill::actionRate),
                         "ratio", "actionRate", "命中后实际造成生命或盾损失，且目标可受缓时", "on_effective_hit", ACTION);
                 add(effects, skill, "target_action_slow_duration", "control_duration", field(KehengTimeFields.NEEDLE_TICKS,
-                        "tick", source(KehengTimeFields.class, "NEEDLE_TICKS"),
+                        "ticks", source(KehengTimeFields.class, "NEEDLE_TICKS"),
                         "有效命中且目标可受缓时，基础时长取韧性折减前", "on_effective_hit", REAL));
                 inapplicable(effects, skill, "heal", "迟针无治疗");
                 inapplicable(effects, skill, "shield", "迟针无护盾");
@@ -96,15 +96,15 @@ final class SkillEffects {
                 add(effects, skill, "field_actor_and_flight_rate", "action_slow", OffbeatStepSkill.FIELD_RATE,
                         "ratio", "FIELD_RATE", FIELD_TARGETS, "inside_field", ACTION);
                 add(effects, skill, "field_duration", "control_duration", OffbeatStepSkill.FIELD_TICKS,
-                        "tick", "FIELD_TICKS", "领域自起脚点展开", "on_cast_commit", REAL);
+                        "ticks", "FIELD_TICKS", "领域自起脚点展开", "on_cast_commit", REAL);
                 add(effects, skill, "field_radius", "range", OffbeatStepSkill.FIELD_RADIUS,
-                        "block", "FIELD_RADIUS", FIELD_TARGETS, "on_cast_commit", NONE);
+                        "blocks", "FIELD_RADIUS", FIELD_TARGETS, "on_cast_commit", NONE);
                 add(effects, skill, "dash_range", "displacement", OffbeatStepSkill.DASH_RANGE,
-                        "block", "DASH_RANGE", "未被禁锢，采用移动输入否则朝向；地形可截断", "on_cast_commit", NONE);
+                        "blocks", "DASH_RANGE", "未被禁锢，采用移动输入否则朝向；地形可截断", "on_cast_commit", NONE);
                 add(effects, skill, "dash_duration", "displacement_duration", OffbeatStepSkill.DASH_TICKS,
-                        "tick", "DASH_TICKS", "未被禁锢且未被障碍阻止", "on_cast_commit", ACTION);
+                        "ticks", "DASH_TICKS", "未被禁锢且未被障碍阻止", "on_cast_commit", ACTION);
                 add(effects, skill, "shield_duration", "shield_duration", OffbeatStepSkill.SHIELD_TICKS,
-                        "tick", "SHIELD_TICKS", "合法施放给自身盾", "on_shield_grant", REAL);
+                        "ticks", "SHIELD_TICKS", "合法施放给自身盾", "on_shield_grant", REAL);
                 inapplicable(effects, skill, "damage", "位移、原地缓时和自身护盾本身无伤害");
                 inapplicable(effects, skill, "heal", "错拍步无治疗");
             }
@@ -112,7 +112,7 @@ final class SkillEffects {
                 fieldEffects(effects, skill, DelayedBoundarySkill.RANGE, DelayedBoundarySkill.RADIUS,
                         DelayedBoundarySkill.WARNING_TICKS);
                 add(effects, skill, "field_duration", "control_duration", rankValues(skill, DelayedBoundarySkill::durationTicks),
-                        "tick", "durationTicks", "领域从预警结束展开至到期", "on_field_open", REAL);
+                        "ticks", "durationTicks", "领域从预警结束展开至到期", "on_field_open", REAL);
                 add(effects, skill, "field_actor_and_flight_rate", "action_slow", rankValues(skill, DelayedBoundarySkill::actionRate),
                         "ratio", "actionRate", FIELD_TARGETS, "inside_field", ACTION);
                 inapplicable(effects, skill, "heal", "迟界无治疗");
@@ -120,12 +120,12 @@ final class SkillEffects {
             }
             case FollowingSecondSkill ignored -> {
                 add(effects, skill, "field_duration", "control_duration", rankValues(skill, FollowingSecondSkill::durationTicks),
-                        "tick", "durationTicks", "不提前取消且未被打断的最长持续", "on_field_open", REAL);
+                        "ticks", "durationTicks", "不提前取消且未被打断的最长持续", "on_field_open", REAL);
                 add(effects, skill, "field_actor_and_flight_rate", "action_slow", rankValues(skill, FollowingSecondSkill::actionRate),
                         "ratio", "actionRate", FIELD_TARGETS, "inside_field", ACTION);
                 add(effects, skill, "release_windup", "windup", FollowingSecondSkill.WINDUP_TICKS,
-                        "tick", "WINDUP_TICKS", "扣蓝并开始冷却后才进入展开起手", "after_cast_commit", ACTION);
-                add(effects, skill, "field_radius", "range", field(KehengTimeFields.FOLLOW_RADIUS, "block",
+                        "ticks", "WINDUP_TICKS", "扣蓝并开始冷却后才进入展开起手", "after_cast_commit", ACTION);
+                add(effects, skill, "field_radius", "range", field(KehengTimeFields.FOLLOW_RADIUS, "blocks",
                         source(KehengTimeFields.class, "FOLLOW_RADIUS"), "领域随自身移动", "inside_field", NONE));
                 inapplicable(effects, skill, "heal", "随行秒域无治疗");
                 inapplicable(effects, skill, "shield", "该技能本身无护盾，进入领域可另触发恒步分支");
@@ -134,36 +134,36 @@ final class SkillEffects {
                 fieldEffects(effects, skill, BeyondOneSecondSkill.RANGE, BeyondOneSecondSkill.RADIUS,
                         BeyondOneSecondSkill.WARNING_TICKS);
                 add(effects, skill, "field_duration", "control_duration", BeyondOneSecondSkill.DURATION_TICKS,
-                        "tick", "DURATION_TICKS", "领域从预警结束展开至到期", "on_field_open", REAL);
+                        "ticks", "DURATION_TICKS", "领域从预警结束展开至到期", "on_field_open", REAL);
                 add(effects, skill, "field_actor_rate", "action_slow", rankValues(skill, BeyondOneSecondSkill::actionRate),
                         "ratio", "actionRate", FIELD_TARGETS + "中的单位", "inside_field", ACTION);
                 add(effects, skill, "field_flight_rate", "projectile_slow", rankValues(skill, BeyondOneSecondSkill::flightRate),
                         "ratio", "flightRate", FIELD_TARGETS + "中的弹体", "inside_field", ACTION);
                 add(effects, skill, "damage_interval", "timing", field(KehengTimeFields.FIELD_PULSE_TICKS,
-                        "tick", source(KehengTimeFields.class, "FIELD_PULSE_TICKS"),
+                        "ticks", source(KehengTimeFields.class, "FIELD_PULSE_TICKS"),
                         "开启后首轮间隔至到期时最后一跳", "on_field_open", REAL));
                 inapplicable(effects, skill, "heal", "一秒之外无治疗");
                 inapplicable(effects, skill, "shield", "一秒之外无护盾");
             }
             case ImpactHammer ignored -> {
                 add(effects, skill, "push", "displacement", ImpactHammer.PUSH_DISTANCE,
-                        "block", "PUSH_DISTANCE", "锤击主要目标有效命中；障碍和推移减免可截断", "on_effective_hit", NONE);
+                        "blocks", "PUSH_DISTANCE", "锤击主要目标有效命中；障碍和推移减免可截断", "on_effective_hit", NONE);
                 add(effects, skill, "protocol_push", "displacement", ImpactHammer.ANCHORED_PUSH_DISTANCE,
-                        "block", "ANCHORED_PUSH_DISTANCE", "主要目标有效命中且坚守协议加长该推移", "on_effective_hit", NONE);
+                        "blocks", "ANCHORED_PUSH_DISTANCE", "主要目标有效命中且坚守协议加长该推移", "on_effective_hit", NONE);
                 add(effects, skill, "wall_root", "control_duration", ImpactHammer.WALL_ROOT_TICKS,
-                        "tick", "WALL_ROOT_TICKS", "主要目标被实际推得撞墙，未触发强化锚击", "on_collision", REAL);
+                        "ticks", "WALL_ROOT_TICKS", "主要目标被实际推得撞墙，未触发强化锚击", "on_collision", REAL);
                 add(effects, skill, "anchor_root", "control_duration", ImpactHammer.ANCHOR_ROOT_TICKS,
-                        "tick", "ANCHOR_ROOT_TICKS", "主要目标实际撞墙且锚击增强可用", "on_collision", REAL);
+                        "ticks", "ANCHOR_ROOT_TICKS", "主要目标实际撞墙且锚击增强可用", "on_collision", REAL);
                 inapplicable(effects, skill, "shield", "锤击本身无护盾");
                 inapplicable(effects, skill, "heal", "锤击本身无治疗");
             }
             case QiaoFanSkill ignored -> {
                 add(effects, skill, "counter_stun", "control_duration", QiaoFanSkill.COUNTER_STUN_TICKS,
-                        "tick", "COUNTER_STUN_TICKS", "收鞘成功格挡再反击命中，名义时长未减韧性", "on_counter_hit", REAL);
+                        "ticks", "COUNTER_STUN_TICKS", "收鞘成功格挡再反击命中，名义时长未减韧性", "on_counter_hit", REAL);
                 add(effects, skill, "counter_shield_duration", "shield_duration", QiaoFanSkill.COUNTER_SHIELD_TICKS,
-                        "tick", "COUNTER_SHIELD_TICKS", "收鞘成功格挡再反击命中至少一个合法敌人", "on_shield_grant", REAL);
+                        "ticks", "COUNTER_SHIELD_TICKS", "收鞘成功格挡再反击命中至少一个合法敌人", "on_shield_grant", REAL);
                 add(effects, skill, "drawn_slow_duration", "control_duration", QiaoFanSkill.DRAWN_SLOW_TICKS,
-                        "tick", "DRAWN_SLOW_TICKS", "拔刀姿态扫击命中，名义时长未减韧性", "on_sweep_hit", REAL);
+                        "ticks", "DRAWN_SLOW_TICKS", "拔刀姿态扫击命中，名义时长未减韧性", "on_sweep_hit", REAL);
                 add(effects, skill, "drawn_slow_rate", "movement_slow", QiaoFanSkill.DRAWN_SLOW,
                         "ratio", "DRAWN_SLOW", "拔刀姿态扫击命中", "on_sweep_hit", NONE);
                 inapplicable(effects, skill, "heal", "鞘返只有触发护盾");
@@ -199,7 +199,7 @@ final class SkillEffects {
             missing(effects, skill, "support_conditions", "event", "名义盾疗量已接入；触发、时长及有效盾疗还需事件与目标状态");
         }
         missing(effects, skill, "control", "effect", "独立持续、目标筛选、韧性、位移或形态依赖等控制输入待逐项接入");
-        missing(effects, skill, "geometry", "block", "服务端距离／地形／碰撞尚未导出成可复算的效果条件");
+        missing(effects, skill, "geometry", "blocks", "服务端距离／地形／碰撞尚未导出成可复算的效果条件");
     }
 
     private static void markDamageOnly(JsonArray effects, AbilitySkill skill, String reason) {
@@ -207,9 +207,9 @@ final class SkillEffects {
     }
 
     private static void fieldEffects(JsonArray effects, AbilitySkill skill, double range, double radius, int warning) {
-        add(effects, skill, "target_range", "range", range, "block", "RANGE", "合法地面选点", "on_cast_request", NONE);
-        add(effects, skill, "field_radius", "range", radius, "block", "RADIUS", FIELD_TARGETS, "on_field_open", NONE);
-        add(effects, skill, "field_warning", "timing", warning, "tick", "WARNING_TICKS",
+        add(effects, skill, "target_range", "range", range, "blocks", "RANGE", "合法地面选点", "on_cast_request", NONE);
+        add(effects, skill, "field_radius", "range", radius, "blocks", "RADIUS", FIELD_TARGETS, "on_field_open", NONE);
+        add(effects, skill, "field_warning", "timing", warning, "ticks", "WARNING_TICKS",
                 "成功设下地面预警后由场地独立推进", "on_cast_commit", REAL);
     }
 

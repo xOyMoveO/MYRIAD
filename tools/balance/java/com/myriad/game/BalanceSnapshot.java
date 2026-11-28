@@ -3,6 +3,7 @@ package com.myriad.game;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonParseException;
 import com.myriad.character.rework.FirstGroupSkills;
@@ -44,10 +45,11 @@ public final class BalanceSnapshot {
         rules.add("skillRules", RosterSnapshot.commonSkillRules());
         rules.add("battlefield", BattlefieldSnapshot.export(root));
 
+        JsonElement dirty = args[3].equals("unknown") ? JsonNull.INSTANCE : SnapshotJson.json(Boolean.parseBoolean(args[3]));
         var snapshot = new JsonObject();
         snapshot.addProperty("formatVersion", FORMAT_VERSION);
         snapshot.addProperty("sourceSha", args[2]);
-        snapshot.addProperty("sourceDirty", Boolean.parseBoolean(args[3]));
+        snapshot.add("sourceDirty", dirty);
         snapshot.addProperty("rulesSha256", sha256(SnapshotJson.canonical(rules)));
         snapshot.add("rules", rules);
         String serialized = SnapshotJson.pretty(snapshot);
@@ -55,7 +57,7 @@ public final class BalanceSnapshot {
         var report = coverage(rules);
         report.addProperty("formatVersion", FORMAT_VERSION);
         report.addProperty("sourceSha", args[2]);
-        report.addProperty("sourceDirty", Boolean.parseBoolean(args[3]));
+        report.add("sourceDirty", dirty);
         report.addProperty("rulesSha256", snapshot.get("rulesSha256").getAsString());
         report.add("presentationReminders", checkKehengDescriptions());
 
@@ -208,9 +210,11 @@ public final class BalanceSnapshot {
 
     private static String markdown(JsonObject report) {
         var roster = report.getAsJsonObject("roster");
+        var dirty = report.get("sourceDirty");
+        String dirtyText = dirty.isJsonNull() ? "未知" : dirty.getAsBoolean() ? "是" : "否";
         var output = new StringBuilder("# 平衡快照覆盖\n\n")
                 .append("- 源码提交 `").append(report.get("sourceSha").getAsString()).append("`\n")
-                .append("- 工作区含未提交文件 ").append(report.get("sourceDirty").getAsBoolean() ? "是" : "否").append("\n")
+                .append("- 工作区含未提交文件 ").append(dirtyText).append("\n")
                 .append("- 规则摘要 `").append(report.get("rulesSha256").getAsString()).append("`\n")
                 .append("- 已登记 ").append(roster.get("roles").getAsInt()).append(" 个角色、")
                 .append(roster.get("uniqueCandidates").getAsInt()).append(" 个唯一候选和 ")

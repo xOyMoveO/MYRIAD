@@ -59,8 +59,8 @@ final class RosterSnapshot {
         attributes.add("spellPower", innate(FirstGroupGrowth.baselineSpellPower(), "spell_power", "baselineSpellPower"));
         attributes.add("attackSpeed", innate(FirstGroupGrowth.BASE_ATTACK_SPEED, "attacks_per_second", "BASE_ATTACK_SPEED"));
         attributes.add("movementSpeed", innate(FirstGroupGrowth.BASE_MOVEMENT_SPEED, "movement_attribute", "BASE_MOVEMENT_SPEED"));
-        attributes.add("physicalDefense", innate(FirstGroupGrowth.BASE_DEFENSE, "physical_defense", "BASE_DEFENSE"));
-        attributes.add("magicResistance", innate(FirstGroupGrowth.BASE_DEFENSE, "magic_resistance", "BASE_DEFENSE"));
+        attributes.add("physicalDefense", innate(FirstGroupGrowth.BASE_DEFENSE, "defense_points", "BASE_DEFENSE"));
+        attributes.add("magicResistance", innate(FirstGroupGrowth.BASE_DEFENSE, "defense_points", "BASE_DEFENSE"));
         attributes.add("healthRegen", innate(FirstGroupGrowth.BASE_HEALTH_REGEN, "hp_per_second", "BASE_HEALTH_REGEN"));
         attributes.add("manaRegen", innate(FirstGroupGrowth.BASE_MANA_REGEN, "mana_per_second", "BASE_MANA_REGEN"));
         attributes.add("critDamage", innate(FirstGroupGrowth.BASE_CRIT_DAMAGE, "percent", "BASE_CRIT_DAMAGE"));
@@ -100,25 +100,25 @@ final class RosterSnapshot {
             result.addProperty("id", "vanilla_melee");
             result.add("rawDamage", field(physical, "hp", source(FirstGroupGrowth.class, "baselinePhysicalAttack"),
                     "无购买、无增益且满恢复的近战普攻物理基础值，技能与暴击修饰另算", "命中时", NO_CLOCK));
-            result.add("recovery", field(20.0 / attackSpeed, "tick", source(VanillaMeleeAttack.class, "fullyRecovered"),
+            result.add("recovery", field(20.0 / attackSpeed, "ticks", source(VanillaMeleeAttack.class, "fullyRecovered"),
                     "原版攻速已同步且无临时增益；原版按已恢复的强度判定能否出手", "完全恢复时", ACTION));
-            result.add("range", gap("missing_input", "block", source(VanillaMeleeAttack.class, "canSubmitIntent"),
+            result.add("range", gap("missing_input", "blocks", source(VanillaMeleeAttack.class, "canSubmitIntent"),
                     "当前原版实体交互距离、攻击物品和合法攻击对象", "普攻判定时", NO_CLOCK, "需要实际交互属性与目标碰撞体"));
         } else if (role == CharacterType.YIKE) {
             result.addProperty("id", "cannon");
             result.add("rawDamage", field(physical, "hp", source(YikeBasicAttack.class, "tryFire"),
                     "普通形态，无购买或临时增益，物理", "出膛", NO_CLOCK));
-            result.add("range", field(YikeBasicAttack.RANGE, "block", source(YikeBasicAttack.class, "RANGE"),
+            result.add("range", field(YikeBasicAttack.RANGE, "blocks", source(YikeBasicAttack.class, "RANGE"),
                     "普通形态且持虹裂，炮台姿态禁止普攻；墙体能截断弹道", "发射", NO_CLOCK));
-            result.add("recovery", field(YikeBasicAttack.recoveryTicks(attackSpeed), "tick", source(YikeBasicAttack.class, "recoveryTicks"),
+            result.add("recovery", field(YikeBasicAttack.recoveryTicks(attackSpeed), "ticks", source(YikeBasicAttack.class, "recoveryTicks"),
                     "无购买或临时增益", "出膛后", ACTION));
         } else if (role == CharacterType.LUOXIA) {
             result.addProperty("id", "bow");
             result.add("rawDamage", field(physical, "hp", source(LuoxiaBow.class, "input"),
                     "普通弓、无购买或临时增益，物理，快弓及满弓按被动修饰", "放弓", NO_CLOCK));
-            result.add("drawWork", field(LuoxiaBow.NORMAL_WORK, "tick", source(LuoxiaBow.class, "NORMAL_WORK"),
+            result.add("drawWork", field(LuoxiaBow.NORMAL_WORK, "ticks", source(LuoxiaBow.class, "NORMAL_WORK"),
                     "无快弓、满弓与攻速增益", "开始拉弓后", ACTION));
-            result.add("drawRange", field(LuoxiaBow.NORMAL_RANGE, "block", source(LuoxiaBow.class, "NORMAL_RANGE"),
+            result.add("drawRange", field(LuoxiaBow.NORMAL_RANGE, "blocks", source(LuoxiaBow.class, "NORMAL_RANGE"),
                     "普通／快弓，命中实体或墙体可提前截断", "放弓", NO_CLOCK));
         } else {
             result.addProperty("id", "magic_bullet");
@@ -126,9 +126,9 @@ final class RosterSnapshot {
                     source(MagicBullet.class, "rawDamage"), "无购买或增益的魔法普攻", "发射", NO_CLOCK));
             result.add("spellScaling", field(MagicBullet.spellPowerRatio(role), "hp_per_spell_power",
                     source(MagicBullet.class, "spellPowerRatio"), "每点相对固有法强的增量", "发射", NO_CLOCK));
-            result.add("range", field(MagicBullet.MAX_RANGE, "block", source(MagicBullet.class, "MAX_RANGE"),
+            result.add("range", field(MagicBullet.MAX_RANGE, "blocks", source(MagicBullet.class, "MAX_RANGE"),
                     "持初始武器，障碍物可提前截断", "发射", NO_CLOCK));
-            result.add("recovery", field(MagicBullet.recoveryTicks(attackSpeed), "tick", source(MagicBullet.class, "recoveryTicks"),
+            result.add("recovery", field(MagicBullet.recoveryTicks(attackSpeed), "ticks", source(MagicBullet.class, "recoveryTicks"),
                     "无购买或临时增益", "发射后", ACTION));
         }
         return result;
@@ -207,12 +207,12 @@ final class RosterSnapshot {
         if (skill.isPassive()) {
             result.add("mana", gap("not_applicable", "mana", resource + "/mana", "被动", "on_cast_commit",
                     NO_CLOCK, "被动候选不作为主动技能支付"));
-            result.add("cooldown", gap("not_applicable", "tick", resource + "/cooldowns", "被动", "on_cast_commit",
+            result.add("cooldown", gap("not_applicable", "ticks", resource + "/cooldowns", "被动", "on_cast_commit",
                     REAL, "主动施法冷却不适用；被动触发可有独立恢复"));
         } else {
             result.add("mana", field(skill.manaCost(rank), "mana", resource + "/mana", "正常施法流程，按阶换算",
                     "on_cast_commit", NO_CLOCK));
-            result.add("cooldown", field(skill.getCooldownTicks(rank), "tick",
+            result.add("cooldown", field(skill.getCooldownTicks(rank), "ticks",
                     skill instanceof TacticalAnchor ? source(TacticalAnchor.class, "getCooldownTicks") : resource + "/cooldowns",
                     "常规形态的基础冷却；未应用购点缩减或训练免冷却", "on_cast_commit", REAL));
         }
@@ -258,11 +258,11 @@ final class RosterSnapshot {
                     "支援应用前，取当前施法上下文总法强", NO_CLOCK)));
         }
         if (!skill.isPassive() && skill.commitWindupTicks() > 0) {
-            result.add(effect(skill, "commit_windup", "windup", field(skill.commitWindupTicks(), "tick",
+            result.add(effect(skill, "commit_windup", "windup", field(skill.commitWindupTicks(), "ticks",
                     source(skill.getClass(), "commitWindupTicks"), "通过施放检查后的提交前起手", "on_cast_request", ACTION)));
         }
         if (skill instanceof LastSun) {
-            result.add(effect(skill, "arrow_range", "range", field(LastSun.RANGE, "block", source(LastSun.class, "RANGE"),
+            result.add(effect(skill, "arrow_range", "range", field(LastSun.RANGE, "blocks", source(LastSun.class, "RANGE"),
                     "重箭出手；首个合法敌人或地形可截断", "on_projectile_launch", NO_CLOCK)));
         }
         if (skill instanceof RainbowShell rainbowShell) yikeForms(result, rainbowShell);
@@ -293,7 +293,7 @@ final class RosterSnapshot {
             var fields = new JsonObject();
             var cooldowns = new JsonArray();
             for (int rank = 1; rank <= skill.maxRank(); rank++) {
-                var value = field(skill.cooldownTicks(rank, artillery), "tick", artillery
+                var value = field(skill.cooldownTicks(rank, artillery), "ticks", artillery
                         ? source(RainbowShell.class, "cooldownTicks") : "src/main/resources/"
                         + FirstGroupSkills.definitionResource(skill.getId()) + "#skills/" + skill.getId() + "/cooldowns",
                         condition, "on_projectile_launch", REAL);
@@ -301,18 +301,18 @@ final class RosterSnapshot {
                 cooldowns.add(value);
             }
             fields.add("skillCooldown", cooldowns);
-            fields.add("range", field(form.range, "block", formSource, condition, "on_projectile_launch", NO_CLOCK));
-            fields.add("speed", field(form.speed, "block_per_second", formSource, condition, "on_projectile_launch", ACTION));
-            fields.add("radius", field(form.radius, "block", formSource, condition, "on_projectile_launch", NO_CLOCK));
+            fields.add("range", field(form.range, "blocks", formSource, condition, "on_projectile_launch", NO_CLOCK));
+            fields.add("speed", field(form.speed, "blocks_per_second", formSource, condition, "on_projectile_launch", ACTION));
+            fields.add("radius", field(form.radius, "blocks", formSource, condition, "on_projectile_launch", NO_CLOCK));
             fields.add("damageMultiplier", field(Map.of("base", form.baseMultiplier, "growthPerStanceRank", form.multiplierPerRank),
                     "ratio", formSource, condition, "on_projectile_launch", NO_CLOCK));
             if (artillery) {
                 fields.add("shots", field(form.shells, "shell", formSource, condition, "on_stance_deploy", NO_CLOCK));
-                fields.add("duration", field(YikeStance.DURATION_TICKS, "tick", source(YikeStance.class, "DURATION_TICKS"),
+                fields.add("duration", field(YikeStance.DURATION_TICKS, "ticks", source(YikeStance.class, "DURATION_TICKS"),
                         condition, "on_stance_deploy", REAL));
-                fields.add("nextShot", field(form.nextShotTicks, "tick", formSource,
+                fields.add("nextShot", field(form.nextShotTicks, "ticks", formSource,
                         condition + "；从上一发出膛计，原 Q 冷却挡首发，W 暂停可以推迟下一发", "on_projectile_launch", REAL));
-                fields.add("pauseForW", field(YikeStance.PAUSE_FOR_W_TICKS, "tick", source(YikeStance.class, "PAUSE_FOR_W_TICKS"),
+                fields.add("pauseForW", field(YikeStance.PAUSE_FOR_W_TICKS, "ticks", source(YikeStance.class, "PAUSE_FOR_W_TICKS"),
                         condition + "且 W 已完成合法预警提交", "on_w_commit", REAL));
             } else {
                 fields.add("shots", gap("not_applicable", "shell", formSource, condition, "on_projectile_launch",
