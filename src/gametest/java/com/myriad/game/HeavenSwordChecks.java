@@ -90,8 +90,10 @@ final class HeavenSwordChecks {
         var targets=new ArrayList<LivingEntity>();
         for(Vec3 offset:List.of(new Vec3(0,0,7),new Vec3(0,0,14.95),new Vec3(1.85,0,8),
                 new Vec3(2.2,0,8),new Vec3(0,0,-1.2),new Vec3(0,0,16.2))){
-            var pig=h.spawn(EntityTypes.PIG,new BlockPos(2,20,2));
-            pig.setPos(origin.add(offset));pig.setNoAi(true);pig.setNoGravity(true);
+            var position=origin.add(offset);
+            CombatChunks.prepare(h.getLevel(),BlockPos.containing(position));
+            var pig=h.spawn(EntityTypes.PIG,h.relativeVec(position));
+            pig.setNoAi(true);pig.setNoGravity(true);
             pig.getAttribute(Attributes.MAX_HEALTH).setBaseValue(1000);pig.setHealth(1000);targets.add(pig);
         }
         var tower=h.spawn(ModEntities.DEFENSE_TOWER.get(),new BlockPos(2,20,2));tower.setPos(origin.add(0,0,10));tower.setHealth(1000);
