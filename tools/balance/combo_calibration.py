@@ -187,10 +187,14 @@ class Replay:
     def mana_cost(self, skill):
         return next(row["mana"]["value"] for row in self.skills[skill]["ranks"] if row["rank"] == self.ranks[skill])
 
+    def movement_rate(self, target, tick):
+        return min((value for start, end, kind, value, _ in target.controls
+                    if kind == "movement_slow" and start <= tick < end), default=1)
+
     def loss(self, target, tick, include_skill=True):
         blocked = set()
         rate = 1
-        movement_rate = 1
+        movement_rate = self.movement_rate(target, tick) if include_skill else 1
         if target is self.enemies[0] and tick < self.opponent["stunTicks"]:
             blocked.update(self.defaults["controlActionWeights"])
         for start, end, kind, value, _ in (target.controls if include_skill else ()):
@@ -198,9 +202,7 @@ class Replay:
                 continue
             if kind == "slow":
                 rate = min(rate, value)
-            elif kind == "movement_slow":
-                movement_rate = min(movement_rate, value)
-            else:
+            elif kind != "movement_slow":
                 blocked.update(key for key, available in self.availability[kind]["value"].items() if not available)
         weights = self.defaults["controlActionWeights"]
         return 1 - sum(weight * (min(rate, movement_rate) if key == "move" else rate)
@@ -480,6 +482,7 @@ class Replay:
         elif mode == "magic_bullet":
             raw = row["rawDamage"]["value"] + row["spellScaling"]["value"] * self.stats["bonus_spell"]
             reach = row["range"]["value"]
+            speed = row.get("flightSpeed", {}).get("value", speed)
             self.basic_ready = self.action_progress + ceil(20 / self.stats["attackSpeed"])
         else:
             raw = self.stats["total_physical"]
@@ -638,8 +641,9 @@ class Replay:
                     continue
                 if enemy is self.enemies[0] and self.tick < self.opponent["stunTicks"]:
                     continue
-                rate = min([value for start, end, kind, value, _ in enemy.controls
-                            if kind in ("slow", "movement_slow") and start <= self.tick < end], default=1)
+                action_rate = min((value for start, end, kind, value, _ in enemy.controls
+                                   if kind == "slow" and start <= self.tick < end), default=1)
+                rate = min(action_rate, self.movement_rate(enemy, self.tick))
                 enemy.position += rate * self.opponent["retreatPerActionTick"]
         return self
 

@@ -36,6 +36,8 @@ import com.myriad.registry.ModAttributes;
 public final class MagicBullet {
     /** 飞行速度（格/刻） */
     private static final double SPEED = 1.5 * HeroProjectileTuning.SPEED;
+
+    public static double speedBlocksPerActionTick() { return SPEED; }
     /** 射程（格） */
     public static final double MAX_RANGE = 15.0;
     /** 命中判定半径（格） */

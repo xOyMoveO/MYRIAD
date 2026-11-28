@@ -1,0 +1,338 @@
+{
+  "scenarioId": "lingyuan.zero_preparation",
+  "scenarioVersion": 1,
+  "schemaVersion": 1,
+  "baselineCommit": "b368acd",
+  "role": "lingyuan",
+  "applicableBuilds": "all_terminal_combinations",
+  "category": "zero_preparation",
+  "status": "candidate_l3_partial",
+  "startState": {
+    "distance": 2.6,
+    "purchases": {
+      "wisdom": 5,
+      "strength": 1,
+      "speed": 1,
+      "cooldown": 2
+    },
+    "preloadedBlades": 0
+  },
+  "opponentCondition": [
+    "solo",
+    "ally_cc"
+  ],
+  "windows": [
+    "burst",
+    "sustained"
+  ],
+  "delayProfile": [
+    "human_default",
+    "zero_extra_delay"
+  ],
+  "basicAttack": {
+    "range": 3,
+    "source": "src/main/java/com/myriad/combat/VanillaMeleeAttack.java"
+  },
+  "skills": {
+    "g2_lingyuan_n1": {
+      "source": "src/main/java/com/myriad/character/skills/lingyuan/rework/CloudBreakSkill.java",
+      "events": [
+        {
+          "kind": "damage",
+          "effect": "damage",
+          "geometry": "dash"
+        }
+      ],
+      "range": "dash_range",
+      "motion": "dash_duration"
+    },
+    "g2_lingyuan_n2": {
+      "source": "src/main/java/com/myriad/character/skills/lingyuan/rework/SwordMantleSkill.java",
+      "events": [
+        {
+          "kind": "shield",
+          "effect": "shield",
+          "target": "self",
+          "duration": "shield_duration"
+        },
+        {
+          "kind": "guard",
+          "target": "self",
+          "duration": "guard_duration",
+          "multiplier": "incoming_rate",
+          "channel": "sword_mantle"
+        }
+      ]
+    },
+    "g2_lingyuan_ma": {
+      "source": "src/main/java/com/myriad/character/skills/lingyuan/rework/SwordVolleySkill.java",
+      "events": [
+        {
+          "kind": "damage",
+          "effect": "segment.sword",
+          "geometry": "projectile",
+          "at": 0,
+          "clock": "action_tick"
+        },
+        {
+          "kind": "damage",
+          "effect": "segment.sword",
+          "geometry": "projectile",
+          "at": "shot_gap",
+          "clock": "action_tick"
+        },
+        {
+          "kind": "damage",
+          "effect": "segment.sword",
+          "geometry": "projectile",
+          "at": "third",
+          "clock": "action_tick"
+        }
+      ],
+      "range": "projectile_range"
+    },
+    "g2_lingyuan_mb": {
+      "source": "src/main/java/com/myriad/character/skills/lingyuan/rework/SwordArraySkill.java",
+      "events": [
+        {
+          "kind": "damage",
+          "effect": "segment.pulse",
+          "geometry": "point_area",
+          "repeat": [
+            "pulse_interval",
+            "field_duration"
+          ],
+          "indirect": true,
+          "slow_duration": "slow_duration"
+        }
+      ],
+      "point": true,
+      "range": "point_range"
+    },
+    "g2_lingyuan_ua": {
+      "source": "src/main/java/com/myriad/character/skills/lingyuan/rework/ThousandSwordsSkill.java",
+      "events": [
+        {
+          "kind": "damage",
+          "effect": "segment.pulse",
+          "geometry": "point_area",
+          "repeat": [
+            "pulse_interval",
+            "field_duration"
+          ],
+          "indirect": true
+        }
+      ],
+      "point": true,
+      "range": "point_range"
+    },
+    "g2_lingyuan_ub": {
+      "source": "src/main/java/com/myriad/character/skills/lingyuan/rework/HeavenSwordSkill.java",
+      "events": [
+        {
+          "kind": "damage",
+          "effect": "damage",
+          "geometry": "chop"
+        }
+      ],
+      "range": "chop_range",
+      "paidWindup": "charge"
+    }
+  },
+  "execution": {
+    "type": "apl",
+    "steps": [
+      {
+        "action": "cast",
+        "skill": "r"
+      },
+      {
+        "action": "cast",
+        "skill": "e"
+      },
+      {
+        "action": "cast",
+        "skill": "w"
+      },
+      {
+        "action": "basic_attack"
+      },
+      {
+        "action": "cast",
+        "skill": "q"
+      }
+    ]
+  },
+  "scripted": [
+    {
+      "scenarioId": "lingyuan.sword_field_stays",
+      "applicableBuilds": [
+        "g2_lingyuan_ua"
+      ],
+      "opponentCondition": "solo",
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "r"
+          }
+        ]
+      },
+      "observationTicks": 126,
+      "startState": {
+        "distance": 4
+      },
+      "opponentOverrides": {
+        "retreatPerActionTick": 0
+      }
+    },
+    {
+      "scenarioId": "lingyuan.sword_field_leaves",
+      "applicableBuilds": [
+        "g2_lingyuan_ua"
+      ],
+      "opponentCondition": "solo",
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "r"
+          }
+        ]
+      },
+      "observationTicks": 126,
+      "startState": {
+        "distance": 4,
+        "forcedEnemyPositions": [
+          [
+            27,
+            0,
+            16
+          ]
+        ]
+      },
+      "opponentOverrides": {
+        "retreatPerActionTick": 0
+      }
+    },
+    {
+      "scenarioId": "lingyuan.heaven_sword_full_charge",
+      "applicableBuilds": [
+        "g2_lingyuan_ub"
+      ],
+      "opponentCondition": "solo",
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "r"
+          }
+        ]
+      },
+      "startState": {
+        "distance": 4
+      }
+    },
+    {
+      "scenarioId": "lingyuan.heaven_sword_interrupted",
+      "applicableBuilds": [
+        "g2_lingyuan_ub"
+      ],
+      "opponentCondition": "solo",
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "r"
+          }
+        ]
+      },
+      "startState": {
+        "distance": 4,
+        "interruptActorAt": [
+          16
+        ]
+      },
+      "opponentOverrides": {
+        "retreatPerActionTick": 0
+      }
+    },
+    {
+      "scenarioId": "lingyuan.sword_heart_preloaded",
+      "applicableBuilds": [
+        "g2_lingyuan_pa"
+      ],
+      "opponentCondition": "solo",
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "basic_attack"
+          }
+        ]
+      },
+      "startState": {
+        "distance": 2.6,
+        "preloadedBlades": 2
+      }
+    },
+    {
+      "scenarioId": "lingyuan.sword_heart_zero",
+      "applicableBuilds": [
+        "g2_lingyuan_pa"
+      ],
+      "opponentCondition": "solo",
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "basic_attack"
+          }
+        ]
+      },
+      "startState": {
+        "distance": 2.6,
+        "preloadedBlades": 0
+      }
+    }
+  ],
+  "coverageGaps": {
+    "g2_lingyuan_n1": {
+      "axes": [
+        "damage",
+        "timing"
+      ],
+      "reason": "开阔直线名义移动按等步扫掠。真实墙、身体碰撞、击退打断暂无离线几何模型。"
+    },
+    "g2_lingyuan_ma": {
+      "axes": [
+        "damage"
+      ],
+      "reason": "固定一维朝向与目标碰撞宽度，弹体转向选点及实际地图碰撞需要引擎或实图采样。"
+    },
+    "g2_lingyuan_mb": {
+      "axes": [
+        "damage",
+        "control"
+      ],
+      "reason": "合法平地固定区心按一维目标距离结算，实图三维遮挡及路线尚无输入。"
+    },
+    "g2_lingyuan_ua": {
+      "axes": [
+        "damage"
+      ],
+      "reason": "合法平地固定区心按一维目标距离结算，实图三维遮挡及路线尚无输入。"
+    },
+    "g2_lingyuan_ub": {
+      "axes": [
+        "damage",
+        "timing"
+      ],
+      "reason": "假设目标与矩形中心线共线，方向在起手时锁定；被控制中止只在脚本对照指定。"
+    }
+  }
+}

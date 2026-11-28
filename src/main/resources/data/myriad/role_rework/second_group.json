@@ -124,7 +124,7 @@
       "cooldowns": [
         0
       ],
-      "description": "直接普攻或技能命中叠1层寒霜，同一施法对同目标最多1层；4层造成25＋12(r－1)＋20%S魔法伤害并定身1秒。层数6秒失效，同目标触发后6秒免疫叠层；取消旧最大生命真伤。",
+      "description": "直接普攻或技能命中叠1层寒霜，同一施法对同目标最多1层；4层造成25＋12(r－1)＋20%S魔法伤害并定身1秒。层数6秒失效，同目标触发后6秒免疫来自你的叠层；千里冰封的脉冲伤害不会叠霜。",
       "iconAlias": "hanze_passive"
     },
     {
@@ -460,7 +460,7 @@
       "cooldowns": [
         0
       ],
-      "description": "同一友军在6秒内两次实际受到你的技能治疗或新增护盾后，获得{support0}护盾3秒。同目标8秒冷却；被动自身不再累计层数。",
+      "description": "同一友军在{windowSeconds}秒内受到{supportCount}次有效治疗或新增护盾后，获得{support0}护盾，持续{shieldSeconds}秒。有效受援需间隔至少{minimumInterval}秒；每名受援者独立冷却{procSeconds}秒。完全溢出的治疗、未增盾的同源刷新和被动盾本身均不计。",
       "iconAlias": "yunsheng_passive"
     },
     {
@@ -474,7 +474,7 @@
       "cooldowns": [
         0
       ],
-      "description": "直接命中敌方英雄后，为自身及6格内可见友军治疗{support0}并加速10%持续1秒。每6秒最多触发一次，持续与派生伤害不会触发。",
+      "description": "直接有效命中敌方英雄后，为自身及{allyRange}格内可见友军治疗{support0}，并加速{hastePercent}%持续{hasteSeconds}秒。每{procSeconds}秒最多触发一次，持续及派生伤害不触发。",
       "iconAlias": "yunsheng_passive"
     },
     {
@@ -488,7 +488,7 @@
       "cooldowns": [
         200
       ],
-      "description": "向指向的14格内单位送出弧线纸鹤，优先选中准星下的敌人，其次友军，无目标则作用自身。敌人受到55＋24.3(r－1)＋45%S魔法伤害并减速25%持续1秒；友军治疗{support0}并回复20法力。纸鹤遇墙或敌方风墙消散。",
+      "description": "向{targetRange}格内准星所指单位放出弧线纸鹤，优先敌军，其次友军，无目标回到自身。敌军受魔法伤害并减速{slowPercent}%持续{slowSeconds}秒；友军受{support0}治疗并回复{manaRestore}法力。地形或敌方风墙可拦截。",
       "iconAlias": "zhihechuanyin"
     },
     {
@@ -502,7 +502,7 @@
       "cooldowns": [
         280
       ],
-      "description": "锁定12格内准星下的可见敌人，造成35＋15(r－1)＋30%S魔法伤害并定身0.6秒。两秒后若仍在12格且未隔墙，再造成同额伤害并减速30%持续1.5秒；超距或隔墙断索后不会重新连接。",
+      "description": "锁定{targetRange}格内准星下的可见敌人，造成魔法伤害并定身{rootSeconds}秒。持续可见且未超过距离时，在{tetherSeconds}秒后再造成同额伤害并减速{slowPercent}%持续{slowSeconds}秒。断开后本次索不会重连。",
       "iconAlias": "dingqisuo"
     },
     {
@@ -516,7 +516,7 @@
       "cooldowns": [
         380
       ],
-      "description": "14格内选点，半径4格界标持续8秒。每秒为阵内友军刷新{support0}护盾1.25秒；每名敌人首次入阵受到65＋25(r－1)＋45%S魔法伤害并减速30%持续1秒，之后不重复出伤。",
+      "description": "在{pointRange}格内布置半径{radius}格的界标，持续{fieldSeconds}秒。每秒为可见阵内友军刷新{support0}护盾，持续{shieldSeconds}秒。敌人首次被区域检测到时受一次魔法伤害并减速{slowPercent}%持续{slowSeconds}秒。",
       "iconAlias": "huiyinjiebiao"
     },
     {
@@ -530,7 +530,7 @@
       "cooldowns": [
         340
       ],
-      "description": "8格内选择可站立落点，以motion快速前往；停稳后为3格内可见友军提供{support0}护盾3秒并加速20%持续1.5秒。路径受阻时在实际停止位置结算，不穿墙。",
+      "description": "冲向{pointRange}格内的合法站立点。停稳后为实际落点{radius}格内可见友军施加{support0}护盾，持续{shieldSeconds}秒，并加速{hastePercent}%持续{hasteSeconds}秒。途中受阻时在实际停止位置结算。",
       "iconAlias": "huiyinjiebiao"
     },
     {
@@ -544,7 +544,7 @@
       "cooldowns": [
         1400
       ],
-      "description": "14格内选点，站桩引导1秒后展开半径6格回响域4秒。每秒治疗友军{support0}，敌人受到45＋23(r－1)＋25%S魔法伤害，共4轮；引导可被控制打断。",
+      "description": "在{pointRange}格内选点，提交后原地引导{windupSeconds}秒，可被打断。完成后展开半径{radius}格的回响域{fieldSeconds}秒，每秒治疗可见友军{support0}并对可见敌人造成魔法伤害，共{pulseCount}轮。",
       "iconAlias": "zhongshengguizong"
     },
     {
@@ -558,7 +558,7 @@
       "cooldowns": [
         1350
       ],
-      "description": "为自身及8格内可见友军提供{support0}护盾5秒，移速提高25%持续3秒。护盾存续时不附加无敌或隐藏减伤；适合带队进退。",
+      "description": "为自身及{allyRange}格内可见友军施加{support0}护盾，持续{shieldSeconds}秒，并加速{hastePercent}%持续{hasteSeconds}秒。",
       "iconAlias": "zhongshengguizong"
     }
   ]

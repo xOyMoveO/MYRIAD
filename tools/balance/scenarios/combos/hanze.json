@@ -1,0 +1,327 @@
+{
+  "scenarioId": "hanze.zero_preparation",
+  "scenarioVersion": 1,
+  "schemaVersion": 1,
+  "baselineCommit": "b368acd",
+  "role": "hanze",
+  "applicableBuilds": "all_terminal_combinations",
+  "category": "zero_preparation",
+  "status": "candidate_l3_partial",
+  "startState": {
+    "distance": 2.6,
+    "purchases": {
+      "wisdom": 6,
+      "speed": 1,
+      "cooldown": 2
+    },
+    "allyPositions": [
+      2,
+      5
+    ]
+  },
+  "opponentCondition": [
+    "solo",
+    "ally_cc"
+  ],
+  "windows": [
+    "burst",
+    "sustained"
+  ],
+  "delayProfile": [
+    "human_default",
+    "zero_extra_delay"
+  ],
+  "basicAttack": {
+    "source": "src/main/java/com/myriad/combat/MagicBullet.java"
+  },
+  "skills": {
+    "g2_hanze_n1": {
+      "source": "src/main/java/com/myriad/character/skills/hanze/rework/IceVolleySkill.java",
+      "events": [
+        {
+          "kind": "damage",
+          "effect": "segment.projectile",
+          "geometry": "projectile",
+          "at": 0,
+          "clock": "action_tick",
+          "slow_duration": "slow_duration"
+        },
+        {
+          "kind": "damage",
+          "effect": "segment.projectile",
+          "geometry": "projectile",
+          "at": "shot_gap",
+          "clock": "action_tick",
+          "slow_duration": "slow_duration"
+        },
+        {
+          "kind": "damage",
+          "effect": "segment.projectile",
+          "geometry": "projectile",
+          "at": "third",
+          "clock": "action_tick",
+          "slow_duration": "slow_duration"
+        }
+      ],
+      "range": "projectile_range"
+    },
+    "g2_hanze_n2": {
+      "source": "src/main/java/com/myriad/character/skills/hanze/rework/FrostShieldSkill.java",
+      "events": [
+        {
+          "kind": "shield",
+          "effect": "shield",
+          "target": "self",
+          "duration": "shield_duration"
+        },
+        {
+          "kind": "control",
+          "geometry": "caster_area",
+          "radius": "radius",
+          "slow_duration": "slow_duration"
+        }
+      ]
+    },
+    "g2_hanze_ma": {
+      "source": "src/main/java/com/myriad/character/skills/hanze/rework/AbsoluteZeroSkill.java",
+      "events": [
+        {
+          "kind": "damage",
+          "effect": "damage",
+          "geometry": "point_area",
+          "root_duration": "root_duration"
+        }
+      ],
+      "point": true,
+      "range": "point_range",
+      "paidWindup": "windup"
+    },
+    "g2_hanze_mb": {
+      "source": "src/main/java/com/myriad/character/skills/hanze/rework/GlacierLanceSkill.java",
+      "events": [
+        {
+          "kind": "damage",
+          "effect": "damage",
+          "geometry": "projectile",
+          "pierces": true,
+          "slow_duration": "slow_duration"
+        }
+      ],
+      "range": "projectile_range"
+    },
+    "g2_hanze_ua": {
+      "source": "src/main/java/com/myriad/character/skills/hanze/rework/FrozenExpanseSkill.java",
+      "events": [
+        {
+          "kind": "damage",
+          "effect": "segment.pulse",
+          "geometry": "point_area",
+          "repeat": [
+            "pulse_interval",
+            "field_duration"
+          ],
+          "indirect": true,
+          "slow_duration": "slow_duration"
+        }
+      ],
+      "point": true,
+      "range": "point_range"
+    },
+    "g2_hanze_ub": {
+      "source": "src/main/java/com/myriad/character/skills/hanze/rework/WinterBastionSkill.java",
+      "events": [
+        {
+          "kind": "shield",
+          "effect": "shield",
+          "target": "allies",
+          "duration": "shield_duration",
+          "radius": "ally_radius",
+          "includeSelf": true,
+          "allVisibleAllies": true
+        },
+        {
+          "kind": "damage",
+          "effect": "damage",
+          "geometry": "caster_area",
+          "radius": "enemy_radius",
+          "root_duration": "root_duration"
+        }
+      ]
+    }
+  },
+  "execution": {
+    "type": "apl",
+    "steps": [
+      {
+        "action": "cast",
+        "skill": "r"
+      },
+      {
+        "action": "cast",
+        "skill": "e"
+      },
+      {
+        "action": "cast",
+        "skill": "w"
+      },
+      {
+        "action": "cast",
+        "skill": "q"
+      },
+      {
+        "action": "basic_attack"
+      }
+    ]
+  },
+  "scripted": [
+    {
+      "scenarioId": "hanze.frost_interleave_immunity",
+      "applicableBuilds": [
+        "g2_hanze_pa",
+        "g2_hanze_mb",
+        "g2_hanze_ub"
+      ],
+      "opponentCondition": "solo",
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "q",
+            "earliestTick": 1
+          },
+          {
+            "action": "cast",
+            "skill": "e",
+            "earliestTick": 7
+          },
+          {
+            "action": "cast",
+            "skill": "r",
+            "earliestTick": 30
+          },
+          {
+            "action": "basic_attack",
+            "earliestTick": 35
+          },
+          {
+            "action": "basic_attack",
+            "earliestTick": 65
+          },
+          {
+            "action": "basic_attack",
+            "earliestTick": 95
+          },
+          {
+            "action": "basic_attack",
+            "earliestTick": 125
+          },
+          {
+            "action": "basic_attack",
+            "earliestTick": 157
+          }
+        ]
+      },
+      "observationTicks": 163,
+      "startState": {
+        "distance": 2.6,
+        "purchases": {},
+        "casterActionRate": [
+          [
+            0,
+            29,
+            0.5
+          ]
+        ]
+      },
+      "opponentOverrides": {
+        "retreatPerActionTick": 0
+      }
+    },
+    {
+      "scenarioId": "hanze.frozen_expanse_multiple_pulses_no_stack",
+      "applicableBuilds": [
+        "g2_hanze_pa",
+        "g2_hanze_ua"
+      ],
+      "opponentCondition": "solo",
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "r"
+          }
+        ]
+      },
+      "observationTicks": 126,
+      "startState": {
+        "distance": 4
+      },
+      "opponentOverrides": {
+        "retreatPerActionTick": 0
+      }
+    },
+    {
+      "scenarioId": "hanze.winter_bastion_pressure",
+      "applicableBuilds": [
+        "g2_hanze_ub"
+      ],
+      "opponentCondition": "solo",
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "r"
+          }
+        ]
+      },
+      "startState": {
+        "distance": 2.6,
+        "allyPositions": [
+          2,
+          5
+        ]
+      }
+    }
+  ],
+  "coverageGaps": {
+    "g2_hanze_n1": {
+      "axes": [
+        "damage",
+        "control"
+      ],
+      "reason": "定向一维首敌和合成宽度；三个弹体的实际三维命中及地形另查。"
+    },
+    "g2_hanze_ma": {
+      "axes": [
+        "damage",
+        "control"
+      ],
+      "reason": "采用合法平地、无阻直线视野；实地图遮挡、脱离途径及普通起手对攻可打断另查。"
+    },
+    "g2_hanze_mb": {
+      "axes": [
+        "damage",
+        "control"
+      ],
+      "reason": "按一维直线贯穿，实际间隔、地形和敌方风墙改变量另采。"
+    },
+    "g2_hanze_ua": {
+      "axes": [
+        "damage",
+        "control"
+      ],
+      "reason": "合法平地固定区心按一维距离判断，实图三维遮挡及撤离线路另采。"
+    },
+    "g2_hanze_ub": {
+      "axes": [
+        "damage",
+        "control",
+        "support"
+      ],
+      "reason": "明确受援者为可见友军，默认距施法者 2／5 格；实图视野、相对站位与受压时序另采。"
+    }
+  }
+}

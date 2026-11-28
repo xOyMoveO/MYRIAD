@@ -126,6 +126,9 @@ final class RosterSnapshot {
                     "普通／快弓，命中实体或墙体可提前截断", "放弓", NO_CLOCK));
         } else {
             result.addProperty("id", "magic_bullet");
+            result.add("flightSpeed", field(MagicBullet.speedBlocksPerActionTick(), "blocks_per_tick",
+                    source(MagicBullet.class, "speedBlocksPerActionTick"), "含英雄投射物的公用速度系数；进入缓时时再应用局部倍率",
+                    "飞行时", ACTION));
             result.add("rawDamage", field(MagicBullet.rawDamage(role, FirstGroupGrowth.baselineSpellPower()), "hp",
                     source(MagicBullet.class, "rawDamage"), "无购买或增益的魔法普攻", "发射", NO_CLOCK));
             result.add("spellScaling", field(MagicBullet.spellPowerRatio(role), "hp_per_spell_power",
@@ -225,6 +228,12 @@ final class RosterSnapshot {
 
     static JsonObject commonSkillRules() {
         var rules = new JsonObject();
+        rules.add("incomingGuardResolution", field(Map.of(
+                        "minimumMultiplier", AbilityRuntime.MIN_INCOMING_DAMAGE_MULTIPLIER,
+                        "sameChannel", "strongest", "independentChannels", "multiply", "trueDamage", "unaffected"),
+                "rule_set", source(AbilityRuntime.class, "incoming"),
+                "共享法阵减伤取最低乘数，其他独立减伤乘算；真伤略过，计算发生在护盾吸收前",
+                "on_incoming_damage", NO_CLOCK));
         rules.add("skillHaste", field(Map.of("perPurchase", FirstGroupGrowth.HASTE_PER_POINT,
                         "denominatorBase", AbilityRuntime.SKILL_HASTE_REFERENCE,
                         "minPositiveTicks", AbilityRuntime.MIN_POSITIVE_COOLDOWN, "rounding", "floor"), "rule_set",

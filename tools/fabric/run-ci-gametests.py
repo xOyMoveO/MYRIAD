@@ -17,6 +17,7 @@ EXTRA_TESTS = ("balance_calibration_damage", "calibration_keheng", "calibration_
                "match_economy", "match_assists", "balance_haste", "balance_vertical",
                "balance_shuo_chixiao", "balance_roster_lane", "balance_roster_camps", "balance_roster_towers",
                *(f"balance_roster_{roster}_{scene}" for roster in (112, 113) for scene in ("lane", "camps", "towers")))
+EXTRA_TESTS += ("balance_roster_sword_frost", "balance_mage_support_113")
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--offline", action="store_true", help="Use only already cached Gradle dependencies")
 parser.add_argument("filters", nargs="*", help="Explicit check filters; default is all core checks")

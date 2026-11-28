@@ -1,0 +1,406 @@
+{
+  "scenarioId": "xuanchen.zero_preparation",
+  "scenarioVersion": 1,
+  "schemaVersion": 1,
+  "baselineCommit": "b368acd100b07b5676d709f03d8ac29fb4cf3e04",
+  "role": "xuanchen",
+  "applicableBuilds": "all_terminal_combinations",
+  "category": "zero_preparation",
+  "supportTarget": "primary",
+  "status": "candidate_l3_partial",
+  "startState": {
+    "distance": 4,
+    "allyPositions": [
+      1.5,
+      7
+    ],
+    "purchases": {
+      "wisdom": 6,
+      "cooldown": 3
+    },
+    "preconditions": [
+      "no_active_field",
+      "no_passive_marks",
+      "no_existing_shield"
+    ]
+  },
+  "opponentCondition": [
+    "solo",
+    "ally_cc"
+  ],
+  "windows": [
+    "burst",
+    "sustained"
+  ],
+  "delayProfile": [
+    "human_default",
+    "zero_extra_delay"
+  ],
+  "basicAttack": {
+    "flightSpeed": 1.95,
+    "source": "src/main/java/com/myriad/combat/MagicBullet.java"
+  },
+  "skills": {
+    "g1_xuanchen_n1": {
+      "source": "src/main/java/com/myriad/character/skills/xuanchen/rework/SpiritBindSkill.java",
+      "events": [
+        {
+          "kind": "damage",
+          "effect": "damage",
+          "speed": "flight_speed",
+          "root": "root_duration",
+          "unconditionalControl": true
+        }
+      ],
+      "range": "range"
+    },
+    "g1_xuanchen_n2": {
+      "source": "src/main/java/com/myriad/character/skills/xuanchen/rework/InkShieldSkill.java",
+      "events": [
+        {
+          "kind": "shield",
+          "target": "aimed_ally",
+          "effect": "shield",
+          "duration": "shield_duration"
+        }
+      ]
+    },
+    "g1_xuanchen_ma": {
+      "source": "src/main/java/com/myriad/character/skills/xuanchen/rework/PairedPortalSkill.java",
+      "events": [
+        {
+          "kind": "portal_ready"
+        }
+      ],
+      "point": true,
+      "range": "range"
+    },
+    "g1_xuanchen_mb": {
+      "source": "src/main/java/com/myriad/character/skills/xuanchen/rework/InkProtectionArraySkill.java",
+      "events": [
+        {
+          "kind": "shield",
+          "center": "point",
+          "radius": "radius",
+          "area": true,
+          "at": "warning",
+          "target": "allies",
+          "includeSelf": true,
+          "effect": "shield",
+          "duration": "shield_duration"
+        },
+        {
+          "kind": "guard",
+          "center": "point",
+          "radius": "radius",
+          "area": true,
+          "at": "warning",
+          "repeat": [
+            "refresh_interval",
+            "field_duration"
+          ],
+          "target": "allies",
+          "includeSelf": true,
+          "duration": "guard_duration",
+          "multiplier": "guard_multiplier"
+        },
+        {
+          "kind": "field_contact",
+          "center": "point",
+          "radius": "radius",
+          "area": true,
+          "at": "warning",
+          "repeat": [
+            "refresh_interval",
+            "field_duration"
+          ],
+          "movementOnly": true,
+          "movementSlow": [
+            "movement_rate",
+            "slow_duration"
+          ]
+        }
+      ],
+      "point": true,
+      "range": "range"
+    },
+    "g1_xuanchen_ua": {
+      "source": "src/main/java/com/myriad/character/skills/xuanchen/rework/HeavenCoverArraySkill.java",
+      "events": [
+        {
+          "kind": "guard",
+          "center": "caster",
+          "radius": "radius",
+          "area": true,
+          "at": 0,
+          "repeat": [
+            "refresh_interval",
+            "field_duration"
+          ],
+          "target": "allies",
+          "includeSelf": true,
+          "duration": "guard_duration",
+          "multiplier": "guard_multiplier"
+        },
+        {
+          "kind": "field_contact",
+          "center": "caster",
+          "radius": "radius",
+          "area": true,
+          "at": 0,
+          "repeat": [
+            "refresh_interval",
+            "field_duration"
+          ],
+          "movementOnly": true,
+          "movementSlow": [
+            "movement_rate",
+            "slow_duration"
+          ]
+        },
+        {
+          "kind": "field_contact",
+          "center": "caster",
+          "radius": "radius",
+          "area": true,
+          "effect": "segment.pulse",
+          "derived": true,
+          "repeat": [
+            "pulse_interval",
+            "field_duration"
+          ]
+        }
+      ],
+      "paidWindup": "windup_duration"
+    },
+    "g1_xuanchen_ub": {
+      "source": "src/main/java/com/myriad/character/skills/xuanchen/rework/SealedBoundarySkill.java",
+      "events": [
+        {
+          "kind": "field_contact",
+          "center": "point",
+          "radius": "radius",
+          "area": true,
+          "at": "warning",
+          "effect": "damage",
+          "root": "root_duration",
+          "unconditionalControl": true
+        },
+        {
+          "kind": "field_contact",
+          "center": "point",
+          "radius": "radius",
+          "area": true,
+          "at": "warning",
+          "repeat": [
+            "refresh_interval",
+            "field_duration"
+          ],
+          "movementOnly": true,
+          "movementSlow": [
+            "movement_rate",
+            "slow_duration"
+          ]
+        }
+      ],
+      "point": true,
+      "range": "range"
+    }
+  },
+  "execution": {
+    "type": "apl",
+    "steps": [
+      {
+        "action": "cast",
+        "skill": "r"
+      },
+      {
+        "action": "cast",
+        "skill": "e"
+      },
+      {
+        "action": "cast",
+        "skill": "w"
+      },
+      {
+        "action": "cast",
+        "skill": "q",
+        "notBeforeTick": 18
+      },
+      {
+        "action": "basic_attack"
+      },
+      {
+        "action": "wait_until"
+      }
+    ],
+    "notes": "第 18 真实刻之后开始输入灵缚，使正常选点延迟下两段伤害避免挤进同目标三刻受击恢复。"
+  },
+  "coverageGaps": {
+    "g1_xuanchen_ma": {
+      "axes": [
+        "damage",
+        "control",
+        "support"
+      ],
+      "reason": "成对阵点可以合法布置；本场景无队友下蹲、传送路径及额外命中输入，不能估计传送创造的有效收益。"
+    },
+    "g1_xuanchen_n1": {
+      "axes": [
+        "damage",
+        "control"
+      ],
+      "reason": "合成直线按首个目标的接触时间取样；三维实体边缘、途中风墙与弹道缓时未模拟。"
+    },
+    "g1_xuanchen_n2": {
+      "axes": [
+        "support"
+      ],
+      "reason": "基准预先指向主受援者，无合法队友时退化自身；遮挡与争抢准星须用另一输入。"
+    },
+    "g1_xuanchen_mb": {
+      "axes": [
+        "support",
+        "control"
+      ],
+      "reason": "阵内各人按声明的一维站位或滞留时间估算；离场后残留的减伤受最近一次轮询影响。"
+    },
+    "g1_xuanchen_ua": {
+      "axes": [
+        "damage",
+        "control",
+        "support"
+      ],
+      "reason": "基准引导无敌方反击；打断仅在成对脚本中提供，强制位移、沉默和实图视线另采。"
+    }
+  },
+  "scripted": [
+    {
+      "scenarioId": "xuanchen.channel_completed",
+      "scenarioVersion": 1,
+      "category": "conditional_authoritative_replay",
+      "status": "candidate_l3_partial",
+      "applicableBuilds": [
+        "g1_xuanchen_pa",
+        "g1_xuanchen_mb",
+        "g1_xuanchen_ua"
+      ],
+      "startState": {
+        "distance": 3,
+        "allyPositions": [
+          2,
+          8
+        ],
+        "allRecipients": true
+      },
+      "opponentCondition": "solo",
+      "opponentOverrides": {
+        "retreatPerActionTick": 0
+      },
+      "windows": {
+        "burst": 30,
+        "sustained": 120
+      },
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "r"
+          },
+          {
+            "action": "cast",
+            "skill": "e",
+            "notBeforeTick": 65
+          }
+        ]
+      },
+      "source": "balance_mage_support_113 的成功与外部眩晕对照；此处保留 20 级统一经济和来伤表，作为对应机制的离线样例。"
+    },
+    {
+      "scenarioId": "xuanchen.channel_interrupted",
+      "scenarioVersion": 1,
+      "category": "conditional_authoritative_replay",
+      "status": "candidate_l3_partial",
+      "applicableBuilds": [
+        "g1_xuanchen_pa",
+        "g1_xuanchen_mb",
+        "g1_xuanchen_ua"
+      ],
+      "startState": {
+        "distance": 3,
+        "allyPositions": [
+          2,
+          8
+        ],
+        "allRecipients": true,
+        "interruptAtTick": 8,
+        "interruptStunTicks": 8
+      },
+      "opponentCondition": "solo",
+      "opponentOverrides": {
+        "retreatPerActionTick": 0
+      },
+      "windows": {
+        "burst": 30,
+        "sustained": 120
+      },
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "r"
+          },
+          {
+            "action": "cast",
+            "skill": "e",
+            "notBeforeTick": 65
+          }
+        ]
+      },
+      "source": "balance_mage_support_113 的成功与外部眩晕对照；此处保留 20 级统一经济和来伤表，作为对应机制的离线样例。"
+    },
+    {
+      "scenarioId": "xuanchen.solo_without_ally",
+      "scenarioVersion": 1,
+      "category": "conditional_authoritative_replay",
+      "status": "candidate_l3_partial",
+      "applicableBuilds": [
+        "g1_xuanchen_pa",
+        "g1_xuanchen_ma",
+        "g1_xuanchen_ub"
+      ],
+      "startState": {
+        "distance": 5,
+        "noAllies": true
+      },
+      "opponentCondition": "solo",
+      "opponentOverrides": {
+        "retreatPerActionTick": 0
+      },
+      "windows": {
+        "burst": 30,
+        "sustained": 120
+      },
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "w"
+          },
+          {
+            "action": "cast",
+            "skill": "q"
+          },
+          {
+            "action": "cast",
+            "skill": "r"
+          }
+        ]
+      },
+      "source": "在无合格友方位置时 W 与 P-A 均选自身；不能用此读数估计双人解围。"
+    }
+  ]
+}

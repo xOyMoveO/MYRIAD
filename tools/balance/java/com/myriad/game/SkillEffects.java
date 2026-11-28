@@ -34,6 +34,12 @@ final class SkillEffects {
         if (skill.role().equals("rivet")) return RivetSkillEffects.damageCondition(skill, id);
         if (skill.role().equals("shuo")) return ShuoSkillEffects.damageCondition(skill, id);
         if (skill.role().equals("chixiao")) return ChixiaoSkillEffects.damageCondition(skill, id);
+        if (skill.role().equals("lingyuan") || skill.role().equals("hanze")) {
+            return SwordFrostSkillEffects.damageCondition(skill, id);
+        }
+        if (skill.role().equals("xuanchen") || skill.role().equals("yunsheng")) {
+            return XuanchenYunshengSkillEffects.damageCondition(skill, id);
+        }
         return switch (skill) {
             case EngravedEchoSkill ignored -> "同一敌方英雄在窗口内受不同次主动直接技能有效命中，达到刻痕触发层数";
             case DelayedNeedleSkill ignored -> "起手完成，针体首次有效接触合法敌人";
@@ -50,6 +56,12 @@ final class SkillEffects {
         if (skill.role().equals("rivet")) return RivetSkillEffects.supportCondition(skill);
         if (skill.role().equals("shuo")) return ShuoSkillEffects.supportCondition(skill);
         if (skill.role().equals("chixiao")) return ChixiaoSkillEffects.supportCondition(skill);
+        if (skill.role().equals("lingyuan") || skill.role().equals("hanze")) {
+            return SwordFrostSkillEffects.supportCondition(skill);
+        }
+        if (skill.role().equals("xuanchen") || skill.role().equals("yunsheng")) {
+            return XuanchenYunshengSkillEffects.supportCondition(skill);
+        }
         return switch (skill) {
             case ConstantStepSkill ignored -> "选择恒步分支，进入自己领域的瞬间且内置冷却已结束";
             case OffbeatStepSkill ignored -> "错拍步合法施放后给自身加盾";
@@ -63,6 +75,8 @@ final class SkillEffects {
             case "rivet" -> RivetSkillEffects.add(effects, skill);
             case "shuo" -> ShuoSkillEffects.add(effects, skill);
             case "chixiao" -> ChixiaoSkillEffects.add(effects, skill);
+            case "lingyuan", "hanze" -> SwordFrostSkillEffects.add(effects, skill);
+            case "xuanchen", "yunsheng" -> XuanchenYunshengSkillEffects.add(effects, skill);
             default -> addStandard(effects, skill);
         }
     }

@@ -2,14 +2,16 @@ package com.myriad.character.skills.hanze.rework;
 
 import com.myriad.character.ability.*;
 import com.myriad.character.ability.AbilityRuntime.Cast;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.phys.Vec3;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import static com.myriad.combat.DamageCalc.Kind.*;
 
 /** Independent branch; no gameplay switches in the batch registry. */
 public final class FrostStacksSkill extends AbilitySkill {
+    public static final int MIN_HIT_GAP_TICKS=4, STACKS=4, STACK_WINDOW_TICKS=120, IMMUNITY_TICKS=120, ROOT_TICKS=20;
+
     private static final AbilityDamageFormula DAMAGE =
             AbilityDamageFormula.spellPower(MAGIC, 25, 12, .2f);
 
@@ -17,24 +19,38 @@ public final class FrostStacksSkill extends AbilitySkill {
         return List.of(DAMAGE);
     }
 
+    @Override public Map<String, Number> descriptionFields(int rank) {
+        return Map.of("stacks", STACKS, "root", ROOT_TICKS / 20.0, "immunity", IMMUNITY_TICKS / 20.0);
+    }
+
     public FrostStacksSkill(Definition definition){super(definition);}
 
- @Override public void onHit(AbilityRuntime.Hit h){
-     Cast c=AbilityRuntime.context(h.player(),this);
-     var m=c.memory(h.target().getUUID().toString());
-     if(c.now()<m.cooldown||c.now()-m.last<4)return;
-     if(!h.basic()&&m.tag.equals(h.skillId()+"/"+AbilityRuntime.sourceCast()))return;
-     if(c.now()>m.until)m.count=0;
-     m.last=c.now();m.tag=h.basic()?"":h.skillId()+"/"+AbilityRuntime.sourceCast();m.until=c.now()+120;
-     if(++m.count<4){
-         AbilityVisuals.following(c,AbilityVfxGeometry.BURST,h.target(),.39,200+m.count,9);
-         return;
-     }
-     m.count=0;m.cooldown=c.now()+120;
-     c.root(h.target(),20,false);
-     c.damage(h.target(),DAMAGE.value(c),DAMAGE.kind(),false);
-     AbilityVisuals.pillar(c,h.target().position(),2.2);
- }
-@Override public void release(Cast c){}
+    @Override
+    public void onHit(AbilityRuntime.Hit hit) {
+        Cast cast = AbilityRuntime.context(hit.player(), this);
+        var frost = cast.memory(hit.target().getUUID().toString());
+        long now = cast.now();
+        if (now < frost.cooldown || now - frost.last < MIN_HIT_GAP_TICKS) return;
+        if (!hit.basic()) {
+            if (frost.castTokens == null) frost.castTokens = new HashSet<>();
+            // Earlier projectiles can arrive after hits from other skills or basic attacks.
+            if (!frost.castTokens.add(AbilityRuntime.sourceCast())) return;
+        }
+
+        if (now > frost.until) frost.count = 0;
+        frost.last = now;
+        frost.until = now + STACK_WINDOW_TICKS;
+        if (++frost.count < STACKS) {
+            AbilityVisuals.following(cast, AbilityVfxGeometry.BURST, hit.target(), .39, 200 + frost.count, 9);
+            return;
+        }
+        frost.count = 0;
+        frost.cooldown = now + IMMUNITY_TICKS;
+        cast.root(hit.target(), ROOT_TICKS, false);
+        cast.damage(hit.target(), DAMAGE.value(cast), DAMAGE.kind(), false);
+        AbilityVisuals.pillar(cast, hit.target().position(), 2.2);
+    }
+
+    @Override public void release(Cast cast) {}
 }
 

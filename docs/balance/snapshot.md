@@ -7,6 +7,7 @@
 - `formatVersion` 表示结构与单位版本。版本 2 导出技能急速和购点契约，盾疗字段以 `scaling` 和 `scale` 表示指定的属性与系数。版本 1 的 `spellScale` 表示总法强系数。`sourceSha` 标明构建时检出的提交。`sourceDirty` 标明该工作区还有未提交文件。源码归档可正常构建，未带 Git 元数据时两值分别为 `unknown` 和 `null`。
 - `rulesSha256` 对 `rules` 的紧凑 UTF-8 JSON 求摘要。对象键按字典序，数组保留其规则顺序。Git 信息、素材资源和文案提醒在摘要范围之外。未导出的机制应结合 `sourceSha`、成品摘要和覆盖报告追查。
 - `rules.roles` 通过角色表和已绑定技能生成。每个角色含从一级开始的属性、普攻、分支组合和候选技能。技能的 `ranks` 记录实际调用的逐阶蓝耗与基础冷却。位置无关的效果标识位于 `effects[].id`，取值、本游戏版本的单位、规则来源、条件、取值时点和时基位于 `effects[].rule`。炮台姿态等效果内可以再带分字段。距离和时长统一写作 `blocks`、`ticks`，时基分别为 `real_tick`、`action_tick` 或 `not_timed`。
+- 法师普攻的 `flightSpeed` 已乘公用英雄投射物速度系数，缓时由飞行事件另行结算。`rules.skillRules.incomingGuardResolution` 登记共享法阵减伤取强、独立减伤相乘，以及真伤和乘数下限。实际盾疗、减伤与净控制须按来伤、有效覆盖和到期前吸收复跑。
 - `defined` 与 `zero` 都是可读定义，`zero` 表示该字段的合法数字零。`not_applicable` 和 `missing_input` 使用空值并带理由。伤害公式与名义盾疗可以独立取数。连续有效命中、实际存活、多个技能段能否相加，以及缺条件的几何、触发与 Buff 交互须按场景验证。
 - `rules.battlefield` 包含真实规则定义与樱隙前线 3v3 已提交的地图配置。5v5 使用部署时的世界设施及营地配置，未提供的点位在报告中列为缺输入。野怪成长、塔保护、赏金等有明确场景的读数按其输入取样。小兵先按地图的 `tempoProfile` 读取 `minions.types.<兵种>.byTempo` 中对应的基础赏金与时间轴。原有 `baseGold`、`growthSamples` 和 `rewardSamplesBeforeCatchUpAndGlobalGold` 保留旧节奏样本。野怪首刷的各版本生命、攻击与零穿透有效生命见 `monsters.types.<种类>.combatStatsByTempo`。
 - 覆盖报告包含刻衡两条[历史中文长说明](../../tools/balance/archived/zh_cn.json)的成长系数差异。提醒指出技能、语言和字段。游戏内「刻痕回响」按生效公式生成成长系数。

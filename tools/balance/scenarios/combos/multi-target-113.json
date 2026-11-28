@@ -1,0 +1,30 @@
+{
+  "scenarioId": "cherry.formation_and_support",
+  "scenarioVersion": 1,
+  "schemaVersion": 1,
+  "status": "prototype_assumptions",
+  "probes": [
+    {"role": "lingyuan", "slot": "e", "skill": "g2_lingyuan_ma", "size": "small", "compareBranch": true},
+    {"role": "lingyuan", "slot": "e", "skill": "g2_lingyuan_mb", "size": "medium", "compareBranch": true},
+    {"role": "lingyuan", "slot": "r", "skill": "g2_lingyuan_ua", "size": "large", "compareBranch": true},
+    {"role": "lingyuan", "slot": "r", "skill": "g2_lingyuan_ub", "size": "large", "compareBranch": true},
+    {"role": "hanze", "slot": "e", "skill": "g2_hanze_ma", "size": "medium", "compareBranch": true},
+    {"role": "hanze", "slot": "e", "skill": "g2_hanze_mb", "size": "large", "compareBranch": true},
+    {"role": "hanze", "slot": "r", "skill": "g2_hanze_ua", "size": "large", "beneficiaries": "both", "compareBranch": true},
+    {"role": "hanze", "slot": "r", "skill": "g2_hanze_ub", "size": "large", "beneficiaries": "both", "compareBranch": true},
+    {"role": "xuanchen", "slot": "e", "skill": "g1_xuanchen_ma", "size": "small", "beneficiaries": "both", "compareBranch": true},
+    {"role": "xuanchen", "slot": "e", "skill": "g1_xuanchen_mb", "size": "medium", "beneficiaries": "both", "compareBranch": true},
+    {"role": "xuanchen", "slot": "r", "skill": "g1_xuanchen_ua", "size": "large", "beneficiaries": "both", "compareBranch": true},
+    {"role": "xuanchen", "slot": "r", "skill": "g1_xuanchen_ub", "size": "medium", "beneficiaries": "both", "compareBranch": true},
+    {"role": "yunsheng", "slot": "e", "skill": "g2_yunsheng_ma", "size": "medium", "beneficiaries": "both", "compareBranch": true},
+    {"role": "yunsheng", "slot": "e", "skill": "g2_yunsheng_mb", "size": "small", "beneficiaries": "both", "compareBranch": true},
+    {"role": "yunsheng", "slot": "r", "skill": "g2_yunsheng_ua", "size": "large", "beneficiaries": "both", "compareBranch": true},
+    {"role": "yunsheng", "slot": "r", "skill": "g2_yunsheng_ub", "size": "large", "beneficiaries": "both", "compareBranch": true}
+  ],
+  "modelNotes": [
+    "条件命中及逐人留场来自樱隙三场景共用原型，供趋势提醒。选点或穿透技能同时覆盖的人数档按场景固定。",
+    "混合技能在同档条件下分别记攻击和支援。敌我同时站入范围的概率留待实局取样。",
+    "第三受援人是施法者，按低承压起点和对应来伤跑。净控扣除队友先控，伤害集火权重仅作用于伤害。",
+    "额外支援保留按个人入账的实际治疗、护盾吸收和减伤；移速范围增益与传送保留为读数缺口。"
+  ]
+}

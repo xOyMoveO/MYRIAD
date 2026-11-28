@@ -72,6 +72,8 @@ public final class CombatRegressionTests {
         register("staff_first_person", StaffCastChecks::run);
         register("lingyuan_first_person", LingyuanHandCueChecks::run);
         register("war_spirit_first_person", WarSpiritHandChecks::run);
+        register("balance_roster_sword_frost", BalanceSwordFrostChecks::run);
+        register("balance_mage_support_113", MageSupportBalanceChecks::run);
         register("roster_delivery", RosterDeliveryChecks::run);
         register("roster_a", RosterAChecks::run);
         register("shuo_pilot", ShuoPilotChecks::run);

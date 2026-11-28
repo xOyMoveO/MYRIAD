@@ -176,7 +176,10 @@ final class RosterBChecks {
             h.assertTrue(FirstGroupGrowth.ATTRIBUTES.stream().allMatch(key->d.firstGroupAttribute(key)==1)&&d.getGold()==200,"Five actual purchase inputs charge exactly 5x360 gold: "+role);
             near(h,p.getAttributeValue(ModAttributes.PHYSICAL_ATTACK),80,"Purchased strength "+role);near(h,p.getAttributeValue(ModAttributes.SPELL_POWER),50,"Purchased wisdom "+role);
             near(h,p.getAttributeValue(ModAttributes.ATTACK_SPEED),.76,"Purchased attack speed "+role);h.assertTrue(Math.abs(p.getAttributeValue(Attributes.MOVEMENT_SPEED)-.1015)<.00001,"Purchased movement speed "+role);
-            near(h,p.getAttributeValue(ModAttributes.PHYSICAL_DEFENSE),50,"Purchased physical defense "+role);near(h,p.getAttributeValue(ModAttributes.MAGIC_RESISTANCE),50,"Purchased magic resistance "+role);near(h,p.getAttributeValue(ModAttributes.COOLDOWN_REDUCTION),3,"Purchased cooldown reduction "+role);
+            near(h,p.getAttributeValue(ModAttributes.PHYSICAL_DEFENSE),50,"Purchased physical defense "+role);near(h,p.getAttributeValue(ModAttributes.MAGIC_RESISTANCE),50,"Purchased magic resistance "+role);
+            near(h,p.getAttributeValue(ModAttributes.COOLDOWN_REDUCTION),0,"Purchased haste leaves legacy percentage unchanged "+role);
+            near(h,FirstGroupGrowth.skillHaste(d.firstGroupAttribute("cooldown")),12.5,"One actual purchase grants haste "+role);
+            h.assertTrue(AbilityRuntime.effectiveCooldownTicks(p,d,180)==160,"One haste purchase shortens a positive cooldown "+role);
             near(h,d.getModMaxHealth(),FirstGroupGrowth.health(role,20),"Gold attributes retain level-twenty health "+role);
             d.setMana(123);d.setGold(4321);d.setFirstGroupAttribute("wisdom",2);verifyPersistence(h,p);
         }

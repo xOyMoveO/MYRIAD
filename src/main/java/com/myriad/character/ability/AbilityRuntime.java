@@ -40,6 +40,10 @@ public final class AbilityRuntime {
 
     public static final int SKILL_HASTE_REFERENCE = 100;
     public static final int MIN_POSITIVE_COOLDOWN = 1;
+    public static final double GUARD15_DAMAGE_MULTIPLIER = .85;
+    public static final double GUARD12_DAMAGE_MULTIPLIER = .88;
+    public static final double MIN_INCOMING_DAMAGE_MULTIPLIER = .3;
+    public static final int PORTAL_TRAVEL_REUSE_TICKS = 40;
 
     public static int effectiveCooldownTicks(int baseTicks, double skillHaste, double legacyReduction) {
         if (baseTicks <= 0) return 0;
@@ -72,6 +76,7 @@ public final class AbilityRuntime {
         public long until,cooldown,last;public int count;public double distance;
         public UUID target;public String tag="";public Vec3 point,lastPosition;
         public final Map<UUID,Long> targets=new HashMap<>();
+        public Set<Integer> castTokens;
     }
     private record Debuff(LivingEntity target,Identifier id,long until){}
     private static Owner owner(ServerPlayer p){
@@ -325,11 +330,12 @@ public final class AbilityRuntime {
     }
     public static double incoming(ServerPlayer p,DamageCalc.Kind kind){
         if(kind==DamageCalc.Kind.TRUE)return 1;var d=PlayerDataProvider.get(p);
-        double scale=d.getBuff("g1_guard15")>0?.85:d.getBuff("g1_guard12")>0?.88:1;
+        double scale=d.getBuff("g1_guard15")>0?GUARD15_DAMAGE_MULTIPLIER:
+                d.getBuff("g1_guard12")>0?GUARD12_DAMAGE_MULTIPLIER:1;
         if(FirstGroupSkills.active(d.getCharacterId()))for(var skill:FirstGroupSkills.candidates(d.getCharacterId()))
             if(d.skillLevel(skill.getId())>0)scale*=skill.incomingMultiplier(context(p,skill));
         scale*=com.myriad.character.skills.rivet.HoldProtocol.incoming(p);
-        return Math.clamp(scale,.3,1);
+        return Math.clamp(scale,MIN_INCOMING_DAMAGE_MULTIPLIER,1);
     }
     public static final class Cast {
         public final ServerPlayer player;public final PlayerData data;public final AbilitySkill skill;public final int rank;
@@ -904,10 +910,10 @@ public final class AbilityRuntime {
                 }
                 for(var ally:allies(from,2)){if(ally.isShiftKeyDown()&&ally.position().distanceToSqr(from)<=2.25&&memory.targets.getOrDefault(ally.getUUID(),0L)<=now()
                         &&PlayerDataProvider.get(ally).getBuff("g1_root")==0&&PlayerDataProvider.get(ally).getBuff("g1_stun")==0&&AbilityTargeting.canStand(ally,to)){
-                    ally.teleportTo(to.x,to.y,to.z);memory.targets.put(ally.getUUID(),now()+40);travel.accept(from,to);}}
+                    ally.teleportTo(to.x,to.y,to.z);memory.targets.put(ally.getUUID(),now()+PORTAL_TRAVEL_REUSE_TICKS);travel.accept(from,to);}}
                 for(var ally:allies(to,2)){if(ally.isShiftKeyDown()&&ally.position().distanceToSqr(to)<=2.25&&memory.targets.getOrDefault(ally.getUUID(),0L)<=now()
                         &&PlayerDataProvider.get(ally).getBuff("g1_root")==0&&PlayerDataProvider.get(ally).getBuff("g1_stun")==0&&AbilityTargeting.canStand(ally,from)){
-                    ally.teleportTo(from.x,from.y,from.z);memory.targets.put(ally.getUUID(),now()+40);travel.accept(to,from);}}
+                    ally.teleportTo(from.x,from.y,from.z);memory.targets.put(ally.getUUID(),now()+PORTAL_TRAVEL_REUSE_TICKS);travel.accept(to,from);}}
                 return true;
             });
             AbilityVisuals.portalAnchor(this,from,to,6);
