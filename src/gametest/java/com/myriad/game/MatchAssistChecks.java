@@ -5,6 +5,7 @@ import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.network.MatchTabPayload;
 import com.myriad.network.NetworkSetup;
 import com.myriad.player.ModShieldSystem;
+import com.myriad.player.PlayerData;
 import com.myriad.player.PlayerDataProvider;
 import io.netty.buffer.Unpooled;
 import java.util.ArrayList;
@@ -25,6 +26,7 @@ final class MatchAssistChecks {
         windows(test);
         packets(test);
         match(test);
+        rewardShares(test);
         test.succeed();
     }
 
@@ -45,17 +47,19 @@ final class MatchAssistChecks {
         ledger.hit(dealer, victim, 150, 2, false);
         ledger.hit(killer, victim, 200, 99, false);
         ledger = MatchProgress.JSON.fromJson(MatchProgress.JSON.toJson(ledger), MatchAssists.class);
-        ledger.death(victim, killer, 100, 200, ignored -> true);
+        var team = List.of(controller, dealer, helper, late, small, other, killer);
+        test.assertTrue(ledger.death(victim, killer, 100, 200, team).equals(List.of(controller, dealer, helper)),
+                "Assists use locked team order and deduplicate contributions");
         test.assertTrue(ledger.total(dealer) == 1 && ledger.total(helper) == 1 && ledger.total(controller) == 1,
                 "Inclusive damage, control and rescue boundaries survive a checkpoint and deduplicate");
         test.assertTrue(ledger.total(small) + ledger.total(other) + ledger.total(late) + ledger.total(killer) == 0,
                 "Subthreshold, another ally, expired rescue and final killer receive no assist");
-        ledger.death(victim, killer, 100, 201, ignored -> true);
+        ledger.death(victim, killer, 100, 201, team);
         ledger.hit(dealer, victim, 201, 10, true);
-        ledger.death(victim, killer, 100, 402, ignored -> true);
+        ledger.death(victim, killer, 100, 402, team);
         ledger.hit(dealer, victim, 405, 10, false);
-        ledger.death(victim, null, 100, 405, ignored -> true);
-        ledger.death(victim, killer, 100, 406, ignored -> true);
+        ledger.death(victim, null, 100, 405, team);
+        ledger.death(victim, killer, 100, 406, team);
         test.assertTrue(ledger.total(dealer) == 1 && ledger.total(controller) == 1,
                 "New life, expired damage/control and unattributed environmental death clear pending credit");
     }
@@ -151,7 +155,7 @@ final class MatchAssistChecks {
                 test.assertTrue(GameManager.get().assists().total(contributor.getUUID()) == 1,
                         "Offline roster retains actual ally heal, shield absorption and applied control");
             test.assertTrue(PlayerDataProvider.get(support).getGold() == gold && PlayerDataProvider.get(support).getXp() == xp,
-                    "Assists pay neither gold nor experience");
+                    "Offline assist shares leave the wallet and XP frozen until rejoin");
         } finally {
             for (var p : players) {
                 server.getPlayerList().getPlayersByUUID().remove(p.getUUID(), p);
@@ -166,4 +170,131 @@ final class MatchAssistChecks {
             ModState.setEnabled(enabled);
         }
     }
+    private static void rewardShares(GameTestHelper test) {
+        var server = test.getLevel().getServer();
+        var byId = server.getPlayerList().getPlayersByUUID();
+        var previous = GameManager.snapshot();
+        var respawns = HeroRespawnSystem.snapshot();
+        boolean enabled = ModState.isEnabled(), training = TrainingMode.isEnabled();
+        var players = new ArrayList<ServerPlayer>();
+        try {
+            ModState.setEnabled(true);
+            TrainingMode.setEnabled(false);
+            var killer = player(test, players, "rivet");
+            var first = player(test, players, "yunsheng");
+            var second = player(test, players, "qingluo");
+            var soloVictim = player(test, players, "shuo");
+            var oneVictim = player(test, players, "xuanchen");
+            var twoVictim = player(test, players, "tianxing");
+            var checkpoint = MatchProgress.JSON.toJsonTree(new GameManager()).getAsJsonObject();
+            UUID round = UUID.randomUUID();
+            checkpoint.addProperty("queueRound", round.toString());
+            checkpoint.addProperty("phase", "PLAYING");
+            checkpoint.addProperty("matchStartTime", test.getLevel().getGameTime());
+            for (var player : players) {
+                var team = List.of(killer, first, second).contains(player) ? Faction.GUARDIAN : Faction.DESTRUCTION;
+                var data = PlayerDataProvider.get(player);
+                data.setFaction(team);
+                data.setLevel(5);
+                data.beginQueueRound(round);
+                data.grantOpeningPurse();
+                checkpoint.getAsJsonObject("factions").addProperty(player.getUUID().toString(), team.getName());
+                checkpoint.getAsJsonObject("charPicks").addProperty(data.getCharacterId(), player.getUUID().toString());
+                checkpoint.getAsJsonArray("queueRoster").add(player.getUUID().toString());
+                byId.put(player.getUUID(), player);
+            }
+            GameManager.restore(checkpoint, server);
+            var firstWallet = PlayerDataProvider.get(first);
+            var secondWallet = PlayerDataProvider.get(second);
+            var killerWallet = PlayerDataProvider.get(killer);
+
+            heroDeath(soloVictim, killer);
+            test.assertTrue(killerWallet.getGold() == 598 && killerWallet.getXp() == 30 && firstWallet.getGold() == 500
+                    && firstWallet.getXp() == 0 && secondWallet.getGold() == 500 && secondWallet.getXp() == 0,
+                    "Zero assists retain both pools and pay the killer the normal 98 gold and 30 XP");
+            System.out.printf("[MYRIAD-ECONOMY] assists=0 killer=%d/%d recipients=%d/%d,%d/%d%n",
+                    killerWallet.getGold(), killerWallet.getXp(), firstWallet.getGold(), firstWallet.getXp(),
+                    secondWallet.getGold(), secondWallet.getXp());
+
+            MatchAssists.healthLost(oneVictim, killer, 1);
+            killer.setHealth(killer.getMaxHealth() - 2);
+            AbilityRuntime.context(first, FirstGroupSkills.node("yunsheng", 2)).heal(killer, 2);
+            heroDeath(oneVictim, killer);
+            test.assertTrue(killerWallet.getGold() == 696 && killerWallet.getXp() == 60 && firstWallet.getGold() == 601
+                    && firstWallet.getXp() == 51 && secondWallet.getGold() == 500 && secondWallet.getXp() == 0,
+                    "One effective rescue earns the entire assist pool and does not change the killer's reward");
+            System.out.printf("[MYRIAD-ECONOMY] assists=1 killer=%d/%d recipient=%d/%d%n",
+                    killerWallet.getGold(), killerWallet.getXp(), firstWallet.getGold(), firstWallet.getXp());
+
+            MatchAssists.controlled(second, twoVictim);
+            MatchAssists.controlled(first, twoVictim);
+            MatchAssists.healthLost(first, twoVictim, twoVictim.getMaxHealth() * .10f);
+            GameManager.get().onPlayerQuit(first);
+            byId.remove(first.getUUID(), first);
+            heroDeath(twoVictim, killer);
+            test.assertTrue(firstWallet.getGold() == 601 && firstWallet.getXp() == 51 && secondWallet.getGold() == 550
+                    && secondWallet.getXp() == 25 && killerWallet.getGold() == 794 && killerWallet.getXp() == 90,
+                    "Two eligible contributors split both pools, and a disconnected contributor remains frozen");
+            test.assertTrue(GameManager.get().assists().total(first.getUUID()) == 2
+                    && GameManager.get().assists().total(second.getUUID()) == 1,
+                    "Wallet shares and KDA reuse one deduplicated eligibility list");
+            var pendingCheckpoint = GameManager.snapshot();
+            GameManager.restore(pendingCheckpoint, server);
+            byId.put(first.getUUID(), first);
+            GameManager.get().onPlayerJoin(first);
+            test.assertTrue(firstWallet.getGold() == 652 && firstWallet.getXp() == 77,
+                    "The first locked seat receives the extra one gold and one XP on same-round reconnect");
+            // Reload the earlier match checkpoint with a saved player receipt to exercise adjacent saves.
+            var savedWallet = com.mojang.serialization.JsonOps.INSTANCE;
+            var encoded = PlayerData.CODEC.encodeStart(savedWallet, firstWallet).getOrThrow();
+            var restoredWallet = PlayerData.CODEC.parse(savedWallet, encoded).getOrThrow();
+            PlayerDataProvider.set(first, restoredWallet);
+            GameManager.restore(pendingCheckpoint, server);
+            GameManager.get().onPlayerJoin(first);
+            test.assertTrue(restoredWallet.getGold() == 652 && restoredWallet.getXp() == 77,
+                    "The persisted player receipt rejects double payment after a checkpoint and repeat join");
+            System.out.printf("[MYRIAD-ECONOMY] assists=2 killer=%d/%d lockedFirst=%d/%d lockedSecond=%d/%d%n",
+                    killerWallet.getGold(), killerWallet.getXp(), restoredWallet.getGold(), restoredWallet.getXp(),
+                    secondWallet.getGold(), secondWallet.getXp());
+
+            restoredWallet.addGold(1000);
+            restoredWallet.setLevel(8);
+            int goldWithThree = MatchBalance.farmReward(soloVictim, 100, false);
+            int xpWithThree = MatchBalance.farmReward(soloVictim, 100, true);
+            GameManager.get().onPlayerQuit(first);
+            byId.remove(first.getUUID(), first);
+            test.assertTrue(goldWithThree > 100 && xpWithThree == 115
+                    && MatchBalance.farmReward(soloVictim, 100, false) == goldWithThree
+                    && MatchBalance.farmReward(soloVictim, 100, true) == xpWithThree,
+                    "Three locked seats retain the same averages when the richest and highest-level hero leaves");
+            byId.put(first.getUUID(), first);
+            GameManager.get().onPlayerJoin(first);
+            test.assertTrue(MatchBalance.farmReward(soloVictim, 100, false) == goldWithThree
+                    && MatchBalance.farmReward(soloVictim, 100, true) == xpWithThree,
+                    "Rejoining the three-seat roster retains the frozen income and level");
+            System.out.printf("[MYRIAD-ECONOMY] 3v3 catch-up base100 before/after/rejoin gold=%d xp=%d%n", goldWithThree, xpWithThree);
+
+            GameManager.get().resetToLobby(server, false);
+            var reset = GameManager.snapshot().getAsJsonObject();
+            test.assertTrue(reset.getAsJsonObject("pendingAssistRewards").isEmpty()
+                    && reset.getAsJsonArray("queueRoster").isEmpty()
+                    && reset.getAsJsonObject("offlineStats").isEmpty(),
+                    "Round reset clears pending shares, locked order, and frozen seat state");
+        } finally {
+            for (var fixture : players) {
+                byId.remove(fixture.getUUID(), fixture);
+                com.myriad.combat.DeathRecaps.forget(fixture.getUUID());
+                fixture.discard();
+            }
+            HeroRespawnSystem.restore(respawns);
+            GameManager.restore(previous, server);
+            TrainingMode.setEnabled(training);
+            ModState.setEnabled(enabled);
+        }
+    }
+
+    private static void heroDeath(ServerPlayer victim, ServerPlayer killer) {
+        PlayerDataProvider.onLivingDeath(victim, victim.damageSources().playerAttack(killer));
+    }
+
 }

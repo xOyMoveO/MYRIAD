@@ -67,6 +67,7 @@ public final class ClientDataHolder {
 
     /** Connection-local snapshots must never carry rendering rules into another world/server. */
     public static void resetConnection() {
+        UiFeedback.resetShopAccess();
         MinimapClientState.update(null);
         LuoxiaPoseClient.reset();
         MeleeAttackBuffer.reset();

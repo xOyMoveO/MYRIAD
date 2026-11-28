@@ -100,9 +100,8 @@ public final class TacticalSupplySystem {
     /** 使用对局金币购买补给；视野饰品互斥，购买时会自动替换。 */
     public static boolean buy(ServerPlayer player, String id) {
         PlayerData data = PlayerDataProvider.get(player);
-        if (data == null || (GameManager.get() == null && !TrainingMode.isEnabled(player))
-                || !BaseRules.canShop(player)) {
-            if (data != null && ModState.isEnabled() && !BaseRules.canShop(player))
+        if (data == null || !BaseRules.canBuySupplies(player)) {
+            if (data != null && ModState.isEnabled())
                 player.sendSystemMessage(Component.translatable("message.myriad.shop_base_only"));
             return false;
         }

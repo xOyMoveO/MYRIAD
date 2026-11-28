@@ -14,5 +14,22 @@ public record UiFeedbackPayload(int kind) implements CustomPacketPayload {
     @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     public static void levelUp(ServerPlayer p) { Packets.sendToPlayer(p,new UiFeedbackPayload(0)); }
     public static void purchase(ServerPlayer p, boolean success) { Packets.sendToPlayer(p,new UiFeedbackPayload(success ? 1 : 2)); }
-    public static void shopAccess(ServerPlayer p, boolean allowed) { Packets.sendToPlayer(p,new UiFeedbackPayload(allowed ? 3 : 4)); }
+    public static void shopAccess(ServerPlayer p, ShopAccess access) {
+        Packets.sendToPlayer(p, new UiFeedbackPayload(access.kind()));
+    }
+
+    public record ShopAccess(boolean attributes, boolean supplies, boolean equipment) {
+        private static final int FIRST_KIND = 7;
+        public static final ShopAccess NONE = new ShopAccess(false, false, false);
+
+        public int kind() {
+            return FIRST_KIND + (attributes ? 1 : 0) + (supplies ? 2 : 0) + (equipment ? 4 : 0);
+        }
+
+        public static ShopAccess fromKind(int kind) {
+            int flags = kind - FIRST_KIND;
+            return flags < 0 || flags > 7 ? null
+                    : new ShopAccess((flags & 1) != 0, (flags & 2) != 0, (flags & 4) != 0);
+        }
+    }
 }

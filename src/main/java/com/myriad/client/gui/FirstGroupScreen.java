@@ -123,12 +123,12 @@ public final class FirstGroupScreen extends Screen {
         if (id.startsWith(ATTRIBUTE_PREFIX)) {
             String key = id.substring(ATTRIBUTE_PREFIX.length());
             if (!FirstGroupGrowth.ATTRIBUTES.contains(key)) return "message.myriad.g1.invalid_skill";
-            if (!UiFeedback.shopAllowed) return "message.myriad.shop_base_only";
+            if (!UiFeedback.shopAccess().attributes()) return "screen.myriad.shop.unavailable";
             return FirstGroupGrowth.purchaseError(CharacterType.byId(data.characterId()), key,
                     data.buffs().getOrDefault(id, 0), data.gold(), data.training() && data.noGoldCost());
         }
         if (TacticalSupplySystem.isSupply(id)) {
-            if (!UiFeedback.shopAllowed) return "message.myriad.shop_base_only";
+            if (!UiFeedback.shopAccess().supplies()) return "message.myriad.shop_base_only";
             return !(data.training() && data.noGoldCost()) && data.gold() < TacticalSupplySystem.supplyPrice(id)
                     ? "message.myriad.equip_no_gold" : null;
         }

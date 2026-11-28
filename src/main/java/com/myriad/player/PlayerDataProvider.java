@@ -1921,9 +1921,6 @@ public final class PlayerDataProvider {
             if (manager != null) {
                 manager.recordHeroDeath(player, credited);
             }
-            if (manager != null && credited instanceof ServerPlayer killer) {
-                manager.onHeroKill(killer, player);
-            }
             if (credited instanceof ServerPlayer killer) {
 
                 if (killer != player && killer.isAlive() && !killer.isSpectator()

@@ -107,7 +107,8 @@ public final class MatchAssists {
         life.rescues.add(new Rescue(owner, ally, now));
     }
 
-    void death(UUID victim, UUID killer, float maxHealth, long now, java.util.function.Predicate<UUID> sameTeam) {
+    List<UUID> death(UUID victim, UUID killer, float maxHealth, long now, List<UUID> killerTeam) {
+        List<UUID> credited = List.of();
         Life life = lives.get(victim);
         if (life != null && killer != null) {
             life.prune(now);
@@ -118,9 +119,11 @@ public final class MatchAssists {
             for (Rescue rescue : life.rescues)
                 if (rescue.protectedAlly().equals(killer)) eligible.add(rescue.owner());
             eligible.remove(killer);
-            for (UUID owner : eligible) if (sameTeam.test(owner)) totals.merge(owner, 1, Integer::sum);
+            credited = killerTeam.stream().filter(eligible::contains).toList();
+            for (UUID owner : credited) totals.merge(owner, 1, Integer::sum);
         }
         newLife(victim);
+        return credited;
     }
 
     void newLife(UUID player) {

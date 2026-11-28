@@ -22,6 +22,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.level.GameType;
 
 import com.myriad.character.CharacterType;
+import com.myriad.player.LevelSystem;
 import com.myriad.player.PlayerData;
 import com.myriad.player.PlayerDataProvider;
 
@@ -180,6 +181,9 @@ public class GameManager {
                 queueRound, factions.size(), outcome, time - matchStartTime, firstTowerTick, crabKillTicks, crystalTick, economySamples);
     }
     private final Map<UUID, OfflineStats> offlineStats = new HashMap<>();
+    private List<UUID> legacyEconomySeats;
+    private record PendingAssist(UUID receipt, int gold, int xp) {}
+    private final Map<UUID, List<PendingAssist>> pendingAssistRewards = new HashMap<>();
     private long pickToken;
     private transient boolean checkDraftPool = true;
     private int pickIndex = 0;
@@ -215,14 +219,18 @@ public class GameManager {
     }
 
     public static com.google.gson.JsonElement snapshot() {
-        if (instance != null && instance.server != null && instance.isQueuedMatch()) {
-            for (ServerPlayer player : instance.matchPlayers()) instance.rememberPlayerStats(player);
+        if (instance != null && instance.server != null
+                && (instance.phase == Phase.PLAYING || instance.phase == Phase.ENDED)) {
+            for (ServerPlayer player : instance.matchPlayers()) {
+                if (instance.factionOf(player) != null) instance.rememberPlayerStats(player);
+            }
         }
         return MatchProgress.JSON.toJsonTree(instance);
     }
     public static void restore(com.google.gson.JsonElement value, MinecraftServer server) {
         instance = MatchProgress.JSON.fromJson(value, GameManager.class);
         instance.setServer(server);
+        if (instance.phase == Phase.PLAYING) instance.economyRoster();
     }
 
     public Phase getPhase() {
@@ -329,6 +337,43 @@ public class GameManager {
         return server.getPlayerList().getPlayers().stream().filter(this::countsForMatch).toList();
     }
 
+    private List<UUID> economyRoster() {
+        if (isQueuedMatch()) return queueRoster;
+        // Older world checkpoints did not have a queue roster.
+        if (legacyEconomySeats == null) legacyEconomySeats = factions.keySet().stream().sorted().toList();
+        return legacyEconomySeats;
+    }
+
+    double farmBonus(ServerPlayer player, boolean xp) {
+        Faction side = factions.get(player.getUUID());
+        if (side == null || server == null) return 0;
+        var roster = economyRoster();
+        if (!roster.contains(player.getUUID())) return 0;
+        int ownSeats = 0, enemySeats = 0;
+        double ownIncome = 0, enemyIncome = 0, enemyLevels = 0;
+        for (UUID id : roster) {
+            Faction team = factions.get(id);
+            if (team == null) continue;
+            ServerPlayer online = server.getPlayerList().getPlayer(id);
+            PlayerData data = online == null ? null : PlayerDataProvider.get(online);
+            OfflineStats saved = offlineStats.get(id);
+            int income = data != null && data.getCharacterId() != null ? data.getMatchGoldEarned()
+                    : saved == null ? PlayerData.OPENING_PURSE_GOLD : saved.gold();
+            int level = data != null && data.getCharacterId() != null ? data.getLevel() : saved == null ? 1 : saved.level();
+            if (team == side) {
+                ownSeats++;
+                ownIncome += income;
+            } else {
+                enemySeats++;
+                enemyIncome += income;
+                enemyLevels += level;
+            }
+        }
+        if (ownSeats == 0 || enemySeats == 0) return 0;
+        return xp ? MatchBalance.xpCatchUp(PlayerDataProvider.get(player).getLevel(), enemyLevels / enemySeats)
+                : MatchBalance.goldCatchUp(ownIncome / ownSeats, enemyIncome / enemySeats);
+    }
+
     public MatchAssists assists() { return assists; }
     public int killsOf(UUID id) { return matchKills.getOrDefault(id, 0); }
     public int killsOf(ServerPlayer player) { return killsOf(player.getUUID()); }
@@ -395,7 +440,10 @@ public class GameManager {
                 }
                 data.setFaction(faction);
                 if (!locked.isEmpty() && !locked.equals(data.getCharacterId())) applyPick(player, CharacterType.byId(locked));
-                if (phase == Phase.PLAYING) data.grantOpeningPurse();
+                if (phase == Phase.PLAYING) {
+                    data.grantOpeningPurse();
+                    if (ModState.isEnabled()) claimOfflineAssists(player, data);
+                }
             }
             data.setFaction(faction);
             com.myriad.player.PlayerNames.refresh(player);
@@ -419,9 +467,9 @@ public class GameManager {
     }
 
     public void onPlayerQuit(ServerPlayer player) {
-        if (isQueuedMatch() && isParticipant(player.getUUID())) {
+        if (phase == Phase.PLAYING && isParticipant(player.getUUID())) {
             rememberPlayerStats(player);
-            if (phase == Phase.PLAYING)
+            if (isQueuedMatch())
                 earlyRemake.disconnect(player.getUUID(), server.overworld().getGameTime(), matchStartTime);
         }
         // Keep the player's faction, character reservation and K/D for reconnecting.
@@ -730,7 +778,7 @@ public class GameManager {
         for (ServerPlayer player : matchPlayers()) {
             if (factionOf(player) == null) continue;
             if (PlayerDataProvider.get(player) == null) continue;
-            awards.put(player, GlobalBalance.goldIncome(MatchBalance.farmReward(player, PASSIVE_GOLD_BASE, false)));
+            awards.put(player, MatchBalance.passiveGoldReward(player));
         }
         for (var award : awards.entrySet()) {
             ServerPlayer player = award.getKey();
@@ -791,6 +839,7 @@ public class GameManager {
         // 无选角顺序的极端开局仍沿用直接就位。
         if (pickOrder.isEmpty()) LaneSystem.teleportPlayersToBases(server.overworld(), players);
         for (ServerPlayer player : players) PlayerDataProvider.get(player).grantOpeningPurse();
+        economyRoster();
         // 地图编辑和训练时玩家可能处于创造/旁观模式；正式对局统一使用冒险模式，
         // 既允许战斗与物品交互，又避免玩家破坏战场方块。
         for (ServerPlayer player : players) {
@@ -964,22 +1013,14 @@ public class GameManager {
     }
 
     /** 英雄击杀：金币、经验与连杀赏金，保证双方发生正面冲突时有明确收益。 */
-    public void onHeroKill(ServerPlayer killer, ServerPlayer victim) {
-        if (phase != Phase.PLAYING || killer == victim || !countsForMatch(killer) || !countsForMatch(victim)
-                || factionOf(killer) == null || factionOf(killer) == factionOf(victim)) {
-            return;
-        }
+    private void settleHeroKill(ServerPlayer killer, ServerPlayer victim) {
         int victimStreak = killStreaks.getOrDefault(victim.getUUID(), 0);
         int priorDeaths=com.myriad.player.EntityState.data(victim).getIntOr("myriad_deaths_without_kill",0);
         int gap=PlayerDataProvider.get(victim).getLevel()-PlayerDataProvider.get(killer).getLevel();
-        int reward = GlobalBalance.goldIncome(MatchBalance.killReward(false,MatchBalance.elapsed(killer),victimStreak,priorDeaths,gap));
-        com.myriad.player.PlayerData killerData = PlayerDataProvider.get(killer);
-        if (killerData != null) {
-            killerData.addGold(reward);
-            com.myriad.player.LevelSystem.addXp(killer, killerData,
-                    MatchBalance.killReward(true,MatchBalance.elapsed(killer),victimStreak,priorDeaths,gap));
-            PlayerDataProvider.syncToClient(killer);
-        }
+        long elapsed = MatchBalance.elapsed(killer);
+        int gold = GlobalBalance.goldIncome(MatchBalance.killReward(false, elapsed, victimStreak, priorDeaths, gap));
+        int xp = MatchBalance.killReward(true, elapsed, victimStreak, priorDeaths, gap);
+        giveHeroReward(killer, PlayerDataProvider.get(killer), gold, xp);
         killStreaks.put(killer.getUUID(), killStreaks.getOrDefault(killer.getUUID(), 0) + 1);
         killStreaks.remove(victim.getUUID());
         com.myriad.player.EntityState.data(killer).putInt("myriad_deaths_without_kill",0);
@@ -999,23 +1040,58 @@ public class GameManager {
         }
     }
 
-    /** 记录一次实际发生的英雄死亡；击杀奖励与“不扣命”效果不影响 K/D 统计。 */
+    /** Records and pays a single hero death from the same qualifying assist list. */
     public void recordHeroDeath(ServerPlayer victim, net.minecraft.world.entity.Entity killerEntity) {
         if (phase != Phase.PLAYING || !countsForMatch(victim) || factionOf(victim) == null) return;
+        ServerPlayer killer = killerEntity instanceof ServerPlayer hero && hero != victim && countsForMatch(hero)
+                && factionOf(hero) != null && factionOf(hero) != factionOf(victim) ? hero : null;
+        List<UUID> eligible = List.of();
         if (isQueuedMatch()) {
-            UUID killerId = killerEntity instanceof ServerPlayer hero && countsForMatch(hero)
-                    && factionOf(hero) != null && factionOf(hero) != factionOf(victim) ? hero.getUUID() : null;
-            assists.death(victim.getUUID(), killerId, victim.getMaxHealth(), victim.level().getGameTime(),
-                    id -> factions.get(id) != null && factions.get(id) == factions.get(killerId));
+            List<UUID> team = killer == null ? List.of()
+                    : queueRoster.stream().filter(id -> factions.get(id) == factionOf(killer)).toList();
+            eligible = assists.death(victim.getUUID(), killer == null ? null : killer.getUUID(),
+                    victim.getMaxHealth(), victim.level().getGameTime(), team);
         }
         matchDeaths.merge(victim.getUUID(), 1, Integer::sum);
         multiKills.remove(victim.getUUID());
         com.myriad.player.PlayerNames.refresh(victim);
-        if (killerEntity instanceof ServerPlayer killer && killer != victim && countsForMatch(killer)
-                && factionOf(killer) != null && factionOf(killer) != factionOf(victim)) {
+        if (killer != null) {
             matchKills.merge(killer.getUUID(), 1, Integer::sum);
             com.myriad.player.PlayerNames.refresh(killer);
+            settleHeroKill(killer, victim);
+            settleAssists(eligible);
         }
+    }
+
+    private void settleAssists(List<UUID> eligible) {
+        for (int i = 0; i < eligible.size(); i++) {
+            UUID id = eligible.get(i);
+            int gold = MatchBalance.assistShare(MatchBalance.ASSIST_GOLD_POOL, eligible.size(), i);
+            int xp = MatchBalance.assistShare(MatchBalance.ASSIST_XP_POOL, eligible.size(), i);
+            if (gold == 0 && xp == 0) continue;
+            ServerPlayer online = server.getPlayerList().getPlayer(id);
+            if (online == null) {
+                pendingAssistRewards.computeIfAbsent(id, ignored -> new ArrayList<>())
+                        .add(new PendingAssist(UUID.randomUUID(), gold, xp));
+            } else {
+                giveHeroReward(online, PlayerDataProvider.get(online), gold, xp);
+            }
+        }
+    }
+
+    private void claimOfflineAssists(ServerPlayer player, PlayerData data) {
+        for (var reward : pendingAssistRewards.getOrDefault(player.getUUID(), List.of())) {
+            // The player save and match checkpoint are separate. Retain the entitlement
+            // for the round, and store its receipt together with the credited wallet and XP.
+            if (data.claimOfflineAssist(reward.receipt()))
+                giveHeroReward(player, data, reward.gold(), reward.xp());
+        }
+    }
+
+    private static void giveHeroReward(ServerPlayer player, PlayerData data, int gold, int xp) {
+        if (gold > 0) data.addGold(gold);
+        if (xp > 0) LevelSystem.addXp(player, data, xp);
+        else if (gold > 0) PlayerDataProvider.syncToClient(player);
     }
 
     void resetMatchObjectives() {
@@ -1374,6 +1450,8 @@ public class GameManager {
         queueRound = null;
         earlyRemake = new EarlyRemake();
         offlineStats.clear();
+        legacyEconomySeats = null;
+        pendingAssistRewards.clear();
         pickToken = 0;
         for (ServerPlayer player : participants) {
             pendingRoundReset.remove(player.getUUID());
