@@ -30,7 +30,7 @@ public final class InkProtectionArraySkill extends AbilitySkill {
             "warningSeconds", WARNING_TICKS / 20.0,
             "fieldSeconds", FIELD_TICKS / 20.0,
             "shieldSeconds", SHIELD_TICKS / 20.0,
-            "guardPercent", Math.round(100 * (1 - AbilityRuntime.GUARD12_DAMAGE_MULTIPLIER)),
+            "guardPercent", Math.round(100 * (1 - AbilityRuntime.GUARD_12_DAMAGE_TAKEN)),
             "slowPercent", Math.round(100 * SLOW));
     }
 

@@ -14,6 +14,10 @@ import java.util.List;
 
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class FlameBurstSkill extends AbilitySkill {
+    public static final int WINDUP_TICKS = 13;
+    public static final float WINDUP_MOVE_RATE = .25f;
+    public static final double HP_STEPS = 10, BONUS_PER_STEP = .02, MAX_BONUS = .16;
+
     private static final AbilityDamageFormula DAMAGE =
             AbilityDamageFormula.physicalFromSpell(110, 31.25f, 1.1f, .5f);
 
@@ -25,12 +29,12 @@ public final class FlameBurstSkill extends AbilitySkill {
     public FlameBurstSkill(Definition definition){super(definition);}
     @Override public boolean hasOwnCastSound(){return true;}
     @Override public void present(Cast c){
-        c.whileActive(13,age->{if(!AbilityRuntime.channeling(c.player))return false;
+        c.whileActive(WINDUP_TICKS,age->{if(!AbilityRuntime.channeling(c.player))return false;
             if(age%3==0){com.myriad.character.ability.AbilityVisuals.emit(c,com.myriad.character.ability.AbilityVfxGeometry.CHARGE,
                     c.player.position().add(0,.04,0),c.player.position().add(c.forward(1)),RADIUS,0,4,false);
                 com.myriad.character.ability.AbilityVisuals.emit(c,com.myriad.character.ability.AbilityVfxGeometry.SEAL,
                     c.player.position().add(0,.055,0),c.player.position().add(c.forward(1)),RADIUS,359,4,false);}return true;});
     }
-    @Override public void release(Cast c){FlameMajorAudio.burstCharge(c);FlameSkillPresentation.mobileBurst(c,()->{FlameMajorAudio.burstRelease(c);double lost=1-c.player.getHealth()/c.player.getMaxHealth();double bonus=Math.min(.16,Math.floor(lost*10)*.02);
+    @Override public void release(Cast c){FlameMajorAudio.burstCharge(c);FlameSkillPresentation.mobileBurst(c,()->{FlameMajorAudio.burstRelease(c);double lost=1-c.player.getHealth()/c.player.getMaxHealth();double bonus=Math.min(MAX_BONUS,Math.floor(lost * HP_STEPS)*BONUS_PER_STEP);
  c.area(c.player.position(),RADIUS,(float)(DAMAGE.value(c)*(1+bonus)),DAMAGE.kind());});}
 }

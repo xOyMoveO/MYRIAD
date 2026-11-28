@@ -14,6 +14,10 @@ import java.util.List;
 
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class ThousandWindDashSkill extends AbilitySkill {
+    public static final int WINDUP_TICKS = 10, DASH_TICKS = 14, SLOW_TICKS = 30;
+    public static final double RANGE = 12, PATH_RADIUS = 1.2, IMPACT_RADIUS = 2.5;
+    public static final float SLOW_RATE = .30f;
+
     private static final AbilityDamageFormula DAMAGE =
             AbilityDamageFormula.physicalFromSpell(160, 81.25f, 1.2f, .8f);
 
@@ -23,9 +27,12 @@ public final class ThousandWindDashSkill extends AbilitySkill {
 
     public ThousandWindDashSkill(Definition definition){super(definition);}
     @Override public void windupPose(Cast c,boolean winding){WindCastCues.windup(c,winding);}
-    @Override public void dashPose(Cast c,DashPose phase,Vec3 direction){WindCastCues.dash(c,phase,direction);}
-    @Override public void present(Cast c){com.myriad.character.ability.AbilityVisuals.charging(c,10,12,.35);}
+    @Override public void dashPose(Cast c,DashPose phase,Vec3 direction){
+        WindWalkingBladeSkill.trackSkillDash(c,phase);
+        WindCastCues.dash(c,phase,direction);
+    }
+    @Override public void present(Cast c){com.myriad.character.ability.AbilityVisuals.charging(c,WINDUP_TICKS,RANGE,.35);}
     @Override public boolean canRelease(Cast c){return c.data.getBuff("g1_root")==0;}
- @Override public void release(Cast c){c.windup(10,0,()->c.actionDash(c.forward(12),14,1.2,(t,first)->{},
- ()->{Vec3 at=c.player.position();c.area(at,2.5,DAMAGE.value(c),DAMAGE.kind());for(var t:c.enemies(at,2.5))c.slow(t,.3f,30);},true,true));}
+ @Override public void release(Cast c){c.windup(WINDUP_TICKS,0,()->c.actionDash(c.forward(RANGE),DASH_TICKS,PATH_RADIUS,(t,first)->{},
+ ()->{Vec3 at=c.player.position();c.area(at,IMPACT_RADIUS,DAMAGE.value(c),DAMAGE.kind());for(var t:c.enemies(at,IMPACT_RADIUS))c.slow(t,SLOW_RATE,SLOW_TICKS);},true,true));}
 }

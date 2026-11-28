@@ -40,8 +40,8 @@ public final class AbilityRuntime {
 
     public static final int SKILL_HASTE_REFERENCE = 100;
     public static final int MIN_POSITIVE_COOLDOWN = 1;
-    public static final double GUARD15_DAMAGE_MULTIPLIER = .85;
-    public static final double GUARD12_DAMAGE_MULTIPLIER = .88;
+    public static final double GUARD_15_DAMAGE_TAKEN = .85;
+    public static final double GUARD_12_DAMAGE_TAKEN = .88;
     public static final double MIN_INCOMING_DAMAGE_MULTIPLIER = .3;
     public static final int PORTAL_TRAVEL_REUSE_TICKS = 40;
 
@@ -330,8 +330,8 @@ public final class AbilityRuntime {
     }
     public static double incoming(ServerPlayer p,DamageCalc.Kind kind){
         if(kind==DamageCalc.Kind.TRUE)return 1;var d=PlayerDataProvider.get(p);
-        double scale=d.getBuff("g1_guard15")>0?GUARD15_DAMAGE_MULTIPLIER:
-                d.getBuff("g1_guard12")>0?GUARD12_DAMAGE_MULTIPLIER:1;
+        double scale=d.getBuff("g1_guard15")>0?GUARD_15_DAMAGE_TAKEN:
+                d.getBuff("g1_guard12")>0?GUARD_12_DAMAGE_TAKEN:1;
         if(FirstGroupSkills.active(d.getCharacterId()))for(var skill:FirstGroupSkills.candidates(d.getCharacterId()))
             if(d.skillLevel(skill.getId())>0)scale*=skill.incomingMultiplier(context(p,skill));
         scale*=com.myriad.character.skills.rivet.HoldProtocol.incoming(p);

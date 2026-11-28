@@ -93,7 +93,7 @@ final class XuanchenYunshengSkillEffects {
                 ticks(effects, skill, "shield_duration", InkProtectionArraySkill.SHIELD_TICKS, "SHIELD_TICKS", "开阵一次性授盾");
                 ticks(effects, skill, "refresh_interval", InkProtectionArraySkill.REFRESH_TICKS, "REFRESH_TICKS", "开阵后按驻留读取内外目标");
                 ticks(effects, skill, "guard_duration", InkProtectionArraySkill.GUARD_TICKS, "GUARD_TICKS", "每轮驻留刷新，离场后余时按最近刷新计算");
-                guard(effects, skill, AbilityRuntime.GUARD12_DAMAGE_MULTIPLIER, "GUARD12_DAMAGE_MULTIPLIER");
+                guard(effects, skill, AbilityRuntime.GUARD_12_DAMAGE_TAKEN, "GUARD_12_DAMAGE_TAKEN");
                 slow(effects, skill, InkProtectionArraySkill.SLOW, InkProtectionArraySkill.SLOW_TICKS);
             }
             case HeavenCoverArraySkill ignored -> {
@@ -104,7 +104,7 @@ final class XuanchenYunshengSkillEffects {
                 ticks(effects, skill, "pulse_interval", HeavenCoverArraySkill.PULSE_TICKS, "PULSE_TICKS", "首跳间隔一周期，末次到场地有效期");
                 ticks(effects, skill, "refresh_interval", HeavenCoverArraySkill.REFRESH_TICKS, "REFRESH_TICKS", "展开后按实际驻留刷新减伤和移速");
                 ticks(effects, skill, "guard_duration", HeavenCoverArraySkill.GUARD_TICKS, "GUARD_TICKS", "每轮驻留刷新，离场后短余时");
-                guard(effects, skill, AbilityRuntime.GUARD15_DAMAGE_MULTIPLIER, "GUARD15_DAMAGE_MULTIPLIER");
+                guard(effects, skill, AbilityRuntime.GUARD_15_DAMAGE_TAKEN, "GUARD_15_DAMAGE_TAKEN");
                 slow(effects, skill, HeavenCoverArraySkill.SLOW, HeavenCoverArraySkill.SLOW_TICKS);
             }
             case SealedBoundarySkill ignored -> {

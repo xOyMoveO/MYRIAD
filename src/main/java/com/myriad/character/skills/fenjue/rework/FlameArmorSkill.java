@@ -14,6 +14,10 @@ import java.util.List;
 
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class FlameArmorSkill extends AbilitySkill {
+    public static final int SHIELD_TICKS = 100, PULSE_TICKS = 20;
+    public static final double RADIUS = 3;
+    public static final int LAST_PULSE_TICK = SHIELD_TICKS - PULSE_TICKS;
+
     private static final SupportAmount SHIELD = new SupportAmount(SupportEffect.SHIELD, SupportScaling.TOTAL_SPELL, 180, 87.5f, .8f);
 
     @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(SHIELD); }
@@ -27,8 +31,8 @@ public final class FlameArmorSkill extends AbilitySkill {
 
     public FlameArmorSkill(Definition definition){super(definition);}
     @Override public boolean hasOwnCastSound(){return true;}
-    @Override public void present(Cast c){com.myriad.character.ability.AbilityVisuals.seal(c,c.player.position(),3,false);}
+    @Override public void present(Cast c){com.myriad.character.ability.AbilityVisuals.seal(c,c.player.position(),RADIUS,false);}
     @Override public void release(Cast c){FlameMajorAudio.armor(c);FlameSkillPresentation.play(c,com.myriad.network.FlameSkillViewPayload.ARMOR,18);
- c.shield(c.player,SHIELD.value(c),100);c.buff(getId(),100);
- c.repeat(100,20,i->{if(c.ownShield(c.player))c.pulse(c.player.position(),3,DAMAGE.value(c),DAMAGE.kind());});}
+ c.shield(c.player,SHIELD.value(c),SHIELD_TICKS);c.buff(getId(),SHIELD_TICKS);
+ c.repeat(LAST_PULSE_TICK,PULSE_TICKS,i->{if(c.ownShield(c.player))c.pulse(c.player.position(),RADIUS,DAMAGE.value(c),DAMAGE.kind());});}
 }

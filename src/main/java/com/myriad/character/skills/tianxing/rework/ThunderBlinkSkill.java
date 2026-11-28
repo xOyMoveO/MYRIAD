@@ -15,7 +15,8 @@ import java.util.List;
 
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class ThunderBlinkSkill extends AbilitySkill {
-    private static final double HORIZONTAL = 6, RISE = 2.5, DROP = 4, FOOT_GAP = .025;
+    public static final double HORIZONTAL = 6, RISE = 2.5, DROP = 4, IMPACT_RADIUS = 2.5;
+    private static final double FOOT_GAP = .025;
     private static final AbilityDamageFormula DAMAGE =
             AbilityDamageFormula.physicalFromSpell(40, 15, .45f, .5f);
 
@@ -94,5 +95,5 @@ public final class ThunderBlinkSkill extends AbilitySkill {
     }
  @Override public void release(Cast c){ThunderSkillPresentation.play(c,com.myriad.network.ThunderSkillViewPayload.GROUND,14);com.myriad.character.ability.AbilityVisuals.burst(c,c.player.position(),.6);
  com.myriad.character.ability.AbilityVisuals.emit(c,com.myriad.character.ability.AbilityVfxGeometry.TRAIL,c.player.position().add(0,.4,0),c.point.add(0,.4,0),.22,0,8,false);
- c.player.teleportTo(c.point.x,c.point.y,c.point.z);ThunderAudio.play(c,ThunderAudio.Cue.CAST);c.area(c.point,2.5,DAMAGE.value(c),DAMAGE.kind());}
+ c.player.teleportTo(c.point.x,c.point.y,c.point.z);ThunderAudio.play(c,ThunderAudio.Cue.CAST);c.area(c.point,IMPACT_RADIUS,DAMAGE.value(c),DAMAGE.kind());}
 }

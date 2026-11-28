@@ -16,7 +16,7 @@ public final class ThunderSlashSkill extends AbilitySkill {
         return List.of(DAMAGE);
     }
 
-    public static final int WINDUP=10;
+    public static final int WINDUP = 10, ROOT_TICKS = 12;
     public static final double RANGE=20,SPEED=4,RADIUS=1;
     public ThunderSlashSkill(Definition definition){super(definition);}
     @Override public boolean hasOwnCastSound(){return true;}
@@ -28,7 +28,7 @@ public final class ThunderSlashSkill extends AbilitySkill {
             c.actionProjectile(RANGE,SPEED,RADIUS,true,false,(target,back)->{
                 ThunderAudio.play(c,ThunderAudio.Cue.HIT,target.position());
                 c.damage(target,DAMAGE.value(c),DAMAGE.kind());
-                if(!rooted[0]&&c.hero(target)){rooted[0]=true;c.root(target,12,false);}
+                if(!rooted[0]&&c.hero(target)){rooted[0]=true;c.root(target,ROOT_TICKS,false);}
             });
         });
     }

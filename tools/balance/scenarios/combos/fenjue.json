@@ -1,0 +1,368 @@
+{
+  "schemaVersion": 1,
+  "scenarioVersion": 1,
+  "scenarioId": "fenjue.zero_preparation",
+  "baselineCommit": "b368acd100b07b5676d709f03d8ac29fb4cf3e04",
+  "role": "fenjue",
+  "applicableBuilds": "all_terminal_combinations",
+  "category": "zero_preparation",
+  "status": "candidate_l3_partial",
+  "startState": {
+    "distance": 2.4,
+    "purchases": {
+      "strength": 5,
+      "speed": 2,
+      "cooldown": 2
+    }
+  },
+  "opponentCondition": [
+    "solo",
+    "ally_cc"
+  ],
+  "windows": [
+    "burst",
+    "sustained"
+  ],
+  "delayProfile": [
+    "human_default",
+    "zero_extra_delay"
+  ],
+  "basicAttack": {
+    "range": 3,
+    "source": "src/main/java/com/myriad/combat/VanillaMeleeAttack.java"
+  },
+  "skills": {
+    "g1_fenjue_n1": {
+      "source": "src/main/java/com/myriad/character/skills/fenjue/rework/FlameSlashSkill.java",
+      "events": [
+        {
+          "kind": "damage",
+          "effect": "segment.sweep",
+          "at": "first_cut",
+          "clock": "action_tick",
+          "radius": 7,
+          "area": true
+        },
+        {
+          "kind": "damage",
+          "effect": "segment.sweep",
+          "at": "second_cut",
+          "clock": "action_tick",
+          "radius": 7,
+          "area": true
+        }
+      ],
+      "range": 7
+    },
+    "g1_fenjue_n2": {
+      "source": "src/main/java/com/myriad/character/skills/fenjue/rework/FlameStepSkill.java",
+      "events": [
+        {
+          "kind": "dash_hit",
+          "effect": "damage",
+          "radius": "dash_range",
+          "area": true
+        }
+      ],
+      "range": "dash_range",
+      "motion": "dash_duration"
+    },
+    "g1_fenjue_ma": {
+      "source": "src/main/java/com/myriad/character/skills/fenjue/rework/LavaCageSkill.java",
+      "events": [
+        {
+          "kind": "lava_field",
+          "at": "warning"
+        }
+      ],
+      "range": "range",
+      "point": true
+    },
+    "g1_fenjue_mb": {
+      "source": "src/main/java/com/myriad/character/skills/fenjue/rework/FlameBurstSkill.java",
+      "events": [
+        {
+          "kind": "damage",
+          "effect": "damage",
+          "radius": "radius",
+          "area": true
+        }
+      ],
+      "paidWindup": "windup",
+      "range": "radius"
+    },
+    "g1_fenjue_ua": {
+      "source": "src/main/java/com/myriad/character/skills/fenjue/rework/HeavenFireSeaSkill.java",
+      "events": [
+        {
+          "kind": "fire_sea",
+          "at": "leap_duration",
+          "clock": "action_tick"
+        }
+      ],
+      "range": "range",
+      "point": true,
+      "motion": "leap_duration"
+    },
+    "g1_fenjue_ub": {
+      "source": "src/main/java/com/myriad/character/skills/fenjue/rework/FlameArmorSkill.java",
+      "events": [
+        {
+          "kind": "shield",
+          "effect": "shield",
+          "at": 0,
+          "target": "self",
+          "duration": "shield_duration"
+        },
+        {
+          "kind": "armor_pulse",
+          "repeat": [
+            "pulse_interval",
+            "last_pulse"
+          ]
+        }
+      ]
+    }
+  },
+  "execution": {
+    "type": "apl",
+    "steps": [
+      {
+        "action": "cast",
+        "skill": "r"
+      },
+      {
+        "action": "cast",
+        "skill": "e"
+      },
+      {
+        "action": "cast",
+        "skill": "q"
+      },
+      {
+        "action": "basic_attack"
+      },
+      {
+        "action": "cast",
+        "skill": "w"
+      }
+    ]
+  },
+  "coverageGaps": {
+    "g1_fenjue_pa": {
+      "axes": [
+        "damage"
+      ],
+      "reason": "每个目标独立真实刻灼烧，使用首次命中时法强快照与真实刻；离线未模拟叠加来源、离线和目标死亡清理。"
+    },
+    "g1_fenjue_pb": {
+      "axes": [
+        "damage"
+      ],
+      "reason": "同输入的满血场景不提前触发低血增伤；低血独立案例使用冻结来伤，只覆盖实测技能实例。"
+    },
+    "g1_fenjue_n1": {
+      "axes": [
+        "damage"
+      ],
+      "reason": "刀面三维扫掠简化为一维 7 格内两段，遮挡和高低差另以独立引擎专项核对。"
+    },
+    "g1_fenjue_n2": {
+      "axes": [
+        "damage"
+      ],
+      "reason": "用一维直线名义速度估计碰撞时刻。碰撞止步、目标身体和斜坡另测。"
+    },
+    "g1_fenjue_ma": {
+      "axes": [
+        "damage",
+        "control"
+      ],
+      "reason": "固定点，在每跳时从合成轴位置检查。真实高差、视线和减速离圈尾段另测。"
+    },
+    "g1_fenjue_mb": {
+      "axes": [
+        "damage"
+      ],
+      "reason": "固定来伤和无真实横移，低血阶梯在脚本中独立观测。"
+    },
+    "g1_fenjue_ua": {
+      "axes": [
+        "damage"
+      ],
+      "reason": "落地点为确认时一维坐标，固定区域按当前敌方位置计算。实际弧线、打断、遮掩与三目标归因另有服务端专项。"
+    },
+    "g1_fenjue_ub": {
+      "axes": [
+        "damage",
+        "support"
+      ],
+      "reason": "火环以自身位置、实剩余的同源盾按跳结算。真实来伤、撤出半径与护盾破碎时刻另测。"
+    }
+  },
+  "scripted": [
+    {
+      "scenarioId": "fenjue.ember_refresh",
+      "scenarioVersion": 1,
+      "category": "condition_probe",
+      "status": "l3_synthetic",
+      "applicableBuilds": [
+        "g1_fenjue_pa"
+      ],
+      "opponentCondition": "solo",
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "q"
+          }
+        ]
+      },
+      "notes": [
+        "烈焰斩两个直接命中间隔 4 行动刻；第二击刷新同一个三秒真实刻截止，不增层或重置当前跳相位。"
+      ],
+      "startState": {
+        "distance": 3
+      },
+      "opponentOverrides": {
+        "retreatPerActionTick": 0
+      }
+    },
+    {
+      "scenarioId": "fenjue.sea_stay",
+      "scenarioVersion": 1,
+      "category": "condition_probe",
+      "status": "l3_synthetic",
+      "applicableBuilds": [
+        "g1_fenjue_ua"
+      ],
+      "opponentCondition": "solo",
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "r"
+          }
+        ]
+      },
+      "notes": [
+        "固定停留在火海，记录落地与四跳分离。"
+      ],
+      "startState": {
+        "distance": 6
+      },
+      "opponentOverrides": {
+        "retreatPerActionTick": 0
+      }
+    },
+    {
+      "scenarioId": "fenjue.sea_leave",
+      "scenarioVersion": 1,
+      "category": "condition_probe",
+      "status": "l3_synthetic",
+      "applicableBuilds": [
+        "g1_fenjue_ua"
+      ],
+      "opponentCondition": "solo",
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "r"
+          }
+        ]
+      },
+      "notes": [
+        "同一合法初始选点。目标用固定速度撤离，只有落地和离场前的脉冲计入。"
+      ],
+      "startState": {
+        "distance": 6
+      },
+      "opponentOverrides": {
+        "retreatPerActionTick": 0.1
+      }
+    },
+    {
+      "scenarioId": "fenjue.last_stand",
+      "scenarioVersion": 1,
+      "category": "condition_probe",
+      "status": "l3_synthetic",
+      "applicableBuilds": [
+        "g1_fenjue_pb"
+      ],
+      "opponentCondition": "solo",
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "q"
+          },
+          {
+            "action": "cast",
+            "skill": "e"
+          }
+        ]
+      },
+      "notes": [
+        "20% 生命开始，同一技能实例的直接命中共享战意增幅。"
+      ],
+      "startState": {
+        "distance": 3,
+        "hpRatio": 0.2,
+        "casterIncoming": []
+      },
+      "opponentOverrides": {
+        "retreatPerActionTick": 0
+      }
+    },
+    {
+      "scenarioId": "fenjue.armor_pressure",
+      "scenarioVersion": 1,
+      "category": "condition_probe",
+      "status": "l3_synthetic",
+      "applicableBuilds": [
+        "g1_fenjue_ub"
+      ],
+      "opponentCondition": "solo",
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "r"
+          }
+        ]
+      },
+      "notes": [
+        "三笔共同的物理、魔法及真实来伤，记录实际吸盾、余血和破盾后火环。"
+      ],
+      "startState": {
+        "distance": 2,
+        "casterIncoming": [
+          [
+            10,
+            "physical",
+            100
+          ],
+          [
+            30,
+            "magic",
+            100
+          ],
+          [
+            50,
+            "true",
+            400
+          ]
+        ]
+      },
+      "opponentOverrides": {
+        "retreatPerActionTick": 0
+      }
+    }
+  ]
+}

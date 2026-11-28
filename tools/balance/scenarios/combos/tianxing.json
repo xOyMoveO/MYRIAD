@@ -1,0 +1,249 @@
+{
+  "schemaVersion": 1,
+  "scenarioId": "tianxing.zero_preparation",
+  "scenarioVersion": 1,
+  "baselineCommit": "b368acd100b07b5676d709f03d8ac29fb4cf3e04",
+  "role": "tianxing",
+  "startState": {
+    "distance": 1.8,
+    "purchases": {
+      "strength": 3,
+      "wisdom": 4,
+      "speed": 2,
+      "defense": 1
+    },
+    "casterIncoming": [
+      [
+        4,
+        "physical",
+        160
+      ],
+      [
+        24,
+        "magic",
+        160
+      ],
+      [
+        44,
+        "true",
+        90
+      ],
+      [
+        74,
+        "physical",
+        180
+      ],
+      [
+        104,
+        "magic",
+        180
+      ]
+    ]
+  },
+  "basicAttack": {
+    "range": 3
+  },
+  "skills": {
+    "g1_tianxing_n1": {
+      "source": "src/main/java/com/myriad/character/skills/tianxing/rework/ThunderBlinkSkill.java",
+      "events": [
+        {
+          "kind": "damage",
+          "effect": "damage",
+          "at": 0,
+          "radius": "radius",
+          "area": true
+        }
+      ],
+      "range": "range",
+      "point": true
+    },
+    "g1_tianxing_n2": {
+      "source": "src/main/java/com/myriad/character/skills/tianxing/rework/ThunderArcSkill.java",
+      "events": [
+        {
+          "kind": "damage",
+          "effect": "segment.primary",
+          "at": 0,
+          "radius": "range",
+          "speed": "projectile_speed",
+          "movementSlow": [
+            "movement_rate",
+            "slow_duration"
+          ]
+        }
+      ],
+      "range": "range",
+      "paidWindup": "windup"
+    },
+    "g1_tianxing_ma": {
+      "source": "src/main/java/com/myriad/character/skills/tianxing/rework/ThunderGuardSkill.java",
+      "events": [
+        {
+          "kind": "damage",
+          "effect": "segment.pulse",
+          "at": 0,
+          "radius": "radius",
+          "repeat": [
+            "pulse_interval",
+            "guard_duration"
+          ],
+          "area": true
+        }
+      ],
+      "range": "radius"
+    },
+    "g1_tianxing_mb": {
+      "source": "src/main/java/com/myriad/character/skills/tianxing/rework/ThunderSlashSkill.java",
+      "events": [
+        {
+          "kind": "damage",
+          "effect": "damage",
+          "at": 0,
+          "radius": "range",
+          "speed": "projectile_speed",
+          "root": "root_duration"
+        }
+      ],
+      "range": "range",
+      "paidWindup": "windup"
+    },
+    "g1_tianxing_ua": {
+      "source": "src/main/java/com/myriad/character/skills/tianxing/rework/NineThunderSkill.java",
+      "events": [
+        {
+          "kind": "strike_schedule"
+        }
+      ],
+      "range": "range",
+      "point": true
+    },
+    "g1_tianxing_ub": {
+      "source": "src/main/java/com/myriad/character/skills/tianxing/rework/ThunderJudgmentSkill.java",
+      "events": [
+        {
+          "kind": "damage",
+          "effect": "damage",
+          "at": 0,
+          "radius": "range",
+          "area": true,
+          "stun": "stun_duration"
+        }
+      ],
+      "range": "range",
+      "paidWindup": "windup"
+    }
+  },
+  "execution": {
+    "type": "apl",
+    "steps": [
+      {
+        "action": "cast",
+        "skill": "r"
+      },
+      {
+        "action": "cast",
+        "skill": "e"
+      },
+      {
+        "action": "cast",
+        "skill": "w"
+      },
+      {
+        "action": "basic_attack"
+      },
+      {
+        "action": "cast",
+        "skill": "q"
+      }
+    ]
+  },
+  "coverageGaps": {
+    "g1_tianxing_pa": {
+      "axes": [
+        "damage"
+      ],
+      "reason": "单体闭环按有效普攻计数。合成追加目标脚本采用一维固定站位，实体查询顺序及漏击另用引擎专项。"
+    },
+    "g1_tianxing_pb": {
+      "axes": [
+        "damage"
+      ],
+      "reason": "对手为合法英雄；额外溅射路径与实际多目标调度需独立证据。"
+    },
+    "g1_tianxing_n1": {
+      "axes": [
+        "damage",
+        "timing"
+      ],
+      "reason": "选点固定为正面目标的当前位置。视线、垂直位差和落点可站立性由引擎判定。"
+    },
+    "g1_tianxing_n2": {
+      "axes": [
+        "damage",
+        "control"
+      ],
+      "reason": "用直线飞行时间，未模拟其它实体抢先挡弹、弯折、风墙与实际实体碰撞盒。"
+    },
+    "g1_tianxing_ma": {
+      "axes": [
+        "damage"
+      ],
+      "reason": "脉冲以移动施法者为中心并沿一维站位核对距离。支援极值为护盾及治疗，不包含减伤。"
+    },
+    "g1_tianxing_mb": {
+      "axes": [
+        "damage",
+        "control"
+      ],
+      "reason": "第一名英雄固定为主目标。引擎以最先碰到的英雄为定身对象。"
+    },
+    "g1_tianxing_ua": {
+      "axes": [
+        "damage",
+        "control"
+      ],
+      "reason": "固定地面点中心及真实刻脉冲；复杂地形和周围目标移动由引擎另核对。"
+    },
+    "g1_tianxing_ub": {
+      "axes": [
+        "damage",
+        "control"
+      ],
+      "reason": "剧本敌人位于正面单轴，实际侧向角度与遮挡另核对。"
+    }
+  },
+  "scripted": [
+    {
+      "scenarioId": "tianxing.same_target_splash",
+      "scenarioVersion": 1,
+      "category": "condition_probe",
+      "status": "l3_synthetic",
+      "applicableBuilds": [
+        "g1_tianxing_pa"
+      ],
+      "opponentCondition": "solo",
+      "opponentOverrides": {
+        "retreatPerActionTick": 0
+      },
+      "startState": {
+        "splashTargets": [
+          0.8,
+          1.8,
+          2.6
+        ]
+      },
+      "execution": {
+        "type": "apl",
+        "steps": [
+          {
+            "action": "basic_attack"
+          }
+        ]
+      },
+      "notes": [
+        "固定正面主目标和三个合法额外目标。连击每三次触发，读出各目标损血；实际漏击、换目标和超时由独立 GameTest 重放。"
+      ]
+    }
+  ]
+}

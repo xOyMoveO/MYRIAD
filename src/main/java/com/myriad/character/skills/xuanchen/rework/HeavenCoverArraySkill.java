@@ -30,7 +30,7 @@ public final class HeavenCoverArraySkill extends AbilitySkill {
             "windupSeconds", WINDUP_TICKS / 20.0,
             "fieldSeconds", FIELD_TICKS / 20.0,
             "pulseCount", FIELD_TICKS / PULSE_TICKS,
-            "guardPercent", Math.round(100 * (1 - AbilityRuntime.GUARD15_DAMAGE_MULTIPLIER)),
+            "guardPercent", Math.round(100 * (1 - AbilityRuntime.GUARD_15_DAMAGE_TAKEN)),
             "slowPercent", Math.round(100 * SLOW));
     }
 

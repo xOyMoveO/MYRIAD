@@ -1,0 +1,321 @@
+{
+  "schemaVersion": 1,
+  "scenarioVersion": 1,
+  "scenarioId": "sulan.zero_preparation",
+  "baselineCommit": "b368acd100b07b5676d709f03d8ac29fb4cf3e04",
+  "role": "sulan",
+  "applicableBuilds": "all_terminal_combinations",
+  "category": "zero_preparation",
+  "status": "candidate_l3_partial",
+  "startState": {
+    "distance": 2.4,
+    "purchases": {
+      "strength": 5,
+      "speed": 2,
+      "cooldown": 2
+    }
+  },
+  "opponentCondition": [
+    "solo",
+    "ally_cc"
+  ],
+  "windows": [
+    "burst",
+    "sustained"
+  ],
+  "delayProfile": [
+    "human_default",
+    "zero_extra_delay"
+  ],
+  "basicAttack": {
+    "range": 3,
+    "source": "src/main/java/com/myriad/combat/VanillaMeleeAttack.java"
+  },
+  "skills": {
+    "g1_sulan_n1": {
+      "source": "src/main/java/com/myriad/character/skills/sulan/rework/GaleThrustSkill.java",
+      "events": [
+        {
+          "kind": "dash_hit",
+          "effect": "damage",
+          "radius": "dash_range",
+          "area": true
+        }
+      ],
+      "range": "dash_range",
+      "motion": "dash_duration"
+    },
+    "g1_sulan_n2": {
+      "source": "src/main/java/com/myriad/character/skills/sulan/rework/SpiritWindMarkSkill.java",
+      "events": [
+        {
+          "kind": "damage",
+          "effect": "damage",
+          "radius": "range",
+          "movementSlow": [
+            "movement_rate",
+            "slow_duration"
+          ]
+        }
+      ],
+      "range": "range"
+    },
+    "g1_sulan_ma": {
+      "source": "src/main/java/com/myriad/character/skills/sulan/rework/WindBarrierSkill.java",
+      "events": []
+    },
+    "g1_sulan_mb": {
+      "source": "src/main/java/com/myriad/character/skills/sulan/rework/ReturningWindBladeSkill.java",
+      "events": [
+        {
+          "kind": "returning_blade",
+          "clock": "action_tick"
+        }
+      ],
+      "range": "range"
+    },
+    "g1_sulan_ua": {
+      "source": "src/main/java/com/myriad/character/skills/sulan/rework/ThousandWindDashSkill.java",
+      "events": [
+        {
+          "kind": "stop_dash",
+          "clock": "action_tick"
+        }
+      ],
+      "range": "dash_range",
+      "paidWindup": "windup",
+      "motion": "dash_duration"
+    },
+    "g1_sulan_ub": {
+      "source": "src/main/java/com/myriad/character/skills/sulan/rework/WindDomainSkill.java",
+      "events": [
+        {
+          "kind": "damage",
+          "effect": "damage",
+          "radius": "radius",
+          "area": true
+        },
+        {
+          "kind": "follow_field",
+          "effect": "slow",
+          "radius": "radius",
+          "repeat": [
+            "refresh_interval",
+            "field_duration"
+          ]
+        }
+      ]
+    }
+  },
+  "execution": {
+    "type": "apl",
+    "steps": [
+      {
+        "action": "cast",
+        "skill": "r"
+      },
+      {
+        "action": "cast",
+        "skill": "e"
+      },
+      {
+        "action": "cast",
+        "skill": "q"
+      },
+      {
+        "action": "basic_attack"
+      },
+      {
+        "action": "cast",
+        "skill": "w"
+      }
+    ]
+  },
+  "coverageGaps": {
+    "g1_sulan_n1": {
+      "axes": [
+        "damage"
+      ],
+      "reason": "只沿一维扫掠并近似碰撞时刻。实机墙阻、擦边和突进末步用专项核对。"
+    },
+    "g1_sulan_pa": {
+      "axes": [
+        "damage"
+      ],
+      "reason": "零预置脚本不完成自然行走，另有从自然已达阈值、以及只由技能位移起手的成对脚本和引擎测量。"
+    },
+    "g1_sulan_ma": {
+      "axes": [
+        "support"
+      ],
+      "reason": "风墙只拦截可格挡弹体；固定来伤没有来袭弹体轨迹，风墙减免价值待专项。"
+    },
+    "g1_sulan_mb": {
+      "axes": [
+        "damage"
+      ],
+      "reason": "一维去回程离线可复算两段，真实移动施法者曲线、风墙和掩体另测。"
+    },
+    "g1_sulan_ua": {
+      "axes": [
+        "damage",
+        "control"
+      ],
+      "reason": "沿一维模拟接触停止和终点爆发；实际转向、墙与路径接触由引擎验证。"
+    },
+    "g1_sulan_ub": {
+      "axes": [
+        "control",
+        "support"
+      ],
+      "reason": "近似一维跟随场；友军加速带来的净闪避、实际续挂位置与视线另测。"
+    }
+  },
+  "scripted": [
+    {
+      "scenarioId": "sulan.walking_zero",
+      "scenarioVersion": 1,
+      "category": "condition_probe",
+      "status": "l3_synthetic",
+      "applicableBuilds": [
+        "g1_sulan_pa"
+      ],
+      "opponentCondition": "solo",
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "basic_attack"
+          }
+        ]
+      },
+      "notes": [
+        "普通地面起手，未走满 30 格。"
+      ],
+      "startState": {
+        "naturalTravel": 0
+      },
+      "opponentOverrides": {
+        "retreatPerActionTick": 0
+      }
+    },
+    {
+      "scenarioId": "sulan.walking_prepared",
+      "scenarioVersion": 1,
+      "category": "condition_probe",
+      "status": "l3_synthetic",
+      "applicableBuilds": [
+        "g1_sulan_pa"
+      ],
+      "opponentCondition": "solo",
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "basic_attack"
+          }
+        ]
+      },
+      "notes": [
+        "启动时完成至少 30 格合格自然移动；首个普攻消耗一层。"
+      ],
+      "startState": {
+        "naturalTravel": 30
+      },
+      "opponentOverrides": {
+        "retreatPerActionTick": 0
+      }
+    },
+    {
+      "scenarioId": "sulan.skill_motion_only",
+      "scenarioVersion": 1,
+      "category": "condition_probe",
+      "status": "l3_synthetic",
+      "applicableBuilds": [
+        "g1_sulan_pa"
+      ],
+      "opponentCondition": "solo",
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "q"
+          },
+          {
+            "action": "basic_attack"
+          }
+        ]
+      },
+      "notes": [
+        "只用技能突进，零自然移动。为观察合法追击普攻使用前方 6 格固定目标。"
+      ],
+      "startState": {
+        "naturalTravel": 0,
+        "distance": 6
+      },
+      "opponentOverrides": {
+        "retreatPerActionTick": 0
+      }
+    },
+    {
+      "scenarioId": "sulan.wind_mark_next_hit",
+      "scenarioVersion": 1,
+      "category": "condition_probe",
+      "status": "l3_synthetic",
+      "applicableBuilds": [
+        "g1_sulan_n2"
+      ],
+      "opponentCondition": "solo",
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "w"
+          },
+          {
+            "action": "basic_attack"
+          }
+        ]
+      },
+      "notes": [
+        "标记本次伤害与下一次普攻增幅分开结算。"
+      ],
+      "startState": {
+        "distance": 2
+      },
+      "opponentOverrides": {
+        "retreatPerActionTick": 0
+      }
+    },
+    {
+      "scenarioId": "sulan.return_blade",
+      "scenarioVersion": 1,
+      "category": "condition_probe",
+      "status": "l3_synthetic",
+      "applicableBuilds": [
+        "g1_sulan_mb"
+      ],
+      "opponentCondition": "solo",
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "e"
+          }
+        ]
+      },
+      "notes": [
+        "静止直线目标，分别观察去程与回程。"
+      ],
+      "startState": {
+        "distance": 3
+      },
+      "opponentOverrides": {
+        "retreatPerActionTick": 0
+      }
+    }
+  ]
+}
