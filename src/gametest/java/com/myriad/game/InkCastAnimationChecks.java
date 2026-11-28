@@ -32,11 +32,21 @@ final class InkCastAnimationChecks {
     }
     private InkCastAnimationChecks(){}
 
+    static void run(GameTestHelper h) {
+        ModState.setEnabled(true);
+        TrainingMode.setEnabled(true);
+        start(h);
+        h.runAfterDelay(19, () -> start(h));
+        h.runAfterDelay(38, h::succeed);
+    }
+
     static void start(GameTestHelper h){
         com.myriad.client.firstperson.InkHandChecks.verify(h);
 
         var regular=actor(h,112);
         var interrupted=actor(h,127);
+        AbilityRuntime.Cast winding;
+        long started;
         try {
             var p=regular.player;
             var d=PlayerDataProvider.get(p);
@@ -64,24 +74,35 @@ final class InkCastAnimationChecks {
             }
             var heaven=FirstGroupSkills.node("xuanchen",6);
             heaven.release(AbilityRuntime.context(interrupted.player,heaven));
+            winding = java.util.Objects.requireNonNull(AbilityRuntime.winding(p));
+            started = winding.now();
         }catch(Throwable e){cleanup(regular,interrupted);throw e;}
 
+        var progress = new ArrayList<String>();
         boolean[] done={false};
         for(int tick=1;tick<=18;tick++){
             int elapsed=tick;
             h.runAfterDelay(tick,()->{
                 if(done[0])return;
                 try{
+                    float before = winding.windupProgress();
                     AbilityRuntime.tick(regular.player);AbilityRuntime.tick(interrupted.player);
+                    progress.add(elapsed + "/" + winding.now() + "=" + before + "/" + winding.windupProgress()
+                            + "@" + winding.phase());
                     if(elapsed==5)AbilityRuntime.cancel(interrupted.player);
                     if(elapsed==18){
                         for(int index=2;index<=7;index++)
                             h.assertTrue(regular.cues(index,index==3?SELF:RELEASE).size()==1,"One cast release cue for variant "+index);
                         var channel=regular.cues(6,WINDUP);
                         var release=regular.cues(6,RELEASE).getFirst();
-                        h.assertTrue(!channel.isEmpty()&&release.started()-channel.getFirst().started()==16
-                                        &&channel.getLast().radius()>channel.getFirst().radius(),
-                                "Real local progress drives the 16-tick channel");
+                        var timings = " start=" + started + " release=" + release.started() + " stage=" + progress
+                                + " cues=" + channel.stream().map(cue -> cue.started() + "/" + cue.radius()).toList();
+                        System.out.println("[MYRIAD-INK-CHANNEL]" + timings);
+                        h.assertTrue(winding.windupProgress() == 1 && release.started() - started == 16,
+                                "Authoritative channel completes after 16 unchanged-rate ticks" + timings);
+                        h.assertTrue(!channel.isEmpty() && channel.getFirst().started() == started
+                                        && channel.getLast().radius() > channel.getFirst().radius(),
+                                "The cast pose starts with the channel and publishes advancing progress" + timings);
                         h.assertTrue(regular.visuals.stream().anyMatch(p->p.variant()==6&&p.kind()==AbilityVfxGeometry.SEAL
                                         &&p.angle()==360&&p.started()==release.started()),
                                 "The cast pose opens on the same tick as the authoritative field");

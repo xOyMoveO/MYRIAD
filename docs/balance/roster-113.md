@@ -41,3 +41,5 @@ python tools/balance/replay-roster-113.py \
 ```
 
 如有本票首轮原始证据，给离线命令追加 `--baseline-engine`，输入按 filter 保存 stdout 和 XML 的目录。对局地图路线、真人清线、全局站位概率、实战支援及完整对局体感另由人取样。
+
+合并阵容后可另跑 `ink_cast_animation` 与 `first_group`。独立墨尘专项分别在奇偶游戏刻起手，记录每次引导推进的世界刻、阶段和出包，常速下于第 16 刻完成。完整聚合也保留相同的引导轨迹。
