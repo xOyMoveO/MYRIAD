@@ -21,6 +21,7 @@ import net.minecraft.world.entity.Display.BillboardConstraints;
 import net.minecraft.world.entity.Display.ItemDisplay;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
@@ -35,18 +36,25 @@ import com.myriad.registry.ModItems;
 public final class TacticalSupplySystem {
     private TacticalSupplySystem() {}
 
-    private static final int BLOOD_DURATION = 8 * 20;
-    private static final int MANA_DURATION = 5 * 20;
-    private static final int WARD_DURATION = 120 * 20;
-    private static final int TRAP_DURATION = 90 * 20;
-    private static final double WARD_RADIUS = 20.0;
-    private static final double WARD_CAST_RADIUS = 6.0;
-    private static final double TRUE_SIGHT_RADIUS = 12.0;
-    private static final double TRAP_RADIUS = 2.5;
+    static final int BLOOD_DURATION = 8 * 20;
+    static final int MANA_DURATION = 5 * 20;
+    static final int WARD_DURATION = 120 * 20;
+    static final int TRAP_DURATION = 90 * 20;
+    static final double WARD_RADIUS = 20.0;
+    static final double WARD_CAST_RADIUS = 6.0;
+    static final double TRUE_SIGHT_RADIUS = 12.0;
+    static final double TRAP_RADIUS = 2.5;
+
+    static final int PILL_LIMIT = 5;
+    static final int PILL_PULSE_TICKS = 20;
+    static final int TRUE_SIGHT_DURATION = 10 * 20;
+    static final int TRAP_SLOW_TICKS = 60;
+    static final int TRAP_SLOW_AMPLIFIER = 2;
+    static final int TRAP_REVEAL_TICKS = 100;
 
     private record Regeneration(long nextTick, long endTick) {
-        static Regeneration start(long now,int duration) { return new Regeneration(now+20,now+duration); }
-        Regeneration advance() { return new Regeneration(nextTick+20,endTick); }
+        static Regeneration start(long now,int duration) { return new Regeneration(now+PILL_PULSE_TICKS,now+duration); }
+        Regeneration advance() { return new Regeneration(nextTick+PILL_PULSE_TICKS,endTick); }
     }
     private static final Map<UUID, Regeneration> BLOOD_REMAINING = new HashMap<>();
     private static final Map<UUID, Regeneration> MANA_REMAINING = new HashMap<>();
@@ -80,8 +88,9 @@ public final class TacticalSupplySystem {
             player.sendSystemMessage(Component.translatable("message.myriad.supply_unknown"));
             return false;
         }
-        if ((offer.item == ModItems.BLOOD_PILL.get() || offer.item == ModItems.MANA_PILL.get())
-                && pillCount(player) + offer.count > 5) {
+        Item item = offer.item.get();
+        if ((item == ModItems.BLOOD_PILL.get() || item == ModItems.MANA_PILL.get())
+                && pillCount(player) + offer.count > PILL_LIMIT) {
             player.sendSystemMessage(Component.translatable("message.myriad.pill_limit"));
             return false;
         }
@@ -90,10 +99,10 @@ public final class TacticalSupplySystem {
             player.sendSystemMessage(Component.translatable("message.myriad.supply_no_gold"));
             return false;
         }
-        if (offer.item == ModItems.SCOUT_TOTEM.get() || offer.item == ModItems.TRUE_SIGHT_CHARM.get()) {
+        if (item == ModItems.SCOUT_TOTEM.get() || item == ModItems.TRUE_SIGHT_CHARM.get()) {
             removeVisionTrinkets(player);
         }
-        ItemStack bought = new ItemStack(offer.item, offer.count);
+        ItemStack bought = new ItemStack(item, offer.count);
         Component itemName = bought.getHoverName();
         if (!player.getInventory().add(bought)) player.drop(bought, false, net.minecraft.util.Prediction.SERVER_ONLY);
         if (!free) data.spendGold(offer.price);
@@ -103,13 +112,13 @@ public final class TacticalSupplySystem {
         return true;
     }
 
-    private static SupplyOffer offer(String id) {
+    static SupplyOffer offer(String id) {
         return switch (id) {
-            case "blood_pill" -> new SupplyOffer(ModItems.BLOOD_PILL.get(), 60, 1);
-            case "mana_pill" -> new SupplyOffer(ModItems.MANA_PILL.get(), 60, 1);
-            case "spirit_snare" -> new SupplyOffer(ModItems.SPIRIT_SNARE.get(), 100, 1);
-            case "scout_totem" -> new SupplyOffer(ModItems.SCOUT_TOTEM.get(), 150, 1);
-            case "true_sight_charm" -> new SupplyOffer(ModItems.TRUE_SIGHT_CHARM.get(), 300, 1);
+            case "blood_pill" -> new SupplyOffer(() -> ModItems.BLOOD_PILL.get(), 60, 1);
+            case "mana_pill" -> new SupplyOffer(() -> ModItems.MANA_PILL.get(), 60, 1);
+            case "spirit_snare" -> new SupplyOffer(() -> ModItems.SPIRIT_SNARE.get(), 100, 1);
+            case "scout_totem" -> new SupplyOffer(() -> ModItems.SCOUT_TOTEM.get(), 150, 1);
+            case "true_sight_charm" -> new SupplyOffer(() -> ModItems.TRUE_SIGHT_CHARM.get(), 300, 1);
             default -> null;
         };
     }
@@ -162,7 +171,7 @@ public final class TacticalSupplySystem {
             return true;
         }
         if (stack.is(ModItems.TRUE_SIGHT_CHARM.get())) {
-            TRUE_SIGHT_UNTIL.put(player.getUUID(), player.level().getGameTime() + 10 * 20L);
+            TRUE_SIGHT_UNTIL.put(player.getUUID(), player.level().getGameTime() + TRUE_SIGHT_DURATION);
             consume(player, stack);
             player.sendSystemMessage(Component.translatable("message.myriad.true_sight_active"));
             return true;
@@ -279,8 +288,8 @@ public final class TacticalSupplySystem {
                 p -> p.isAlive() && enemyOf(trap, p));
         if (targets.isEmpty()) return false;
         ServerPlayer target = targets.get(0);
-        target.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 60, 2, true, true, true));
-        target.addEffect(new MobEffectInstance(MobEffects.GLOWING, 100, 0, true, false, true));
+        target.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, TRAP_SLOW_TICKS, TRAP_SLOW_AMPLIFIER, true, true, true));
+        target.addEffect(new MobEffectInstance(MobEffects.GLOWING, TRAP_REVEAL_TICKS, 0, true, false, true));
         level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, trap.pos.x, trap.pos.y + 0.3, trap.pos.z,
                 28, 0.8, 0.4, 0.8, 0.04);
         level.playSound(null, trap.pos.x, trap.pos.y, trap.pos.z,
@@ -434,7 +443,7 @@ public final class TacticalSupplySystem {
 
     /** 两类丹药共享五瓶携带上限；处理拾取、指令或创造模式等非商店来源。 */
     private static void enforcePillLimit(ServerPlayer player) {
-        int remaining = 5;
+        int remaining = PILL_LIMIT;
         boolean trimmed = false;
         for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
             ItemStack stack = player.getInventory().getItem(i);
@@ -541,7 +550,7 @@ public final class TacticalSupplySystem {
 
     private enum Kind { WARD, TRAP }
 
-    private record SupplyOffer(net.minecraft.world.item.Item item, int price, int count) { }
+    record SupplyOffer(java.util.function.Supplier<Item> item, int price, int count) { }
 
     private record Deployable(ServerLevel level, UUID owner, Faction faction, Vec3 pos, long expireTick,
             Kind kind, ItemDisplay visual) { }

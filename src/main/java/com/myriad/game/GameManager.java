@@ -718,16 +718,19 @@ public class GameManager {
         }
     }
 
+    static final int PASSIVE_GOLD_INTERVAL_TICKS = 100;
+    static final int PASSIVE_GOLD_BASE = 10;
+
     /** 对局中所有参赛玩家每 5 秒获得经全局收益倍率调整后的金币，死亡等待期间也不会中断。 */
     private void tickPassiveGold(MinecraftServer server, long gameTime) {
         if (matchStartTime < 0) return;
         long elapsed = gameTime - matchStartTime;
-        if (elapsed <= 0 || elapsed % 100 != 0) return;
+        if (elapsed <= 0 || elapsed % PASSIVE_GOLD_INTERVAL_TICKS != 0) return;
         var awards = new java.util.LinkedHashMap<ServerPlayer, Integer>();
         for (ServerPlayer player : matchPlayers()) {
             if (factionOf(player) == null) continue;
             if (PlayerDataProvider.get(player) == null) continue;
-            awards.put(player, GlobalBalance.goldIncome(MatchBalance.farmReward(player, 10, false)));
+            awards.put(player, GlobalBalance.goldIncome(MatchBalance.farmReward(player, PASSIVE_GOLD_BASE, false)));
         }
         for (var award : awards.entrySet()) {
             ServerPlayer player = award.getKey();

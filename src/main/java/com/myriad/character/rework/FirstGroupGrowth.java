@@ -17,6 +17,15 @@ public final class FirstGroupGrowth {
     public static final List<String> ATTRIBUTES=List.of("strength","wisdom","speed","defense","cooldown");
     public static final long PRICE_OVERFLOW = -1;
     public static final int HASTE_PER_POINT = 3;
+    public static final double BASE_ATTACK_SPEED = .70;
+    public static final double BASE_MOVEMENT_SPEED = .10;
+    public static final double BASE_DEFENSE = 45;
+    public static final double BASE_MANA_REGEN = 4;
+    public static final double BASE_HEALTH_REGEN = 2;
+    public static final double BASE_CRIT_DAMAGE = 150;
+    public static final double SPEED_ATTACK_GAIN = .06;
+    public static final double SPEED_MOVEMENT_GAIN = .0015;
+    public static final double DEFENSE_GAIN = 5.0;
     private static final List<Long> PRICES = purchasePrices();
 
     private static List<Long> purchasePrices() {
@@ -120,11 +129,11 @@ public final class FirstGroupGrowth {
         var role=CharacterType.byId(d.getCharacterId());
         base(p,ModAttributes.PHYSICAL_ATTACK,baselinePhysicalAttack(role));
         base(p,ModAttributes.SPELL_POWER,baselineSpellPower());
-        base(p,ModAttributes.ATTACK_SPEED,.70);base(p,Attributes.MOVEMENT_SPEED,.10);
-        base(p,ModAttributes.PHYSICAL_DEFENSE,45);base(p,ModAttributes.MAGIC_RESISTANCE,45);
-        base(p,ModAttributes.MAX_MANA,maxMana(role,d.getLevel()));base(p,ModAttributes.MANA_REGEN,4);base(p,ModAttributes.HEALTH_REGEN,2);
+        base(p,ModAttributes.ATTACK_SPEED,BASE_ATTACK_SPEED);base(p,Attributes.MOVEMENT_SPEED,BASE_MOVEMENT_SPEED);
+        base(p,ModAttributes.PHYSICAL_DEFENSE,BASE_DEFENSE);base(p,ModAttributes.MAGIC_RESISTANCE,BASE_DEFENSE);
+        base(p,ModAttributes.MAX_MANA,maxMana(role,d.getLevel()));base(p,ModAttributes.MANA_REGEN,BASE_MANA_REGEN);base(p,ModAttributes.HEALTH_REGEN,BASE_HEALTH_REGEN);
         d.setMana((float)Math.min(d.getMana(),p.getAttributeValue(ModAttributes.MAX_MANA)));
-        base(p,ModAttributes.CRIT_DAMAGE,150);
+        base(p,ModAttributes.CRIT_DAMAGE,BASE_CRIT_DAMAGE);
         apply(p,d);
     }
     private static void base(ServerPlayer p,Holder<Attribute> attr,double amount){var a=p.getAttribute(attr);if(a!=null)a.setBaseValue(amount);}
@@ -136,10 +145,10 @@ public final class FirstGroupGrowth {
         if(!FirstGroupSkills.active(d.getCharacterId()))return;
         modifier(p,ModAttributes.PHYSICAL_ATTACK,"strength",purchasedPhysicalAttack(d.firstGroupAttribute("strength")));
         modifier(p,ModAttributes.SPELL_POWER,"wisdom",purchasedSpellPower(d.firstGroupAttribute("wisdom")));
-        modifier(p,ModAttributes.ATTACK_SPEED,"speed_as",.06*d.firstGroupAttribute("speed"));
-        modifier(p,Attributes.MOVEMENT_SPEED,"speed_ms",.0015*d.firstGroupAttribute("speed"));
-        modifier(p,ModAttributes.PHYSICAL_DEFENSE,"defense_pd",5.0*d.firstGroupAttribute("defense"));
-        modifier(p,ModAttributes.MAGIC_RESISTANCE,"defense_mr",5.0*d.firstGroupAttribute("defense"));
+        modifier(p,ModAttributes.ATTACK_SPEED,"speed_as",SPEED_ATTACK_GAIN*d.firstGroupAttribute("speed"));
+        modifier(p,Attributes.MOVEMENT_SPEED,"speed_ms",SPEED_MOVEMENT_GAIN*d.firstGroupAttribute("speed"));
+        modifier(p,ModAttributes.PHYSICAL_DEFENSE,"defense_pd",DEFENSE_GAIN*d.firstGroupAttribute("defense"));
+        modifier(p,ModAttributes.MAGIC_RESISTANCE,"defense_mr",DEFENSE_GAIN*d.firstGroupAttribute("defense"));
         modifier(p,ModAttributes.COOLDOWN_REDUCTION,"cooldown",(double)HASTE_PER_POINT*d.firstGroupAttribute("cooldown"));
         for(String key:ATTRIBUTES)d.setBuff("g1_attribute_"+key,d.firstGroupAttribute(key));
         PlayerHealthSystem.recalculate(p);

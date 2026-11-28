@@ -8,6 +8,7 @@ import com.myriad.player.PlayerDataProvider;
 
 /** Server-authoritative home shop and departure haste. No client position claims. */
 public final class BaseRules {
+    static final double SHOP_RADIUS = 10.0;
     private static final Identifier HASTE=Identifier.parse("myriad:base_haste");
     private static final class State { boolean inside; Boolean shopAllowed; long until,combatUntil; }
     private static final Map<UUID,State> STATES=new HashMap<>();
@@ -15,7 +16,7 @@ public final class BaseRules {
         var manager=GameManager.get();var faction=manager==null?null:manager.factionOf(player);
         var base=faction==null?null:LaneSystem.respawnPoint(faction);
         return player.level().dimension()==net.minecraft.world.level.Level.OVERWORLD && base!=null
-                && player.position().distanceToSqr(net.minecraft.world.phys.Vec3.atBottomCenterOf(base))<=100;
+                && player.position().distanceToSqr(net.minecraft.world.phys.Vec3.atBottomCenterOf(base))<=SHOP_RADIUS*SHOP_RADIUS;
     }
     public static boolean canShop(ServerPlayer player){
         if(!ModState.isEnabled())return false;

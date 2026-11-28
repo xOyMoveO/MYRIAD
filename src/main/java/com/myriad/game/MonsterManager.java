@@ -81,12 +81,13 @@ public final class MonsterManager {
 
     static double growthMultiplier(int generation) { return 1.0 + Math.max(0,generation-2)*.03; }
     private static double initialHealth(MonsterType type,int generation) { return type.getHealth()*growthMultiplier(generation); }
-    private static final long FIRST_BOSS_SPAWN_TICKS = 8L * 60L * 20L;
-    private static final long BOSS_SPAWN_INTERVAL_TICKS = 5L * 60L * 20L;
-    private static final MonsterType[] LARGE_BOSSES = {
+    static final long FIRST_BOSS_SPAWN_TICKS = 8L * 60L * 20L;
+    static final long BOSS_SPAWN_INTERVAL_TICKS = 5L * 60L * 20L;
+    static final List<MonsterType> LARGE_BOSSES = List.of(
             MonsterType.AZURE_HORN_GUARDIAN, MonsterType.VERMILION_FLAME_TYRANT,
             MonsterType.GALE_ROC_MATRIARCH, MonsterType.OBSIDIAN_TORTOISE_WARDEN
-    };
+    );
+    static final long BOSS_BUFF_TICKS = 90L * 20L;
 
     /** 写入存档配置文件的刷新点。type=null 表示大型随机刷新点。 */
     record SpawnPoint(String id, BlockPos pos, MonsterType type) {
@@ -905,7 +906,7 @@ public final class MonsterManager {
                 MatchMessages.send(killer, MatchMessages.Tone.SUCCESS,
                         Component.translatable("message.myriad.buff_beast"));
             } else {
-                grantTeamBossBuff(killer, type, now + 90L * 20L);
+                grantTeamBossBuff(killer, type, now + BOSS_BUFF_TICKS);
             }
         }
         PlayerDataProvider.syncToClient(killer);

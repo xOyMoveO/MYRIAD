@@ -10,6 +10,8 @@ import java.util.List;
 
 /** The broad hammer hits several enemies; only the nearest aim-line contact is pushed. */
 public final class ImpactHammer extends RivetSkill {
+    public static final int WALL_ROOT_TICKS = 10, ANCHOR_ROOT_TICKS = 16;
+    public static final double PUSH_DISTANCE = 2, ANCHORED_PUSH_DISTANCE = 2.5;
     private static final AbilityDamageFormula DIRECT = AbilityDamageFormula.physicalFromSpell(75, 25, .50f, 5f / 14)
             .segment("skill.myriad.damage.direct_hit", 1);
     private static final AbilityDamageFormula WALL = AbilityDamageFormula.physicalFromSpell(29, 10, .20f, 1f / 7)
@@ -40,8 +42,8 @@ public final class ImpactHammer extends RivetSkill {
         }
         RivetVfx.hammer(c);
         if (primaryHit && primary != null && primary.isAlive()) {
-            double distance = HoldProtocol.extendsHammer(c.player, primary) ? 2.5 : 2;
-            RivetPush.start(c, primary, direction, distance, WALL.value(c), 10, 16, true);
+            double distance = HoldProtocol.extendsHammer(c.player, primary) ? ANCHORED_PUSH_DISTANCE : PUSH_DISTANCE;
+            RivetPush.start(c, primary, direction, distance, WALL.value(c), WALL_ROOT_TICKS, ANCHOR_ROOT_TICKS, true);
         }
     }
 }

@@ -5,7 +5,8 @@ import com.myriad.character.ability.AbilityRuntime.Cast;
 import com.myriad.combat.DamageCalc;
 import java.util.List;
 
-final class LastSun extends LuoxiaSkill {
+public final class LastSun extends LuoxiaSkill {
+    public static final double RANGE = 28;
     private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.purchased(DamageCalc.Kind.PHYSICAL, 150, 6.75f, .50f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
@@ -23,7 +24,7 @@ final class LastSun extends LuoxiaSkill {
     @Override public void release(Cast c) {
         LuoxiaBowPose.skill(c, com.myriad.network.LuoxiaBowPosePayload.Phase.RELEASE, 1, c.player.getLookAngle());
         LuoxiaVfx.shot(c, true, .90f);
-        LuoxiaArrow.launch(c, c.player.getLookAngle(), 28, 3, LuoxiaArrow.Shape.LAST_SUN, false,
+        LuoxiaArrow.launch(c, c.player.getLookAngle(), RANGE, 3, LuoxiaArrow.Shape.LAST_SUN, false,
                 target -> { c.damage(target, DAMAGE.value(c), DamageCalc.Kind.PHYSICAL); return true; });
     }
 }

@@ -37,7 +37,7 @@ public final class MagicBullet {
     /** 飞行速度（格/刻） */
     private static final double SPEED = 1.5 * HeroProjectileTuning.SPEED;
     /** 射程（格） */
-    private static final double MAX_RANGE = 15.0;
+    public static final double MAX_RANGE = 15.0;
     /** 命中判定半径（格） */
     private static final double BASE_HIT_RADIUS = 1.05;
     private static final double HIT_RADIUS = BASE_HIT_RADIUS * HeroProjectileTuning.ENTITY_PADDING;
@@ -98,9 +98,7 @@ public final class MagicBullet {
         if (com.myriad.character.ability.AbilityRuntime.channeling(player)) { InputFailure.CHANNEL.send(player); return; }
         ServerLevel level = (ServerLevel) player.level();
         long now = level.getGameTime();
-        double as = Math.max(0.05, player.getAttributeValue(
-                com.myriad.registry.ModAttributes.ATTACK_SPEED));
-        int cd = (int) Math.ceil(20.0 / as);
+        int cd = recoveryTicks(player.getAttributeValue(com.myriad.registry.ModAttributes.ATTACK_SPEED));
         FireCooldown previous = FIRE_CD.get(player.getUUID());
         if (previous != null && !previous.progress.advance(now,ActionTime.multiplier(player.getUUID(),now),previous.totalTicks)) {
             InputFailure.RECOVERING.send(player);
@@ -253,6 +251,8 @@ public final class MagicBullet {
         double extraSpellPower = totalSpellPower - FirstGroupGrowth.baselineSpellPower();
         return (float) (baselineDamage + ratio * extraSpellPower);
     }
+
+    public static int recoveryTicks(double attackSpeed) { return (int) Math.ceil(20.0 / Math.max(.05, attackSpeed)); }
 
     private static double maxRange(String characterId) {
         return MAX_RANGE;

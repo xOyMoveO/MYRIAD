@@ -17,6 +17,7 @@ public final class FirstGroupSkills {
     public static final Set<String> ROLES=Set.of("yingxiao","tianxing","fenjue","xuanchen","sulan","lingyuan","hanze","qingluo","chixiao","yunsheng","shuo","keheng","yike","rivet","luoxia");
     private static final Map<String,List<AbilitySkill>> BY_ROLE=new LinkedHashMap<>();
     private static final Map<String,AbilitySkill> BY_ID=new LinkedHashMap<>();
+    private static final Map<String,String> SOURCE_BY_ID=new LinkedHashMap<>();
     static {
         try { for(String resource:List.of("first_group","second_group","shuo","keheng","yike","rivet","luoxia")) {
           try(var stream=FirstGroupSkills.class.getResourceAsStream("/data/myriad/role_rework/"+resource+".json")) {
@@ -48,6 +49,7 @@ public final class FirstGroupSkills {
                 };
                 if(!ROLES.contains(node.role())||node.index()<0||node.index()>7||BY_ID.putIfAbsent(node.getId(),node)!=null)
                     throw new IllegalArgumentException("Invalid first-group binding: "+node.getId());
+                SOURCE_BY_ID.put(id,"data/myriad/role_rework/"+resource+".json");
                 BY_ROLE.computeIfAbsent(node.role(),key->new ArrayList<>()).add(node);
             }
           }
@@ -63,6 +65,7 @@ public final class FirstGroupSkills {
     }
     public static boolean active(String id){return id!=null&&ROLES.contains(id);}
     public static List<AbilitySkill> candidates(String role){return BY_ROLE.getOrDefault(role,List.of());}
+    public static String definitionResource(String skillId){return SOURCE_BY_ID.get(skillId);}
     public static AbilitySkill byId(String id){return BY_ID.get(id);}
     public static AbilitySkill node(String role,int index){var list=candidates(role);return index>=0&&index<list.size()?list.get(index):null;}
     public static int opposite(int index){return switch(index){case 0->1;case 1->0;case 4->5;case 5->4;case 6->7;case 7->6;default->-1;};}

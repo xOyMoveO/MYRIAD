@@ -44,8 +44,8 @@ public final class YikeStance {
             deployment = c;
             level = c.player.level();
             this.mobile = mobile;
-            shots = mobile ? 4 : 5;
-            until = c.now() + 120;
+            shots = artilleryForm(mobile).shells;
+            until = c.now() + DURATION_TICKS;
             q = YikeRework.q(c.player);
             originalQReady = c.now() + (q == null ? 0 : c.data.getCooldown(q.getId()));
             nextShot = c.now();
@@ -76,14 +76,47 @@ public final class YikeStance {
         }
         return (int) Math.max(0, ready - now);
     }
+    /** Static shot rules also consumed by the build snapshot. */
+    public enum ShotForm {
+        NORMAL(16, 30, 1.5, 1, 0, 0, 0),
+        FIXED(26, 34, 1.5, .65f, .025f, 5, 22),
+        MOBILE(20, 30, 1, .55f, .025f, 4, 27);
+
+        public final double range, speed, radius;
+        public final float baseMultiplier, multiplierPerRank;
+        public final int shells, nextShotTicks;
+
+        ShotForm(double range, double speed, double radius, float baseMultiplier,
+                float multiplierPerRank, int shells, int nextShotTicks) {
+            this.range = range;
+            this.speed = speed;
+            this.radius = radius;
+            this.baseMultiplier = baseMultiplier;
+            this.multiplierPerRank = multiplierPerRank;
+            this.shells = shells;
+            this.nextShotTicks = nextShotTicks;
+        }
+
+        public float multiplier(int stanceRank) {
+            return baseMultiplier + multiplierPerRank * (stanceRank - 1);
+        }
+    }
+
+    public static final int DURATION_TICKS = 120;
+    public static final int PAUSE_FOR_W_TICKS = 11;
+    private static ShotForm artilleryForm(boolean mobile) { return mobile ? ShotForm.MOBILE : ShotForm.FIXED; }
+    private static ShotForm shotForm(ServerPlayer p) {
+        var state = STATES.get(p.getUUID());
+        return state == null ? ShotForm.NORMAL : artilleryForm(state.mobile);
+    }
     public static float multiplier(ServerPlayer p) {
         var s = STATES.get(p.getUUID());
-        return s == null ? 1 : (s.mobile ? .55f : .65f) + .025f * (s.deployment.rank - 1);
+        return s == null ? ShotForm.NORMAL.baseMultiplier : artilleryForm(s.mobile).multiplier(s.deployment.rank);
     }
-    public static double shotRange(ServerPlayer p) { return active(p) ? mobile(p) ? 20 : 26 : 16; }
+    public static double shotRange(ServerPlayer p) { return shotForm(p).range; }
     /** Blocks per second; callers convert to their projectile's tick step. */
-    public static double shotSpeed(ServerPlayer p) { return active(p) && !mobile(p) ? 34 : 30; }
-    public static double shotRadius(ServerPlayer p) { return mobile(p) ? 1 : 1.5; }
+    public static double shotSpeed(ServerPlayer p) { return shotForm(p).speed; }
+    public static double shotRadius(ServerPlayer p) { return shotForm(p).radius; }
 
     /** Called only by the paid deployment release, after its 9/7 local-action ticks. */
     public static void enter(Cast c, boolean mobile) {
@@ -116,7 +149,7 @@ public final class YikeStance {
         s.lastShotCast = c.castId();
         s.fired = true;
         s.shots--;
-        s.nextShot = c.now() + (s.mobile ? 27 : 22);
+        s.nextShot = c.now() + artilleryForm(s.mobile).nextShotTicks;
         if (s.shots == 0) exit(c.player, "empty");
         else if (!canAffordShot(c.player, s)) exit(c.player, "mana");
     }
@@ -124,7 +157,7 @@ public final class YikeStance {
     /** W calls this only after its legal ground warning has actually been committed. */
     public static void pauseForW(ServerPlayer p) {
         var s = STATES.get(p.getUUID());
-        if (s != null) s.pausedUntil = Math.max(s.pausedUntil, p.level().getGameTime() + 11);
+        if (s != null) s.pausedUntil = Math.max(s.pausedUntil, p.level().getGameTime() + PAUSE_FOR_W_TICKS);
     }
     public static boolean recastAvailable(Cast c) { return c.skill.slot() == 2 && active(c.player); }
     public static void recast(Cast c) { if (recastAvailable(c)) exit(c.player, "manual"); }

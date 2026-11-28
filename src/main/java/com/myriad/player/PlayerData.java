@@ -50,10 +50,12 @@ public class PlayerData {
         openingPurseClaimed = false;
     }
     public boolean openingPurseClaimed() { return openingPurseClaimed; }
+    public static final int OPENING_PURSE_GOLD = 500;
+
     public void grantOpeningPurse() {
         if (openingPurseClaimed) return;
-        setGold(500);
-        resetMatchGoldEarned(500);
+        setGold(OPENING_PURSE_GOLD);
+        resetMatchGoldEarned(OPENING_PURSE_GOLD);
         openingPurseClaimed = true;
     }
     private transient boolean practiceWallet;

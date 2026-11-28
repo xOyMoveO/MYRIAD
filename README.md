@@ -158,6 +158,8 @@ java -version
 
 首次构建需要联网获取依赖。本分支的客户端发行包输出为 `build/libs/myriad-0.1.0-no-arms.jar`。
 
+构建同时输出 `build/balance/balance-snapshot.json` 与覆盖报告。可单独运行 `./gradlew exportBalanceSnapshot` 生成同一快照。使用 `python tools/fabric/prepare-ci-release.py` 生成包含 JAR、快照及双文件 SHA-256 的 `build/ci-release/`。复跑基线样本见[平衡快照说明](docs/balance/snapshot.md)。
+
 开发运行入口：
 
 | 用途 | macOS / Linux | Windows PowerShell |
