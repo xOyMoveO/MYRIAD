@@ -1,0 +1,14 @@
+[
+  {
+    "role": "keheng",
+    "skill": "keheng_yimiao",
+    "metric": "lostActionSeconds",
+    "scenario": "rank3-stationary-single-target-6s",
+    "referenceRange": [0, 1.8],
+    "overrideRange": [1.8, 2.5],
+    "benefit": "固定场可以封住一个走位位置",
+    "cost": "有预警，目标可以走出范围",
+    "owner": "原型演示",
+    "reviewAt": "2026-11-27"
+  }
+]

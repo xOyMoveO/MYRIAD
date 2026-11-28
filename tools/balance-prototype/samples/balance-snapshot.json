@@ -1,0 +1,1569 @@
+{
+  "format": 1,
+  "gameBase": "bae9d06c765d7c8e74a5c1200533ae8d26443912",
+  "localGameChanges": [],
+  "profile": "CHERRY_V1",
+  "rules": {
+    "baseAttributes": [
+      65.0,
+      30.0,
+      0.7,
+      45.0,
+      45.0,
+      0.0
+    ],
+    "basicDraw": 11,
+    "camps": {
+      "CHERRY_FROST_HARE": {
+        "first": 20,
+        "gold": 45,
+        "respawn": 75,
+        "xp": 85
+      },
+      "CHERRY_JADE_BEAST": {
+        "first": 40,
+        "gold": 154,
+        "respawn": 100,
+        "xp": 155
+      },
+      "CHERRY_RIFT_CRAB": {
+        "first": 240,
+        "gold": 364,
+        "respawn": 240,
+        "xp": 270
+      }
+    },
+    "cdrCap": 60,
+    "firstWave": 35,
+    "goldScale": 1.4,
+    "inline": {
+      "backstab": [
+        10,
+        5
+      ],
+      "dome": [
+        13,
+        60,
+        0.05
+      ],
+      "domeFlight": [
+        0.4,
+        0.05
+      ],
+      "domePulse": 10,
+      "laneGold": [
+        65,
+        18,
+        12
+      ],
+      "laneXp": [
+        24,
+        18
+      ],
+      "magicWave": 3,
+      "noWave": 0.2,
+      "outerTowerHp": 8400,
+      "salaryBase": 10,
+      "salaryTicks": 100,
+      "sharedXp": 80,
+      "sources": {
+        "MELEE_PER_WAVE": "src/main/java/com/myriad/game/LaneSystem.java:55",
+        "RANGED_PER_WAVE": "src/main/java/com/myriad/game/LaneSystem.java:58",
+        "backstab": "src/main/java/com/myriad/character/skills/yingxiao/rework/NightBackstabSkill.java:17",
+        "dome": "src/main/java/com/myriad/character/skills/keheng/BeyondOneSecondSkill.java:22",
+        "domeFlight": "src/main/java/com/myriad/character/skills/keheng/BeyondOneSecondSkill.java:21",
+        "domePulse": "src/main/java/com/myriad/character/skills/keheng/KehengTimeFields.java:104",
+        "laneGold": "src/main/java/com/myriad/game/LaneSystem.java:1198",
+        "laneXp": "src/main/java/com/myriad/game/LaneSystem.java:1202",
+        "magicWave": "src/main/java/com/myriad/game/LaneSystem.java:432",
+        "noWave": "src/main/java/com/myriad/game/LaneSystem.java:1063",
+        "outerTowerHp": "src/main/java/com/myriad/game/LaneSystem.java:405",
+        "rewardSteps": "src/main/java/com/myriad/game/LaneSystem.java:1220",
+        "salaryBase": "src/main/java/com/myriad/game/GameManager.java:730",
+        "salaryTicks": "src/main/java/com/myriad/game/GameManager.java:725",
+        "share": "src/main/java/com/myriad/game/LaneSystem.java:1221",
+        "waveSeconds": "src/main/java/com/myriad/game/LaneSystem.java:54"
+      },
+      "steps": [
+        10,
+        10,
+        2
+      ],
+      "waveSeconds": 40,
+      "waveSize": [
+        2,
+        2
+      ]
+    },
+    "mageBasic": 65.0,
+    "mageRatio": 0.5,
+    "manaRegen": 4.0,
+    "oneEach": [
+      80.0,
+      50.0,
+      0.76,
+      50.0,
+      50.0,
+      3.0
+    ],
+    "opening": 500,
+    "passiveRank": [
+      1,
+      1,
+      1,
+      2,
+      2,
+      2,
+      3,
+      3,
+      3,
+      4,
+      4,
+      4,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5
+    ],
+    "power": 30.0,
+    "price": [
+      360,
+      432,
+      518,
+      622,
+      746,
+      895,
+      1074,
+      1289,
+      1547,
+      1856,
+      2227,
+      2672,
+      3206,
+      3847,
+      4616,
+      5539,
+      6647,
+      7976,
+      9571,
+      11485,
+      13782,
+      16538,
+      19846,
+      23815
+    ],
+    "quickDraw": [
+      10.6,
+      10.2,
+      9.8,
+      9.4,
+      9.0
+    ],
+    "registeredSkills": 120,
+    "roles": {
+      "keheng": {
+        "attack": 65.0,
+        "hp": [
+          600.0,
+          685.0,
+          770.0,
+          855.0,
+          940.0,
+          1025.0,
+          1110.0,
+          1195.0,
+          1280.0,
+          1365.0,
+          1450.0,
+          1535.0,
+          1620.0,
+          1705.0,
+          1790.0,
+          1875.0,
+          1960.0,
+          2045.0,
+          2130.0,
+          2215.0
+        ],
+        "mp": [
+          700.0,
+          736.0,
+          772.0,
+          808.0,
+          844.0,
+          880.0,
+          916.0,
+          952.0,
+          988.0,
+          1024.0,
+          1060.0,
+          1096.0,
+          1132.0,
+          1168.0,
+          1204.0,
+          1240.0,
+          1276.0,
+          1312.0,
+          1348.0,
+          1384.0
+        ],
+        "skills": [
+          {
+            "cooldown": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "damage": [
+              {
+                "base": 50.0,
+                "kind": "MAGIC",
+                "labelKey": "",
+                "maxHits": 1,
+                "rankGrowth": 14.4,
+                "scale": 0.25,
+                "scaleGrowth": 0.0,
+                "scaling": "TOTAL_SPELL",
+                "weight": 1.0
+              }
+            ],
+            "id": "keheng_kehen",
+            "index": 0,
+            "java": "com.myriad.character.skills.keheng.EngravedEchoSkill",
+            "mana": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "name": "Engraved Echo",
+            "prepare": 0,
+            "recovery": 3,
+            "support": []
+          },
+          {
+            "cooldown": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "damage": [],
+            "id": "keheng_hengbu",
+            "index": 1,
+            "java": "com.myriad.character.skills.keheng.ConstantStepSkill",
+            "mana": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "name": "Constant Step",
+            "prepare": 0,
+            "recovery": 3,
+            "support": [
+              {
+                "base": 75.0,
+                "effect": "shield",
+                "rankGrowth": 18.0,
+                "spellScale": 0.3
+              }
+            ]
+          },
+          {
+            "cooldown": [
+              140,
+              130,
+              120,
+              110,
+              100
+            ],
+            "damage": [
+              {
+                "base": 80.0,
+                "kind": "MAGIC",
+                "labelKey": "",
+                "maxHits": 1,
+                "rankGrowth": 24.3,
+                "scale": 0.5,
+                "scaleGrowth": 0.0,
+                "scaling": "TOTAL_SPELL",
+                "weight": 1.0
+              }
+            ],
+            "id": "keheng_chizhen",
+            "index": 2,
+            "java": "com.myriad.character.skills.keheng.DelayedNeedleSkill",
+            "mana": [
+              40.0,
+              38.0,
+              36.0,
+              34.0,
+              32.0
+            ],
+            "name": "Delayed Needle",
+            "prepare": 0,
+            "recovery": 3,
+            "support": []
+          },
+          {
+            "cooldown": [
+              280,
+              260,
+              240,
+              220,
+              200
+            ],
+            "damage": [],
+            "id": "keheng_cuopaibu",
+            "index": 3,
+            "java": "com.myriad.character.skills.keheng.OffbeatStepSkill",
+            "mana": [
+              45.0,
+              42.75,
+              40.5,
+              38.25,
+              36.0
+            ],
+            "name": "Offbeat Step",
+            "prepare": 0,
+            "recovery": 3,
+            "support": [
+              {
+                "base": 35.0,
+                "effect": "shield",
+                "rankGrowth": 12.5,
+                "spellScale": 0.15
+              }
+            ]
+          },
+          {
+            "cooldown": [
+              400,
+              380,
+              360,
+              340,
+              320,
+              300,
+              280
+            ],
+            "damage": [
+              {
+                "base": 80.0,
+                "kind": "MAGIC",
+                "labelKey": "",
+                "maxHits": 1,
+                "rankGrowth": 22.5,
+                "scale": 0.45,
+                "scaleGrowth": 0.0,
+                "scaling": "TOTAL_SPELL",
+                "weight": 1.0
+              }
+            ],
+            "id": "keheng_chijie",
+            "index": 4,
+            "java": "com.myriad.character.skills.keheng.DelayedBoundarySkill",
+            "mana": [
+              75.0,
+              71.25,
+              67.5,
+              63.75,
+              60.0,
+              56.25,
+              52.5
+            ],
+            "name": "Delayed Boundary",
+            "prepare": 0,
+            "recovery": 3,
+            "support": []
+          },
+          {
+            "cooldown": [
+              400,
+              380,
+              360,
+              340,
+              320,
+              300,
+              280
+            ],
+            "damage": [
+              {
+                "base": 90.0,
+                "kind": "MAGIC",
+                "labelKey": "",
+                "maxHits": 1,
+                "rankGrowth": 22.5,
+                "scale": 0.5,
+                "scaleGrowth": 0.0,
+                "scaling": "TOTAL_SPELL",
+                "weight": 1.0
+              }
+            ],
+            "id": "keheng_suixing",
+            "index": 5,
+            "java": "com.myriad.character.skills.keheng.FollowingSecondSkill",
+            "mana": [
+              75.0,
+              71.25,
+              67.5,
+              63.75,
+              60.0,
+              56.25,
+              52.5
+            ],
+            "name": "Following Second",
+            "prepare": 0,
+            "recovery": 3,
+            "support": []
+          },
+          {
+            "cooldown": [
+              1400,
+              1300,
+              1200
+            ],
+            "damage": [
+              {
+                "base": 24.0,
+                "kind": "MAGIC",
+                "labelKey": "skill.myriad.damage.per_pulse",
+                "maxHits": 6,
+                "rankGrowth": 9.2,
+                "scale": 0.12,
+                "scaleGrowth": 0.0,
+                "scaling": "TOTAL_SPELL",
+                "weight": 1.0
+              }
+            ],
+            "id": "keheng_yimiao",
+            "index": 6,
+            "java": "com.myriad.character.skills.keheng.BeyondOneSecondSkill",
+            "mana": [
+              160.0,
+              152.0,
+              144.0
+            ],
+            "name": "Beyond One Second",
+            "prepare": 0,
+            "recovery": 3,
+            "support": []
+          },
+          {
+            "cooldown": [
+              1300,
+              1200,
+              1100
+            ],
+            "damage": [
+              {
+                "base": 330.0,
+                "kind": "MAGIC",
+                "labelKey": "",
+                "maxHits": 1,
+                "rankGrowth": 125.0,
+                "scale": 1.35,
+                "scaleGrowth": 0.0,
+                "scaling": "TOTAL_SPELL",
+                "weight": 1.0
+              }
+            ],
+            "id": "keheng_zhongke",
+            "index": 7,
+            "java": "com.myriad.character.skills.keheng.FinalPenetrationSkill",
+            "mana": [
+              150.0,
+              142.5,
+              135.0
+            ],
+            "name": "Final Penetration",
+            "prepare": 0,
+            "recovery": 3,
+            "support": []
+          }
+        ]
+      },
+      "luoxia": {
+        "attack": 100.0,
+        "hp": [
+          575.0,
+          650.0,
+          725.0,
+          800.0,
+          875.0,
+          950.0,
+          1025.0,
+          1100.0,
+          1175.0,
+          1250.0,
+          1325.0,
+          1400.0,
+          1475.0,
+          1550.0,
+          1625.0,
+          1700.0,
+          1775.0,
+          1850.0,
+          1925.0,
+          2000.0
+        ],
+        "mp": [
+          700.0,
+          724.0,
+          748.0,
+          772.0,
+          796.0,
+          820.0,
+          844.0,
+          868.0,
+          892.0,
+          916.0,
+          940.0,
+          964.0,
+          988.0,
+          1012.0,
+          1036.0,
+          1060.0,
+          1084.0,
+          1108.0,
+          1132.0,
+          1156.0
+        ],
+        "skills": [
+          {
+            "cooldown": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "damage": [
+              {
+                "base": 0.0,
+                "kind": "PHYSICAL",
+                "labelKey": "",
+                "maxHits": 1,
+                "rankGrowth": 0.0,
+                "scale": 0.9,
+                "scaleGrowth": 0.0,
+                "scaling": "TOTAL_PHYSICAL",
+                "weight": 1.0
+              }
+            ],
+            "id": "luoxia_chase_dusk",
+            "index": 0,
+            "java": "com.myriad.character.skills.luoxia.ChaseDusk",
+            "mana": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "name": "追霞续弦",
+            "prepare": 0,
+            "recovery": 3,
+            "support": []
+          },
+          {
+            "cooldown": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "damage": [
+              {
+                "base": 0.0,
+                "kind": "PHYSICAL",
+                "labelKey": "",
+                "maxHits": 1,
+                "rankGrowth": 0.0,
+                "scale": 1.21,
+                "scaleGrowth": 0.06,
+                "scaling": "TOTAL_PHYSICAL",
+                "weight": 1.0
+              }
+            ],
+            "id": "luoxia_steady_dusk",
+            "index": 1,
+            "java": "com.myriad.character.skills.luoxia.SteadyDusk",
+            "mana": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "name": "凝霞满弓",
+            "prepare": 0,
+            "recovery": 3,
+            "support": []
+          },
+          {
+            "cooldown": [
+              140,
+              140,
+              140,
+              140,
+              140
+            ],
+            "damage": [
+              {
+                "base": 52.0,
+                "kind": "PHYSICAL",
+                "labelKey": "skill.myriad.damage.mark_arrow",
+                "maxHits": 1,
+                "rankGrowth": 8.75,
+                "scale": 0.2777778,
+                "scaleGrowth": 0.0,
+                "scaling": "PURCHASED_PHYSICAL",
+                "weight": 1.0
+              },
+              {
+                "base": 25.0,
+                "kind": "PHYSICAL",
+                "labelKey": "skill.myriad.damage.mark_pop",
+                "maxHits": 1,
+                "rankGrowth": 6.25,
+                "scale": 0.22222222,
+                "scaleGrowth": 0.0,
+                "scaling": "PURCHASED_PHYSICAL",
+                "weight": 1.0
+              }
+            ],
+            "id": "luoxia_dusk_mark",
+            "index": 2,
+            "java": "com.myriad.character.skills.luoxia.DuskMark",
+            "mana": [
+              45.0,
+              42.75,
+              40.5,
+              38.25,
+              36.0
+            ],
+            "name": "雁过霞痕",
+            "prepare": 0,
+            "recovery": 3,
+            "support": []
+          },
+          {
+            "cooldown": [
+              220,
+              220,
+              220,
+              220,
+              220
+            ],
+            "damage": [],
+            "id": "luoxia_slant_step",
+            "index": 3,
+            "java": "com.myriad.character.skills.luoxia.SlantStep",
+            "mana": [
+              45.0,
+              42.75,
+              40.5,
+              38.25,
+              36.0
+            ],
+            "name": "斜照撤步",
+            "prepare": 0,
+            "recovery": 3,
+            "support": []
+          },
+          {
+            "cooldown": [
+              160,
+              160,
+              160,
+              160,
+              160,
+              160,
+              160
+            ],
+            "damage": [
+              {
+                "base": 50.0,
+                "kind": "PHYSICAL",
+                "labelKey": "skill.myriad.damage.first_two_arrows",
+                "maxHits": 2,
+                "rankGrowth": 1.0416666,
+                "scale": 0.2,
+                "scaleGrowth": 0.0,
+                "scaling": "PURCHASED_PHYSICAL",
+                "weight": 1.0
+              },
+              {
+                "base": 50.0,
+                "kind": "PHYSICAL",
+                "labelKey": "skill.myriad.damage.third_arrow",
+                "maxHits": 1,
+                "rankGrowth": 1.0416666,
+                "scale": 0.2,
+                "scaleGrowth": 0.0,
+                "scaling": "PURCHASED_PHYSICAL",
+                "weight": 0.5
+              }
+            ],
+            "id": "luoxia_feather_burst",
+            "index": 4,
+            "java": "com.myriad.character.skills.luoxia.FeatherBurst",
+            "mana": [
+              65.0,
+              61.75,
+              58.5,
+              55.25,
+              52.0,
+              48.75,
+              45.5
+            ],
+            "name": "飞羽连弦",
+            "prepare": 0,
+            "recovery": 3,
+            "support": []
+          },
+          {
+            "cooldown": [
+              200,
+              200,
+              200,
+              200,
+              200,
+              200,
+              200
+            ],
+            "damage": [
+              {
+                "base": 150.0,
+                "kind": "PHYSICAL",
+                "labelKey": "",
+                "maxHits": 1,
+                "rankGrowth": 6.75,
+                "scale": 0.5,
+                "scaleGrowth": 0.0,
+                "scaling": "PURCHASED_PHYSICAL",
+                "weight": 1.0
+              }
+            ],
+            "id": "luoxia_last_sun",
+            "index": 5,
+            "java": "com.myriad.character.skills.luoxia.LastSun",
+            "mana": [
+              65.0,
+              61.75,
+              58.5,
+              55.25,
+              52.0,
+              48.75,
+              45.5
+            ],
+            "name": "一点残阳",
+            "prepare": 10,
+            "recovery": 3,
+            "support": []
+          },
+          {
+            "cooldown": [
+              1100,
+              1100,
+              1100
+            ],
+            "damage": [
+              {
+                "base": 70.0,
+                "kind": "PHYSICAL",
+                "labelKey": "skill.myriad.damage.per_round",
+                "maxHits": 3,
+                "rankGrowth": 5.75,
+                "scale": 0.26666668,
+                "scaleGrowth": 0.0,
+                "scaling": "PURCHASED_PHYSICAL",
+                "weight": 1.0
+              }
+            ],
+            "id": "luoxia_thousand_feathers",
+            "index": 6,
+            "java": "com.myriad.character.skills.luoxia.ThousandFeathers",
+            "mana": [
+              145.0,
+              137.75,
+              130.5
+            ],
+            "name": "千羽照野",
+            "prepare": 7,
+            "recovery": 3,
+            "support": []
+          },
+          {
+            "cooldown": [
+              1200,
+              1200,
+              1200
+            ],
+            "damage": [
+              {
+                "base": 175.0,
+                "kind": "PHYSICAL",
+                "labelKey": "skill.myriad.damage.hero_first",
+                "maxHits": 1,
+                "rankGrowth": 53.125,
+                "scale": 0.8,
+                "scaleGrowth": 0.0,
+                "scaling": "PURCHASED_PHYSICAL",
+                "weight": 1.0
+              },
+              {
+                "base": 175.0,
+                "kind": "PHYSICAL",
+                "labelKey": "skill.myriad.damage.hero_second",
+                "maxHits": 1,
+                "rankGrowth": 53.125,
+                "scale": 0.8,
+                "scaleGrowth": 0.0,
+                "scaling": "PURCHASED_PHYSICAL",
+                "weight": 0.6923077
+              },
+              {
+                "base": 175.0,
+                "kind": "PHYSICAL",
+                "labelKey": "skill.myriad.damage.hero_third",
+                "maxHits": 1,
+                "rankGrowth": 53.125,
+                "scale": 0.8,
+                "scaleGrowth": 0.0,
+                "scaling": "PURCHASED_PHYSICAL",
+                "weight": 0.48076922
+              },
+              {
+                "base": 40.0,
+                "kind": "PHYSICAL",
+                "labelKey": "skill.myriad.damage.non_hero",
+                "maxHits": 1,
+                "rankGrowth": 12.5,
+                "scale": 0.15238097,
+                "scaleGrowth": 0.0,
+                "scaling": "PURCHASED_PHYSICAL",
+                "weight": 1.0
+              }
+            ],
+            "id": "luoxia_sunset_line",
+            "index": 7,
+            "java": "com.myriad.character.skills.luoxia.SunsetLine",
+            "mana": [
+              155.0,
+              147.25,
+              139.5
+            ],
+            "name": "霞沉一线",
+            "prepare": 17,
+            "recovery": 3,
+            "support": []
+          }
+        ]
+      },
+      "qingluo": {
+        "attack": 65.0,
+        "hp": [
+          580.0,
+          666.0,
+          752.0,
+          838.0,
+          924.0,
+          1010.0,
+          1096.0,
+          1182.0,
+          1268.0,
+          1354.0,
+          1440.0,
+          1526.0,
+          1612.0,
+          1698.0,
+          1784.0,
+          1870.0,
+          1956.0,
+          2042.0,
+          2128.0,
+          2214.0
+        ],
+        "mp": [
+          700.0,
+          736.0,
+          772.0,
+          808.0,
+          844.0,
+          880.0,
+          916.0,
+          952.0,
+          988.0,
+          1024.0,
+          1060.0,
+          1096.0,
+          1132.0,
+          1168.0,
+          1204.0,
+          1240.0,
+          1276.0,
+          1312.0,
+          1348.0,
+          1384.0
+        ],
+        "skills": [
+          {
+            "cooldown": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "damage": [],
+            "id": "g2_qingluo_pa",
+            "index": 0,
+            "java": "com.myriad.character.skills.qingluo.rework.KindHerbalistSkill",
+            "mana": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "name": "仁心",
+            "prepare": 0,
+            "recovery": 3,
+            "support": [
+              {
+                "base": 20.0,
+                "effect": "heal",
+                "rankGrowth": 9.6,
+                "spellScale": 0.18
+              }
+            ]
+          },
+          {
+            "cooldown": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "damage": [],
+            "id": "g2_qingluo_pb",
+            "index": 1,
+            "java": "com.myriad.character.skills.qingluo.rework.HerbalEssenceSkill",
+            "mana": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "name": "采灵化露",
+            "prepare": 0,
+            "recovery": 3,
+            "support": [
+              {
+                "base": 12.0,
+                "effect": "heal",
+                "rankGrowth": 6.0,
+                "spellScale": 0.1
+              }
+            ]
+          },
+          {
+            "cooldown": [
+              180,
+              180,
+              180,
+              180,
+              180
+            ],
+            "damage": [],
+            "id": "g2_qingluo_n1",
+            "index": 2,
+            "java": "com.myriad.character.skills.qingluo.rework.VerdantDewSkill",
+            "mana": [
+              70.0,
+              66.5,
+              63.0,
+              59.5,
+              56.0
+            ],
+            "name": "青藤玉露",
+            "prepare": 0,
+            "recovery": 3,
+            "support": [
+              {
+                "base": 70.0,
+                "effect": "heal",
+                "rankGrowth": 27.5,
+                "spellScale": 0.5
+              }
+            ]
+          },
+          {
+            "cooldown": [
+              220,
+              220,
+              220,
+              220,
+              220
+            ],
+            "damage": [
+              {
+                "base": 50.0,
+                "kind": "MAGIC",
+                "labelKey": "",
+                "maxHits": 1,
+                "rankGrowth": 20.0,
+                "scale": 0.45,
+                "scaleGrowth": 0.0,
+                "scaling": "TOTAL_SPELL",
+                "weight": 1.0
+              }
+            ],
+            "id": "g2_qingluo_n2",
+            "index": 3,
+            "java": "com.myriad.character.skills.qingluo.rework.BriarSeedSkill",
+            "mana": [
+              65.0,
+              61.75,
+              58.5,
+              55.25,
+              52.0
+            ],
+            "name": "缚生藤",
+            "prepare": 0,
+            "recovery": 3,
+            "support": [
+              {
+                "base": 35.0,
+                "effect": "heal",
+                "rankGrowth": 15.0,
+                "spellScale": 0.25
+              }
+            ]
+          },
+          {
+            "cooldown": [
+              360,
+              360,
+              360,
+              360,
+              360,
+              360,
+              360
+            ],
+            "damage": [],
+            "id": "g2_qingluo_ma",
+            "index": 4,
+            "java": "com.myriad.character.skills.qingluo.rework.HeartPillArraySkill",
+            "mana": [
+              110.0,
+              104.5,
+              99.0,
+              93.5,
+              88.0,
+              82.5,
+              77.0
+            ],
+            "name": "护心丹阵",
+            "prepare": 0,
+            "recovery": 3,
+            "support": [
+              {
+                "base": 80.0,
+                "effect": "shield",
+                "rankGrowth": 25.3,
+                "spellScale": 0.35
+              }
+            ]
+          },
+          {
+            "cooldown": [
+              340,
+              340,
+              340,
+              340,
+              340,
+              340,
+              340
+            ],
+            "damage": [],
+            "id": "g2_qingluo_mb",
+            "index": 5,
+            "java": "com.myriad.character.skills.qingluo.rework.LifeThreadSkill",
+            "mana": [
+              100.0,
+              95.0,
+              90.0,
+              85.0,
+              80.0,
+              75.0,
+              70.0
+            ],
+            "name": "千丝渡厄",
+            "prepare": 0,
+            "recovery": 3,
+            "support": [
+              {
+                "base": 150.0,
+                "effect": "shield",
+                "rankGrowth": 43.75,
+                "spellScale": 0.7
+              },
+              {
+                "base": 20.0,
+                "effect": "heal",
+                "rankGrowth": 8.75,
+                "spellScale": 0.15
+              }
+            ]
+          },
+          {
+            "cooldown": [
+              1400,
+              1400,
+              1400
+            ],
+            "damage": [],
+            "id": "g2_qingluo_ua",
+            "index": 6,
+            "java": "com.myriad.character.skills.qingluo.rework.SpringGroveSkill",
+            "mana": [
+              190.0,
+              180.5,
+              171.0
+            ],
+            "name": "万木春晖",
+            "prepare": 0,
+            "recovery": 3,
+            "support": [
+              {
+                "base": 45.0,
+                "effect": "heal",
+                "rankGrowth": 23.0,
+                "spellScale": 0.22
+              }
+            ]
+          },
+          {
+            "cooldown": [
+              1300,
+              1300,
+              1300
+            ],
+            "damage": [],
+            "id": "g2_qingluo_ub",
+            "index": 7,
+            "java": "com.myriad.character.skills.qingluo.rework.JadeCanopySkill",
+            "mana": [
+              180.0,
+              171.0,
+              162.0
+            ],
+            "name": "悬壶天幕",
+            "prepare": 0,
+            "recovery": 3,
+            "support": [
+              {
+                "base": 100.0,
+                "effect": "heal",
+                "rankGrowth": 43.75,
+                "spellScale": 0.4
+              },
+              {
+                "base": 200.0,
+                "effect": "shield",
+                "rankGrowth": 81.25,
+                "spellScale": 0.65
+              }
+            ]
+          }
+        ]
+      },
+      "yingxiao": {
+        "attack": 65.0,
+        "hp": [
+          560.0,
+          645.0,
+          730.0,
+          815.0,
+          900.0,
+          985.0,
+          1070.0,
+          1155.0,
+          1240.0,
+          1325.0,
+          1410.0,
+          1495.0,
+          1580.0,
+          1665.0,
+          1750.0,
+          1835.0,
+          1920.0,
+          2005.0,
+          2090.0,
+          2175.0
+        ],
+        "mp": [
+          700.0,
+          724.0,
+          748.0,
+          772.0,
+          796.0,
+          820.0,
+          844.0,
+          868.0,
+          892.0,
+          916.0,
+          940.0,
+          964.0,
+          988.0,
+          1012.0,
+          1036.0,
+          1060.0,
+          1084.0,
+          1108.0,
+          1132.0,
+          1156.0
+        ],
+        "skills": [
+          {
+            "cooldown": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "damage": [],
+            "id": "g1_yingxiao_pa",
+            "index": 0,
+            "java": "com.myriad.character.skills.yingxiao.rework.NightBackstabSkill",
+            "mana": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "name": "暗影猎手",
+            "prepare": 0,
+            "recovery": 3,
+            "support": []
+          },
+          {
+            "cooldown": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "damage": [
+              {
+                "base": 37.5,
+                "kind": "PHYSICAL",
+                "labelKey": "",
+                "maxHits": 1,
+                "rankGrowth": 14.4,
+                "scale": 0.25,
+                "scaleGrowth": 0.0,
+                "scaling": "PURCHASED_PHYSICAL",
+                "weight": 1.0
+              }
+            ],
+            "id": "g1_yingxiao_pb",
+            "index": 1,
+            "java": "com.myriad.character.skills.yingxiao.rework.NightAmbushSkill",
+            "mana": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "name": "孤影伏击",
+            "prepare": 0,
+            "recovery": 3,
+            "support": []
+          },
+          {
+            "cooldown": [
+              180,
+              180,
+              180,
+              180,
+              180
+            ],
+            "damage": [
+              {
+                "base": 61.5,
+                "kind": "PHYSICAL",
+                "labelKey": "",
+                "maxHits": 1,
+                "rankGrowth": 20.25,
+                "scale": 0.5,
+                "scaleGrowth": 0.0,
+                "scaling": "PURCHASED_PHYSICAL",
+                "weight": 1.0
+              }
+            ],
+            "id": "g1_yingxiao_n1",
+            "index": 2,
+            "java": "com.myriad.character.skills.yingxiao.rework.ShadowDaggerSkill",
+            "mana": [
+              70.0,
+              66.5,
+              63.0,
+              59.5,
+              56.0
+            ],
+            "name": "影杀",
+            "prepare": 0,
+            "recovery": 3,
+            "support": []
+          },
+          {
+            "cooldown": [
+              360,
+              360,
+              360,
+              360,
+              360
+            ],
+            "damage": [],
+            "id": "g1_yingxiao_n2",
+            "index": 3,
+            "java": "com.myriad.character.skills.yingxiao.rework.ShadowVanishSkill",
+            "mana": [
+              90.0,
+              85.5,
+              81.0,
+              76.5,
+              72.0
+            ],
+            "name": "化影",
+            "prepare": 0,
+            "recovery": 3,
+            "support": []
+          },
+          {
+            "cooldown": [
+              200,
+              200,
+              200,
+              200,
+              200,
+              200,
+              200
+            ],
+            "damage": [
+              {
+                "base": 94.0,
+                "kind": "PHYSICAL",
+                "labelKey": "",
+                "maxHits": 1,
+                "rankGrowth": 25.0,
+                "scale": 0.5,
+                "scaleGrowth": 0.0,
+                "scaling": "PURCHASED_PHYSICAL",
+                "weight": 1.0
+              }
+            ],
+            "id": "g1_yingxiao_ma",
+            "index": 4,
+            "java": "com.myriad.character.skills.yingxiao.rework.ShadowAssaultSkill",
+            "mana": [
+              85.0,
+              80.75,
+              76.5,
+              72.25,
+              68.0,
+              63.75,
+              59.5
+            ],
+            "name": "影袭",
+            "prepare": 0,
+            "recovery": 3,
+            "support": []
+          },
+          {
+            "cooldown": [
+              240,
+              240,
+              240,
+              240,
+              240,
+              240,
+              240
+            ],
+            "damage": [
+              {
+                "base": 74.5,
+                "kind": "PHYSICAL",
+                "labelKey": "",
+                "maxHits": 1,
+                "rankGrowth": 22.5,
+                "scale": 0.5,
+                "scaleGrowth": 0.0,
+                "scaling": "PURCHASED_PHYSICAL",
+                "weight": 1.0
+              }
+            ],
+            "id": "g1_yingxiao_mb",
+            "index": 5,
+            "java": "com.myriad.character.skills.yingxiao.rework.ShadowReturnSkill",
+            "mana": [
+              85.0,
+              80.75,
+              76.5,
+              72.25,
+              68.0,
+              63.75,
+              59.5
+            ],
+            "name": "回影",
+            "prepare": 0,
+            "recovery": 3,
+            "support": []
+          },
+          {
+            "cooldown": [
+              1700,
+              1500,
+              1300
+            ],
+            "damage": [
+              {
+                "base": 219.0,
+                "kind": "PHYSICAL",
+                "labelKey": "",
+                "maxHits": 1,
+                "rankGrowth": 87.5,
+                "scale": 0.8,
+                "scaleGrowth": 0.0,
+                "scaling": "PURCHASED_PHYSICAL",
+                "weight": 1.0
+              }
+            ],
+            "id": "g1_yingxiao_ua",
+            "index": 6,
+            "java": "com.myriad.character.skills.yingxiao.rework.ShadowExecutionSkill",
+            "mana": [
+              160.0,
+              152.0,
+              144.0
+            ],
+            "name": "绝影追击",
+            "prepare": 0,
+            "recovery": 3,
+            "support": []
+          },
+          {
+            "cooldown": [
+              1600,
+              1400,
+              1200
+            ],
+            "damage": [],
+            "id": "g1_yingxiao_ub",
+            "index": 7,
+            "java": "com.myriad.character.skills.yingxiao.rework.ShadowShieldSkill",
+            "mana": [
+              150.0,
+              142.5,
+              135.0
+            ],
+            "name": "灵盾",
+            "prepare": 0,
+            "recovery": 3,
+            "support": [
+              {
+                "base": 306.0,
+                "effect": "shield",
+                "rankGrowth": 148.75,
+                "spellScale": 1.53
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "roster": [
+      "chixiao",
+      "fenjue",
+      "hanze",
+      "keheng",
+      "lingyuan",
+      "luoxia",
+      "qingluo",
+      "rivet",
+      "shuo",
+      "sulan",
+      "tianxing",
+      "xuanchen",
+      "yike",
+      "yingxiao",
+      "yunsheng"
+    ],
+    "towerScale": [
+      0.65,
+      0.65,
+      0.65,
+      0.65,
+      0.65,
+      0.65,
+      0.7000000000000001,
+      0.75,
+      0.8,
+      0.85,
+      0.9,
+      0.95,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "xpNext": [
+      100,
+      150,
+      200,
+      250,
+      300,
+      350,
+      400,
+      450,
+      500,
+      550,
+      600,
+      650,
+      700,
+      750,
+      800,
+      850,
+      900,
+      950,
+      1000
+    ]
+  },
+  "rulesSha256": "bccdf6e030afd1e6eeade3879970ddc7cdcb21131c4b39c1c0bea3694ac144a7",
+  "variant": "current"
+}

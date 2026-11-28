@@ -20,7 +20,7 @@ import java.util.*;
 /** Production input, actual health/shields, local progress, real-time fields and lifecycle in a new world. */
 final class KehengChecks {
     private KehengChecks(){}
-    private static final class Fixture {ServerPlayer p,t;Vec3 origin;final List<ServerPlayer> players=new ArrayList<>();final Map<BlockPos,net.minecraft.world.level.block.state.BlockState> blocks=new HashMap<>();}
+    static final class Fixture {ServerPlayer p,t;Vec3 origin;final List<ServerPlayer> players=new ArrayList<>();final Map<BlockPos,net.minecraft.world.level.block.state.BlockState> blocks=new HashMap<>();}
     static void run(GameTestHelper h){
         boolean mod=ModState.isEnabled(),training=TrainingMode.isEnabled(),noMana=TrainingMode.isNoMana(),noCd=TrainingMode.isNoCooldown();
         ModState.setEnabled(true);TrainingMode.setEnabled(true);TrainingMode.setNoMana(false);TrainingMode.setNoCooldown(false);
@@ -235,7 +235,7 @@ final class KehengChecks {
     private static void rate(GameTestHelper h,ServerPlayer p,double rate,String why){h.assertTrue(Math.abs(ActionTime.multiplier(p.getUUID(),p.level().getGameTime())-rate)<.00001,why);}
     private static void hp(GameTestHelper h,Fixture f,float hp,String why){h.assertTrue(Math.abs(f.t.getHealth()-hp)<.12,why+"; actual="+f.t.getHealth()+" expected="+hp);}
     private static void learn(Fixture f,int index,int rank){PlayerDataProvider.get(f.p).setSkillLevel(FirstGroupSkills.node("keheng",index).getId(),rank);}
-    private static void point(Fixture f,double forward){f.p.setYRot(0);f.p.setXRot((float)Math.toDegrees(Math.atan2(f.p.getEyeHeight(),forward)));}
+    static void point(Fixture f,double forward){f.p.setYRot(0);f.p.setXRot((float)Math.toDegrees(Math.atan2(f.p.getEyeHeight(),forward)));}
     private static void wall(Fixture f,GameTestHelper h,int x,int y,int z){var pos=BlockPos.containing(f.origin).offset(x,y-1,z);f.blocks.putIfAbsent(pos,h.getLevel().getBlockState(pos));h.getLevel().setBlockAndUpdate(pos,Blocks.STONE.defaultBlockState());}
     private static void cover(Fixture f,GameTestHelper h,net.minecraft.world.level.block.Block block){
         var base=BlockPos.containing(f.origin).offset(0,0,4);
@@ -246,7 +246,7 @@ final class KehengChecks {
         f.t.setPos(f.origin.x,f.origin.y,base.getZ()+rear+.01+f.t.getBbWidth()/2);
         h.assertTrue(f.t.getBoundingBox().minZ>base.getZ()+rear,"Cover fixture target is wholly behind the collision shape");
     }
-    private static Fixture fixture(GameTestHelper h,int i){
+    static Fixture fixture(GameTestHelper h,int i){
         var f=new Fixture();var floor=h.absolutePos(new BlockPos(-100+i*24,80,-45));
         for(int x=-5;x<=5;x++)for(int z=-5;z<=14;z++)for(int y=0;y<=6;y++){
             var pos=floor.offset(x,y,z);f.blocks.put(pos,h.getLevel().getBlockState(pos));h.getLevel().setBlockAndUpdate(pos,(y==0?Blocks.STONE:Blocks.AIR).defaultBlockState());}

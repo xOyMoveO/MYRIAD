@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>万象 · 樱隙前线平衡标杆</title>
+<style>
+:root{color-scheme:light;--ink:#202d29;--sub:#485954;--rule:#ced7cf;--paper:#fafaf5;--accent:#17614e;font:16px/1.55 "Source Sans 3","PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);background:var(--paper)}
+*{box-sizing:border-box}body{margin:0}main{max-width:1100px;margin:auto;padding:32px clamp(16px,5vw,56px) 60px}
+header{border-top:5px solid var(--accent);padding-top:18px}h1{font-size:clamp(25px,3.4vw,40px);letter-spacing:-.03em;margin:0}h2{font-size:21px;margin:24px 0 5px}h3{font-size:17px;margin:18px 0 6px}p{margin:8px 0;color:var(--sub)}
+nav,.controls,.guide{display:flex;flex-wrap:wrap;gap:8px}nav{margin:20px 0 10px;border-bottom:1px solid var(--rule);padding-bottom:12px}
+button,select{font:inherit;color:var(--ink);background:white;border:1px solid #83968a;border-radius:4px;padding:5px 10px;cursor:pointer}
+button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:white}button:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid #93671b;outline-offset:2px}
+.controls{margin:12px 0 15px;align-items:end}.controls label{display:flex;flex-direction:column;font-size:.84rem;color:var(--sub);gap:2px}.controls select{font-size:1rem}
+.wrap{overflow:auto;max-width:100%}table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:.92rem}td,th{text-align:left;padding:7px 9px;border-bottom:1px solid var(--rule);vertical-align:top}th{color:var(--sub);font-weight:600;background:#eaf0e8}th,td:first-child{white-space:nowrap}
+.lead{color:var(--accent);font-size:1.13rem;font-weight:650}.guide{padding:7px 0 12px}.guide button{font-size:.9rem}details{margin:14px 0;border-top:1px solid var(--rule);padding:9px 0}summary{cursor:pointer;font-weight:600}footer{border-top:1px solid var(--rule);margin-top:32px;padding-top:10px;color:var(--sub);font-size:.85rem}
+@media(max-width:600px){main{padding-top:14px}td,th{padding:5px 7px}nav button{font-size:.92rem}}
+</style>
+<main>
+<header><h1>樱隙前线平衡标杆</h1><p>用四名角色检验同一套预算能否看见拆塔、切入、缓时和救援的差别。可以改变场景，查看技能如何命中、花蓝和消耗护盾。</p></header>
+<nav id="nav" aria-label="报告视图"></nav>
+<div id="controls" class="controls"></div>
+<section id="body" aria-live="polite"></section>
+<footer>万象 · 3v3 单目标逻辑原型　|　当前规则 <span id="rev"></span>　|　报告日期 <span id="date"></span></footer>
+</main>
+<script id="model">
+const DATA=/*AUDIT_DATA*/null;
+const tabs=["角色与连招","经济与配点","普攻拆塔","改值与复审","引擎对照"];
+const initial={tab:0,role:"luoxia",mode:"当前",level:20,branch:"AAA",scene:"独自出手",minute:12,wave:true,manual:false,record:true,shop:20};
+function transition(state,patch){return {...state,...patch}}
+function rowsAt(s){const role=DATA.roles[s.role][s.mode],stage=role.stages[s.level],branch=stage.branches[s.branch];return {role,stage,branch,sim:branch.scenes[s.scene]}}
+function exceptionState(s){const exp=DATA.experiment,item=exp.rows[s.manual?"manual":"current"],record=s.record && exp.record;const flags=item.signals.filter(x=>!(x.includes("已记")||x.includes("日期")||x.includes("无设计")||x.includes("清理")));if(record&&item.seconds>exp.reference[1]){if(item.seconds<record.overrideRange[0]||item.seconds>record.overrideRange[1])flags.push("超出已记区间，建议复审");if(record.reviewAt<=DATA.asOf)flags.push("复审日期已到")}else if(!record&&item.seconds>exp.reference[1])flags.push("无设计例外记录");return {item,record,flags}}
+</script>
+<script>
+let state={...initial};
+const el=id=>document.getElementById(id);
+const esc=s=>String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
+const num=(v,n=2)=>v==null?"—":Number(v).toLocaleString("zh-CN",{maximumFractionDigits:n});
+const table=(heads,rows)=>'<div class="wrap"><table><thead><tr>'+heads.map(x=>'<th scope="col">'+esc(x)+'</th>').join("")+'</tr></thead><tbody>'+rows.map(row=>'<tr>'+row.map(x=>'<td>'+esc(x)+'</td>').join("")+'</tr>').join("")+'</tbody></table></div>';
+const para=s=>'<p>'+esc(s)+'</p>', head=s=>'<h2>'+esc(s)+'</h2>', sub=s=>'<h3>'+esc(s)+'</h3>',lead=s=>'<p class="lead">'+esc(s)+'</p>';
+const details=(title,html)=>'<details><summary>'+esc(title)+'</summary>'+html+'</details>';
+function change(patch){state=transition(state,patch);draw()}
+function select(key,title,items){const label=document.createElement("label");label.textContent=title;const field=document.createElement("select");field.id=key;for(const [value,display] of items){const opt=new Option(display,String(value));opt.selected=value==state[key];field.append(opt)}field.onchange=()=>change({[key]:typeof state[key]==="boolean"?field.value==="true":typeof state[key]==="number"?Number(field.value):field.value});label.append(field);el("controls").append(label)}
+const opts=values=>values.map(v=>[v,v]);
+const guides=[
+ [["从落霞 AAA 开始",{...initial}],["切到夜影背面",{role:"yingxiao",branch:"AAA",scene:"队友先控"}],["看青萝连线",{role:"qingluo",branch:"ABB",scene:"独自出手"}]],
+ [["看开局",{shop:0}],["看第七分钟",{shop:7}],["看二十分钟候选配点",{shop:20,mode:"候选"}]],
+ [["十二分钟带兵线",{minute:12,wave:true}],["撤走兵线",{minute:12,wave:false}],["回到三分钟",{minute:3,wave:true}]],
+ [["查看原值",{manual:false,record:true}],["换成手改 100 刻",{manual:true,record:true}],["移走例外说明",{manual:true,record:false}]],
+ [["当前引擎输入",{manual:false}],["手改版本同输入",{manual:true}]]
+];
+function guide(){return sub("逐步对照")+'<div class="guide">'+guides[state.tab].map(([name],i)=>'<button data-step="'+i+'">'+esc(name)+'</button>').join("")+'</div>'}
+function draw(){
+ el("nav").replaceChildren();tabs.forEach((n,i)=>{const b=document.createElement("button");b.textContent=n;b.setAttribute("aria-pressed",state.tab===i);b.onclick=()=>change({...initial,tab:i});el("nav").append(b)});
+ el("controls").replaceChildren();const s=state;
+ if(s.tab<2){select("role","角色",Object.entries(DATA.names));select("mode","数值规则",opts(DATA.modes))}
+ if(s.tab===0){select("level","英雄等级",DATA.levels.map(x=>[x,(x===DATA.curve.at(-1).level?"20 分钟推演":"指定同经济")+" · Lv"+x]));select("branch","被动 / E / R",opts(Object.keys(rowsAt(s).stage.branches)));select("scene","对手位置",opts(DATA.scenes))}
+ if(s.tab===1){select("shop","购物时点",[0,3,7,12,16,20].map(v=>[v,v+" 分钟"]))}
+ if(s.tab===2){select("minute","时段",[3,8,12].map(v=>[v,v+" 分钟"]));select("wave","友军兵线",[[true,"在塔下"],[false,"未进塔下"]])}
+ if(s.tab===3||s.tab===4)select("manual","构建",[[false,"当前版本"],[true,"手改 100 刻"]]);
+ if(s.tab===3)select("record","设计例外",[[true,"读取记录"],[false,"移走记录"]]);
+ let html="";
+ if(s.tab===0){
+ const {role,stage,branch,sim}=rowsAt(s),low=DATA.corridors[s.role][0],high=DATA.corridors[s.role][1],ttk=sim.ttk;
+ const corridor=s.level<12?"该等级不适用中后期走廊":(high===null?"参考 ≥ "+low+" 秒":"参考 "+low+"–"+high+" 秒");
+ html=head(DATA.names[s.role]+" · "+branch.names.join(" / "))+lead("击杀参考脆皮耗时 "+(ttk===null?"超过 60 秒":num(ttk)+" 秒")+"。"+corridor+"（"+sim.corridor+"）。")+
+ para("相同可用金币，攻方配点 "+role.economy.points.join("/")+"，守方 "+role.defender.points.join("/")+"。各列峰值分别取八种分支、两种场景的最大值。")+
+ table(["指标","当前选择","八组合峰值","峰值来源","试测线","状态"],stage.envelope.map((v,i)=>[DATA.axes[i],num(sim.metrics[i]),num(v.value),v.branch+" · "+v.scene,num(v.limit),v.status]))+
+ para("六秒内有效治疗 "+num(sim.heal)+"，实际吸收 "+num(sim.absorbed)+"。固定反击动作减少 "+sim.deniedBasics+" 次。60 秒提交 "+sim.casts60+" 次，最低法力 "+num(sim.manaMin)+"，终点 "+num(sim.manaEnd)+"。")+
+ details("静态预算 · 各段单次成立时",para("同一箭穿透不同目标的段值互斥。盾疗按实际缺血和来伤进入时序预算。")+table(["技能","段 / 效果","减伤前数值","声明最多命中","单次伤害预算点"],branch.terms.map(t=>[t.skill,t.term.replace("skill.myriad.damage.",""),num(t.raw),num(t.maxHits),num(t.onHitPoints)])))+
+ details("本次起手、提交与命中",table(["真实刻","事件","数值"],sim.trace.map(row=>[row[0],row[1],num(row[2])])))+
+ details("同层 A/B 增量（强制 Lv20）",para("固定其余两层，以移除本层的同脚本为共同基线。两场景各占一半。平均增量为正时显示相对差；超过 8% 提示复核。")+table(["层","A / B","A 增量","B 增量","相对差"],role.branchMargins.map(v=>[v.layer,v.a+" / "+v.b,num(v.aNet),num(v.bNet),v.gap===null?"原始值":num(v.gap)+"%"])))+
+ para("这是固定出手次序的单目标试算。地形、退路价值、隐身换位和实战命中率待测；单技能引擎对照见相应页。");
+ }else if(s.tab===1){
+ const row=DATA.curve.find(r=>r.sec===s.shop*60),econ=DATA.roles[s.role][s.mode].economy,b=econ.path.find(r=>r.sec===row.sec);
+ html=head("从开战到第 "+s.shop+" 分钟")+lead("Lv"+row.level+" · 累计 "+num(row.income)+" 金 · 钱包 "+num(b.remaining)+" 金")+
+ para("三人轮流补一条兵线，兵线生成 15 秒后结算。本角色回泉前后 12 秒离线。双方对称，本场景的野区、击杀、助攻和推塔收入均为零。")+
+ table(["来源","开局","工资","补刀","经验"],[["截至所选时点",num(row.sources["开局"]||0),num(row.sources["工资"]||0),num(row.sources["补刀"]||0),num(row.xp)]])+
+ para("同刻轮转清野对照为 "+num(DATA.rotation.find(r=>r.sec===row.sec).income)+" 金、Lv"+DATA.rotation.find(r=>r.sec===row.sec).level+"。每趟清营移除途中的兵线收益。下列配点使用三人同线收入。")+sub("五属性购买路径")+table(["分钟",...DATA.attributes,"余金"],econ.path.map(r=>[r.sec/60,...r.points,num(r.remaining)]))+
+ para("本次可购买 "+(b.buy.join("、")||"零点")+"。终点枚举 "+num(econ.n)+" 套可负担的配点。验算 5,000 金时共有 "+num(DATA.count5000)+" 套。")+
+ details("终点帕累托前沿",table(["力 / 智 / 速 / 防 / 冷","价格","60 秒单动作收益","有效生命"],econ.frontier.map(v=>[v.points.join("/"),num(v.cost),num(v.output),num(v.ehp)])))+
+ details("0–20 分钟曲线",table(["分钟","累计收入","经验","等级"],DATA.curve.map(v=>[v.sec/60,num(v.income),num(v.xp),v.level])));
+ }else if(s.tab===2){
+ const t=DATA.tower,v=t.rows.find(r=>r.minute===s.minute&&r.wave===s.wave);
+ html=head("普攻打满血外塔")+lead("落霞每秒 "+num(v.bow)+"，青萝每秒 "+num(v.normal)+"。比值 "+num(t.ratio)+"×。")+
+ table(["角色","零购买原始 DPS","折后 DPS","单人造成整管塔血所需"],[["落霞 · 普通满拉",t.bow,v.bow,num(v.bowSecs)+" 秒"],["青萝 · 完整恢复法弹",t.normal,v.normal,num(v.mageSecs)+" 秒"]])+
+ para("同条件合成 3v3 外塔的实际单击掉血为落霞 "+num(v.engineHits[0])+"，青萝 "+num(v.engineHits[1])+"。预测 "+v.modelHits.map(x=>num(x)).join(" / ")+"。")+para("冻结本时段的塔保护，有兵线时兵只解除反偷塔减伤。弓从开始蓄力、法弹从开始恢复计时，持续命中，忽略飞行时间与兵线自身输出。拆塔参考上限 2×。");
+ }else if(s.tab===3){
+ const {item,record,flags}=exceptionState(s);
+ html=head("刻衡 · 三阶「一秒之外」")+lead(num(item.seconds)+" 秒等效行动损失 · "+item.hits+" 次脉冲 · 累计 "+num(item.hp)+" 伤害")+
+ para("单目标全程留场、零韧性与魔抗，前 6 秒审计。普通目标在第 "+item.ticks[0]+" 刻进入缓时，第 "+item.ticks[1]+" 刻恢复。原参考上限 "+DATA.experiment.reference[1]+" 秒。")+
+ table(["构建","引擎施放","技能段声明","例外区间","复审日期"],[[item.build==="passed"?"成功":item.build,item.fixture,item.expectedHits+" 跳",record?record.overrideRange.join("–")+" 秒":"无",record?record.reviewAt:"—"]])+
+ (s.manual&&DATA.client?para("同一 JAR 已进入独立 Minecraft 客户端训练场。原生 R 和左键提交，法力 "+num(DATA.client.before.mana)+" → "+num(DATA.client.after.mana)+"，R 冷却 "+num(DATA.client.after.cooldowns[3])+" 刻，结束时持有输入 "+DATA.client.heldAtEnd+"。"):"")+
+ sub("本次报告")+flags.map(para).join("")+details("逐刻观察",table(["真实刻","行动倍率","累计掉血"],item.events.map(e=>[e.tick,num(e.rate),num(e.hpLost)])))+
+ para("构建制品 SHA-256 前 16 位为 "+item.jarHash.slice(0,16)+"。移走设计例外后，观察值和已构建制品可在这里再次核对。");
+ }else{
+ const results=s.manual?DATA.manualProbes:DATA.probes;
+ html=head("同输入的离线计算与服务端读数")+lead(results.filter(r=>r.match).length+" / "+results.length+" 个数值与服务端相符")+
+ para("合成世界独立操作。候选列为尚未接入游戏的公式比较，夜影首点力量保留旧首点智慧的边际盾量。")+
+ table(["场景","当前模型","该构建实读","候选试算","对照"],results.map(r=>[r.name,num(r.model,3),num(r.engine,3),num(r.candidate,3),r.match?"相符":"有差异"]));
+ }
+ el("body").innerHTML=html+guide();el("body").querySelectorAll("[data-step]").forEach((btn,i)=>btn.onclick=()=>change(guides[state.tab][i][1]));
+}
+el("rev").textContent=DATA.baseline.slice(0,7);el("date").textContent=DATA.asOf;draw();
+</script></html>

@@ -1,0 +1,333 @@
+{
+  "current": {
+    "build": "passed",
+    "evidence": {
+      "dome": {
+        "cooldown": 1200,
+        "events": [
+          {
+            "hpLost": 0.0,
+            "rate": 0.25000000000000006,
+            "tick": 13
+          },
+          {
+            "hpLost": 46.0,
+            "rate": 0.25000000000000006,
+            "tick": 23
+          },
+          {
+            "hpLost": 92.0,
+            "rate": 0.25000000000000006,
+            "tick": 33
+          },
+          {
+            "hpLost": 138.0,
+            "rate": 0.25000000000000006,
+            "tick": 43
+          },
+          {
+            "hpLost": 184.0,
+            "rate": 0.25000000000000006,
+            "tick": 53
+          },
+          {
+            "hpLost": 230.0,
+            "rate": 0.25000000000000006,
+            "tick": 63
+          },
+          {
+            "hpLost": 276.0,
+            "rate": 1.0,
+            "tick": 73
+          }
+        ],
+        "manaAfter": 556.0,
+        "manaBefore": 700,
+        "rank": 3
+      },
+      "samples": {
+        "bowHit": 100.0,
+        "herbMixed": [
+          {
+            "absorbed": 80.0,
+            "kind": "PHYSICAL",
+            "post": 80.0,
+            "raw": 120
+          },
+          {
+            "absorbed": 80.0,
+            "kind": "MAGIC",
+            "post": 80.0,
+            "raw": 120
+          },
+          {
+            "absorbed": 11.0,
+            "kind": "TRUE",
+            "post": 120.0,
+            "raw": 120
+          }
+        ],
+        "herbRealHeal": 50.0,
+        "herbShield": 171.0,
+        "nightBack": 75.90039,
+        "nightBuffedFront": 69.0,
+        "nightFront": 69.0,
+        "nightShield": 351.9
+      }
+    },
+    "fieldClassSha256": "3c222b54eb35c259c7688c68b34b68ae3a5a17edfc5b157a7af7216b10f6a64c",
+    "fieldSourceSha256": "61770b7ee68f8d11678fd67fb667fde30fe98cf358f2190480f0612c215071f4",
+    "jar": "myriad-0.1.0-no-arms.jar",
+    "jarSha256": "9d0783774303a1839d2ff0c86b32f7b24f24fe2f1cc26ab2355b5744b053c406",
+    "rulesSha256": "bccdf6e030afd1e6eeade3879970ddc7cdcb21131c4b39c1c0bea3694ac144a7",
+    "serverFixture": "1/1",
+    "snapshotSha256": "4a40a5351a9e074c32ee658bf3f65d84ba45e5fd1a6110337ebe52e37a1beb7b",
+    "xml": "read; no failure/error"
+  },
+  "labels": {
+    "g1_yingxiao_ma": "影袭",
+    "g1_yingxiao_mb": "回影",
+    "g1_yingxiao_n1": "影杀",
+    "g1_yingxiao_n2": "化影",
+    "g1_yingxiao_pa": "暗影猎手",
+    "g1_yingxiao_pb": "孤影伏击",
+    "g1_yingxiao_ua": "绝影追击",
+    "g1_yingxiao_ub": "灵盾",
+    "g2_qingluo_ma": "护心丹阵",
+    "g2_qingluo_mb": "千丝渡厄",
+    "g2_qingluo_n1": "青藤玉露",
+    "g2_qingluo_n2": "缚生藤",
+    "g2_qingluo_pa": "仁心",
+    "g2_qingluo_pb": "采灵化露",
+    "g2_qingluo_ua": "万木春晖",
+    "g2_qingluo_ub": "悬壶天幕",
+    "keheng_chijie": "迟界",
+    "keheng_chizhen": "迟针",
+    "keheng_cuopaibu": "错拍步",
+    "keheng_hengbu": "恒步",
+    "keheng_kehen": "刻痕回响",
+    "keheng_suixing": "随行秒域",
+    "keheng_yimiao": "一秒之外",
+    "keheng_zhongke": "终刻贯穿",
+    "luoxia_chase_dusk": "追霞续弦",
+    "luoxia_dusk_mark": "雁过霞痕",
+    "luoxia_feather_burst": "飞羽连弦",
+    "luoxia_last_sun": "一点残阳",
+    "luoxia_slant_step": "斜照撤步",
+    "luoxia_steady_dusk": "凝霞满弓",
+    "luoxia_sunset_line": "霞沉一线",
+    "luoxia_thousand_feathers": "千羽照野",
+    "skill.myriad.damage.first_two_arrows": "前两箭",
+    "skill.myriad.damage.hero_first": "首名英雄",
+    "skill.myriad.damage.hero_second": "第二名英雄",
+    "skill.myriad.damage.hero_third": "第三名英雄",
+    "skill.myriad.damage.mark_arrow": "霞痕箭",
+    "skill.myriad.damage.mark_pop": "印记触发",
+    "skill.myriad.damage.non_hero": "非英雄",
+    "skill.myriad.damage.per_pulse": "每跳",
+    "skill.myriad.damage.per_round": "每轮",
+    "skill.myriad.damage.third_arrow": "第三箭"
+  },
+  "manual": {
+    "build": "passed",
+    "evidence": {
+      "dome": {
+        "cooldown": 1200,
+        "events": [
+          {
+            "hpLost": 0.0,
+            "rate": 0.25000000000000006,
+            "tick": 13
+          },
+          {
+            "hpLost": 46.0,
+            "rate": 0.25000000000000006,
+            "tick": 23
+          },
+          {
+            "hpLost": 92.0,
+            "rate": 0.25000000000000006,
+            "tick": 33
+          },
+          {
+            "hpLost": 138.0,
+            "rate": 0.25000000000000006,
+            "tick": 43
+          },
+          {
+            "hpLost": 184.0,
+            "rate": 0.25000000000000006,
+            "tick": 53
+          },
+          {
+            "hpLost": 230.0,
+            "rate": 0.25000000000000006,
+            "tick": 63
+          },
+          {
+            "hpLost": 276.0,
+            "rate": 0.25000000000000006,
+            "tick": 73
+          },
+          {
+            "hpLost": 322.0,
+            "rate": 0.25000000000000006,
+            "tick": 83
+          },
+          {
+            "hpLost": 368.0,
+            "rate": 0.25000000000000006,
+            "tick": 93
+          },
+          {
+            "hpLost": 414.0,
+            "rate": 0.25000000000000006,
+            "tick": 103
+          },
+          {
+            "hpLost": 460.0,
+            "rate": 1.0,
+            "tick": 113
+          }
+        ],
+        "manaAfter": 556.0,
+        "manaBefore": 700,
+        "rank": 3
+      },
+      "samples": {
+        "bowHit": 100.0,
+        "herbMixed": [
+          {
+            "absorbed": 80.0,
+            "kind": "PHYSICAL",
+            "post": 80.0,
+            "raw": 120
+          },
+          {
+            "absorbed": 80.0,
+            "kind": "MAGIC",
+            "post": 80.0,
+            "raw": 120
+          },
+          {
+            "absorbed": 11.0,
+            "kind": "TRUE",
+            "post": 120.0,
+            "raw": 120
+          }
+        ],
+        "herbRealHeal": 50.0,
+        "herbShield": 171.0,
+        "nightBack": 75.90039,
+        "nightBuffedFront": 69.0,
+        "nightFront": 69.0,
+        "nightShield": 351.9
+      }
+    },
+    "fieldClassSha256": "0eb1c2706b148686cbbafba8749e6cb12560766e3a24f76e17ea2061e8ee5b50",
+    "fieldSourceSha256": "20205fb031aa06149f7660c9e5fc3897d56417cd635c70c27e018ac8812b2202",
+    "jar": "myriad-0.1.0-no-arms.jar",
+    "jarSha256": "64841ebccb7189985b37aef861c57216cfa9b0221ec4ff6d26697db1538bb676",
+    "rulesSha256": "3ffc83d3aff80ddf9898f80937df2a4f190097b2c11bdb5ae1c90c1f36aa3daa",
+    "serverFixture": "1/1",
+    "snapshotSha256": "ff71c47260e44ee7595f2be89dd2e4b5215ffc611043f1e3fb96fd2178890450",
+    "xml": "read; no failure/error"
+  },
+  "manualInline": {
+    "backstab": [
+      10,
+      5
+    ],
+    "dome": [
+      13,
+      100,
+      0.05
+    ],
+    "domeFlight": [
+      0.4,
+      0.05
+    ],
+    "domePulse": 10,
+    "laneGold": [
+      65,
+      18,
+      12
+    ],
+    "laneXp": [
+      24,
+      18
+    ],
+    "magicWave": 3,
+    "noWave": 0.2,
+    "outerTowerHp": 8400,
+    "salaryBase": 10,
+    "salaryTicks": 100,
+    "sharedXp": 80,
+    "sources": {
+      "MELEE_PER_WAVE": "src/main/java/com/myriad/game/LaneSystem.java:55",
+      "RANGED_PER_WAVE": "src/main/java/com/myriad/game/LaneSystem.java:58",
+      "backstab": "src/main/java/com/myriad/character/skills/yingxiao/rework/NightBackstabSkill.java:17",
+      "dome": "src/main/java/com/myriad/character/skills/keheng/BeyondOneSecondSkill.java:22",
+      "domeFlight": "src/main/java/com/myriad/character/skills/keheng/BeyondOneSecondSkill.java:21",
+      "domePulse": "src/main/java/com/myriad/character/skills/keheng/KehengTimeFields.java:104",
+      "laneGold": "src/main/java/com/myriad/game/LaneSystem.java:1198",
+      "laneXp": "src/main/java/com/myriad/game/LaneSystem.java:1202",
+      "magicWave": "src/main/java/com/myriad/game/LaneSystem.java:432",
+      "noWave": "src/main/java/com/myriad/game/LaneSystem.java:1063",
+      "outerTowerHp": "src/main/java/com/myriad/game/LaneSystem.java:405",
+      "rewardSteps": "src/main/java/com/myriad/game/LaneSystem.java:1220",
+      "salaryBase": "src/main/java/com/myriad/game/GameManager.java:730",
+      "salaryTicks": "src/main/java/com/myriad/game/GameManager.java:725",
+      "share": "src/main/java/com/myriad/game/LaneSystem.java:1221",
+      "waveSeconds": "src/main/java/com/myriad/game/LaneSystem.java:54"
+    },
+    "steps": [
+      10,
+      10,
+      2
+    ],
+    "waveSeconds": 40,
+    "waveSize": [
+      2,
+      2
+    ]
+  },
+  "tower": [
+    {
+      "luoxia": 13.0,
+      "minute": 3,
+      "qingluo": 8.450195,
+      "wave": false
+    },
+    {
+      "luoxia": 65.0,
+      "minute": 3,
+      "qingluo": 42.25,
+      "wave": true
+    },
+    {
+      "luoxia": 16.0,
+      "minute": 8,
+      "qingluo": 10.400391,
+      "wave": false
+    },
+    {
+      "luoxia": 80.0,
+      "minute": 8,
+      "qingluo": 52.0,
+      "wave": true
+    },
+    {
+      "luoxia": 20.0,
+      "minute": 12,
+      "qingluo": 13.0,
+      "wave": false
+    },
+    {
+      "luoxia": 100.0,
+      "minute": 12,
+      "qingluo": 65.0,
+      "wave": true
+    }
+  ]
+}

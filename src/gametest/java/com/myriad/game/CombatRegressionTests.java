@@ -22,6 +22,8 @@ public final class CombatRegressionTests {
         register("faction_identity",FactionIdentityChecks::run);
         register("training_ui",TrainingUiChecks::run);
         register("combat_feedback",CombatFeedbackChecks::run);
+        register("balance_tower_probe", BalanceBenchmark::tower);
+        register("balance_benchmark", BalanceBenchmark::run);
         register("battle_tuning",BattleTuningChecks::run);
         register("tower_cover", TowerCoverChecks::run);
         register("match_economy", MatchEconomyChecks::run);

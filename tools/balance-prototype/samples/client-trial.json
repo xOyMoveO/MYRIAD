@@ -1,0 +1,79 @@
+{
+  "after": {
+    "character": "keheng",
+    "clientTick": 233,
+    "cooldowns": [
+      0,
+      0,
+      0,
+      1198,
+      0
+    ],
+    "dimension": "myriad:training_ground",
+    "heldInputs": 0,
+    "level": 20,
+    "mana": 576.0,
+    "nativeKeyEvents": 6,
+    "nativeMouseEvents": 15,
+    "noCooldown": false,
+    "noMana": false,
+    "placementType": 0,
+    "skills": {
+      "keheng_yimiao": 3
+    },
+    "worldTick": 237
+  },
+  "aiming": {
+    "character": "keheng",
+    "clientTick": 231,
+    "cooldowns": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "dimension": "myriad:training_ground",
+    "heldInputs": 0,
+    "level": 20,
+    "mana": 720.0,
+    "nativeKeyEvents": 6,
+    "nativeMouseEvents": 14,
+    "noCooldown": false,
+    "noMana": false,
+    "placementType": 106,
+    "skills": {
+      "keheng_yimiao": 3
+    },
+    "worldTick": 235
+  },
+  "before": {
+    "character": "keheng",
+    "clientTick": 227,
+    "cooldowns": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "dimension": "myriad:training_ground",
+    "heldInputs": 0,
+    "level": 20,
+    "mana": 720.0,
+    "nativeKeyEvents": 4,
+    "nativeMouseEvents": 14,
+    "noCooldown": false,
+    "noMana": false,
+    "placementType": 0,
+    "skills": {
+      "keheng_yimiao": 3
+    },
+    "worldTick": 231
+  },
+  "heldAtEnd": 0,
+  "input": "native R + left mouse",
+  "jarSha256": "64841ebccb7189985b37aef861c57216cfa9b0221ec4ff6d26697db1538bb676",
+  "minecraft": "26.3",
+  "world": "synthetic training"
+}
