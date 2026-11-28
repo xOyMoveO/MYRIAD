@@ -1,0 +1,40 @@
+{
+  "scenarioId": "luoxia_last_sun_range",
+  "scenarioVersion": 1,
+  "role": "luoxia",
+  "skill": "luoxia_last_sun",
+  "caseId": "range_probes",
+  "mode": "synthetic_flat_server",
+  "timeUnit": "real_tick",
+  "initial": {
+    "level": 1,
+    "rank": 1,
+    "mana": 700,
+    "boughtPoints": 0,
+    "cooldownReductionPct": 0,
+    "noManaCost": false,
+    "noCooldown": false,
+    "actionMultiplier": 1
+  },
+  "conditions": {
+    "targetType": "villager",
+    "targetWidthBlocks": 0.6,
+    "centerDistancesBlocks": [
+      27.5,
+      28.5,
+      31.5,
+      32.5
+    ],
+    "stationaryTarget": true,
+    "muzzleAlignedWithTarget": true,
+    "lineOfSight": "clear",
+    "independentLanes": true,
+    "observationEndTick": 30,
+    "targetMaxHealth": 1000,
+    "targetArmor": 0,
+    "aimAxis": "+Z"
+  },
+  "actions": {
+    "requestTick": 0
+  }
+}

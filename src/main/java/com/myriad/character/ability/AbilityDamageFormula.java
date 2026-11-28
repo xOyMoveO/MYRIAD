@@ -7,7 +7,7 @@ import com.myriad.combat.DamageCalc.Kind;
 public record AbilityDamageFormula(Kind kind, float base, float rankGrowth, float scale,
         float scaleGrowth, Scaling scaling, float weight, String labelKey, int maxHits) {
 
-    public enum Scaling { FIXED, PURCHASED_PHYSICAL, PURCHASED_SPELL, TOTAL_PHYSICAL, TOTAL_SPELL }
+    public enum Scaling { FIXED, BONUS_PHYSICAL, PURCHASED_SPELL, TOTAL_PHYSICAL, TOTAL_SPELL }
 
     private static AbilityDamageFormula of(Kind kind, float base, float growth, float scale, Scaling scaling) {
         return new AbilityDamageFormula(kind, base, growth, scale, 0, scaling, 1, "", 1);
@@ -25,18 +25,14 @@ public record AbilityDamageFormula(Kind kind, float base, float rankGrowth, floa
         return of(kind, base, growth, scale, Scaling.TOTAL_SPELL);
     }
 
-    public static AbilityDamageFormula purchased(Kind kind, float base, float growth, float scale) {
-        return switch (kind) {
-            case PHYSICAL -> of(kind, base, growth, scale, Scaling.PURCHASED_PHYSICAL);
-            case MAGIC -> of(kind, base, growth, scale, Scaling.PURCHASED_SPELL);
-            case TRUE -> throw new IllegalArgumentException("Choose an explicit formula for true damage");
-        };
+    public static AbilityDamageFormula bonusPhysical(float base, float growth, float scale) {
+        return of(Kind.PHYSICAL, base, growth, scale, Scaling.BONUS_PHYSICAL);
     }
 
-    /** Retain the old unbuffed, zero-purchase contribution before adding purchases of physical attack. */
+    /** Retain the old unbuffed, zero-purchase contribution before applying bonus physical attack. */
     public static AbilityDamageFormula physicalFromSpell(float base, float growth, float oldSpellScale, float attackScale) {
         float baseline = base + oldSpellScale * (float) FirstGroupGrowth.baselineSpellPower();
-        return purchased(Kind.PHYSICAL, baseline, growth, attackScale);
+        return bonusPhysical(baseline, growth, attackScale);
     }
 
     public AbilityDamageFormula withScaleGrowth(float perRank) {
@@ -56,7 +52,7 @@ public record AbilityDamageFormula(Kind kind, float base, float rankGrowth, floa
     public float value(AbilityRuntime.Cast cast) {
         float attribute = switch (scaling) {
             case FIXED -> 0;
-            case PURCHASED_PHYSICAL -> cast.purchasedPhysicalAttack;
+            case BONUS_PHYSICAL -> cast.bonusPhysicalAttack;
             case PURCHASED_SPELL -> cast.purchasedSpellPower;
             case TOTAL_PHYSICAL -> cast.totalPhysicalAttack;
             case TOTAL_SPELL -> cast.totalSpellPower;
@@ -64,10 +60,10 @@ public record AbilityDamageFormula(Kind kind, float base, float rankGrowth, floa
         return value(cast.rank, attribute);
     }
 
-    public float value(int rank, double totalPhysicalAttack, double totalSpellPower, int purchasedStrength, int purchasedWisdom) {
+    public float value(int rank, double totalPhysicalAttack, double totalSpellPower, double bonusPhysicalAttack, int purchasedWisdom) {
         float attribute = switch (scaling) {
             case FIXED -> 0;
-            case PURCHASED_PHYSICAL -> (float) FirstGroupGrowth.purchasedPhysicalAttack(purchasedStrength);
+            case BONUS_PHYSICAL -> (float) bonusPhysicalAttack;
             case PURCHASED_SPELL -> (float) FirstGroupGrowth.purchasedSpellPower(purchasedWisdom);
             case TOTAL_PHYSICAL -> (float) totalPhysicalAttack;
             case TOTAL_SPELL -> (float) totalSpellPower;
@@ -78,7 +74,7 @@ public record AbilityDamageFormula(Kind kind, float base, float rankGrowth, floa
     public float perPoint(int rank) {
         float attribute = switch (scaling) {
             case FIXED -> 0;
-            case PURCHASED_PHYSICAL, TOTAL_PHYSICAL -> (float) FirstGroupGrowth.purchasedPhysicalAttack(1);
+            case BONUS_PHYSICAL, TOTAL_PHYSICAL -> (float) FirstGroupGrowth.purchasedPhysicalAttack(1);
             case PURCHASED_SPELL, TOTAL_SPELL -> (float) FirstGroupGrowth.purchasedSpellPower(1);
         };
         return weight * scaleAt(rank) * attribute;

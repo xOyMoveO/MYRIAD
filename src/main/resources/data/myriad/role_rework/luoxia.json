@@ -75,7 +75,7 @@
         200
       ],
       "name": "一点残阳",
-      "description": "蓄势0.5秒，可缓慢移动。射出28格高速重箭，命中首个敌方单位即停止。",
+      "description": "蓄势 {windup_seconds} 秒，可缓慢移动。重箭射程 {range_blocks} 格，命中首个敌方单位即停止。",
       "iconAlias": "luoxia_last_sun"
     },
     {

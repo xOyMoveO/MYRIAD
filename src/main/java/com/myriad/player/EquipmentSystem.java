@@ -26,10 +26,10 @@ public final class EquipmentSystem {
             player.sendSystemMessage(Component.translatable("message.myriad.g1.equipment_retired"));
             return false;
         }
-        if(!com.myriad.game.BaseRules.canShop(player)){
+        if(!com.myriad.game.BaseRules.canBuyEquipment(player)){
             com.myriad.game.MatchMessages.send(player,
                     com.myriad.game.MatchMessages.Tone.WARNING,
-                    Component.translatable("message.myriad.shop_base_only"));return false;
+                    Component.translatable("message.myriad.equipment_base_only"));return false;
         }
         EquipDef def = EquipmentRegistry.get(equipId);
         if (def == null) {

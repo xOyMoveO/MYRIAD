@@ -6,8 +6,8 @@ import net.minecraft.world.phys.Vec3;
 import static com.myriad.combat.DamageCalc.Kind.*;
 /** Independent reusable branch. */
 public final class JadeCanopySkill extends AbilitySkill {
-    private static final SupportAmount HEAL = new SupportAmount("heal", 100, 43.75f, .4f);
-    private static final SupportAmount SHIELD = new SupportAmount("shield", 200, 81.25f, .65f);
+    private static final SupportAmount HEAL = new SupportAmount(SupportEffect.HEAL, SupportScaling.TOTAL_SPELL, 100, 43.75f, .4f);
+    private static final SupportAmount SHIELD = new SupportAmount(SupportEffect.SHIELD, SupportScaling.TOTAL_SPELL, 200, 81.25f, .65f);
 
     @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(HEAL, SHIELD); }
 

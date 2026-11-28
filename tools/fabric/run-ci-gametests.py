@@ -13,12 +13,21 @@ CORE_TESTS = (
     "keheng", "yike", "rivet", "roster_delivery", "world_time", "hero_action_time",
     "arena_fixture", "arena_tower_5v5", "arena_tower_3v3",
 )
+EXTRA_TESTS = ("balance_calibration_damage", "calibration_keheng", "calibration_qingluo",
+               "match_economy", "match_assists", "balance_haste", "balance_vertical",
+               "wind_cast_animation", "fenjue_leap", "balance_tianxing", "balance_sulan_fenjue",
+               "balance_shuo_chixiao", "balance_roster_lane", "balance_roster_camps", "balance_roster_towers",
+               *(f"balance_roster_{roster}_{scene}" for roster in (112, 113) for scene in ("lane", "camps", "towers")))
+EXTRA_TESTS += ("balance_roster_sword_frost", "balance_mage_support_113", "ink_cast_animation",
+                "balance_small_modes", "mode_supply_rift", "mode_supply_cherry",
+                *(f"balance_roster_114_{scene}" for scene in ("lane", "camps", "towers")))
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--offline", action="store_true", help="Use only already cached Gradle dependencies")
-parser.add_argument("filters", nargs="*", help="Optional core check subset; default is all core checks")
+parser.add_argument("filters", nargs="*", help="Explicit check filters; default is all core checks")
 args = parser.parse_args()
-if set(args.filters) - set(CORE_TESTS):
-    parser.error("Unknown core filters: " + ", ".join(sorted(set(args.filters) - set(CORE_TESTS))))
+unknown = set(args.filters) - set(CORE_TESTS + EXTRA_TESTS)
+if unknown:
+    parser.error("Unknown filters: " + ", ".join(sorted(unknown)))
 root = Path(__file__).resolve().parents[2]
 output = root / "build/reports/fabric-ci"
 output.mkdir(parents=True, exist_ok=True)
@@ -52,9 +61,12 @@ for name in args.filters or CORE_TESTS:
         shutil.copyfile(report, target / "report.xml")
         try:
             xml = ET.parse(report).getroot()
-            cases = len(list(xml.iter("testcase")))
-            if list(xml.iter("failure")) or list(xml.iter("error")):
-                problems.append("XML reports test failure/error")
+            names = [case.get("name") for case in xml.iter("testcase")]
+            cases = len(names)
+            if names != [f"myriad:{name}"]:
+                problems.append(f"Expected one named XML case for myriad:{name}, found {names!r}")
+            if list(xml.iter("failure")) or list(xml.iter("error")) or list(xml.iter("skipped")):
+                problems.append("XML reports a failure, error or skipped check")
         except ET.ParseError as error:
             problems.append(f"Invalid XML: {error}")
     else:

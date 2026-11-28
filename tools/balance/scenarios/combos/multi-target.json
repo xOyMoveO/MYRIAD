@@ -1,0 +1,20 @@
+{
+  "scenarioId": "cherry.hero_multi_target",
+  "scenarioVersion": 1,
+  "schemaVersion": 1,
+  "status": "prototype_assumptions",
+  "targetRole": "luoxia",
+  "focusWeights": [1, 0.75, 0.60],
+  "scenes": {
+    "dispersed": {"weight": 0.45, "opponent": "solo", "p": {"small": [0.65, 0.12, 0.04], "medium": [0.70, 0.20, 0.10], "large": [0.76, 0.30, 0.15]}, "fieldStayTicks": [28, 18, 8]},
+    "clustered": {"weight": 0.35, "opponent": "solo", "p": {"small": [0.72, 0.30, 0.15], "medium": [0.80, 0.50, 0.25], "large": [0.85, 0.64, 0.38]}, "fieldStayTicks": [40, 28, 18]},
+    "ally_clustered": {"weight": 0.20, "opponent": "ally_cc", "p": {"small": [0.86, 0.50, 0.25], "medium": [0.90, 0.66, 0.40], "large": [0.94, 0.80, 0.58]}, "fieldStayTicks": [52, 40, 30]}
+  },
+  "probes": [
+    {"role": "luoxia", "slot": "r", "skill": "luoxia_sunset_line", "size": "large"},
+    {"role": "keheng", "slot": "e", "skill": "keheng_chijie", "size": "medium"},
+    {"role": "keheng", "slot": "r", "skill": "keheng_yimiao", "size": "medium"},
+    {"role": "qingluo", "slot": "r", "skill": "g2_qingluo_ua", "size": "large", "beneficiaries": "allies"},
+    {"role": "qingluo", "slot": "r", "skill": "g2_qingluo_ub", "size": "large", "beneficiaries": "allies"}
+  ]
+}

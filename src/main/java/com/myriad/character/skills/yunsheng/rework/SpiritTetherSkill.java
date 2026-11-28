@@ -8,6 +8,21 @@ import java.util.List;
 import static com.myriad.combat.DamageCalc.Kind.*;
 /** Independent reusable branch. */
 public final class SpiritTetherSkill extends AbilitySkill {
+    public static final double RANGE = 12;
+    public static final int TETHER_TICKS = 40;
+    public static final int ROOT_TICKS = 12;
+    public static final float SLOW = .3f;
+    public static final int SLOW_TICKS = 30;
+
+    @Override public java.util.Map<String, Number> descriptionFields(int rank) {
+        return java.util.Map.of(
+            "targetRange", RANGE,
+            "tetherSeconds", TETHER_TICKS / 20.0,
+            "rootSeconds", ROOT_TICKS / 20.0,
+            "slowPercent", Math.round(100 * SLOW),
+            "slowSeconds", SLOW_TICKS / 20.0);
+    }
+
     private static final AbilityDamageFormula DAMAGE =
             AbilityDamageFormula.spellPower(MAGIC, 35, 15, .3f).segment("skill.myriad.damage.segment.tether", 2);
 
@@ -17,15 +32,15 @@ public final class SpiritTetherSkill extends AbilitySkill {
 
  public SpiritTetherSkill(Definition definition){super(definition);}
 
-@Override public boolean canRelease(Cast c){return c.target(12,false)!=null;}
+@Override public boolean canRelease(Cast c){return c.target(RANGE,false)!=null;}
 @Override public void release(Cast c){
-    LivingEntity t=c.target(12,false);if(t==null)return;
+    LivingEntity t=c.target(RANGE,false);if(t==null)return;
     WarSpiritHandCues.cast(c);
-    c.damage(t,DAMAGE.value(c),DAMAGE.kind());c.root(t,12,false);thread(c,t,false);
-    c.whileActive(40,a->{
-        if(!t.isAlive()||t.level()!=c.player.level()||t.distanceToSqr(c.player)>144||!c.player.hasLineOfSight(t))return false;
-        if(a<40){if(a>0&&a%5==0)thread(c,t,false);return true;}
-        c.damage(t,DAMAGE.value(c),DAMAGE.kind());c.slow(t,.3f,30);
+    c.damage(t,DAMAGE.value(c),DAMAGE.kind());c.root(t,ROOT_TICKS,false);thread(c,t,false);
+    c.whileActive(TETHER_TICKS,a->{
+        if(!t.isAlive()||t.level()!=c.player.level()||t.distanceToSqr(c.player)>RANGE*RANGE||!c.player.hasLineOfSight(t))return false;
+        if(a<TETHER_TICKS){if(a>0&&a%5==0)thread(c,t,false);return true;}
+        c.damage(t,DAMAGE.value(c),DAMAGE.kind());c.slow(t,SLOW,SLOW_TICKS);
         WarSpiritHandCues.follow(c);thread(c,t,true);AbilityVisuals.burst(c,t.position(),1);return false;
     });
 }

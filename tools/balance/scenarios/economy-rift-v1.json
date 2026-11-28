@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "mode": "5v5",
+  "map": "RIFT",
+  "seconds": [0, 180, 300, 480, 720, 960, 1200, 1320, 1380, 1440, 1500, 1560, 1620, 1680],
+  "shops": [0, 180, 420, 720, 960, 1200, 1440, 1680],
+  "recallMissSeconds": 12,
+  "closingSeconds": 1680,
+  "cutSeconds": 480,
+  "cutEndSeconds": 960,
+  "slots": [
+    {"id":"G1","team":"guardian","position":"solo","role":"luoxia","preference":["strength","speed","defense","wisdom","cooldown"]},
+    {"id":"G2","team":"guardian","position":"roam","role":"yingxiao","preference":["strength","cooldown","speed","defense","wisdom"]},
+    {"id":"G3","team":"guardian","position":"duo","role":"qingluo","preference":["wisdom","cooldown","defense","speed","strength"]},
+    {"id":"G4","team":"guardian","position":"solo","role":"keheng","preference":["strength","defense","cooldown","speed","wisdom"]},
+    {"id":"G5","team":"guardian","position":"duo","role":"yike","preference":["wisdom","speed","cooldown","defense","strength"]},
+    {"id":"D1","team":"destruction","position":"solo","role":"shuo","preference":["strength","speed","defense","wisdom","cooldown"]},
+    {"id":"D2","team":"destruction","position":"roam","role":"tianxing","preference":["strength","cooldown","speed","defense","wisdom"]},
+    {"id":"D3","team":"destruction","position":"duo","role":"yunsheng","preference":["wisdom","cooldown","defense","speed","strength"]},
+    {"id":"D4","team":"destruction","position":"solo","role":"hanze","preference":["wisdom","cooldown","defense","speed","strength"]},
+    {"id":"D5","team":"destruction","position":"duo","role":"lingyuan","preference":["wisdom","speed","cooldown","defense","strength"]}
+  ],
+  "lanes": {
+    "top": {"nearby": [1], "lastHitRotation": [1], "contactAfterSpawnSeconds": 42},
+    "mid": {"nearby": [4], "lastHitRotation": [4], "contactAfterSpawnSeconds": 30},
+    "bottom": {"nearby": [3, 5], "lastHitRotation": [5, 5, 5, 3, 5, 5, 5, 5], "contactAfterSpawnSeconds": 42}
+  },
+  "laneLastHitRate": 0.88,
+  "roamerFollowsMidEveryWaves": 2,
+  "towerTiers": [1, 2, 3],
+  "camps": {
+    "hare": {"unit": "frost_hare", "offset": 0, "clearSeconds": 12},
+    "fox": {"unit": "shadow_fox", "offset": 20, "clearSeconds": 12},
+    "reef": {"unit": "spring_reef_guardian", "offset": 45, "clearSeconds": 19},
+    "web": {"unit": "frost_web_matriarch", "offset": 73, "clearSeconds": 19},
+    "pig": {"unit": "glod_pig", "clearSeconds": 18}
+  },
+  "campRoute": {"firstSeconds": 44, "everySeconds": 132, "homeOrder": ["hare","fox","reef","web"],
+                "defaultAcquisitionRate": 0.92, "recallAvoidSeconds": 20, "missBeforeSeconds": 6, "missAfterSeconds": 5},
+  "bosses": {"order": ["azure_horn_guardian", "vermilion_flame_tyrant", "gale_roc_matriarch", "obsidian_tortoise_warden"],
+             "clearLagAfterSpawnSeconds": 33},
+  "veins": {"attributes": ["moon", "fire", "wood"], "equalControlBlockSeconds": 60,
+            "worldTickPhaseAtStart": 0, "pressureWindowSeconds": 600},
+  "supplyPlan": [
+    {"seatIndex":0,"item":"blood_pill","occasions":[180,720,1200]},
+    {"seatIndex":1,"item":"mana_pill","occasions":[180,420,960,1440]},
+    {"seatIndex":2,"item":"scout_totem","occasions":[180,720,1440]},
+    {"seatIndex":2,"item":"spirit_snare","occasions":[420,960]},
+    {"seatIndex":3,"item":"blood_pill","occasions":[180,720,1200]},
+    {"seatIndex":4,"item":"mana_pill","occasions":[180,720,1200]}
+  ],
+  "cut": {"trailingIncome": [2800,2400,1800,2800,2200], "trailingLevels": [8,7,6,8,7]},
+  "cases": {
+    "S0": {"label":"均势，无英雄击杀", "events":"balanced"},
+    "S1": {"label":"中度顺逆风，8 分钟后无反杀", "events":"defense", "earlyRates":[0.95,0.77], "cutoffSeconds":480},
+    "S2": {"label":"中度顺逆风，两次反打", "events":"counter", "earlyRates":[0.95,0.77], "cutoffSeconds":480},
+    "S3": {"label":"重度单边，三路持续受压", "events":"heavy", "earlyRates":[0.97,0.59], "cutoffSeconds":960},
+    "C0": {"label":"8 分钟人均收入差 25% 注入，8 分钟无击杀对称发育", "cut":{"id":"medium","incomePercent":125,"coreLevelLead":2}}
+  },
+  "eventGroups": {
+    "balanced": [
+      {"id":"G-top-1","at":675,"type":"tower","team":"guardian","lane":"top","tier":1},
+      {"id":"D-top-1","at":675,"type":"tower","team":"destruction","lane":"top","tier":1},
+      {"id":"G-bottom-1","at":880,"type":"tower","team":"guardian","lane":"bottom","tier":1},
+      {"id":"D-bottom-1","at":880,"type":"tower","team":"destruction","lane":"bottom","tier":1},
+      {"id":"G-mid-1","at":1050,"type":"tower","team":"guardian","lane":"mid","tier":1},
+      {"id":"D-mid-1","at":1050,"type":"tower","team":"destruction","lane":"mid","tier":1},
+      {"id":"G-mid-2","at":1290,"type":"tower","team":"guardian","lane":"mid","tier":2},
+      {"id":"D-mid-2","at":1290,"type":"tower","team":"destruction","lane":"mid","tier":2}
+    ],
+    "early": [
+      {"id":"early-1","at":165,"type":"kill","killer":"G1","victim":"D1","assists":["G2"]},
+      {"id":"early-2","at":292,"type":"kill","killer":"G1","victim":"D2","assists":["G4","G2"]},
+      {"id":"early-3","at":416,"type":"kill","killer":"G1","victim":"D3","assists":["G2","G5"]},
+      {"id":"G-top-1","at":456,"type":"tower","team":"guardian","lane":"top","tier":1}
+    ],
+    "defense": [
+      {"include":"early"},
+      {"id":"G-mid-1","at":705,"type":"tower","team":"guardian","lane":"mid","tier":1},
+      {"id":"D-bottom-1","at":950,"type":"tower","team":"destruction","lane":"bottom","tier":1},
+      {"id":"G-top-2","at":1010,"type":"tower","team":"guardian","lane":"top","tier":2},
+      {"id":"D-mid-1","at":1240,"type":"tower","team":"destruction","lane":"mid","tier":1},
+      {"id":"G-top-3","at":1425,"type":"tower","team":"guardian","lane":"top","tier":3}
+    ],
+    "counter": [
+      {"include":"early"},
+      {"id":"counter-1","at":600,"type":"kill","killer":"D1","victim":"G1","assists":["D2"],"round":1},
+      {"id":"counter-2","at":842,"type":"kill","killer":"D1","victim":"G2","assists":["D3","D2"],"round":2},
+      {"id":"counter-3","at":844,"type":"kill","killer":"G5","victim":"D3","assists":["G3"]},
+      {"id":"counter-4","at":849,"type":"kill","killer":"D4","victim":"G5","assists":["D1","D5"]},
+      {"id":"D-mid-1","at":880,"type":"tower","team":"destruction","lane":"mid","tier":1},
+      {"id":"D-bottom-1","at":950,"type":"tower","team":"destruction","lane":"bottom","tier":1},
+      {"id":"G-mid-1","at":1080,"type":"tower","team":"guardian","lane":"mid","tier":1},
+      {"id":"D-mid-2","at":1350,"type":"tower","team":"destruction","lane":"mid","tier":2}
+    ],
+    "heavy": [
+      {"include":"early"},
+      {"id":"heavy-4","at":489,"type":"kill","killer":"G2","victim":"D1","assists":["G1"]},
+      {"id":"G-mid-1","at":510,"type":"tower","team":"guardian","lane":"mid","tier":1},
+      {"id":"heavy-5","at":562,"type":"kill","killer":"G4","victim":"D4","assists":["G2","G5"]},
+      {"id":"G-bottom-1","at":585,"type":"tower","team":"guardian","lane":"bottom","tier":1},
+      {"id":"heavy-6","at":634,"type":"kill","killer":"G1","victim":"D2","assists":["G2"]},
+      {"id":"G-top-2","at":670,"type":"tower","team":"guardian","lane":"top","tier":2},
+      {"id":"heavy-7","at":730,"type":"kill","killer":"G5","victim":"D3","assists":["G3","G2"]},
+      {"id":"G-mid-2","at":785,"type":"tower","team":"guardian","lane":"mid","tier":2},
+      {"id":"heavy-8","at":876,"type":"kill","killer":"G1","victim":"D1","assists":["G2","G3"]},
+      {"id":"G-top-3","at":1045,"type":"tower","team":"guardian","lane":"top","tier":3},
+      {"id":"G-bottom-2","at":1220,"type":"tower","team":"guardian","lane":"bottom","tier":2},
+      {"id":"G-mid-3","at":1460,"type":"tower","team":"guardian","lane":"mid","tier":3}
+    ]
+  },
+  "objectives": {
+    "S0": {"pig": [], "bossOwners": []},
+    "S1": {"pig": [["guardian",310]], "bossOwners": ["guardian","destruction","guardian","destruction"]},
+    "S2": {"pig": [["guardian",310]], "bossOwners": ["guardian","destruction","destruction","guardian"]},
+    "S3": {"pig": [["guardian",310]], "bossOwners": ["guardian","guardian","guardian","guardian"]}
+  },
+  "provenance": {
+    "modeDecision": "https://github.com/xOyMoveO/MYRIAD/issues/101#issuecomment-7234950506",
+    "economyDecision": "https://github.com/xOyMoveO/MYRIAD/issues/100#issuecomment-7234845985",
+    "scope": "https://github.com/xOyMoveO/MYRIAD/issues/114",
+    "notes": "5v5 三路、九塔/侧和三灵脉参考模式决议与合成地图样本。营地数量、三路到线时间、击杀、辅助资格、争夺和破塔刻均为公开场景假设。每队有两名独享路位、一名打野游走和两名双人路位。"
+  }
+}

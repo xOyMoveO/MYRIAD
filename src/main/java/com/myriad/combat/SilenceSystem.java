@@ -12,9 +12,11 @@ public final class SilenceSystem {
     private static final Map<UUID, Long> SILENCED_UNTIL = new HashMap<>();
     private SilenceSystem() {}
     public static void apply(LivingEntity target, int ticks) {
-        SILENCED_UNTIL.put(target.getUUID(), target.level().getGameTime() + ticks);
+        if (ticks <= 0) return;
+        long now = target.level().getGameTime();
+        long until = SILENCED_UNTIL.merge(target.getUUID(), now + ticks, ControlStatusSystem::laterExpiry);
         if (target instanceof ServerPlayer player) {
-            PlayerDataProvider.get(player).setBuff("zhongshengguizong", ticks);
+            PlayerDataProvider.get(player).setBuff("zhongshengguizong", (int) (until - now));
             PlayerDataProvider.syncToClient(player);
         }
     }

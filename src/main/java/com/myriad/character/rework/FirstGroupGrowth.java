@@ -16,16 +16,28 @@ public final class FirstGroupGrowth {
     private FirstGroupGrowth(){}
     public static final List<String> ATTRIBUTES=List.of("strength","wisdom","speed","defense","cooldown");
     public static final long PRICE_OVERFLOW = -1;
-    public static final int HASTE_PER_POINT = 3;
+    public static final int STARTING_PRICE = 360;
+    public static final int PRICE_STEP_DIVISOR = 5;
+    public static final double HASTE_PER_POINT = 12.5;
+    public static final double BASE_ATTACK_SPEED = .70;
+    public static final double BASE_MOVEMENT_SPEED = .10;
+    public static final double BASE_DEFENSE = 45;
+    public static final double BASE_MANA_REGEN = 4;
+    public static final double BASE_HEALTH_REGEN = 2;
+    public static final double BASE_CRIT_DAMAGE = 150;
+    public static final double SPEED_ATTACK_GAIN = .06;
+    public static final double SPEED_MOVEMENT_GAIN = .0015;
+    public static final double DEFENSE_GAIN = 5.0;
     private static final List<Long> PRICES = purchasePrices();
 
     private static List<Long> purchasePrices() {
         var prices = new ArrayList<Long>();
-        long price = 360;
+        long price = STARTING_PRICE;
         while (true) {
             prices.add(price);
             // Round the extra fifth of the previous price without multiplying a large integer.
-            long increase = price / 5 + (price % 5 >= 3 ? 1 : 0);
+            long increase = price / PRICE_STEP_DIVISOR
+                    + (price % PRICE_STEP_DIVISOR >= (PRICE_STEP_DIVISOR + 1) / 2 ? 1 : 0);
             if (price > Long.MAX_VALUE - increase) return List.copyOf(prices);
             price += increase;
         }
@@ -36,8 +48,40 @@ public final class FirstGroupGrowth {
         return rank < PRICES.size() ? PRICES.get(Math.max(0, rank)) : PRICE_OVERFLOW;
     }
 
-    public static String purchaseError(int rank, int gold, boolean free) {
+    public static double skillHaste(int purchasedPoints) {
+        return HASTE_PER_POINT * purchasedPoints;
+    }
+
+    public record SpeedGain(double attackSpeed, double movementSpeed) {}
+
+    public static SpeedGain nextSpeedGain(int rank) {
+        return new SpeedGain(nextGain(ModAttributes.ATTACK_SPEED, BASE_ATTACK_SPEED, SPEED_ATTACK_GAIN, rank),
+                nextGain(Attributes.MOVEMENT_SPEED, BASE_MOVEMENT_SPEED, SPEED_MOVEMENT_GAIN, rank));
+    }
+
+    private static double nextGain(Holder<Attribute> attribute, double base, double perPoint, int rank) {
+        return attribute.value().sanitizeValue(base + perPoint * ((double) rank + 1))
+                - attribute.value().sanitizeValue(base + perPoint * rank);
+    }
+
+    private static boolean improvesPermanentStats(CharacterType role, String key, int rank) {
+        return switch (key) {
+            case "strength" -> nextGain(ModAttributes.PHYSICAL_ATTACK, baselinePhysicalAttack(role), purchasedPhysicalAttack(1), rank) > 0;
+            case "wisdom" -> nextGain(ModAttributes.SPELL_POWER, baselineSpellPower(), purchasedSpellPower(1), rank) > 0;
+            case "speed" -> {
+                var gain = nextSpeedGain(rank);
+                yield gain.attackSpeed() > 0 || gain.movementSpeed() > 0;
+            }
+            case "defense" -> nextGain(ModAttributes.PHYSICAL_DEFENSE, BASE_DEFENSE, DEFENSE_GAIN, rank) > 0
+                    || nextGain(ModAttributes.MAGIC_RESISTANCE, BASE_DEFENSE, DEFENSE_GAIN, rank) > 0;
+            case "cooldown" -> true;
+            default -> false;
+        };
+    }
+
+    public static String purchaseError(CharacterType role, String key, int rank, int gold, boolean free) {
         if (rank == Integer.MAX_VALUE) return "message.myriad.g1.attribute_rank_overflow";
+        if (!improvesPermanentStats(role, key, rank)) return "message.myriad.g1.attribute_no_gain";
         if (free) return null;
         long price = price(rank);
         if (price == PRICE_OVERFLOW) return "message.myriad.g1.attribute_price_overflow";
@@ -55,6 +99,10 @@ public final class FirstGroupGrowth {
     /** Innate physical attack for the active roster, before purchases and modifiers. */
     public static double baselinePhysicalAttack(CharacterType role) {
         return role == CharacterType.LUOXIA ? role.initialAd() : 65.0;
+    }
+
+    public static double bonusPhysicalAttack(CharacterType role, double effectiveAttack) {
+        return effectiveAttack - baselinePhysicalAttack(role);
     }
 
     /** The active roster has no innate spell power growth with character level. */
@@ -99,10 +147,10 @@ public final class FirstGroupGrowth {
     }
     public static boolean buy(ServerPlayer p,PlayerData d,String key){
         if(!com.myriad.game.ModState.isEnabled()||!FirstGroupSkills.active(d.getCharacterId())||!ATTRIBUTES.contains(key))return false;
-        if(!TrainingGround.canFight(p)||!BaseRules.canShop(p))return false;
+        if(!BaseRules.canBuyAttributes(p))return false;
         int rank=d.firstGroupAttribute(key);
         boolean free=TrainingMode.isNoGoldCost(p);
-        String error=purchaseError(rank,d.getGold(),free);
+        String error=purchaseError(CharacterType.byId(d.getCharacterId()),key,rank,d.getGold(),free);
         if(error!=null){p.sendSystemMessage(Component.translatable(error));return false;}
         if(!free)d.spendGold((int)price(rank));
         d.setFirstGroupAttribute(key,rank+1);apply(p,d);PlayerDataProvider.syncToClient(p);return true;
@@ -120,11 +168,11 @@ public final class FirstGroupGrowth {
         var role=CharacterType.byId(d.getCharacterId());
         base(p,ModAttributes.PHYSICAL_ATTACK,baselinePhysicalAttack(role));
         base(p,ModAttributes.SPELL_POWER,baselineSpellPower());
-        base(p,ModAttributes.ATTACK_SPEED,.70);base(p,Attributes.MOVEMENT_SPEED,.10);
-        base(p,ModAttributes.PHYSICAL_DEFENSE,45);base(p,ModAttributes.MAGIC_RESISTANCE,45);
-        base(p,ModAttributes.MAX_MANA,maxMana(role,d.getLevel()));base(p,ModAttributes.MANA_REGEN,4);base(p,ModAttributes.HEALTH_REGEN,2);
+        base(p,ModAttributes.ATTACK_SPEED,BASE_ATTACK_SPEED);base(p,Attributes.MOVEMENT_SPEED,BASE_MOVEMENT_SPEED);
+        base(p,ModAttributes.PHYSICAL_DEFENSE,BASE_DEFENSE);base(p,ModAttributes.MAGIC_RESISTANCE,BASE_DEFENSE);
+        base(p,ModAttributes.MAX_MANA,maxMana(role,d.getLevel()));base(p,ModAttributes.MANA_REGEN,BASE_MANA_REGEN);base(p,ModAttributes.HEALTH_REGEN,BASE_HEALTH_REGEN);
         d.setMana((float)Math.min(d.getMana(),p.getAttributeValue(ModAttributes.MAX_MANA)));
-        base(p,ModAttributes.CRIT_DAMAGE,150);
+        base(p,ModAttributes.CRIT_DAMAGE,BASE_CRIT_DAMAGE);
         apply(p,d);
     }
     private static void base(ServerPlayer p,Holder<Attribute> attr,double amount){var a=p.getAttribute(attr);if(a!=null)a.setBaseValue(amount);}
@@ -136,11 +184,10 @@ public final class FirstGroupGrowth {
         if(!FirstGroupSkills.active(d.getCharacterId()))return;
         modifier(p,ModAttributes.PHYSICAL_ATTACK,"strength",purchasedPhysicalAttack(d.firstGroupAttribute("strength")));
         modifier(p,ModAttributes.SPELL_POWER,"wisdom",purchasedSpellPower(d.firstGroupAttribute("wisdom")));
-        modifier(p,ModAttributes.ATTACK_SPEED,"speed_as",.06*d.firstGroupAttribute("speed"));
-        modifier(p,Attributes.MOVEMENT_SPEED,"speed_ms",.0015*d.firstGroupAttribute("speed"));
-        modifier(p,ModAttributes.PHYSICAL_DEFENSE,"defense_pd",5.0*d.firstGroupAttribute("defense"));
-        modifier(p,ModAttributes.MAGIC_RESISTANCE,"defense_mr",5.0*d.firstGroupAttribute("defense"));
-        modifier(p,ModAttributes.COOLDOWN_REDUCTION,"cooldown",(double)HASTE_PER_POINT*d.firstGroupAttribute("cooldown"));
+        modifier(p,ModAttributes.ATTACK_SPEED,"speed_as",SPEED_ATTACK_GAIN*d.firstGroupAttribute("speed"));
+        modifier(p,Attributes.MOVEMENT_SPEED,"speed_ms",SPEED_MOVEMENT_GAIN*d.firstGroupAttribute("speed"));
+        modifier(p,ModAttributes.PHYSICAL_DEFENSE,"defense_pd",DEFENSE_GAIN*d.firstGroupAttribute("defense"));
+        modifier(p,ModAttributes.MAGIC_RESISTANCE,"defense_mr",DEFENSE_GAIN*d.firstGroupAttribute("defense"));
         for(String key:ATTRIBUTES)d.setBuff("g1_attribute_"+key,d.firstGroupAttribute(key));
         PlayerHealthSystem.recalculate(p);
         p.connection.send(new net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket(p.getId(),p.getAttributes().getSyncableAttributes()));

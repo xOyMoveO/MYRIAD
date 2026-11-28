@@ -14,6 +14,8 @@ import java.util.List;
 
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class ReturningWindBladeSkill extends AbilitySkill {
+    public static final double RANGE = 12, PROJECTILE_SPEED = 1, PROJECTILE_RADIUS = 1;
+
     private static final AbilityDamageFormula DAMAGE =
             AbilityDamageFormula.physicalFromSpell(45, 18.75f, .45f, .5f / 2).segment("skill.myriad.damage.segment.out_and_back", 2);
 
@@ -23,7 +25,7 @@ public final class ReturningWindBladeSkill extends AbilitySkill {
 
     public ReturningWindBladeSkill(Definition definition){super(definition);}
     @Override public void present(Cast c){com.myriad.character.ability.AbilityVisuals.arc(c,c.player.position(),1.6,130);}
-    @Override public void release(Cast c){WindCastCues.release(c);c.actionProjectile(12,1,1,true,true,(t,back)->c.damage(t,DAMAGE.value(c),DAMAGE.kind()));}
+    @Override public void release(Cast c){WindCastCues.release(c);c.actionProjectile(RANGE,PROJECTILE_SPEED,PROJECTILE_RADIUS,true,true,(t,back)->c.damage(t,DAMAGE.value(c),DAMAGE.kind()));}
     @Override public void projectileTurned(Cast c, Vec3 end, Vec3 outboundDirection){
         WindVisuals.turn(c,end,outboundDirection);
     }

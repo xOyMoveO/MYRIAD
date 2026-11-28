@@ -42,7 +42,7 @@ final class AttributeGrowthChecks {
             player.setYRot(yaw);
             player.setXRot(pitch);
         }
-        System.out.println("[MYRIAD-ATTRIBUTE-V1] PASS: V1 prices, uncapped purchases, wallet, save/clone, free ranks, overflow, Haste and live Mountain Cleave damage");
+        System.out.println("[MYRIAD-ATTRIBUTE-V1] PASS: prices, permanent gains, wallet, save/clone, free ranks, overflow, Haste and live Mountain Cleave damage");
     }
 
     private static void verifyPurchases(GameTestHelper helper, ServerPlayer player, PlayerData data) {
@@ -95,11 +95,11 @@ final class AttributeGrowthChecks {
         TrainingMode.setNoGoldCost(true);
         helper.assertTrue(FirstGroupGrowth.buy(player, data, "speed") && data.firstGroupAttribute("speed") == 209
                 && data.getGold() == Integer.MAX_VALUE, "A free purchase is valid even after paid prices exceed the represented range");
-        data.setFirstGroupAttribute("strength", Integer.MAX_VALUE - 1);
-        helper.assertTrue(FirstGroupGrowth.buy(player, data, "strength")
-                && data.firstGroupAttribute("strength") == Integer.MAX_VALUE
-                && player.getAttributeValue(ModAttributes.PHYSICAL_ATTACK) > 65
-                && !FirstGroupGrowth.buy(player, data, "strength"), "Large stat modifiers stay positive and the stored count cannot wrap");
+        data.setFirstGroupAttribute("cooldown", Integer.MAX_VALUE - 1);
+        helper.assertTrue(FirstGroupGrowth.buy(player, data, "cooldown")
+                && data.firstGroupAttribute("cooldown") == Integer.MAX_VALUE
+                && FirstGroupGrowth.skillHaste(data.firstGroupAttribute("cooldown")) > Integer.MAX_VALUE
+                && !FirstGroupGrowth.buy(player, data, "cooldown"), "Haste remains positive and the stored count cannot wrap");
     }
 
     private static void verifyCleave(GameTestHelper helper, ServerPlayer player, PlayerData data) {
@@ -133,7 +133,8 @@ final class AttributeGrowthChecks {
         try {
             helper.assertTrue(player.hasLineOfSight(target), "The isolated Cleave target is visible in the fixture lane");
             int[][] builds = {{1, 0, 0, 0}, {1, 1, 0, 0}, {1, 0, 1, 0}, {1, 3, 0, 20}, {3, 5, 9, 21}};
-            float[] damage = {98f, 105.5f, 98f, 120.5f, 191.525f};
+            float[] damage = {98f, 111f, 109f, 137f, 213.525f};
+            int[] cooldowns = {180, 180, 180, 51, 49};
             for (int index = 0; index < builds.length; index++) {
                 int[] build = builds[index];
                 AbilityRuntime.clear(player);
@@ -142,7 +143,7 @@ final class AttributeGrowthChecks {
                 data.setFirstGroupAttribute("wisdom", build[2]);
                 data.setFirstGroupAttribute("cooldown", build[3]);
                 FirstGroupGrowth.apply(player, data);
-                // Changing any non-purchased attack source must not affect the skill either.
+                // This controlled change to effective attack contributes the same way as a temporary modifier.
                 player.getAttribute(ModAttributes.PHYSICAL_ATTACK).setBaseValue(65 + 11 * index);
                 data.setCooldown(cleave.getId(), 0);
                 data.setMana(700);
@@ -157,13 +158,12 @@ final class AttributeGrowthChecks {
                                 + " from " + before + " HP, candidates=" + cast.enemies(player.position(), 6).size()
                                 + ", line of sight=" + player.hasLineOfSight(target) + ", defense="
                                 + DamageCalc.defenseValue(target, DamageCalc.Kind.PHYSICAL));
-                int expectedCooldown = build[3] == 0 ? 180 : 72;
-                helper.assertTrue(data.getCooldown(cleave.getId()) == expectedCooldown,
-                        "Cleave's actual cooldown applies the 60 percent effect limit at twenty or more Haste");
+                helper.assertTrue(data.getCooldown(cleave.getId()) == cooldowns[index],
+                        "Cleave's actual cooldown uses the active skill-haste rule");
                 helper.assertTrue(!target.hasEffect(net.minecraft.world.effect.MobEffects.SLOWNESS),
                         "The cleave applies damage without adding control");
             }
-            helper.assertTrue(cleave.evaluatedDescription(1, 10_000, 1).contains("105.5"),
+            helper.assertTrue(cleave.evaluatedDescription(1, 10_000, 15).contains("105.5"),
                     "Presented damage uses the same purchased Strength formula");
         } finally {
             target.discard();

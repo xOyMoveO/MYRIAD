@@ -11,11 +11,17 @@ import java.util.*;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
-/** Read existing authoritative states. Never extends effects, consumes resources or creates an ability Owner. */
+/** Shared overlap policy and observation of authoritative control states. */
 public final class ControlStatusSystem {
     private ControlStatusSystem() {}
     private record Sent(ControlStatusPayload payload, long at) {}
     private static final Map<UUID, Sent> LAST = new HashMap<>();
+
+    /** Both arguments use the same time origin, so either deadlines or remaining ticks can be compared. */
+    public static long laterExpiry(long current, long incoming) {
+        return Math.max(current, incoming);
+    }
+
     public static Controls controls(ServerPlayer player) {
         var data = PlayerDataProvider.get(player);
         return new Controls(ControlStatusPayload.ticks(data.getBuff("g1_stun")),

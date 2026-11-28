@@ -2,6 +2,7 @@ package com.myriad.character.skills.rivet;
 
 import com.myriad.character.ability.AbilityRuntime;
 import com.myriad.character.ability.ActionTime;
+import com.myriad.combat.ControlStatusSystem;
 import com.myriad.combat.DamageCalc;
 import com.myriad.combat.KnockbackBuffer;
 import com.myriad.combat.SkillTargets;
@@ -17,6 +18,7 @@ import java.util.*;
 
 /** A short horizontal impulse with actual collision-shape contact and vanilla-sized step clearance. */
 public final class RivetPush {
+    public static final int HAMMER_WALL_WINDOW_TICKS = 8, WALL_ROOT_DR_TICKS = 60;
     private record Root(AbilityRuntime.Cast cast, LivingEntity target, long until, String key) { }
     private static final List<Root> ROOTS = new ArrayList<>();
     private record Push(AbilityRuntime.Cast cast, LivingEntity target, long token) { }
@@ -75,7 +77,7 @@ public final class RivetPush {
             // A clipped partial step reaches the surface first. A side blocked at zero is real contact,
             // including diagonal walls where the other axis could otherwise keep sliding along the wall.
             if (step.wall() && touchingSide) {
-                if (c.now() - start <= 8) {
+                if (c.now() - start <= HAMMER_WALL_WINDOW_TICKS) {
                     wallHit(c, target, flat, wallDamage, rootTicks, anchorRootTicks, hammer);
                 }
                 finish.run(); return false;
@@ -149,7 +151,7 @@ public final class RivetPush {
         c.damage(target, damage, DamageCalc.Kind.PHYSICAL, false);
         LastWall last = LAST_WALL.get(target.getUUID());
         int duration = anchored ? anchorRootTicks : rootTicks;
-        if (last != null && last.level() == target.level() && c.now() - last.time() < 60) duration = Math.max(1, duration / 2);
+        if (last != null && last.level() == target.level() && c.now() - last.time() < WALL_ROOT_DR_TICKS) duration = Math.max(1, duration / 2);
         LAST_WALL.put(target.getUUID(), new LastWall(target.level(), c.now()));
         root(c, target, duration);
         if (hammer) BreachRhythm.wallHit(c.player);
@@ -216,8 +218,12 @@ public final class RivetPush {
                 ? Math.clamp(target.getAttributeValue(com.myriad.registry.ModAttributes.TENACITY), 0, 60) / 100 : 0;
         int duration = Math.max(1, (int) Math.ceil(ticks * (1 - tenacity)));
         String key = "g1_root/" + c.skill.getId() + "/" + c.player.getUUID();
+        long current = ROOTS.stream().filter(root -> root.target() == target && root.key().equals(key))
+                .mapToLong(Root::until).max().orElse(0);
+        long until = c.now() + duration;
+        if (ControlStatusSystem.laterExpiry(current, until) == current) return;
         ROOTS.removeIf(root -> root.target() == target && root.key().equals(key));
-        ROOTS.add(new Root(c, target, c.now() + duration, key));
+        ROOTS.add(new Root(c, target, until, key));
         c.slow(target, 1, ticks);
         if (target instanceof ServerPlayer player) {
             com.myriad.player.PlayerDataProvider.get(player).setBuff(key, duration);

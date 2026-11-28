@@ -1,0 +1,62 @@
+{
+  "baseAttributes": {
+    "decision": "retain",
+    "condition": "1–20 级，无购买、装备或临时增益。",
+    "reason": "保留基础生命 600、每级 +85，基础法力 700、每级 +32。四法师中的阵地角色可依场地防护，现有专项没有指向通用成长的跨场景偏差。",
+    "scenario": "xuanchen.zero_preparation；同批清线、清营、带兵推塔；配对快照 roles.xuanchen.attributes"
+  },
+  "basicAttack": {
+    "decision": "retain",
+    "condition": "持初始武器，魔法弹实际出手且撞到合法目标，地形和风墙可拦截。",
+    "reason": "保留零购 65 点原始魔伤，每点额外法强 +0.5；基础攻速 0.7 次/秒，29 行动刻恢复，名义射程 15 格。共用弹道与购买公式仍从实际定义读取。",
+    "scenario": "xuanchen.zero_preparation；同批清线、清营、带兵推塔"
+  },
+  "g1_xuanchen_pa": {
+    "decision": "retain",
+    "condition": "主动成功提交时，8 格内可见的存活队友按生命比例选最低者，若无合格队友则保护自己。",
+    "reason": "保留 12 秒触发间隔和 40 刻盾。同一试验的二阶被动盾新增 65.5，敌方真实伤害实际吸收 65.5；另一个较健康队友无盾。引导打断仍保留已经提交时的盾。",
+    "scenario": "xuanchen.channel_completed；xuanchen.channel_interrupted；xuanchen.solo_without_ally；balance_mage_support_113"
+  },
+  "g1_xuanchen_pb": {
+    "decision": "retain",
+    "condition": "同一敌方英雄在四秒有效标记内受到不同技能 ID 的有效直接命中。派生脉冲及普攻均不消印。",
+    "reason": "保留 35 基础、14.4 每阶和 0.30 法强系数；每个目标独立八秒冷却。和 P-A 逐相同构筑比较时，只按实际命中的异技能组合估输出。",
+    "scenario": "xuanchen.zero_preparation；roster_a"
+  },
+  "g1_xuanchen_n1": {
+    "decision": "retain",
+    "condition": "16 格名义射程内第一个合法敌方实体，地形和风墙可以提前截断。",
+    "reason": "保留一阶 S=30 的 61.5 原始魔伤和 12 刻定身，每阶增加 2 刻；现有伤害夹具已经实测命中。继续让定身窗口支持留场，没有依据同时调整伤害及射程。",
+    "scenario": "xuanchen.zero_preparation；roster_a"
+  },
+  "g1_xuanchen_n2": {
+    "decision": "retain",
+    "condition": "选中 10 格以内准星下可见队友，缺合法选中目标时给自己。",
+    "reason": "保留一阶 S=30 的 108 名义护盾和 60 刻窗口，按实际入伤计收益。与区域盾分别归因，同源剩余量取较高值。",
+    "scenario": "xuanchen.zero_preparation；xuanchen.solo_without_ally；roster_a"
+  },
+  "g1_xuanchen_ma": {
+    "decision": "retain",
+    "condition": "两端均可站立，可见友军靠近并下蹲、未受到禁止传送的控制，单人重用间隔两秒。",
+    "reason": "保留阵点功能和逐阶部署距离、持续时长。实际传送通过 roster_a；额外伤害、免伤及队友到场时间需要真实路线和下蹲动作。",
+    "scenario": "xuanchen.zero_preparation；roster_a"
+  },
+  "g1_xuanchen_mb": {
+    "decision": "retain",
+    "condition": "12 刻预警后在选点成阵，开阵瞬间仅一次盾；可见驻留者承受非真伤时按团队阵法护持生效。",
+    "reason": "保留一阶 S=30 的 70.5 盾和 12% 非真伤减免。固定原始 100 法伤从 68.97 降为 60.69 HP，盾消耗后不反复补充。较强同类阵法覆盖时取最强一档。",
+    "scenario": "xuanchen.channel_completed；xuanchen.channel_interrupted；balance_mage_support_113"
+  },
+  "g1_xuanchen_ua": {
+    "decision": "retain",
+    "condition": "提交扣费后引导 16 行动刻；成功才建阵，阵地固定在引导完成处，范围内非真伤减免和移速减益逐轮刷新。",
+    "reason": "保留 15% 非真实伤害减免、四轮伤害和有效控制取舍。固定 100 原始法伤下，法阵内实际掉 58.62 HP，阵外掉 68.97 HP；引导被打断后两边都是 68.97 HP，并且无敌方脉冲。",
+    "scenario": "xuanchen.channel_completed；xuanchen.channel_interrupted；balance_mage_support_113"
+  },
+  "g1_xuanchen_ub": {
+    "decision": "retain",
+    "condition": "地面预警 14 真实刻时目标仍在 4 格半径且可见，开场一次伤害和定身，后续只有移速减益。",
+    "reason": "保留一阶 S=30 的实际基线 203 原始魔伤、20 刻定身和区域减速。与 R-A 比较首套爆发和留场范围时分别依各自的生效条件。",
+    "scenario": "xuanchen.zero_preparation；xuanchen.solo_without_ally；roster_a"
+  }
+}

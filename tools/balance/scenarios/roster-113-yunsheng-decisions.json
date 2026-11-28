@@ -1,0 +1,62 @@
+{
+  "baseAttributes": {
+    "decision": "retain",
+    "condition": "1–20 级无购买、装备或临时增益。",
+    "reason": "保留基础生命 600、每级 +90，基础法力 700、每级 +36。固定压力的各人损失主要受盾疗时机和有效缺口影响，当前证据未显示需要同时调整基础成长。",
+    "scenario": "yunsheng.zero_preparation；同批清线、清营、带兵推塔；配对快照 roles.yunsheng.attributes"
+  },
+  "basicAttack": {
+    "decision": "retain",
+    "condition": "持初始武器，魔法弹实际出手且撞到合法目标，地形和风墙可拦截。",
+    "reason": "保留零购 65 点原始魔伤和每点额外法强 +0.5；0.7 次/秒，29 行动刻恢复，名义射程 15 格。辅助价值按有效盾疗另记，普攻仅统计实际命中。",
+    "scenario": "yunsheng.zero_preparation；同批清线、清营、带兵推塔"
+  },
+  "g2_yunsheng_pa": {
+    "decision": "retain",
+    "condition": "同一受援者实际新增盾或有效治疗两次，间隔至少四刻且在 120 刻窗口内，触发后该人独立冷却 160 刻。",
+    "reason": "保留每人的有效事件门槛。固定三席都可触发一份二阶 70.5 盾，但新增盾、消耗和对满血的溢出分别登记，同源无增加时仅刷新期限。",
+    "scenario": "yunsheng.pressure_chorus_beacon；yunsheng.pressure_shelter_beacon；balance_mage_support_113"
+  },
+  "g2_yunsheng_pb": {
+    "decision": "retain",
+    "condition": "有效直接命中敌方英雄，且全局 120 刻内置冷却可用；治疗自己和 6 格内可见友军。",
+    "reason": "保留一阶基础治疗 18、每阶 8.4、法强系数 0.15，并保留短时移速收益。直接命中和实际缺血限制生效，派生脉冲不重复触发。",
+    "scenario": "yunsheng.zero_preparation；yunsheng.tether_breaks；roster_b"
+  },
+  "g2_yunsheng_n1": {
+    "decision": "retain",
+    "condition": "14 格内瞄准敌友，优先敌军。弧线完整抵达前持续核对距离、视线及沿途阻挡。",
+    "reason": "保留敌方伤害与友方治疗返蓝的互斥选择。固定试验友方纸鹤实际治疗 49；敌方首击由 roster_b 单独取过样。因战斗位置偏差而损失的收益交给路径场景。",
+    "scenario": "yunsheng.zero_preparation；yunsheng.pressure_chorus_beacon；yunsheng.pressure_shelter_beacon；balance_mage_support_113"
+  },
+  "g2_yunsheng_n2": {
+    "decision": "retain",
+    "condition": "第一段要求锁定 12 格内可见敌人；若连续 40 刻不超距、不隔墙且目标存活，才有第二段。",
+    "reason": "保留双段各 35 基础、15 每阶、0.30 法强，首段定身 12 刻，次段减速 30% 持续 30 刻。分别记录断索和续索，避免持续读数默认双段。",
+    "scenario": "yunsheng.zero_preparation；yunsheng.tether_breaks；roster_b"
+  },
+  "g2_yunsheng_ma": {
+    "decision": "retain",
+    "condition": "可见友军在半径四格区域中每秒刷新同源盾；每名敌人首次被检测时才吃伤害与减速。",
+    "reason": "保留 25 刻护盾期限和 20 刻刷新间隔。每次只填补同源名义上限的差额，低承压时可观测到正剩余盾量与新增零同时出现。",
+    "scenario": "yunsheng.zero_preparation；yunsheng.pressure_chorus_beacon；yunsheng.pressure_shelter_beacon；balance_mage_support_113"
+  },
+  "g2_yunsheng_mb": {
+    "decision": "retain",
+    "condition": "准入需要八格内可站立点、空路径及未被禁锢，护盾取实际停止位置周围三格可见友军。",
+    "reason": "保留定位救援的三秒盾和 20% 移速增益，盾疗用实际入伤计价。平坦落点路径由 roster_b 抽检，墙阻和随动需给几何数据。",
+    "scenario": "yunsheng.zero_preparation；roster_b"
+  },
+  "g2_yunsheng_ua": {
+    "decision": "retain",
+    "condition": "付费后 20 行动刻引导成功，四轮真实刻脉冲分别检查在场、可见及实际缺血。",
+    "reason": "保留一阶 S=30 每轮治疗 52.5。固定脚本主受援累计治疗 259（含纸鹤），副受压 210，低承压整段治疗 0 且溢出 210。",
+    "scenario": "yunsheng.pressure_chorus_beacon；balance_mage_support_113"
+  },
+  "g2_yunsheng_ub": {
+    "decision": "retain",
+    "condition": "合法提交时为自身和八格内可见友军获取即时盾，移速增益独立到期。",
+    "reason": "保留一阶 S=30 的 229.5 名义盾和 100 刻期限。与 E-A 合用时三席的实际消耗分别记录，名义量对低承压席明显高于实际吸收。",
+    "scenario": "yunsheng.pressure_shelter_beacon；balance_mage_support_113"
+  }
+}

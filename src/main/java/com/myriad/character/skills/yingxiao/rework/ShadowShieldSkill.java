@@ -15,7 +15,7 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class ShadowShieldSkill extends AbilitySkill {
-    private static final SupportAmount SHIELD = new SupportAmount("shield", 306, 148.75f, 1.53f);
+    private static final SupportAmount SHIELD = new SupportAmount(SupportEffect.SHIELD, SupportScaling.TOTAL_SPELL, 306, 148.75f, 1.53f);
 
     @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(SHIELD); }
 

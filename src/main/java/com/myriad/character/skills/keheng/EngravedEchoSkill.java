@@ -6,10 +6,15 @@ import com.myriad.combat.DamageCalc;
 import net.minecraft.server.level.ServerPlayer;
 import java.util.*;
 public final class EngravedEchoSkill extends KehengSkill {
+    public static final int WINDOW_TICKS = 80, TRIGGER_STACKS = 3;
     private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 50, 14.4f, .25f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);
+    }
+
+    @Override public Map<String, Number> descriptionFields(int rank) {
+        return Map.of("damage_rank_growth", DAMAGE.rankGrowth());
     }
 
     private static final WeakHashMap<ServerPlayer,Map<UUID,Mark>> STATES=new WeakHashMap<>();
@@ -21,9 +26,9 @@ public final class EngravedEchoSkill extends KehengSkill {
         var c=AbilityRuntime.context(hit.player(),this);if(!c.hero(hit.target()))return;
         var m=STATES.computeIfAbsent(hit.player(),p->new HashMap<>()).computeIfAbsent(hit.target().getUUID(),id->new Mark());
         if(!m.seen.add(AbilityRuntime.sourceCast()))return;
-        if(c.now()>=m.until){m.stacks=0;m.until=c.now()+80;}
+        if(c.now()>=m.until){m.stacks=0;m.until=c.now()+WINDOW_TICKS;}
         c.memory().target=hit.target().getUUID();m.stacks++;KehengVisuals.mark(c,hit.target(),m.stacks,m.until-c.now());
-        if(m.stacks==3){WeaponPosePayload.play(c.player, Move.ECHO, 5);
+        if(m.stacks==TRIGGER_STACKS){WeaponPosePayload.play(c.player, Move.ECHO, 5);
         m.stacks=0;m.until=0;c.damage(hit.target(),DAMAGE.value(c),DamageCalc.Kind.MAGIC,false);KehengAudio.play(c.player,"echo");}
         c.buff("g1_keheng_marks",m.stacks);c.buff("g1_keheng_mark_window",(int)Math.max(0,m.until-c.now()));
     }

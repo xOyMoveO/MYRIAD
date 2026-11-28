@@ -12,11 +12,15 @@ import java.util.*;
 
 /** Independently clocked swept flights. Every termination has one explicit outcome. */
 public final class YikeProjectiles {
+    public static final double HEAVY_MINIMUM_BASE_FLIGHT_TICKS = 8;
+    public static final double HEAVY_BASE_SPEED = 32;
+    public static final double SHELL_MUZZLE_OFFSET = .45;
+
     private YikeProjectiles(){}
     public static void shell(Cast c,Vec3 direction,double range,double blocksPerSecond,double radius,float damage){
         final Vec3 dir=direction.normalize();final UUID flight=UUID.randomUUID();final int visual=c.newVisualInstance();
         final Vec3 launchEye=c.player.getEyePosition();
-        final Vec3[] pos={launchEye.add(dir.scale(.45))};final double[] distance={0};final long[] last={c.now()};
+        final Vec3[] pos={launchEye.add(dir.scale(SHELL_MUZZLE_OFFSET))};final double[] distance={0};final long[] last={c.now()};
         final double speed=blocksPerSecond/20*HeroProjectileTuning.SPEED;
         final double padding=.35*HeroProjectileTuning.ENTITY_PADDING;
         final int natural=(int)Math.ceil(range/speed);
@@ -59,9 +63,13 @@ public final class YikeProjectiles {
         Vec3 end=c.point.add(0,.10,0);
         return end.subtract(begin).add(0,4*arcHeight(begin,end),0).normalize();
     }
+    public static double heavyFlightTicks(double horizontalDistance) {
+        return Math.max(HEAVY_MINIMUM_BASE_FLIGHT_TICKS, horizontalDistance / HEAVY_BASE_SPEED * 20)
+                / HeroProjectileTuning.SPEED;
+    }
     public static void heavy(Cast c,Vec3 ground,float damage){
         Vec3 begin=c.player.getEyePosition().add(c.player.getLookAngle().scale(.4)),end=ground.add(0,.10,0);
-        double duration=Math.max(8,begin.subtract(end).horizontalDistance()/32*20)/HeroProjectileTuning.SPEED,height=arcHeight(begin,end);
+        double duration=heavyFlightTicks(begin.subtract(end).horizontalDistance()),height=arcHeight(begin,end);
         UUID flight=UUID.randomUUID();int visual=c.newVisualInstance();double[] progress={0};Vec3[] pos={begin};long[] last={c.now()};
         WeaponPosePayload.play(c.player, Move.HEAVY_FIRE, 9);
         YikeAudio.play(c.player,"heavy_flight",begin,.55f,.95f);
@@ -76,8 +84,8 @@ public final class YikeProjectiles {
                 segment.showWindIntercept();
                 Vec3 at=segment.end();YikeVfx.event(c,"dissipate",at,at,.6f,5);finish(c,visual,flight);YikeVfx.cancel(c.player,6);return false;
             }
-            YikeVfx.flight(c,pos[0],next,true,visual);YikeVfx.event(c,"heavy_warning",ground.add(0,.06,0),ground.add(0,.06,0),4,3);pos[0]=next;
-            if(t>=1){YikeVfx.cancel(c.player,6);explode(c,end,4,damage,true);finish(c,visual,flight);return false;}return true;
+            YikeVfx.flight(c,pos[0],next,true,visual);YikeVfx.event(c,"heavy_warning",ground.add(0,.06,0),ground.add(0,.06,0),DistantBombardment.BLAST_RADIUS,3);pos[0]=next;
+            if(t>=1){YikeVfx.cancel(c.player,6);explode(c,end,DistantBombardment.BLAST_RADIUS,damage,true);finish(c,visual,flight);return false;}return true;
         },()->finish(c,visual,flight));
     }
     private static void finish(Cast c,int visual,UUID flight){ActionTime.clearTarget(flight);YikeVfx.finish(c,visual);}

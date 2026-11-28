@@ -1,0 +1,347 @@
+{
+  "scenarioId": "chixiao.zero_preparation",
+  "scenarioVersion": 1,
+  "schemaVersion": 1,
+  "baselineCommit": "fee6c1ca91d181ce34c3d7f3aab47be7d719ec1c",
+  "role": "chixiao",
+  "applicableBuilds": "all_terminal_combinations",
+  "category": "zero_preparation",
+  "status": "candidate_l3_partial",
+  "startState": {
+    "distance": 2.4,
+    "purchases": {
+      "strength": 5,
+      "speed": 2,
+      "cooldown": 2
+    }
+  },
+  "opponentCondition": [
+    "solo",
+    "ally_cc"
+  ],
+  "windows": [
+    "burst",
+    "sustained"
+  ],
+  "delayProfile": [
+    "human_default",
+    "zero_extra_delay"
+  ],
+  "basicAttack": {
+    "range": 3,
+    "source": "src/main/java/com/myriad/combat/VanillaMeleeAttack.java"
+  },
+  "skills": {
+    "g2_chixiao_n1": {
+      "source": "src/main/java/com/myriad/character/skills/chixiao/rework/MountainCleaveSkill.java",
+      "events": [
+        {
+          "effect": "damage",
+          "kind": "damage",
+          "at": 0,
+          "radius": "range",
+          "area": true
+        }
+      ],
+      "range": "range"
+    },
+    "g2_chixiao_n2": {
+      "source": "src/main/java/com/myriad/character/skills/chixiao/rework/SoulPursuitSkill.java",
+      "events": [
+        {
+          "effect": "damage",
+          "kind": "damage",
+          "at": 0,
+          "radius": "dash_range",
+          "speed": "dash_speed",
+          "movementSlow": [
+            "movement_rate",
+            "slow_duration"
+          ]
+        },
+        {
+          "kind": "position",
+          "at": "dash_duration",
+          "distance": "dash_range",
+          "clock": "action_tick"
+        }
+      ],
+      "range": "dash_range",
+      "motion": "dash_duration",
+      "recast": "return_dash",
+      "recastWindow": "recast_window"
+    },
+    "g2_chixiao_ma": {
+      "source": "src/main/java/com/myriad/character/skills/chixiao/rework/CrimsonParrySkill.java",
+      "events": [
+        {
+          "effect": "damage",
+          "kind": "damage",
+          "at": "brace_window",
+          "radius": "range",
+          "area": true,
+          "requires": {
+            "brace_hit": true
+          },
+          "stun": "stun_duration"
+        }
+      ],
+      "range": "range"
+    },
+    "g2_chixiao_mb": {
+      "source": "src/main/java/com/myriad/character/skills/chixiao/rework/RendingWaveSkill.java",
+      "events": [
+        {
+          "effect": "damage",
+          "kind": "damage",
+          "at": 0,
+          "radius": "range",
+          "area": true,
+          "speed": "effective_projectile_speed",
+          "movementSlow": [
+            "movement_rate",
+            "slow_duration"
+          ]
+        }
+      ],
+      "range": "range"
+    },
+    "g2_chixiao_ua": {
+      "source": "src/main/java/com/myriad/character/skills/chixiao/rework/UnreturningLeapSkill.java",
+      "events": [
+        {
+          "kind": "position",
+          "at": "leap_duration",
+          "distance": 2.4,
+          "clock": "action_tick"
+        },
+        {
+          "effect": "damage",
+          "kind": "damage",
+          "at": "leap_duration",
+          "radius": "impact_radius",
+          "area": true,
+          "clock": "action_tick",
+          "movementSlow": [
+            "movement_rate",
+            "slow_duration"
+          ]
+        }
+      ],
+      "range": "range",
+      "point": true,
+      "motion": "leap_duration"
+    },
+    "g2_chixiao_ub": {
+      "source": "src/main/java/com/myriad/character/skills/chixiao/rework/WarBladeSkill.java",
+      "events": [
+        {
+          "effect": "shield",
+          "kind": "shield",
+          "at": 0,
+          "duration": "shield_duration",
+          "target": "self"
+        }
+      ]
+    }
+  },
+  "execution": {
+    "type": "apl",
+    "steps": [
+      {
+        "action": "recast",
+        "skill": "w",
+        "judgment": true
+      },
+      {
+        "action": "cast",
+        "skill": "r"
+      },
+      {
+        "action": "cast",
+        "skill": "e"
+      },
+      {
+        "action": "cast",
+        "skill": "q"
+      },
+      {
+        "action": "basic_attack"
+      },
+      {
+        "action": "cast",
+        "skill": "w"
+      }
+    ]
+  },
+  "coverageGaps": {
+    "g2_chixiao_pa": {
+      "axes": [
+        "damage"
+      ],
+      "reason": "只覆盖脚本单英雄同目标、同次技能去重，未测实图切目标与脱战时间。"
+    },
+    "g2_chixiao_pb": {
+      "axes": [
+        "damage",
+        "support"
+      ],
+      "reason": "零预置满血和固定来伤限制低血触发。加速转换成能否追上目标需另测。"
+    },
+    "g2_chixiao_n2": {
+      "axes": [
+        "damage",
+        "control"
+      ],
+      "reason": "直线路径近似；侧向扫掠、墙、载体碰撞与回程可站立由独立引擎实测。"
+    },
+    "g2_chixiao_ma": {
+      "axes": [
+        "damage",
+        "control"
+      ],
+      "reason": "正面固定来伤进入窗口时计入减伤；窗口结束时目标仍在前方才反击。未复算真实碰撞体和来伤来源切换。"
+    },
+    "g2_chixiao_mb": {
+      "axes": [
+        "damage",
+        "control"
+      ],
+      "reason": "固定轴飞行并按有效速率估计命中，未复算侧向、墙体和缓时几何。"
+    },
+    "g2_chixiao_ua": {
+      "axes": [
+        "damage",
+        "control"
+      ],
+      "reason": "固定合法落点及 14 个行动刻；碰撞阻断和实体空间实际着地独立核对。"
+    },
+    "g2_chixiao_ub": {
+      "axes": [
+        "damage",
+        "support"
+      ],
+      "reason": "按实际合法普攻命中触发三次，目标走位和真实普攻随机浮动未复算。"
+    }
+  },
+  "scripted": [
+    {
+      "scenarioId": "chixiao.dash_return",
+      "scenarioVersion": 1,
+      "category": "condition_probe",
+      "status": "l3_synthetic",
+      "applicableBuilds": [
+        "g2_chixiao_n2"
+      ],
+      "opponentCondition": "solo",
+      "startState": {
+        "distance": 2.4
+      },
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "w"
+          },
+          {
+            "action": "recast",
+            "skill": "w"
+          },
+          {
+            "action": "cast",
+            "skill": "q"
+          }
+        ]
+      },
+      "notes": [
+        "固定前方去程与免费回程，W 只在去程计伤。"
+      ]
+    },
+    {
+      "scenarioId": "chixiao.brace_contact",
+      "scenarioVersion": 1,
+      "category": "condition_probe",
+      "status": "l3_synthetic",
+      "applicableBuilds": [
+        "g2_chixiao_ma"
+      ],
+      "opponentCondition": "solo",
+      "startState": {
+        "casterIncoming": [
+          [
+            4,
+            "physical",
+            65
+          ]
+        ],
+        "braceExternalSource": true
+      },
+      "execution": {
+        "type": "apl",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "e"
+          }
+        ]
+      },
+      "notes": [
+        "固定第 4 刻物理攻击进入架刃窗口，使用终局值对照命中伤害和净眩晕。"
+      ]
+    },
+    {
+      "scenarioId": "chixiao.brace_no_contact",
+      "scenarioVersion": 1,
+      "category": "condition_probe",
+      "status": "l3_synthetic",
+      "applicableBuilds": [
+        "g2_chixiao_ma"
+      ],
+      "opponentCondition": "solo",
+      "startState": {
+        "casterIncoming": []
+      },
+      "execution": {
+        "type": "apl",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "e"
+          }
+        ]
+      },
+      "notes": [
+        "窗口内无任何来伤，期满只记录技能施放。"
+      ]
+    },
+    {
+      "scenarioId": "chixiao.war_blade",
+      "scenarioVersion": 1,
+      "category": "condition_probe",
+      "status": "l3_synthetic",
+      "applicableBuilds": [
+        "g2_chixiao_ub"
+      ],
+      "opponentCondition": "solo",
+      "startState": {
+        "distance": 2.0
+      },
+      "execution": {
+        "type": "apl",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "r"
+          },
+          {
+            "action": "basic_attack"
+          }
+        ]
+      },
+      "notes": [
+        "横刀镇岳后持续进行合法普攻，只有前三次有效伤害可获独立附伤。"
+      ]
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 package com.myriad.game;
 
+import com.google.gson.Gson;
 import com.myriad.character.*;
 import com.myriad.character.ability.*;
 import com.myriad.character.rework.*;
@@ -26,8 +27,10 @@ import java.util.*;
 /** Actual selection, point spending, casts, damage, movement, shields and production packets. */
 final class RivetChecks {
     private static final int CASES=87;
+    private static final Gson JSON = new Gson();
     private static final class Fixture {
         ServerLevel level;ServerPlayer p,ally,other;BlockPos anchorBlock;LivingEntity target,rear;Vec3 origin;
+        float unprotectedPhysicalLoss;
         int index;double initialZ,maxZ;Vec3 stoppedCarrier,stoppedTarget;float before,shieldAbsorbed,npcAbsorbed,firstBasicLoss,plainBasicLoss;int maxRoot,previousRoot,continuousRoot,maxContinuousRoot,continuousControl,maxContinuousControl;boolean sawRoot,sawBonus;final List<Integer> roots=new ArrayList<>();
         final Map<BlockPos,BlockState> blocks=new LinkedHashMap<>();
         final List<CustomPacketPayload> packets=new ArrayList<>();
@@ -73,6 +76,11 @@ final class RivetChecks {
             SkillSystem.cast(prep.p,0);SkillSystem.cast(prep.p,2);SkillSystem.cast(prep.p,3);
             SkillSystem.cast(noWall.p,1);
             h.assertTrue(pd.getMana()==prepMana&&pd.getCooldown(node(2).getId())==0&&TacticalAnchor.anchor(noWall.p)==null,"Preparation allows only Rivet W and does not require anyone to find a wall");
+            trace("rivet.anchor_placement", "preparation_w0", "cast_result", 0,
+                    "paidRank", pd.skillLevel(node(3).getId()), "manaSpent", 700 - prepMana,
+                    "cooldownTicks", pd.getCooldown(node(3).getId()), "lifetimeTicks", TacticalAnchor.remaining(prep.p),
+                    "skillPointsLeft", pd.getSkillPoints(), "anchorActive", TacticalAnchor.anchor(prep.p) != null,
+                    "strikeReady", TacticalAnchor.anchorReady(prep.p));
             long anchorUntil=TacticalAnchor.anchor(prep.p).until();long deadline=(Long)field(GameManager.class,manager,"pickCountdownEndTick");
             h.assertTrue(deadline-h.getLevel().getGameTime()==200,"The existing preparation countdown is exactly ten seconds, once");
             for(int n=1;n<=205;n++){final int tick=n;h.runAfterDelay(n,()->{
@@ -117,7 +125,7 @@ final class RivetChecks {
         CharacterType.applyInitialAttributes(f.p,CharacterType.byId("rivet"));FirstGroupGrowth.initialize(f.p,d);PlayerHealthSystem.fill(f.p);d.setMana(700);
         h.assertTrue(d.getModMaxHealth()==2790&&f.p.getAttributeValue(ModAttributes.MANA_REGEN)==4,"Level twenty reaches 2790 health and retains four mana per second: "+i);
         f.p.getAttribute(ModAttributes.CRIT_CHANCE).setBaseValue(0);f.p.setOnGround(true);f.target.setPos(f.origin.add(0,0,2.35));
-        if(!Set.of(8,9,10,14,16,26,27,31,32,33,34,35,37,48,49,50,51,55).contains(i))wall(f,4,3);
+        if(!Set.of(8,9,10,14,26,27,31,32,33,34,35,37,48,49,50,51,55).contains(i))wall(f,4,3);
         if(i==11){clearWall(f,4);block(f,0,0,4,Blocks.STONE);block(f,0,1,4,Blocks.STONE);}
         if(i==12){clearWall(f,4);for(int y=0;y<3;y++){block(f,0,y,4,Blocks.STONE);block(f,1,y,3,Blocks.STONE);}}
         if(i==13){for(int z=0;z<7;z++)block(f,0,2,z,Blocks.STONE);}
@@ -129,14 +137,19 @@ final class RivetChecks {
         if(i==15||i==36){f.rear=dummy(f,f.origin.add(0,0,i==36?4.8:2.9));if(i==36){clearWall(f,4);f.target.setPos(f.origin.add(0,0,2));}}
         if(i==17)ModShieldSystem.grant(f.target,"rivet_test_shield",1000,700);
         if(i==18)f.target.setPermanentlyInvulnerable(true);
-        if(i==19){rank(f,2,5);d.setFirstGroupAttribute("strength",10);f.p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(230);}
-        if(i==20){rank(f,7,3);d.setFirstGroupAttribute("strength",10);f.p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(230);}
+        if (i == 19 || i == 20 || i == 70) {
+            d.setFirstGroupAttribute("strength", 10);
+            FirstGroupGrowth.apply(f.p, d);
+            f.p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(230);
+        }
+        if(i==19)rank(f,2,5);
+        if(i==20)rank(f,7,3);
         if(i==21){rank(f,0,5);f.p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(230);}
         if(i==22){rank(f,4,7);f.p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(230);}
         if(i==23){rank(f,6,3);f.p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(230);}
         if(i==24)rank(f,5,7);
         if(i==25)rank(f,3,5);
-        if(i==70){rank(f,1,5);d.setFirstGroupAttribute("strength",10);f.p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(230);}
+        if(i==70)rank(f,1,5);
         if(i>=56&&i<=61)rank(f,3,i-56);
         if(i==63){rank(f,0,5);f.p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(230);}
         if(i==65){clearWall(f,4);wall(f,5,3);}
@@ -150,9 +163,26 @@ final class RivetChecks {
         if(i==68){clearWall(f,4);f.target.setPos(f.origin.add(1.8,0,5));for(int z=1;z<=6;z++)for(int y=0;y<3;y++)block(f,3,y,z,Blocks.STONE);}
         if(i==26){f.p.setXRot(-90);SkillSystem.cast(f.p,1);h.assertTrue(TacticalAnchor.anchor(f.p)==null&&d.getMana()==700,"W rejects top/bottom and missing side faces without payment");f.p.setXRot(0);}
         if(i==27){wall(f,9,3);SkillSystem.cast(f.p,1);h.assertTrue(TacticalAnchor.anchor(f.p)==null&&d.getMana()==700,"W rejects a side wall beyond eight blocks without payment");}
-        if(i==31||i==32){if(i==32){wall(f,7,3);SkillSystem.cast(f.p,1);wall(f,3,3);}float before=d.getMana();SkillSystem.cast(f.p,2);h.assertTrue(d.getMana()==before&&d.getCooldown(node(5).getId())==0,"Tow without a visible valid path leaves mana and cooldown unchanged: "+i);}
+        if (i == 31 || i == 32) {
+            if (i == 32) {
+                wall(f, 7, 3);
+                SkillSystem.cast(f.p, 1);
+                wall(f, 3, 3);
+            }
+            rejectAnchorCast(h, f, 2, 5, i == 31 ? "no_anchor" : "blocked_path");
+            if (i == 31) rejectAnchorCast(h, f, 3, 6, "no_anchor");
+        }
         if(i>=40&&i<=46||i==62||i==63)f.target.setPos(f.origin.add(6,0,0));
         if(Set.of(22,23,44,45,46,54).contains(i)){f.ally=player(h,f,f.origin.add(1,0,0));var ad=PlayerDataProvider.get(f.ally);ad.setCharacterId("shuo");ad.setFaction(Faction.GUARDIAN);factions.put(f.ally.getUUID(),Faction.GUARDIAN);f.level.players().remove(f.ally);f.level.addNewPlayer(f.ally);}
+        if (i == 54) {
+            PlayerHealthSystem.fill(f.ally);
+            f.other = player(h, f, f.origin.add(0, 0, -2));
+            PlayerDataProvider.chooseCharacter(f.other, CharacterType.CHIXIAO);
+            PlayerDataProvider.get(f.other).setFaction(Faction.DESTRUCTION);
+            factions.put(f.other.getUUID(), Faction.DESTRUCTION);
+            f.level.players().remove(f.other);
+            f.level.addNewPlayer(f.other);
+        }
         if(i==0){f.ally=player(h,f,f.origin.add(1,0,-1));f.other=player(h,f,f.origin.add(-1,0,-1));for(var observer:new ServerPlayer[]{f.ally,f.other}){PlayerDataProvider.get(observer).setCharacterId("shuo");var side=observer==f.ally?Faction.GUARDIAN:Faction.DESTRUCTION;PlayerDataProvider.get(observer).setFaction(side);factions.put(observer.getUUID(),side);}}
         if(i==45||i==39){
             f.other=player(h,f,i==45?f.origin.add(.5,0,0):f.origin);
@@ -234,17 +264,40 @@ final class RivetChecks {
                     if(tick==18&&(i==47||i==52||i==70)){p.setPos(f.target.position().add(0,0,-1.2));p.getAttribute(ModAttributes.CRIT_CHANCE).setBaseValue(100);d.setCooldown(node(4).getId(),100);f.before=hp(f.target);p.getRandom().setSeed(28);basic(p,f.target);f.firstBasicLoss=f.before-hp(f.target);}
                     if(tick==19&&(i==47||i==52||i==70)){h.assertTrue(f.before-hp(f.target)>0&&d.getCooldown(node(4).getId())==60,"A real Q wall-followup basic hit consumes P2 and refunds exactly two seconds of E: "+i+" hpLoss="+(f.before-hp(f.target))+" cd="+d.getCooldown(node(4).getId())+" rhythm="+d.getBuff("g1_rivet_rhythm"));}
                     if(tick==100&&(i==47||i==70)){float health=hp(f.target);p.getRandom().setSeed(28);basic(p,f.target);f.plainBasicLoss=health-hp(f.target);near(h,f.firstBasicLoss-f.plainBasicLoss,i==47?68.4:105.9,"Matched real critical basics isolate the uncritical P2 baseline and rank-five bonus with ten purchases: "+i);}
-                    if(tick==20&&i==19)h.assertTrue(d.getMana()==615&&d.getCooldown(node(2).getId())==140,"Grown Q commits its unchanged 55 mana and seven-second cooldown");
-                    if(tick==20&&i==20)h.assertTrue(d.getMana()==520&&d.getCooldown(node(7).getId())==1000,"Grown R2 commits its unchanged 150 mana and fifty-second cooldown");
-                    if(tick==20&&i==22)h.assertTrue(d.getMana()==595&&d.getCooldown(node(4).getId())==260&&d.getCooldown(node(3).getId())==120,"Grown E1 commits 75 mana/thirteen seconds and refunds exactly two seconds of W");
-                    if(tick==20&&i==23)h.assertTrue(d.getMana()==530&&d.getCooldown(node(6).getId())==1100,"Grown R1 commits 140 mana and fifty-five seconds");
-                    if(tick==20&&i==24)h.assertTrue(d.getMana()==620,"Rank-seven self-pull commits exactly fifty mana");
+                    if (tick == 20) {
+                        if (i == 19) verifyRankedCast(h, f, tick, 2, 44, 140);
+                        if (i == 20) verifyRankedCast(h, f, tick, 7, 135, 1000);
+                        if (i == 22) {
+                            verifyRankedCast(h, f, tick, 4, 52.5f, 260);
+                            h.assertTrue(d.getCooldown(node(3).getId()) == 120, "E1 refunds forty W cooldown ticks near an anchor");
+                        }
+                        if (i == 23) verifyRankedCast(h, f, tick, 6, 126, 1100);
+                        if (i == 24) verifyRankedCast(h, f, tick, 5, 35, 140);
+                        if (i >= 56 && i <= 61) {
+                            int paidRank = i - 56;
+                            float manaCost = 30 - 1.5f * Math.max(0, paidRank - 1);
+                            int cooldown = 160 - 8 * paidRank;
+                            near(h, 700 - d.getMana(), manaCost, "Ranked W mana cost");
+                            h.assertTrue(d.getCooldown(node(3).getId()) == cooldown, "Ranked W cooldown: " + paidRank);
+                            trace("rivet.anchor_placement", "formal_w" + paidRank, "cast_result", tick,
+                                    "paidRank", d.skillLevel(node(3).getId()), "manaSpent", 700 - d.getMana(),
+                                    "cooldownTicks", d.getCooldown(node(3).getId()), "lifetimeTicks", TacticalAnchor.remaining(p),
+                                    "anchorActive", TacticalAnchor.anchor(p) != null, "strikeReady", TacticalAnchor.anchorReady(p));
+                        }
+                        if (i == 25) h.assertTrue(d.getCooldown(node(3).getId()) == 120, "Five paid W points shorten base cooldown from eight to six seconds");
+                    }
                     if(tick==20&&i==68){Vec3 aim=f.target.position().subtract(p.position());p.setYRot((float)Math.toDegrees(Math.atan2(-aim.x,aim.z)));SkillSystem.cast(p,0);}
                     if(tick==20&&i==39){AbilityRuntime.clear(p);int root=RivetPush.rootRemaining(f.target);h.assertTrue(root>0&&root<=5,"The second owner keeps its independently sourced, shared-DR half root after the first owner leaves; remaining="+root);}
                     if(tick==20&&i==55)h.assertTrue(loss(f)==0&&d.getMana()==700,"Local slow delays unfinished R2 windup without charging early");
                     if(tick==60&&i==55)near(h,loss(f),170,"Slowed windup eventually commits its ordinary physical charge");
-                    if(tick==20){if(i>=56&&i<=61)h.assertTrue(d.getCooldown(node(3).getId())==160-8*(i-56)&&d.getMana()==670,"Each paid W rank commits its exact normal cooldown and 30 mana: "+(i-56));if(i==24)h.assertTrue(d.getCooldown(node(5).getId())==140,"Rank-seven tow commits a seven-second cooldown");if(i==25)h.assertTrue(d.getCooldown(node(3).getId())==120,"Five paid W points shorten base cooldown from eight to six seconds");}
+                    if (tick == 42 && i == 31) {
+                        h.assertTrue(ModShieldSystem.value(p) == 0, "Waiting on clear ground without an anchor cannot grant station armor");
+                        trace("rivet.station_armor", "no_anchor", "case_result", tick, "shield", ModShieldSystem.value(p));
+                    }
                     if(tick==42&&(i>=40&&i<=43||i==62)){near(h,ModShieldSystem.value(p),166.4,"P1 first grounded two seconds grant 166.4: "+i);f.shieldAbsorbed=ModShieldSystem.consume(p,45);}
+                    if (tick == 42 && i == 40) trace("rivet.station_armor", "valid_anchor", "case_result", tick,
+                            "shieldBeforeIncoming", f.shieldAbsorbed + ModShieldSystem.value(p),
+                            "shieldAbsorbed", f.shieldAbsorbed, "shieldLeft", ModShieldSystem.value(p));
                     if(tick==44&&i==40)p.setPos(f.origin.add(6,0,0));
                     if(tick==63&&i==40)p.setPos(f.origin);
                     if(tick==84&&i==40)near(h,ModShieldSystem.value(p),121.4,"A short exit preserves remaining armor and never stacks a top-up");
@@ -267,7 +320,12 @@ final class RivetChecks {
                         if(tick==130){h.assertTrue(f.sawRoot,"Every branch combination observes an actual wall root: "+i);if(((i>>2)&1)==0)h.assertTrue(ModShieldSystem.value(p)>=160,"Combination R1 actually grants its own shield: "+i);else h.assertTrue(loss(f)>=340,"Combination R2 deals direct and wall damage: "+i);}
                     }
                     if(tick==10&&i==22){near(h,ModShieldSystem.value(f.ally),375,"Rank-seven S230 emergency strut grants 375 actual ally shield");}
-                    if(tick==10&&i==23)near(h,ModShieldSystem.sourceValue(p,"rivet_hold_protocol/"+p.getUUID()),405,"Rank-three S230 hold grants 405 own source shield");
+                    if (tick == 10 && i == 23) {
+                        float shield = ModShieldSystem.sourceValue(p, "rivet_hold_protocol/" + p.getUUID());
+                        near(h, shield, 405, "Rank-three S230 hold grants 405 own source shield");
+                        trace("rivet.anchor_hold", "valid_anchor", "shield_granted", tick, "shield", shield,
+                                "rank", d.skillLevel(node(6).getId()), "spellPower", p.getAttributeValue(ModAttributes.SPELL_POWER));
+                    }
                     if(tick==10&&i==44){float value=ModShieldSystem.value(f.ally);near(h,value,110,"E1 grants its full shield to a real ally");ModShieldSystem.grant(f.ally,"unrelated_test_shield",20,600);AbilityRuntime.clear(p);near(h,ModShieldSystem.value(f.ally),20,"Owner cleanup removes only its own ally shield");}
                     if(tick==10&&i==45){ModShieldSystem.consume(f.ally,75);d.setCooldown(node(4).getId(),0);d.setMana(700);SkillSystem.cast(p,2);near(h,ModShieldSystem.value(f.ally),110,"Same support group uses the higher remaining shield rather than additive stacking");}
                     if(tick==12&&i==45)SkillSystem.cast(f.other,2);
@@ -277,8 +335,36 @@ final class RivetChecks {
                     if(tick==50&&Set.of(28,48,49).contains(i))h.assertTrue(TacticalAnchor.anchor(p)==null,"Missing/unloaded or cleared anchor cannot remain active: "+i);
                     if(tick==50&&i==48){AbilityRuntime.clear(p);h.assertTrue(p.getDeltaMovement().lengthSqr()==0,"Lifecycle cleanup releases server motion");}
 
+                    if (tick == 59 && i == 54) {
+                        f.unprotectedPhysicalLoss = incoming(f, DamageCalc.Kind.PHYSICAL);
+                        h.assertTrue(f.unprotectedPhysicalLoss > 0, "The matched unprotected hit removes actual health");
+                        trace("rivet.anchor_hold", "locked_zone_after_anchor_loss", "incoming", tick,
+                                "zoneActive", false, "damageKind", "physical", "healthLoss", f.unprotectedPhysicalLoss);
+                    }
                     if(tick==60&&i==54){SkillSystem.cast(p,3);}
-                    if(tick==67&&i==54){for(int y=0;y<3;y++)block(f,0,y,4,Blocks.AIR);h.assertTrue(HoldProtocol.incoming(f.ally)==.85,"Locked original zone still protects its ally after anchor replacement and wall destruction");}
+                    if (tick == 67 && i == 54) {
+                        for (int y = 0; y < 3; y++) block(f, 0, y, 4, Blocks.AIR);
+                        float protectedLoss = incoming(f, DamageCalc.Kind.PHYSICAL);
+                        near(h, protectedLoss, f.unprotectedPhysicalLoss * .85, "Original zone still reduces actual physical damage after replacement and wall destruction");
+                        trace("rivet.anchor_hold", "locked_zone_after_anchor_loss", "incoming", tick,
+                                "zoneActive", true, "damageKind", "physical", "healthLoss", protectedLoss,
+                                "preventedHealthLoss", f.unprotectedPhysicalLoss - protectedLoss);
+                    }
+                    if (tick == 68 && i == 54) {
+                        float protectedLoss = incoming(f, DamageCalc.Kind.TRUE);
+                        near(h, protectedLoss, 85, "NPC typed true damage still enters the ordinary incoming modifier");
+                        trace("rivet.anchor_hold", "locked_zone_after_anchor_loss", "incoming", tick,
+                                "zoneActive", true, "damageKind", "true", "damagePath", "npc", "healthLoss", protectedLoss);
+                    }
+                    if (tick == 69 && i == 54) {
+                        float hp = f.ally.getHealth();
+                        f.ally.damageCooldownTime = 0;
+                        DamageCalc.dealUncriticalSkillDamage(f.other, f.ally, 100, DamageCalc.Kind.TRUE, 0);
+                        float trueSkillLoss = hp - f.ally.getHealth();
+                        near(h, trueSkillLoss, 100, "Engine-classified true skill damage skips the incoming modifier");
+                        trace("rivet.anchor_hold", "locked_zone_after_anchor_loss", "incoming", tick,
+                                "zoneActive", true, "damageKind", "true", "damagePath", "skill", "healthLoss", trueSkillLoss);
+                    }
                     if(tick==66&&i==54){d.setCooldown(node(3).getId(),0);p.setYRot(180);wall(f,-4,3);SkillSystem.cast(p,1);p.setYRot(0);h.assertTrue(ModShieldSystem.value(p)>=160,"An already locked hold zone keeps its shield after anchor replacement");}
                     AbilityRuntime.tick(p);if(f.other!=null)AbilityRuntime.tick(f.other);
                     if(f.target.isAlive()){boolean controlled=RivetPush.autonomousMovementBlocked(f.target);f.continuousControl=controlled?f.continuousControl+1:0;f.maxContinuousControl=Math.max(f.maxContinuousControl,f.continuousControl);f.maxZ=Math.max(f.maxZ,f.target.getZ());int root=RivetPush.rootRemaining(f.target);if(root>0){if(root>f.previousRoot)f.roots.add(root);f.continuousRoot++;f.maxContinuousRoot=Math.max(f.maxContinuousRoot,f.continuousRoot);f.sawRoot=true;f.maxRoot=Math.max(f.maxRoot,root);h.assertTrue(f.target.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED)==0,"An active sourced root actually blocks autonomous movement: "+i);}else f.continuousRoot=0;f.previousRoot=root;}
@@ -313,6 +399,13 @@ final class RivetChecks {
         if(i==8) {near(h,loss(f),90,"Flat ground Q is 90 direct physical damage without wall bonus");h.assertTrue(f.maxZ-f.initialZ>1.8&&!f.sawRoot,"Flat push covers approximately two blocks with no root");}
         if(i==9||i==10){near(h,loss(f),90,"A passable slab/stair is not a wall: "+i);h.assertTrue(!f.sawRoot&&f.maxZ-f.initialZ>1.5,"A passable slab/stair allows forward movement: "+i);}
         if(i==11||i==12||i==13){near(h,loss(f),125,"A real pillar/corner/tunnel side collision grants one wall bonus: "+i);h.assertTrue(f.maxRoot==10,"Ordinary Q wall root remains exactly half a second: "+i);}
+        if (i == 16 || i == 29) {
+            near(h, loss(f), 125, "Matched wall geometry gives the same damage with and without an anchor");
+            h.assertTrue(f.maxRoot == (i == 16 ? 10 : 16), "A valid anchor increases the observed wall root from ten to sixteen ticks");
+            trace("rivet.anchor_strike", i == 16 ? "wall_without_anchor" : "wall_with_anchor", "case_result", 165,
+                    "maximumRootTicks", f.maxRoot, "healthLoss", loss(f), "wallBlockDistance", 4,
+                    "anchorActive", TacticalAnchor.anchor(f.p) != null);
+        }
         if(i==14)h.assertTrue(f.maxZ==f.initialZ,"Q damages its cone without pushing a target outside the crosshair");
         if(i==15)h.assertTrue(f.maxZ>f.initialZ&&Math.abs(f.rear.getZ()-(f.origin.z+2.9))<.02,"Only the first crosshair target is pushed");
         if(i==17)h.assertTrue(ModShieldSystem.value(f.target)<1000&&f.sawRoot,"Shield absorption counts as an effective hit and still enables collision");
@@ -331,11 +424,57 @@ final class RivetChecks {
         if(i==38)h.assertTrue(loss(f)>=340&&f.roots.contains(16)&&f.roots.contains(8),"Q into R2 retains actual damage and does not suppress the second push");
         if(i==39)h.assertTrue(loss(f)>=250,"Two Rivets share the target root record while both still deal their wall hits: loss="+loss(f)+", roots="+f.roots);
         if(i==50||i==51)h.assertTrue(loss(f)==0,"Stun/silence cancels a not-yet-committed R2 charge: "+i);
-        if(i==68){near(h,loss(f),125,"A real self-pull followed from its actual endpoint by an aimed Q hits and wall-collides");h.assertTrue(f.p.position().subtract(f.origin).horizontalDistance()>6&&f.sawRoot,"Tow-to-Q success includes the full anchor distance and target control");}
+        if(i==68){near(h,loss(f),125,"A real self-pull followed from its actual endpoint by an aimed Q hits and wall-collides");h.assertTrue(f.p.position().subtract(f.origin).horizontalDistance()>6&&f.sawRoot,"Tow-to-Q success includes the full anchor distance and target control");
+            trace("rivet.anchor_tow", "tow_followed_by_hammer", "case_result", 165,
+                    "distanceTravelled", f.p.position().subtract(f.origin).horizontalDistance(),
+                    "hammerHealthLoss", loss(f), "maximumRootTicks", f.maxRoot);
+        }
         if(i==64||i==66){near(h,loss(f),90,"Slowed flat Q retains direct damage without invented wall bonus: "+i);h.assertTrue(f.maxZ-f.initialZ>1.85&&!f.sawRoot,"Slowed or rate-changing push preserves completed work and its two-block budget: "+i);}
         if(i==65){near(h,loss(f),90,"A late slowed wall contact awards no damage outside the eight-real-tick window");h.assertTrue(f.maxZ-f.initialZ>1.7&&!f.sawRoot&&TacticalAnchor.recovery(f.p)==0&&PlayerDataProvider.get(f.p).getBuff("g1_rivet_rhythm")==0,"Late slowed wall contact only stops motion, without anchor, root or P2 rewards");}
         if(i==52||i==53)h.assertTrue(f.maxZ>f.initialZ&&f.sawRoot&&hp(f.target)<f.before,"A real managed large boss accepts push, wall damage and root: "+i);
     }
+    private static void rejectAnchorCast(GameTestHelper h, Fixture f, int slot, int index, String reason) {
+        var data = PlayerDataProvider.get(f.p);
+        String skill = node(index).getId();
+        float mana = data.getMana();
+        SkillSystem.cast(f.p, slot);
+        h.assertTrue(data.getMana() == mana && data.getCooldown(skill) == 0 && !AbilityRuntime.moving(f.p),
+                "An unusable anchor leaves mana, cooldown and movement unchanged: " + reason);
+        trace(index == 5 ? "rivet.anchor_tow" : "rivet.anchor_hold", reason, "cast_result", 0,
+                "skill", skill, "manaSpent", mana - data.getMana(), "cooldownTicks", data.getCooldown(skill),
+                "anchorActive", TacticalAnchor.anchor(f.p) != null, "moving", AbilityRuntime.moving(f.p));
+    }
+
+    private static void verifyRankedCast(GameTestHelper h, Fixture f, int tick, int index, float expectedCost, int expectedCooldown) {
+        var data = PlayerDataProvider.get(f.p);
+        String skill = node(index).getId();
+        float cost = 670 - data.getMana(); // Every fixture here has already placed a rank-zero W for 30 mana.
+        near(h, cost, expectedCost, "Actual mana paid on the ranked skill " + skill);
+        h.assertTrue(data.getCooldown(skill) == expectedCooldown, "Actual cooldown on the ranked skill " + skill);
+        trace(index == 5 ? "rivet.anchor_tow" : index == 6 ? "rivet.anchor_hold" : "rivet.ranked_casts",
+                "valid_anchor_" + skill, "cast_result", tick, "skill", skill, "paidRank", data.skillLevel(skill),
+                "manaSpent", cost, "cooldownTicks", data.getCooldown(skill), "anchorActive", TacticalAnchor.anchor(f.p) != null);
+    }
+
+    private static float incoming(Fixture f, DamageCalc.Kind kind) {
+        float before = f.ally.getHealth();
+        f.ally.damageCooldownTime = 0;
+        NpcCombat.hit(f.ally, f.target, 100, kind);
+        return before - f.ally.getHealth();
+    }
+
+    private static void trace(String scenario, String caseId, String event, int tick, Object... fields) {
+        var row = new LinkedHashMap<String, Object>();
+        row.put("scenarioId", scenario);
+        row.put("scenarioVersion", 1);
+        row.put("caseId", caseId);
+        row.put("event", event);
+        row.put("tick", tick);
+        row.put("timeUnit", "real_tick");
+        for (int i = 0; i < fields.length; i += 2) row.put((String) fields[i], fields[i + 1]);
+        System.out.println("BALANCE_CALIBRATION " + JSON.toJson(row));
+    }
+
     private static void basic(ServerPlayer player,LivingEntity target){set(LivingEntity.class,player,"attackStrengthTicker",200);target.damageCooldownTime = 0;player.fallDistance=0;player.attack(target);}
     private static AbilitySkill node(int i){return FirstGroupSkills.node("rivet",i);}
     private static void rank(Fixture f,int index,int rank){var d=PlayerDataProvider.get(f.p);for(int r=d.skillLevel(node(index).getId());r<rank;r++)PlayerDataProvider.upgradeSkill(f.p,node(index).getId());}

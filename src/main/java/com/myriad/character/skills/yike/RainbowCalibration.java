@@ -10,6 +10,9 @@ import java.util.*;
 
 /** One paid cast can mark each hero only once, even after the third mark clears the stack. */
 public final class RainbowCalibration extends AbilitySkill {
+    public static final int TRIGGER_MARKS = 3;
+    public static final int MARK_WINDOW_TICKS = 120;
+
     private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 40, 12, .20f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
@@ -19,6 +22,9 @@ public final class RainbowCalibration extends AbilitySkill {
     private static final class Mark {int count;long until;final Set<Integer> casts=new HashSet<>();}
     private static final Map<UUID,Map<UUID,Mark>> MARKS=new HashMap<>();
     public RainbowCalibration(Definition d){super(d);}
+    @Override public Map<String, Number> descriptionFields(int rank) {
+        return Map.of("trigger_marks", TRIGGER_MARKS, "mark_window_seconds", MARK_WINDOW_TICKS / 20.0);
+    }
     @Override public void release(AbilityRuntime.Cast c){}
     @Override public void onHit(AbilityRuntime.Hit hit){
         if(hit.basic()||!hit.direct()||!hit.skillId().startsWith("yike_")||AbilityRuntime.sourceCast()<=0)return;
@@ -27,8 +33,8 @@ public final class RainbowCalibration extends AbilitySkill {
         var targets=MARKS.computeIfAbsent(c.player.getUUID(),u->new HashMap<>());
         var m=targets.computeIfAbsent(hit.target().getUUID(),u->new Mark());
         if(!m.casts.add(AbilityRuntime.sourceCast()))return;
-        if(c.now()>=m.until)m.count=0;m.until=c.now()+120;
-        if(++m.count>=3){m.count=0;
+        if(c.now()>=m.until)m.count=0;m.until=c.now()+MARK_WINDOW_TICKS;
+        if(++m.count>=TRIGGER_MARKS){m.count=0;
             c.damage(hit.target(),DAMAGE.value(c),DamageCalc.Kind.MAGIC,false);
             WeaponPosePayload.play(c.player, Move.CALIBRATE, 6);
         YikeVfx.target(c,"mark_burst",hit.target(),.7f,8);YikeAudio.play(c.player,"mark",hit.target().position(),.45f,1.25f);

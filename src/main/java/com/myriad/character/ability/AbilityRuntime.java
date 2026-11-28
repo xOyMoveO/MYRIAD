@@ -37,6 +37,26 @@ public final class AbilityRuntime {
     public static String sourceSkill(){var s=SOURCE.get();return s==null?"":s.skill;}
     public static boolean sourceDirect(){var s=SOURCE.get();return s==null||s.direct;}
     public static int sourceCast(){var s=SOURCE.get();return s==null?0:s.cast;}
+
+    public static final int SKILL_HASTE_REFERENCE = 100;
+    public static final int MIN_POSITIVE_COOLDOWN = 1;
+    public static final double GUARD_15_DAMAGE_TAKEN = .85;
+    public static final double GUARD_12_DAMAGE_TAKEN = .88;
+    public static final double MIN_INCOMING_DAMAGE_MULTIPLIER = .3;
+    public static final int PORTAL_TRAVEL_REUSE_TICKS = 40;
+
+    public static int effectiveCooldownTicks(int baseTicks, double skillHaste, double legacyReduction) {
+        if (baseTicks <= 0) return 0;
+        double reduced = Double.isFinite(legacyReduction)
+                ? Math.clamp(legacyReduction, 0, ModAttributes.MAX_COOLDOWN_REDUCTION) : 0;
+        return Math.max(MIN_POSITIVE_COOLDOWN,
+                (int) (baseTicks * (1 - reduced / 100) * SKILL_HASTE_REFERENCE / (SKILL_HASTE_REFERENCE + skillHaste)));
+    }
+
+    public static int effectiveCooldownTicks(ServerPlayer player, PlayerData data, int baseTicks) {
+        return effectiveCooldownTicks(baseTicks, FirstGroupGrowth.skillHaste(data.firstGroupAttribute("cooldown")),
+                player.getAttributeValue(ModAttributes.COOLDOWN_REDUCTION));
+    }
     private interface Task {boolean tick(long now);default void cancel(){}}
     /** Skill-owned passenger physics; null limits interrupt, zero limits stop at real contact. */
     public interface DashEscort {
@@ -56,6 +76,7 @@ public final class AbilityRuntime {
         public long until,cooldown,last;public int count;public double distance;
         public UUID target;public String tag="";public Vec3 point,lastPosition;
         public final Map<UUID,Long> targets=new HashMap<>();
+        public Set<Integer> castTokens;
     }
     private record Debuff(LivingEntity target,Identifier id,long until){}
     private static Owner owner(ServerPlayer p){
@@ -309,15 +330,16 @@ public final class AbilityRuntime {
     }
     public static double incoming(ServerPlayer p,DamageCalc.Kind kind){
         if(kind==DamageCalc.Kind.TRUE)return 1;var d=PlayerDataProvider.get(p);
-        double scale=d.getBuff("g1_guard15")>0?.85:d.getBuff("g1_guard12")>0?.88:1;
+        double scale=d.getBuff("g1_guard15")>0?GUARD_15_DAMAGE_TAKEN:
+                d.getBuff("g1_guard12")>0?GUARD_12_DAMAGE_TAKEN:1;
         if(FirstGroupSkills.active(d.getCharacterId()))for(var skill:FirstGroupSkills.candidates(d.getCharacterId()))
             if(d.skillLevel(skill.getId())>0)scale*=skill.incomingMultiplier(context(p,skill));
         scale*=com.myriad.character.skills.rivet.HoldProtocol.incoming(p);
-        return Math.clamp(scale,.3,1);
+        return Math.clamp(scale,MIN_INCOMING_DAMAGE_MULTIPLIER,1);
     }
     public static final class Cast {
         public final ServerPlayer player;public final PlayerData data;public final AbilitySkill skill;public final int rank;
-        public final float totalPhysicalAttack, totalSpellPower, purchasedPhysicalAttack, purchasedSpellPower;
+        public final float totalPhysicalAttack, totalSpellPower, bonusPhysicalAttack, purchasedSpellPower;
         private final Owner owner;private int castToken;public Vec3 point;
         private float windupProgress;
         private Phase phase=Phase.REQUESTED;private boolean accepted,committed;private int windupToken;
@@ -342,8 +364,10 @@ public final class AbilityRuntime {
             if(failure != null){failure.send(player);cancelCast();return false;}
             committed=true;phase=Phase.COMMITTED;owner.preparing=null;
             if(!noMana)data.spendMana(skill.manaCost(rank));
-            if(!noCd&&skill.cooldownTicks(this)>0){double reduction=Math.clamp(player.getAttributeValue(ModAttributes.COOLDOWN_REDUCTION),0,ModAttributes.MAX_COOLDOWN_REDUCTION);
-                data.setCooldown(skill.getId(),Math.max(1,(int)(skill.cooldownTicks(this)*(1-reduction/100))));}
+            if (!noCd) {
+                int ticks = effectiveCooldownTicks(player, data, skill.cooldownTicks(this));
+                if (ticks > 0) data.setCooldown(skill.getId(), ticks);
+            }
             player.removeEffect(MobEffects.INVISIBILITY);data.setStealthBonus(false);
             skill.release(this);skill.present(this);SkillPresentation.cast(player,skill);
             AbilitySkill passive=passive(player);if(passive!=null)passive.onCast(this);
@@ -361,7 +385,7 @@ public final class AbilityRuntime {
             rank=Math.clamp(Math.max(1,data.skillLevel(skill.getId())),1,skill.maxRank());
             totalPhysicalAttack=(float)p.getAttributeValue(ModAttributes.PHYSICAL_ATTACK);
             totalSpellPower=(float)p.getAttributeValue(ModAttributes.SPELL_POWER);
-            purchasedPhysicalAttack=(float)FirstGroupGrowth.purchasedPhysicalAttack(data.firstGroupAttribute("strength"));
+            bonusPhysicalAttack=(float)FirstGroupGrowth.bonusPhysicalAttack(CharacterType.byId(data.getCharacterId()),totalPhysicalAttack);
             purchasedSpellPower=(float)FirstGroupGrowth.purchasedSpellPower(data.firstGroupAttribute("wisdom"));
             castToken=owner.castToken;}
         public long now(){return player.level().getGameTime();}
@@ -471,7 +495,8 @@ public final class AbilityRuntime {
                 String control = stun ? "g1_stun" : "g1_root";
                 PlayerData targetData = PlayerDataProvider.get(hero);
                 int previous = targetData.getBuff(control);
-                targetData.setBuff(control,duration);
+                int current = targetData.getDirectBuff(control);
+                targetData.setBuff(control, (int) ControlStatusSystem.laterExpiry(current, duration));
                 if (duration > previous) com.myriad.game.MatchAssists.controlled(player, hero);
                 com.myriad.combat.DeathRecaps.control(player,hero,skill.getId(),stun?5:4,now(),duration);}
         }
@@ -885,10 +910,10 @@ public final class AbilityRuntime {
                 }
                 for(var ally:allies(from,2)){if(ally.isShiftKeyDown()&&ally.position().distanceToSqr(from)<=2.25&&memory.targets.getOrDefault(ally.getUUID(),0L)<=now()
                         &&PlayerDataProvider.get(ally).getBuff("g1_root")==0&&PlayerDataProvider.get(ally).getBuff("g1_stun")==0&&AbilityTargeting.canStand(ally,to)){
-                    ally.teleportTo(to.x,to.y,to.z);memory.targets.put(ally.getUUID(),now()+40);travel.accept(from,to);}}
+                    ally.teleportTo(to.x,to.y,to.z);memory.targets.put(ally.getUUID(),now()+PORTAL_TRAVEL_REUSE_TICKS);travel.accept(from,to);}}
                 for(var ally:allies(to,2)){if(ally.isShiftKeyDown()&&ally.position().distanceToSqr(to)<=2.25&&memory.targets.getOrDefault(ally.getUUID(),0L)<=now()
                         &&PlayerDataProvider.get(ally).getBuff("g1_root")==0&&PlayerDataProvider.get(ally).getBuff("g1_stun")==0&&AbilityTargeting.canStand(ally,from)){
-                    ally.teleportTo(from.x,from.y,from.z);memory.targets.put(ally.getUUID(),now()+40);travel.accept(to,from);}}
+                    ally.teleportTo(from.x,from.y,from.z);memory.targets.put(ally.getUUID(),now()+PORTAL_TRAVEL_REUSE_TICKS);travel.accept(to,from);}}
                 return true;
             });
             AbilityVisuals.portalAnchor(this,from,to,6);

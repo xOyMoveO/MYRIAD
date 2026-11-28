@@ -143,7 +143,8 @@ final class FirstTenDamageFormulaChecks {
                                     double wisdom = segment.wisdom() + t * (segment.maxWisdom() - segment.wisdom());
                                     double damage = zero + segment.strength() * build.strength() + wisdom * build.wisdom();
                                     near(helper, formula.value(cast), damage, label + " authoritative Cast formula");
-                                    near(helper, formula.value(rank, attack, spellPower, build.strength(), build.wisdom()), damage,
+                                    double bonusAttack = 15 * build.strength();
+                                    near(helper, formula.value(rank, attack, spellPower, bonusAttack, build.wisdom()), damage,
                                             label + " preview matches authoritative Cast formula");
                                     near(helper, formula.perPoint(rank), segment.strength() + wisdom, label + " per point");
                                 }

@@ -1,0 +1,62 @@
+{
+  "baseAttributes": {
+    "decision": "retain",
+    "condition": "1–20 级，无购点和临时状态。",
+    "reason": "保留基础生命 620、每级提高 95，法力 700、每级提高 36，双抗各 45。轻重前排对照使用同预算的伤害、控制、承伤与场景位置。",
+    "scenario": "sulan.zero_preparation；balance_tianxing"
+  },
+  "basicAttack": {
+    "decision": "retain",
+    "condition": "初始武器、满恢复、有效普攻。",
+    "reason": "保留 65 基础物攻与每秒 0.70 次基础攻速。蓄刃独立记账。",
+    "scenario": "sulan.walking_zero；balance_sulan_fenjue"
+  },
+  "g1_sulan_pa": {
+    "decision": "retain",
+    "condition": "合格自然水平移动累计 30 格；落地后的下一次有效普攻消耗一层。",
+    "reason": "保留基础 45.5、每阶 +14.4 和 25% 额外物攻系数。零预置、30 格准备与技能位移分别取证。缓时下短冲刺的收尾步仍排除，29.75 格后要再自然移动 0.25 格才就绪。",
+    "scenario": "sulan.walking_zero；sulan.walking_prepared；sulan.skill_motion_only；balance_sulan_fenjue"
+  },
+  "g1_sulan_pb": {
+    "decision": "retain",
+    "condition": "主动直接命中英雄获得 60 真实刻窗口，冷却 120 刻；窗口内下一次有效普攻消耗。",
+    "reason": "保留基础 34、每阶 +12 和 25% 额外物攻；15% 减速 20 真实刻。以实际直接命中作为前提。",
+    "scenario": "sulan.zero_preparation；roster_b"
+  },
+  "g1_sulan_n1": {
+    "decision": "retain",
+    "condition": "无阻挡冲刺上限 6 格，7 行动刻；每个路径合法敌人最多一次。",
+    "reason": "保留 68、每阶 +18.75、额外物攻 50%；移动与伤害分别验证。",
+    "scenario": "sulan.skill_motion_only；wind_cast_animation；hero_action_time"
+  },
+  "g1_sulan_n2": {
+    "decision": "retain",
+    "condition": "14 格内直接标记，减速 20% 持续 30 真实刻；80 刻内自己对同目标的下一次直接非真实伤害消耗标记。",
+    "reason": "保留基础 32.5，标记增幅按阶 6%–10%，仅消费施放者获得的同目标机会。",
+    "scenario": "sulan.wind_mark_next_hit；wind_cast_animation"
+  },
+  "g1_sulan_ma": {
+    "decision": "retain",
+    "condition": "可格挡的敌方投射物碰到风墙。基础 50 刻，每阶 4 刻。",
+    "reason": "保留拦截窗口，位置与遮挡决定收益。固定数值来伤只按场景中明确存在的可格挡弹体归因。",
+    "scenario": "sulan.zero_preparation；first_group"
+  },
+  "g1_sulan_mb": {
+    "decision": "retain",
+    "condition": "合法去回程各一次，12 格名义去程，26 格／秒基础样本。",
+    "reason": "保留每段 58.5、每阶 +18.75、每段额外物攻 25%。离线按单轴估计两段，实际回程持续跟踪施放者位置。",
+    "scenario": "sulan.return_blade；wind_cast_animation；hero_action_time"
+  },
+  "g1_sulan_ua": {
+    "decision": "retain",
+    "condition": "10 个行动刻蓄力后最多冲刺 12 格；合法冲刺终点或撞到首名英雄，附近结算一次。",
+    "reason": "保留终点基础 196，终点 2.5 格内敌人减速 30% 持续 30 真实刻。治疗与护盾样本没有该技能贡献。",
+    "scenario": "sulan.zero_preparation；wind_cast_animation；hero_action_time"
+  },
+  "g1_sulan_ub": {
+    "decision": "retain",
+    "condition": "5 格移动领域展开一次伤害，领域按 80 真实刻追随施放者，每 4 刻在圈内续移速状态。",
+    "reason": "保留展开时基础 109.5，友军加速 15%、敌方减速 25%，实际走出时等待剩余刷新到期。",
+    "scenario": "sulan.zero_preparation；wind_cast_animation；roster_b"
+  }
+}

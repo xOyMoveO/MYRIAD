@@ -52,15 +52,19 @@ public final class HeroRespawnSystem {
             }
         }
     }
+    static int waitTicks(int heroLevel, boolean respawnRune) {
+        int level = Math.clamp(heroLevel, 1, 20);
+        int ticks = (2 * Math.min(15, level) + 7) * 20 + Math.max(0, level - 15) * 32;
+        return respawnRune ? Math.max(20, ticks / 2) : ticks;
+    }
+
     public static void begin(ServerPlayer player) {
         var data = PlayerDataProvider.get(player);
         var fountain = LaneSystem.fountainPoint(data.getFaction());
         Vec3 point = fountain == null ? player.position() : Vec3.atBottomCenterOf(fountain).add(0, 1, 0);
-        int ticks = (2 * Math.max(1, Math.min(15, data.getLevel())) + 7) * 20;
-        if (data.getBuff("rune_realm_respawn") > 0) {
-            ticks = Math.max(20, ticks / 2);
-            data.setBuff("rune_realm_respawn", 0);
-        }
+        boolean respawnRune = data.getBuff("rune_realm_respawn") > 0;
+        int ticks = waitTicks(data.getLevel(), respawnRune);
+        if (respawnRune) data.setBuff("rune_realm_respawn", 0);
         WAITING.put(player.getUUID(), new Waiting(player.level().getGameTime() + ticks,
                 point, GameType.ADVENTURE, null));
         player.setHealth(1);

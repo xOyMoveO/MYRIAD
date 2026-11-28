@@ -1,0 +1,62 @@
+{
+  "baseAttributes": {
+    "decision": "retain",
+    "condition": "樱隙前线，1–20 级零购买或临时增益。",
+    "reason": "保留 740 生命与每级 +115、700 法力与每级 +28。实际出手、承压及 PvE 对照再观察阵地依赖。",
+    "scenario": "hanze.zero_preparation 与 balance_roster_113_{lane,camps,towers}"
+  },
+  "basicAttack": {
+    "decision": "retain",
+    "condition": "右键初始法器，恢复后发射魔法普攻；合法首敌命中，地形或风墙可截断。",
+    "reason": "保留 78 基础魔法伤、每额外法强 +0.6、每秒 0.70 次基准攻速与 15 格射程。独立引擎实际命中 78，触发链记为普攻。",
+    "scenario": "hanze.frost_interleave_immunity；balance_roster_sword_frost"
+  },
+  "g2_hanze_pa": {
+    "decision": "adopt",
+    "condition": "每个敌方目标独立按四次合格直接命中触发，最小间隔 4 刻，同次施法每目标仅计一层，叠层 120 刻刷新、触发后同目标 120 刻免疫，周期伤不计。",
+    "reason": "修正旧实现只记上次施法标记。实际三枚冰锥间穿插冰棱曾在第 30 刻提前触发；修后第 35 刻普攻才触发 31 HP 和定身。原公式、根时长与免疫值沿用。",
+    "scenario": "hanze.frost_interleave_immunity / frozen_expanse_multiple_pulses_no_stack；balance_roster_sword_frost"
+  },
+  "g2_hanze_pb": {
+    "decision": "retain",
+    "condition": "直接有效普攻或技能命中后触发自盾，内冷却 240 真实刻；施法者 3 格内敌人减速 20% 持续 20 刻。",
+    "reason": "保留易启动的自保分支与低频限制；不把未消耗盾或远距离敌人计入收益。",
+    "scenario": "hanze.zero_preparation；roster_b"
+  },
+  "g2_hanze_n1": {
+    "decision": "retain",
+    "condition": "三枚按 5 行动刻间隔依次实际瞄准发射，15 格内首个敌人承受伤害与 20% 持续 20 真实刻移速限制。",
+    "reason": "保留逐枚伤害/减速，三枚同施法每个目标最多记一层寒霜；旧目标间交错失真已修，弹体正常伤害保留三段。",
+    "scenario": "hanze.frost_interleave_immunity；balance_roster_sword_frost"
+  },
+  "g2_hanze_n2": {
+    "decision": "retain",
+    "condition": "立即授予自身 80 真实刻护盾；当前施法者 3 格可见敌人减速 25%，持续 30 真实刻。",
+    "reason": "保留自身承压防护及近身减速，远处只得自盾；有效收益以实际敌方压力消耗记账。",
+    "scenario": "hanze.zero_preparation；first_group"
+  },
+  "g2_hanze_ma": {
+    "decision": "retain",
+    "condition": "合法选点并付费开始驻足起手，20 行动刻后作用于半径 4.5 格合法目标，定身基础 24 真实刻。",
+    "reason": "保留预警与指定区域根；孤立退步和队友先控分别计算净行动损失，期望由几何与控制时序决定。",
+    "scenario": "hanze.zero_preparation；roster_b；multi-target-113.json"
+  },
+  "g2_hanze_mb": {
+    "decision": "retain",
+    "condition": "射程 18 格，可穿过多个合法敌人。每人一次命中，各自 40% 减速 40 真实刻并可各叠霜一次。",
+    "reason": "保留线性控制分支；独立引擎同一发对两敌均实扣 101.5 且按目标隔离后续触发。",
+    "scenario": "hanze.frost_interleave_immunity；balance_roster_sword_frost；multi-target-113.json"
+  },
+  "g2_hanze_ua": {
+    "decision": "retain",
+    "condition": "14 格内选点，半径 7 格，最多六跳，每跳间隔 20 真实刻，对当前留场敌人分别判定并减速 35% 持续 20 真实刻。周期伤不叠霜。",
+    "reason": "保留阵地持续压制。离开区域只避开后续新跳，不拉长已收到的减速；当前命中属性是间接结算。",
+    "scenario": "hanze.frozen_expanse_multiple_pulses_no_stack；balance_roster_sword_frost；multi-target-113.json"
+  },
+  "g2_hanze_ub": {
+    "decision": "retain",
+    "condition": "同一施法向 6 格内可见友军和自身分别提供 100 真实刻护盾，5 格内合法敌人各受一次伤害与 20 真实刻基础定身。",
+    "reason": "保留保护和反开收益。引擎实测一阶 30 法强提供自身与一名友军各 251 盾，敌方各 102 原始伤害。逐人盾耗与护盾名义量单独记录。",
+    "scenario": "hanze.winter_bastion_pressure；balance_roster_sword_frost；multi-target-113.json"
+  }
+}

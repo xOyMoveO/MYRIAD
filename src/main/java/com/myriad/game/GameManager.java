@@ -22,6 +22,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.level.GameType;
 
 import com.myriad.character.CharacterType;
+import com.myriad.player.LevelSystem;
 import com.myriad.player.PlayerData;
 import com.myriad.player.PlayerDataProvider;
 
@@ -90,7 +91,7 @@ public class GameManager {
     private final Map<UUID, Integer> matchKills = new HashMap<>();
     private final Map<UUID, Integer> matchDeaths = new HashMap<>();
     private MatchAssists assists = new MatchAssists();
-    private static final int SMALL_VEIN_CAPTURE_TICKS = 120;
+    static final int SMALL_VEIN_CAPTURE_TICKS = 120;
     private static final int LARGE_VEIN_CAPTURE_TICKS = 200;
     private static final int SMALL_VEIN_RADIUS = 8;
     private static final int LARGE_VEIN_RADIUS = 12;
@@ -140,7 +141,7 @@ public class GameManager {
     private long crystalTick = -1;
 
     private void sampleEconomy(long now) {
-        if (tempo != MatchTempo.CHERRY_V1) return;
+        if (!tempo.isCherry()) return;
         long elapsed = now - matchStartTime;
         if (elapsed != 6000 && elapsed != 12000 && elapsed != 18000) return;
         int minute = (int) (elapsed / 1200);
@@ -162,24 +163,27 @@ public class GameManager {
     }
 
     void recordTowerFall(long time) {
-        if (combatTempo() == MatchTempo.CHERRY_V1 && firstTowerTick < 0) firstTowerTick = time - matchStartTime;
+        if (combatTempo().isCherry() && firstTowerTick < 0) firstTowerTick = time - matchStartTime;
     }
 
     void recordCrabKill(long time) {
-        if (combatTempo() == MatchTempo.CHERRY_V1) crabKillTicks.add(time - matchStartTime);
+        if (combatTempo().isCherry()) crabKillTicks.add(time - matchStartTime);
     }
 
     void crystalDestroyed(Faction winningSide, long time) {
-        if (combatTempo() == MatchTempo.CHERRY_V1) crystalTick = time - matchStartTime;
+        if (combatTempo().isCherry()) crystalTick = time - matchStartTime;
         endMatch(winningSide);
     }
 
     private void logTempoResult(String outcome, long time) {
-        if (tempo == MatchTempo.CHERRY_V1) com.myriad.Myriad.LOGGER.info(
-                "[cherry-tempo] round={} players={} outcome={} ticks={} firstTower={} crabKills={} crystal={} samples={}",
-                queueRound, factions.size(), outcome, time - matchStartTime, firstTowerTick, crabKillTicks, crystalTick, economySamples);
+        if (tempo.isCherry()) com.myriad.Myriad.LOGGER.info(
+                "[cherry-tempo] profile={} round={} players={} outcome={} ticks={} firstTower={} crabKills={} crystal={} samples={}",
+                tempo, queueRound, factions.size(), outcome, time - matchStartTime, firstTowerTick, crabKillTicks, crystalTick, economySamples);
     }
     private final Map<UUID, OfflineStats> offlineStats = new HashMap<>();
+    private List<UUID> legacyEconomySeats;
+    private record PendingAssist(UUID receipt, int gold, int xp) {}
+    private final Map<UUID, List<PendingAssist>> pendingAssistRewards = new HashMap<>();
     private long pickToken;
     private transient boolean checkDraftPool = true;
     private int pickIndex = 0;
@@ -215,14 +219,26 @@ public class GameManager {
     }
 
     public static com.google.gson.JsonElement snapshot() {
-        if (instance != null && instance.server != null && instance.isQueuedMatch()) {
-            for (ServerPlayer player : instance.matchPlayers()) instance.rememberPlayerStats(player);
+        if (instance != null && instance.server != null
+                && (instance.phase == Phase.PLAYING || instance.phase == Phase.ENDED)) {
+            for (ServerPlayer player : instance.matchPlayers()) {
+                if (instance.factionOf(player) != null) instance.rememberPlayerStats(player);
+            }
         }
         return MatchProgress.JSON.toJsonTree(instance);
     }
     public static void restore(com.google.gson.JsonElement value, MinecraftServer server) {
-        instance = MatchProgress.JSON.fromJson(value, GameManager.class);
-        instance.setServer(server);
+        var restored = MatchProgress.JSON.fromJson(value, GameManager.class);
+        if (restored.tempo == null) {
+            if (value.getAsJsonObject().has("tempo")) throw new IllegalArgumentException("Unknown checkpoint match tempo");
+            restored.tempo = MatchTempo.STANDARD;
+        }
+        // Active objectives and their opening deadline already belong to the saved round.
+        // In particular, an edited vein layout must not clear occupied veins on restart.
+        if (restored.phase == Phase.PLAYING) restored.server = server;
+        else restored.setServer(server);
+        instance = restored;
+        if (restored.phase == Phase.PLAYING) restored.economyRoster();
     }
 
     public Phase getPhase() {
@@ -329,6 +345,43 @@ public class GameManager {
         return server.getPlayerList().getPlayers().stream().filter(this::countsForMatch).toList();
     }
 
+    private List<UUID> economyRoster() {
+        if (isQueuedMatch()) return queueRoster;
+        // Older world checkpoints did not have a queue roster.
+        if (legacyEconomySeats == null) legacyEconomySeats = factions.keySet().stream().sorted().toList();
+        return legacyEconomySeats;
+    }
+
+    double farmBonus(ServerPlayer player, boolean xp) {
+        Faction side = factions.get(player.getUUID());
+        if (side == null || server == null) return 0;
+        var roster = economyRoster();
+        if (!roster.contains(player.getUUID())) return 0;
+        int ownSeats = 0, enemySeats = 0;
+        double ownIncome = 0, enemyIncome = 0, enemyLevels = 0;
+        for (UUID id : roster) {
+            Faction team = factions.get(id);
+            if (team == null) continue;
+            ServerPlayer online = server.getPlayerList().getPlayer(id);
+            PlayerData data = online == null ? null : PlayerDataProvider.get(online);
+            OfflineStats saved = offlineStats.get(id);
+            int income = data != null && data.getCharacterId() != null ? data.getMatchGoldEarned()
+                    : saved == null ? PlayerData.OPENING_PURSE_GOLD : saved.gold();
+            int level = data != null && data.getCharacterId() != null ? data.getLevel() : saved == null ? 1 : saved.level();
+            if (team == side) {
+                ownSeats++;
+                ownIncome += income;
+            } else {
+                enemySeats++;
+                enemyIncome += income;
+                enemyLevels += level;
+            }
+        }
+        if (ownSeats == 0 || enemySeats == 0) return 0;
+        return xp ? MatchBalance.xpCatchUp(PlayerDataProvider.get(player).getLevel(), enemyLevels / enemySeats)
+                : MatchBalance.goldCatchUp(ownIncome / ownSeats, enemyIncome / enemySeats);
+    }
+
     public MatchAssists assists() { return assists; }
     public int killsOf(UUID id) { return matchKills.getOrDefault(id, 0); }
     public int killsOf(ServerPlayer player) { return killsOf(player.getUUID()); }
@@ -395,7 +448,10 @@ public class GameManager {
                 }
                 data.setFaction(faction);
                 if (!locked.isEmpty() && !locked.equals(data.getCharacterId())) applyPick(player, CharacterType.byId(locked));
-                if (phase == Phase.PLAYING) data.grantOpeningPurse();
+                if (phase == Phase.PLAYING) {
+                    data.grantOpeningPurse();
+                    if (ModState.isEnabled()) claimOfflineAssists(player, data);
+                }
             }
             data.setFaction(faction);
             com.myriad.player.PlayerNames.refresh(player);
@@ -419,9 +475,9 @@ public class GameManager {
     }
 
     public void onPlayerQuit(ServerPlayer player) {
-        if (isQueuedMatch() && isParticipant(player.getUUID())) {
+        if (phase == Phase.PLAYING && isParticipant(player.getUUID())) {
             rememberPlayerStats(player);
-            if (phase == Phase.PLAYING)
+            if (isQueuedMatch())
                 earlyRemake.disconnect(player.getUUID(), server.overworld().getGameTime(), matchStartTime);
         }
         // Keep the player's faction, character reservation and K/D for reconnecting.
@@ -718,16 +774,19 @@ public class GameManager {
         }
     }
 
+    static final int PASSIVE_GOLD_INTERVAL_TICKS = 100;
+    static final int PASSIVE_GOLD_BASE = 10;
+
     /** 对局中所有参赛玩家每 5 秒获得经全局收益倍率调整后的金币，死亡等待期间也不会中断。 */
     private void tickPassiveGold(MinecraftServer server, long gameTime) {
         if (matchStartTime < 0) return;
         long elapsed = gameTime - matchStartTime;
-        if (elapsed <= 0 || elapsed % 100 != 0) return;
+        if (elapsed <= 0 || elapsed % PASSIVE_GOLD_INTERVAL_TICKS != 0) return;
         var awards = new java.util.LinkedHashMap<ServerPlayer, Integer>();
         for (ServerPlayer player : matchPlayers()) {
             if (factionOf(player) == null) continue;
             if (PlayerDataProvider.get(player) == null) continue;
-            awards.put(player, GlobalBalance.goldIncome(MatchBalance.farmReward(player, 10, false)));
+            awards.put(player, MatchBalance.passiveGoldReward(player));
         }
         for (var award : awards.entrySet()) {
             ServerPlayer player = award.getKey();
@@ -780,14 +839,15 @@ public class GameManager {
             broadcast(Component.translatable("message.myriad.vein_config_incomplete",
                     attributeVeinSpawns.size(), largeVeinSpawns.size()));
         } else if (!spiritVeins.isEmpty()) {
-            spiritVeinAvailableAt = matchStartTime + 60L * 20L;
-            broadcast(Component.translatable("message.myriad.vein_will_open", 60));
+            spiritVeinAvailableAt = matchStartTime + tempo.veinOpensAfterTicks();
+            broadcast(Component.translatable("message.myriad.vein_will_open", tempo.veinOpensAfterTicks() / 20));
         }
         List<ServerPlayer> players = matchPlayers();
         // 正常选角已在准备期开始时传送，开战保留这十秒内的站位和锚点。
         // 无选角顺序的极端开局仍沿用直接就位。
         if (pickOrder.isEmpty()) LaneSystem.teleportPlayersToBases(server.overworld(), players);
         for (ServerPlayer player : players) PlayerDataProvider.get(player).grantOpeningPurse();
+        economyRoster();
         // 地图编辑和训练时玩家可能处于创造/旁观模式；正式对局统一使用冒险模式，
         // 既允许战斗与物品交互，又避免玩家破坏战场方块。
         for (ServerPlayer player : players) {
@@ -961,22 +1021,14 @@ public class GameManager {
     }
 
     /** 英雄击杀：金币、经验与连杀赏金，保证双方发生正面冲突时有明确收益。 */
-    public void onHeroKill(ServerPlayer killer, ServerPlayer victim) {
-        if (phase != Phase.PLAYING || killer == victim || !countsForMatch(killer) || !countsForMatch(victim)
-                || factionOf(killer) == null || factionOf(killer) == factionOf(victim)) {
-            return;
-        }
+    private void settleHeroKill(ServerPlayer killer, ServerPlayer victim) {
         int victimStreak = killStreaks.getOrDefault(victim.getUUID(), 0);
         int priorDeaths=com.myriad.player.EntityState.data(victim).getIntOr("myriad_deaths_without_kill",0);
         int gap=PlayerDataProvider.get(victim).getLevel()-PlayerDataProvider.get(killer).getLevel();
-        int reward = GlobalBalance.goldIncome(MatchBalance.killReward(false,MatchBalance.elapsed(killer),victimStreak,priorDeaths,gap));
-        com.myriad.player.PlayerData killerData = PlayerDataProvider.get(killer);
-        if (killerData != null) {
-            killerData.addGold(reward);
-            com.myriad.player.LevelSystem.addXp(killer, killerData,
-                    MatchBalance.killReward(true,MatchBalance.elapsed(killer),victimStreak,priorDeaths,gap));
-            PlayerDataProvider.syncToClient(killer);
-        }
+        long elapsed = MatchBalance.elapsed(killer);
+        int gold = GlobalBalance.goldIncome(MatchBalance.killReward(false, elapsed, victimStreak, priorDeaths, gap));
+        int xp = MatchBalance.killReward(true, elapsed, victimStreak, priorDeaths, gap);
+        giveHeroReward(killer, PlayerDataProvider.get(killer), gold, xp);
         killStreaks.put(killer.getUUID(), killStreaks.getOrDefault(killer.getUUID(), 0) + 1);
         killStreaks.remove(victim.getUUID());
         com.myriad.player.EntityState.data(killer).putInt("myriad_deaths_without_kill",0);
@@ -996,23 +1048,58 @@ public class GameManager {
         }
     }
 
-    /** 记录一次实际发生的英雄死亡；击杀奖励与“不扣命”效果不影响 K/D 统计。 */
+    /** Records and pays a single hero death from the same qualifying assist list. */
     public void recordHeroDeath(ServerPlayer victim, net.minecraft.world.entity.Entity killerEntity) {
         if (phase != Phase.PLAYING || !countsForMatch(victim) || factionOf(victim) == null) return;
+        ServerPlayer killer = killerEntity instanceof ServerPlayer hero && hero != victim && countsForMatch(hero)
+                && factionOf(hero) != null && factionOf(hero) != factionOf(victim) ? hero : null;
+        List<UUID> eligible = List.of();
         if (isQueuedMatch()) {
-            UUID killerId = killerEntity instanceof ServerPlayer hero && countsForMatch(hero)
-                    && factionOf(hero) != null && factionOf(hero) != factionOf(victim) ? hero.getUUID() : null;
-            assists.death(victim.getUUID(), killerId, victim.getMaxHealth(), victim.level().getGameTime(),
-                    id -> factions.get(id) != null && factions.get(id) == factions.get(killerId));
+            List<UUID> team = killer == null ? List.of()
+                    : queueRoster.stream().filter(id -> factions.get(id) == factionOf(killer)).toList();
+            eligible = assists.death(victim.getUUID(), killer == null ? null : killer.getUUID(),
+                    victim.getMaxHealth(), victim.level().getGameTime(), team);
         }
         matchDeaths.merge(victim.getUUID(), 1, Integer::sum);
         multiKills.remove(victim.getUUID());
         com.myriad.player.PlayerNames.refresh(victim);
-        if (killerEntity instanceof ServerPlayer killer && killer != victim && countsForMatch(killer)
-                && factionOf(killer) != null && factionOf(killer) != factionOf(victim)) {
+        if (killer != null) {
             matchKills.merge(killer.getUUID(), 1, Integer::sum);
             com.myriad.player.PlayerNames.refresh(killer);
+            settleHeroKill(killer, victim);
+            settleAssists(eligible);
         }
+    }
+
+    private void settleAssists(List<UUID> eligible) {
+        for (int i = 0; i < eligible.size(); i++) {
+            UUID id = eligible.get(i);
+            int gold = MatchBalance.assistShare(MatchBalance.ASSIST_GOLD_POOL, eligible.size(), i);
+            int xp = MatchBalance.assistShare(MatchBalance.ASSIST_XP_POOL, eligible.size(), i);
+            if (gold == 0 && xp == 0) continue;
+            ServerPlayer online = server.getPlayerList().getPlayer(id);
+            if (online == null) {
+                pendingAssistRewards.computeIfAbsent(id, ignored -> new ArrayList<>())
+                        .add(new PendingAssist(UUID.randomUUID(), gold, xp));
+            } else {
+                giveHeroReward(online, PlayerDataProvider.get(online), gold, xp);
+            }
+        }
+    }
+
+    private void claimOfflineAssists(ServerPlayer player, PlayerData data) {
+        for (var reward : pendingAssistRewards.getOrDefault(player.getUUID(), List.of())) {
+            // The player save and match checkpoint are separate. Retain the entitlement
+            // for the round, and store its receipt together with the credited wallet and XP.
+            if (data.claimOfflineAssist(reward.receipt()))
+                giveHeroReward(player, data, reward.gold(), reward.xp());
+        }
+    }
+
+    private static void giveHeroReward(ServerPlayer player, PlayerData data, int gold, int xp) {
+        if (gold > 0) data.addGold(gold);
+        if (xp > 0) LevelSystem.addXp(player, data, xp);
+        else if (gold > 0) PlayerDataProvider.syncToClient(player);
     }
 
     void resetMatchObjectives() {
@@ -1089,11 +1176,11 @@ public class GameManager {
                 Component veinName = vein.displayName();
                 broadcast(MatchMessages.Tone.OBJECTIVE,
                         Component.translatable("message.myriad.vein_captured", veinName,
-                        newOwner.displayName(), vein.large ? 30 : 10, vein.large ? 20 : 5));
+                        newOwner.displayName(), spiritVeinPulseGold(vein), spiritVeinPulseXp(vein)));
             }
             int enemyPlayers = vein.owner == Faction.GUARDIAN ? destruction : guardian;
             if (vein.owner != null && Math.abs(vein.progress) == vein.captureTicks()
-                    && enemyPlayers == 0 && gameTime % GameRules.VEIN_INCOME_PULSE_TICKS == 0) {
+                    && enemyPlayers == 0 && gameTime % tempo.veinPulseIntervalTicks() == 0) {
                 rewardSpiritVeinPulse(vein.owner, vein);
             }
         }
@@ -1169,16 +1256,26 @@ public class GameManager {
 
     /** 持续控制收益：每 5 秒发给全队，死亡成员同样获得团队目标收益。 */
     private void rewardSpiritVeinPulse(Faction faction, SpiritVein vein) {
+        int gold = spiritVeinPulseGold(vein);
+        int xp = spiritVeinPulseXp(vein);
         for (ServerPlayer player : matchPlayers()) {
             if (factionOf(player) == faction) {
                 com.myriad.player.PlayerData data = PlayerDataProvider.get(player);
                 if (data != null) {
-                    data.addGold(GlobalBalance.goldIncome(vein.large ? 30 : 10));
-                    com.myriad.player.LevelSystem.addXp(player, data, vein.large ? 20 : 5);
+                    data.addGold(gold);
+                    com.myriad.player.LevelSystem.addXp(player, data, xp);
                     PlayerDataProvider.syncToClient(player);
                 }
             }
         }
+    }
+
+    private int spiritVeinPulseGold(SpiritVein vein) {
+        return GlobalBalance.goldIncome(vein.large ? 30 : tempo.supply().attributeVeinGold());
+    }
+
+    private int spiritVeinPulseXp(SpiritVein vein) {
+        return vein.large ? 20 : tempo.supply().attributeVeinXp();
     }
 
     /** 月=法强、火=物攻、木=物防与法防；控制权转移时移除旧阵营并赋予新阵营。 */
@@ -1192,14 +1289,14 @@ public class GameManager {
                 if (vein.owner != faction || vein.affinity == null) continue;
                 switch (vein.affinity) {
                     case MOON -> addVeinBonus(player, com.myriad.registry.ModAttributes.SPELL_POWER,
-                            MOON_VEIN_BONUS);
+                            MOON_VEIN_BONUS, tempo.attributeVeinBonus());
                     case FIRE -> addVeinBonus(player, com.myriad.registry.ModAttributes.PHYSICAL_ATTACK,
-                            FIRE_VEIN_BONUS);
+                            FIRE_VEIN_BONUS, tempo.attributeVeinBonus());
                     case WOOD -> {
                         addVeinBonus(player, com.myriad.registry.ModAttributes.PHYSICAL_DEFENSE,
-                                WOOD_VEIN_PHYSICAL_BONUS);
+                                WOOD_VEIN_PHYSICAL_BONUS, tempo.attributeVeinBonus());
                         addVeinBonus(player, com.myriad.registry.ModAttributes.MAGIC_RESISTANCE,
-                                WOOD_VEIN_MAGIC_BONUS);
+                                WOOD_VEIN_MAGIC_BONUS, tempo.attributeVeinBonus());
                     }
                 }
             }
@@ -1220,10 +1317,10 @@ public class GameManager {
 
     private static void addVeinBonus(ServerPlayer player,
             net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute,
-            net.minecraft.resources.Identifier id) {
+            net.minecraft.resources.Identifier id, double bonus) {
         AttributeInstance instance = player.getAttribute(attribute);
         if (instance != null) instance.addTransientModifier(new AttributeModifier(
-                id, 0.05, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+                id, bonus, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
     }
 
     private static void removeVeinBonus(ServerPlayer player,
@@ -1349,6 +1446,7 @@ public class GameManager {
         pendingResults = null;
         resetMatchObjectives();
         phase = Phase.WAITING;
+        loadSpiritVeinSpawns();
         winner = null;
         for (ServerPlayer player : participants) {
             PlayerDataProvider.clearMatchPlayerState(player);
@@ -1371,6 +1469,8 @@ public class GameManager {
         queueRound = null;
         earlyRemake = new EarlyRemake();
         offlineStats.clear();
+        legacyEconomySeats = null;
+        pendingAssistRewards.clear();
         pickToken = 0;
         for (ServerPlayer player : participants) {
             pendingRoundReset.remove(player.getUUID());

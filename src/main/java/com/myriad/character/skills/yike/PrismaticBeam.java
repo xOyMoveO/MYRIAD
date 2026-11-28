@@ -8,8 +8,16 @@ import java.util.*;
 
 /** Charge follows local action time; the six damage opportunities use real ticks only. */
 public final class PrismaticBeam extends AbilitySkill {
+    public static final int WINDUP_TICKS = 12;
+    public static final double RANGE = 22;
+    public static final double HALF_WIDTH = .625;
+    public static final double TURN_DEGREES_PER_SECOND = 45;
+    public static final int PULSE_INTERVAL_TICKS = 10;
+    public static final int PULSE_COUNT = 6;
+    public static final int DURATION_TICKS = PULSE_INTERVAL_TICKS * PULSE_COUNT;
+
     private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.spellPower(DamageCalc.Kind.MAGIC, 70, 23, .25f)
-            .segment("skill.myriad.damage.per_pulse", 6);
+            .segment("skill.myriad.damage.per_pulse", PULSE_COUNT);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);
@@ -18,6 +26,11 @@ public final class PrismaticBeam extends AbilitySkill {
     private static final class Beam {AbilityRuntime.Cast cast;Vec3 direction,origin,visualFrom,visualTo;long start,last,impulse;int jumps;}
     private static final Map<UUID,Beam> BEAMS=new HashMap<>();
     public PrismaticBeam(Definition d){super(d);}
+    @Override public Map<String, Number> descriptionFields(int rank) {
+        return Map.of("range_blocks", RANGE, "beam_width_blocks", HALF_WIDTH * 2,
+                "windup_seconds", WINDUP_TICKS / 20.0, "beam_seconds", DURATION_TICKS / 20.0,
+                "pulse_count", PULSE_COUNT, "turn_degrees_per_second", TURN_DEGREES_PER_SECOND);
+    }
     @Override public boolean hasOwnCastSound(){return true;}
     @Override public boolean recastAvailable(AbilityRuntime.Cast c){return active(c.player)||AbilityRuntime.preparingSkill(c.player).equals(getId())||SkillChargeSystem.active(c.player)&&YikeState.beamCharging(c.player);}
     @Override public boolean recastDuringChannel(){return true;}
@@ -25,36 +38,36 @@ public final class PrismaticBeam extends AbilitySkill {
     @Override public void recast(AbilityRuntime.Cast c){AbilityRuntime.cancel(c.player);clear(c.player);}
     @Override public void release(AbilityRuntime.Cast c){
         YikeStance.exit(c.player,"ultimate");YikeState.chargingBeam(c.player,true);
-        YikeVfx.event(c,"beam_charge",c.player.getEyePosition(),c.player.getEyePosition().add(c.player.getLookAngle().scale(2)),.625f,12);
+        YikeVfx.event(c,"beam_charge",c.player.getEyePosition(),c.player.getEyePosition().add(c.player.getLookAngle().scale(2)),(float) HALF_WIDTH,WINDUP_TICKS);
         YikeAudio.play(c.player,"beam_charge",c.player.position(),.5f,1);
-        c.windup(12,0,()->{
+        c.windup(WINDUP_TICKS,0,()->{
             YikeState.chargingBeam(c.player,false);var b=new Beam();b.cast=c;b.direction=c.player.getLookAngle().normalize();b.start=c.now();b.last=b.start;b.origin=c.player.position();b.impulse=KnockbackBuffer.impulseToken(c.player);
-            BEAMS.put(c.player.getUUID(),b);SkillChargeSystem.start(c.player,getId(),61,0);
+            BEAMS.put(c.player.getUUID(),b);SkillChargeSystem.start(c.player,getId(),DURATION_TICKS+1,0);
             YikeAudio.loop(c.player,true);
         });
     }
     public static boolean active(ServerPlayer p){return BEAMS.containsKey(p.getUUID());}
     public static Vec3 aim(ServerPlayer p){var b=BEAMS.get(p.getUUID());return b==null?p.getLookAngle():b.direction;}
-    public static int remaining(ServerPlayer p){var b=BEAMS.get(p.getUUID());return b==null?0:(int)Math.max(0,60-(p.level().getGameTime()-b.start));}
+    public static int remaining(ServerPlayer p){var b=BEAMS.get(p.getUUID());return b==null?0:(int)Math.max(0,DURATION_TICKS-(p.level().getGameTime()-b.start));}
     public static int jumps(ServerPlayer p){var b=BEAMS.get(p.getUUID());return b==null?0:b.jumps;}
     public static void tick(ServerPlayer p){
         var b=BEAMS.get(p.getUUID());if(b==null)return;long now=p.level().getGameTime();var c=b.cast;
         if(!AbilityRuntime.valid(p)||c.data.getBuff("g1_stun")>0||SilenceSystem.isSilenced(p)
                 ||KnockbackBuffer.impulseToken(p)!=b.impulse||p.position().subtract(b.origin).lengthSqr()>.64){clear(p);return;}
-        if(now<=b.last)return;b.last=now;b.direction=YikeGeometry.rotate(b.direction,p.getLookAngle(),Math.toRadians(45.0/20));
-        Vec3 from=p.getEyePosition(),to=YikeGeometry.end(c,from,b.direction,22);long age=now-b.start;
+        if(now<=b.last)return;b.last=now;b.direction=YikeGeometry.rotate(b.direction,p.getLookAngle(),Math.toRadians(TURN_DEGREES_PER_SECOND/20));
+        Vec3 from=p.getEyePosition(),to=YikeGeometry.end(c,from,b.direction,RANGE);long age=now-b.start;
         b.visualFrom=from;b.visualTo=to;
-        if(age>60){clear(p);return;}
-        if(age>0&&age%10==0&&b.jumps<6){
+        if(age>DURATION_TICKS){clear(p);return;}
+        if(age>0&&age%PULSE_INTERVAL_TICKS==0&&b.jumps<PULSE_COUNT){
             b.jumps++;
-            for(var t:p.level().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,new AABB(from,to).inflate(.625),t->SkillTargets.enemy(p,t)
-                    &&AbilityTargeting.unobstructedHit(p,t.getBoundingBox(),from,to,.625).isPresent())){
+            for(var t:p.level().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,new AABB(from,to).inflate(HALF_WIDTH),t->SkillTargets.enemy(p,t)
+                    &&AbilityTargeting.unobstructedHit(p,t.getBoundingBox(),from,to,HALF_WIDTH).isPresent())){
                 c.damage(t,DAMAGE.value(c),DamageCalc.Kind.MAGIC);YikeVfx.target(c,"beam_hit",t,.4f,4);
             }
             YikeAudio.play(p,"beam_tick",to,.25f,1+(b.jumps%2)*.06f);
         }
-        YikeVfx.event(c,"beam",from,to,.625f,2);
-        if(age==60)clear(p);
+        YikeVfx.event(c,"beam",from,to,(float) HALF_WIDTH,2);
+        if(age==DURATION_TICKS)clear(p);
     }
     public static void clear(ServerPlayer p){clear(p,true);}
     public static void clear(ServerPlayer p,boolean visualTail){

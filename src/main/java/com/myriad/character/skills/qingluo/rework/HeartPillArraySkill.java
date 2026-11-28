@@ -6,7 +6,7 @@ import net.minecraft.world.phys.Vec3;
 import static com.myriad.combat.DamageCalc.Kind.*;
 /** Independent reusable branch. */
 public final class HeartPillArraySkill extends AbilitySkill {
-    private static final SupportAmount SHIELD = new SupportAmount("shield", 80, 25.3f, .35f);
+    private static final SupportAmount SHIELD = new SupportAmount(SupportEffect.SHIELD, SupportScaling.TOTAL_SPELL, 80, 25.3f, .35f);
 
     @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(SHIELD); }
 

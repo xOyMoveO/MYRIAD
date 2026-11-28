@@ -3,9 +3,12 @@ package com.myriad.client;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import com.myriad.registry.ModSounds;
+import com.myriad.network.UiFeedbackPayload.ShopAccess;
 
 public final class UiFeedback {
-    public static boolean shopAllowed;
+    private static ShopAccess shopAccess = ShopAccess.NONE;
+    public static ShopAccess shopAccess() { return shopAccess; }
+    public static void resetShopAccess() { shopAccess = ShopAccess.NONE; }
     public static void receive(int kind) {
         var mc = Minecraft.getInstance();
         if(com.myriad.combat.CombatImpactProfile.isPayload(kind)){
@@ -16,7 +19,8 @@ public final class UiFeedback {
             HitFeedback.hit(kind == 6);
             return;
         }
-        if (kind == 3 || kind == 4) { shopAllowed = kind == 3; return; }
+        var access = ShopAccess.fromKind(kind);
+        if (access != null) { shopAccess = access; return; }
         if ((kind == 1 || kind == 2) && mc.gui.screen() instanceof com.myriad.client.gui.ShopScreen shop)
             shop.purchaseComplete();
         if (kind == 0 || kind == 1) mc.getSoundManager().play(SimpleSoundInstance.forUI(

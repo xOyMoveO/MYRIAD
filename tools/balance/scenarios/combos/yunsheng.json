@@ -1,0 +1,437 @@
+{
+  "scenarioId": "yunsheng.zero_preparation",
+  "scenarioVersion": 1,
+  "schemaVersion": 1,
+  "baselineCommit": "b368acd100b07b5676d709f03d8ac29fb4cf3e04",
+  "role": "yunsheng",
+  "applicableBuilds": "all_terminal_combinations",
+  "category": "zero_preparation",
+  "supportTarget": "primary",
+  "status": "candidate_l3_partial",
+  "startState": {
+    "distance": 5,
+    "allyPositions": [
+      3,
+      2
+    ],
+    "purchases": {
+      "wisdom": 6,
+      "cooldown": 3
+    },
+    "preconditions": [
+      "no_active_field",
+      "no_passive_marks",
+      "no_existing_shield"
+    ],
+    "aimFriendlyCrane": false
+  },
+  "opponentCondition": [
+    "solo",
+    "ally_cc"
+  ],
+  "windows": [
+    "burst",
+    "sustained"
+  ],
+  "delayProfile": [
+    "human_default",
+    "zero_extra_delay"
+  ],
+  "basicAttack": {
+    "flightSpeed": 1.95,
+    "source": "src/main/java/com/myriad/combat/MagicBullet.java"
+  },
+  "skills": {
+    "g2_yunsheng_n1": {
+      "source": "src/main/java/com/myriad/character/skills/yunsheng/rework/PaperCraneSkill.java",
+      "events": [
+        {
+          "kind": "damage",
+          "effect": "damage",
+          "at": "flight_duration",
+          "movementSlow": [
+            "movement_rate",
+            "slow_duration"
+          ],
+          "unconditionalControl": true,
+          "requires": {
+            "aimFriendlyCrane": false
+          }
+        },
+        {
+          "kind": "heal",
+          "effect": "heal",
+          "target": "aimed_ally",
+          "at": "flight_duration",
+          "requires": {
+            "aimFriendlyCrane": true
+          }
+        }
+      ],
+      "range": "range"
+    },
+    "g2_yunsheng_n2": {
+      "source": "src/main/java/com/myriad/character/skills/yunsheng/rework/SpiritTetherSkill.java",
+      "events": [
+        {
+          "kind": "damage",
+          "effect": "segment.tether",
+          "root": "root_duration",
+          "unconditionalControl": true
+        },
+        {
+          "kind": "tether_check",
+          "repeat": [
+            1,
+            "tether_duration"
+          ]
+        }
+      ],
+      "range": "range"
+    },
+    "g2_yunsheng_ma": {
+      "source": "src/main/java/com/myriad/character/skills/yunsheng/rework/EchoBeaconSkill.java",
+      "events": [
+        {
+          "kind": "field_contact",
+          "center": "point",
+          "radius": "radius",
+          "area": true,
+          "effect": "segment.entry",
+          "firstEntry": true,
+          "unconditionalControl": true,
+          "movementSlow": [
+            "movement_rate",
+            "slow_duration"
+          ],
+          "repeat": [
+            "first_entry_poll",
+            "field_duration"
+          ]
+        },
+        {
+          "kind": "shield",
+          "center": "point",
+          "radius": "radius",
+          "area": true,
+          "at": 0,
+          "target": "allies",
+          "includeSelf": true,
+          "effect": "shield",
+          "duration": "shield_duration",
+          "repeat": [
+            "shield_interval",
+            "field_duration"
+          ]
+        }
+      ],
+      "point": true,
+      "range": "range"
+    },
+    "g2_yunsheng_mb": {
+      "source": "src/main/java/com/myriad/character/skills/yunsheng/rework/CloudEscortSkill.java",
+      "events": [
+        {
+          "kind": "motion_endpoint",
+          "at": "dash_duration",
+          "clock": "action_tick"
+        },
+        {
+          "kind": "shield",
+          "center": "caster",
+          "radius": "radius",
+          "area": true,
+          "at": "dash_duration",
+          "target": "allies",
+          "includeSelf": true,
+          "effect": "shield",
+          "duration": "shield_duration",
+          "clock": "action_tick"
+        }
+      ],
+      "point": true,
+      "range": "range",
+      "motion": "dash_duration"
+    },
+    "g2_yunsheng_ua": {
+      "source": "src/main/java/com/myriad/character/skills/yunsheng/rework/ConvergingChorusSkill.java",
+      "events": [
+        {
+          "kind": "heal",
+          "center": "point",
+          "radius": "radius",
+          "area": true,
+          "effect": "heal",
+          "target": "allies",
+          "includeSelf": true,
+          "repeat": [
+            "pulse_interval",
+            "field_duration"
+          ]
+        },
+        {
+          "kind": "field_contact",
+          "center": "point",
+          "radius": "radius",
+          "area": true,
+          "effect": "segment.pulse",
+          "derived": true,
+          "repeat": [
+            "pulse_interval",
+            "field_duration"
+          ]
+        }
+      ],
+      "point": true,
+      "range": "range",
+      "paidWindup": "windup_duration"
+    },
+    "g2_yunsheng_ub": {
+      "source": "src/main/java/com/myriad/character/skills/yunsheng/rework/CovenantShelterSkill.java",
+      "events": [
+        {
+          "kind": "shield",
+          "center": "caster",
+          "radius": "radius",
+          "area": true,
+          "at": 0,
+          "target": "allies",
+          "includeSelf": true,
+          "effect": "shield",
+          "duration": "shield_duration"
+        }
+      ]
+    }
+  },
+  "execution": {
+    "type": "apl",
+    "steps": [
+      {
+        "action": "cast",
+        "skill": "r"
+      },
+      {
+        "action": "cast",
+        "skill": "e"
+      },
+      {
+        "action": "cast",
+        "skill": "q"
+      },
+      {
+        "action": "cast",
+        "skill": "w"
+      },
+      {
+        "action": "basic_attack"
+      },
+      {
+        "action": "wait_until"
+      }
+    ]
+  },
+  "coverageGaps": {
+    "g2_yunsheng_pa": {
+      "axes": [
+        "support"
+      ],
+      "reason": "实际溢出、同源无增量和每人冷却已核对；通过加速进入或离开接触范围的收益无路径输入。"
+    },
+    "g2_yunsheng_pb": {
+      "axes": [
+        "support"
+      ],
+      "reason": "直接有效命中可触发治疗；支援伴随加速有数值，缺少友军路径以估值。"
+    },
+    "g2_yunsheng_n1": {
+      "axes": [
+        "damage",
+        "control",
+        "support"
+      ],
+      "reason": "弧线纸鹤在合成开阔场使用名义飞行时长；视线突变、风墙、敌我准星竞争与受援返蓝的额外动作另采。"
+    },
+    "g2_yunsheng_n2": {
+      "axes": [
+        "damage",
+        "control"
+      ],
+      "reason": "按固定路线逐刻核对距离；三维视线需另给输入，另列主动切断的脚本。"
+    },
+    "g2_yunsheng_ma": {
+      "axes": [
+        "damage",
+        "control",
+        "support"
+      ],
+      "reason": "按首轮非零刻轮询和逐目标驻留模拟；同刻第零次轮询取决于引擎输入相位，开场几何及视线为冻结值。"
+    },
+    "g2_yunsheng_mb": {
+      "axes": [
+        "support"
+      ],
+      "reason": "假定合法无碰撞着陆并按实际停点范围估盾；墙阻和移动加速带来的有效出手待路径输入。"
+    },
+    "g2_yunsheng_ua": {
+      "axes": [
+        "damage",
+        "support"
+      ],
+      "reason": "冻结无打断和一维落点，用敌我各自驻留判定；局部缓时变化、强制位移、穿插视线须另采。"
+    },
+    "g2_yunsheng_ub": {
+      "axes": [
+        "support"
+      ],
+      "reason": "范围盾和实际吸收可计算；移速提高是否保住队友出手依赖路径。"
+    }
+  },
+  "scripted": [
+    {
+      "scenarioId": "yunsheng.pressure_chorus_beacon",
+      "scenarioVersion": 1,
+      "category": "conditional_authoritative_replay",
+      "status": "candidate_l3_partial",
+      "applicableBuilds": [
+        "g2_yunsheng_pa",
+        "g2_yunsheng_ma",
+        "g2_yunsheng_ua"
+      ],
+      "startState": {
+        "distance": 3,
+        "allyPositions": [
+          3,
+          2
+        ],
+        "aimFriendlyCrane": true,
+        "allRecipients": true,
+        "hpRatio": 1,
+        "casterIncoming": [
+          [
+            61,
+            "magic",
+            22
+          ]
+        ]
+      },
+      "opponentCondition": "solo",
+      "opponentOverrides": {
+        "retreatPerActionTick": 0
+      },
+      "windows": {
+        "burst": 30,
+        "sustained": 120
+      },
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "r"
+          },
+          {
+            "action": "cast",
+            "skill": "e",
+            "notBeforeTick": 24
+          },
+          {
+            "action": "cast",
+            "skill": "q",
+            "notBeforeTick": 33
+          }
+        ]
+      },
+      "source": "balance_mage_support_113 逐人读数；此处套用统一 Lv20 双友压力输入，保留同源刷新与溢出。"
+    },
+    {
+      "scenarioId": "yunsheng.pressure_shelter_beacon",
+      "scenarioVersion": 1,
+      "category": "conditional_authoritative_replay",
+      "status": "candidate_l3_partial",
+      "applicableBuilds": [
+        "g2_yunsheng_pa",
+        "g2_yunsheng_ma",
+        "g2_yunsheng_ub"
+      ],
+      "startState": {
+        "distance": 3,
+        "allyPositions": [
+          3,
+          2
+        ],
+        "aimFriendlyCrane": true,
+        "allRecipients": true,
+        "hpRatio": 1,
+        "casterIncoming": [
+          [
+            61,
+            "magic",
+            22
+          ]
+        ]
+      },
+      "opponentCondition": "solo",
+      "opponentOverrides": {
+        "retreatPerActionTick": 0
+      },
+      "windows": {
+        "burst": 30,
+        "sustained": 120
+      },
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "r"
+          },
+          {
+            "action": "cast",
+            "skill": "e",
+            "notBeforeTick": 5
+          },
+          {
+            "action": "cast",
+            "skill": "q",
+            "notBeforeTick": 12
+          }
+        ]
+      },
+      "source": "balance_mage_support_113 逐人读数；此处套用统一 Lv20 双友压力输入，保留同源刷新与溢出。"
+    },
+    {
+      "scenarioId": "yunsheng.tether_breaks",
+      "scenarioVersion": 1,
+      "category": "conditional_authoritative_replay",
+      "status": "candidate_l3_partial",
+      "applicableBuilds": [
+        "g2_yunsheng_pb",
+        "g2_yunsheng_mb",
+        "g2_yunsheng_ub"
+      ],
+      "startState": {
+        "distance": 5,
+        "tetherBreakTick": 16,
+        "aimFriendlyCrane": false
+      },
+      "opponentCondition": "solo",
+      "opponentOverrides": {
+        "retreatPerActionTick": 0
+      },
+      "windows": {
+        "burst": 30,
+        "sustained": 120
+      },
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {
+            "action": "cast",
+            "skill": "w"
+          }
+        ]
+      },
+      "source": "宣告第 16 真实刻敌人被遮挡，持续放回范围也不恢复第二段。"
+    }
+  ]
+}

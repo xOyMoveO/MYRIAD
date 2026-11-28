@@ -11,7 +11,9 @@ import java.util.*;
 
 /** Each owner retains a removable source; the shared strut family contributes only its highest shield. */
 public final class EmergencyStrut extends RivetSkill {
-    private static final SupportAmount SHIELD = new SupportAmount("shield", 95, 27.5f, .5f);
+    public static final double ALLY_RADIUS = 3, ANCHOR_RADIUS = 4, KNOCKBACK_FACTOR = .5;
+    public static final int SHIELD_TICKS = 40, ANCHOR_REFUND_TICKS = 40;
+    private static final SupportAmount SHIELD = new SupportAmount(SupportEffect.SHIELD, SupportScaling.TOTAL_SPELL, 95, 27.5f, .5f);
 
     @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(SHIELD); }
 
@@ -19,27 +21,27 @@ public final class EmergencyStrut extends RivetSkill {
     private static final Map<UUID, Set<LivingEntity>> TARGETS = new HashMap<>();
     public EmergencyStrut(Definition definition) { super(definition); }
     @Override public void release(AbilityRuntime.Cast c) {
-        BRACING.put(c.player.getUUID(), c.now() + 40);
+        BRACING.put(c.player.getUUID(), c.now() + SHIELD_TICKS);
         var targets = TARGETS.computeIfAbsent(c.player.getUUID(), ignored -> new HashSet<>());
-        var recipients = new HashSet<>(c.player.level().getEntitiesOfClass(LivingEntity.class, c.player.getBoundingBox().inflate(3),
+        var recipients = new HashSet<>(c.player.level().getEntitiesOfClass(LivingEntity.class, c.player.getBoundingBox().inflate(ALLY_RADIUS),
                 target -> SkillTargets.alive(target) && !target.isSpectator() && SkillTargets.ally(c.player, target)
-                        && target.position().distanceToSqr(c.player.position()) <= 9.0001));
+                        && target.position().distanceToSqr(c.player.position()) <= ALLY_RADIUS * ALLY_RADIUS + .0001));
         recipients.add(c.player);
         for (var target : recipients) {
             ModShieldSystem.grantMaxGroup(target, "rivet_emergency_strut/" + c.player.getUUID(),
-                    "rivet_emergency_strut", SHIELD.value(c), 40, c.player.getUUID());
+                    "rivet_emergency_strut", SHIELD.value(c), SHIELD_TICKS, c.player.getUUID());
             targets.add(target);
             RivetVfx.shield(c, target, .75);
         }
         var anchor = TacticalAnchor.anchor(c.player);
-        if (anchor != null && c.player.position().distanceToSqr(anchor.point()) <= 16.0001) {
+        if (anchor != null && c.player.position().distanceToSqr(anchor.point()) <= ANCHOR_RADIUS * ANCHOR_RADIUS + .0001) {
             var w = FirstGroupSkills.node("rivet", 3);
-            if (w != null) c.data.setCooldown(w.getId(), Math.max(0, c.data.getCooldown(w.getId()) - 40));
+            if (w != null) c.data.setCooldown(w.getId(), Math.max(0, c.data.getCooldown(w.getId()) - ANCHOR_REFUND_TICKS));
         }
         PlayerDataProvider.syncToClient(c.player);
     }
     public static double knockbackMultiplier(LivingEntity target) {
-        return target.level().getGameTime() < BRACING.getOrDefault(target.getUUID(), 0L) ? .5 : 1;
+        return target.level().getGameTime() < BRACING.getOrDefault(target.getUUID(), 0L) ? KNOCKBACK_FACTOR : 1;
     }
     public static void clear(ServerPlayer player) {
         BRACING.remove(player.getUUID());

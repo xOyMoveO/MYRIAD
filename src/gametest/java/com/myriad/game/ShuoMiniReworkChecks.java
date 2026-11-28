@@ -44,7 +44,7 @@ final class ShuoMiniReworkChecks {
                         if(i==5||i==6){
                             h.assertTrue(ShuoCombat.parry(p,p.damageSources().mobAttack(f.t),com.myriad.combat.DamageCalc.Kind.PHYSICAL),"Actual guard opens manual counter");
                             SkillSystem.cast(p,1);
-                            h.assertTrue(Math.abs(ModShieldSystem.value(p)-(i==5?75:0))<.01,"Counter shield requires an effective hit, fixture="+i+" shield="+ModShieldSystem.value(p)+" hp="+f.t.getHealth());
+                            h.assertTrue(Math.abs(ModShieldSystem.value(p)-(i==5?57.5:0))<.01,"Counter shield requires an effective hit, fixture="+i+" shield="+ModShieldSystem.value(p)+" hp="+f.t.getHealth());
                             h.assertTrue(Math.abs(f.t.getHealth()-(i==5?938:1000))<.01,"Counter reach excludes out-of-range target");
                         }
                     }

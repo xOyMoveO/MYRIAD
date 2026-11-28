@@ -8,7 +8,7 @@ import java.util.UUID;
 import java.util.List;
 
 final class ThousandFeathers extends LuoxiaSkill {
-    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.purchased(DamageCalc.Kind.PHYSICAL, 70, 5.75f, .80f / 3)
+    private static final AbilityDamageFormula DAMAGE = AbilityDamageFormula.bonusPhysical(70, 5.75f, .80f / 3)
             .segment("skill.myriad.damage.per_round", 3);
 
     @Override public String singleTargetTotalKey() { return "skill.myriad.damage.full_total"; }

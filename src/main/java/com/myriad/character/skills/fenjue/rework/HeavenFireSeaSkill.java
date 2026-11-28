@@ -14,6 +14,9 @@ import java.util.List;
 
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class HeavenFireSeaSkill extends AbilitySkill {
+    public static final int FIELD_TICKS = 80, PULSE_TICKS = 20;
+    public static final double IMPACT_RADIUS = 5;
+
     private static final AbilityDamageFormula LANDING =
             AbilityDamageFormula.physicalFromSpell(140, 69, 1, .8f / (1 + 4 * .2f)).segment("skill.myriad.damage.segment.landing", 1);
     private static final AbilityDamageFormula PULSE =
@@ -29,18 +32,24 @@ public final class HeavenFireSeaSkill extends AbilitySkill {
     public static double arcHeight(Vec3 origin,Vec3 destination){return MIN_HEIGHT+Math.max(0,origin.y-destination.y)*.5;}
     public HeavenFireSeaSkill(Definition definition){super(definition);}
     @Override public boolean hasOwnCastSound(){return true;}
-    @Override public void present(Cast c){com.myriad.character.ability.AbilityVisuals.warning(c,c.point,5,10);}
+    @Override public void present(Cast c){com.myriad.character.ability.AbilityVisuals.warning(c,c.point,IMPACT_RADIUS,10);}
     @Override public boolean requiresStandingPoint(){return true;}
-    @Override public boolean needsPoint(){return true;} @Override public double pointRange(Cast c){return RANGE;} @Override public double previewRadius(Cast c){return 5;}
+    @Override public boolean needsPoint(){return true;} @Override public double pointRange(Cast c){return RANGE;} @Override public double previewRadius(Cast c){return IMPACT_RADIUS;}
  @Override public boolean canRelease(Cast c){return c.data.getBuff("g1_root")==0&&c.point!=null
          &&com.myriad.character.ability.AbilityTargeting.clearArc(c.player,c.point,FLIGHT_TICKS,arcHeight(c.player.position(),c.point));}
  @Override public void release(Cast c){Vec3 at=c.point;FlameMajorAudio.seaJump(c);int gesture=FlameSkillPresentation.play(c,com.myriad.network.FlameSkillViewPayload.SEA_FLIGHT,32);
  boolean[] landedOnce={false};
  c.actionLeap(at,FLIGHT_TICKS,arcHeight(c.player.position(),at),true,()->{
  landedOnce[0]=true;FlameSkillPresentation.play(c,com.myriad.network.FlameSkillViewPayload.SEA_LAND,10,gesture);
- Vec3 landed=c.player.position();FlameMajorAudio.seaImpact(c,landed);com.myriad.character.ability.AbilityVisuals.field(c,landed,5,80);c.area(landed,5,LANDING.value(c),LANDING.kind());
- c.repeat(80,30,i->FlameMajorAudio.burning(c,landed));
- c.repeat(80,20,i->c.pulse(landed,5,PULSE.value(c),PULSE.kind()));});
+ Vec3 landed=c.player.position();FlameMajorAudio.seaImpact(c,landed);com.myriad.character.ability.AbilityVisuals.field(c,landed,IMPACT_RADIUS,FIELD_TICKS);c.area(landed,IMPACT_RADIUS,LANDING.value(c),LANDING.kind());
+ c.repeat(FIELD_TICKS,30,i->FlameMajorAudio.burning(c,landed));
+         int[] lastPulse = {0};
+        c.repeat(FIELD_TICKS, PULSE_TICKS, pulse -> {
+            if (pulse <= lastPulse[0]) return;
+            lastPulse[0] = pulse;
+            c.pulse(landed, IMPACT_RADIUS, PULSE.value(c), PULSE.kind());
+        });
+    });
  c.whileActive(32,age->{if(landedOnce[0])return false;
  if(age>0&&!AbilityRuntime.moving(c.player)){FlameSkillPresentation.play(c,com.myriad.network.FlameSkillViewPayload.CANCEL,0,gesture);return false;}return true;});}
 }

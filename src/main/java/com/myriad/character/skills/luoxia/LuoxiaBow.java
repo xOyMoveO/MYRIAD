@@ -24,6 +24,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 public final class LuoxiaBow {
     public static final int PRESS = -120, RELEASE = -121, CANCEL = -122;
     public static final int NORMAL_WORK = 11;
+    public static final double NORMAL_RANGE = 18;
     private static final Identifier FULL_WALK = Identifier.fromNamespaceAndPath("myriad", "luoxia_full_draw");
     private static final Map<ServerPlayer, State> STATES = new WeakHashMap<>();
     private static final class State {
@@ -125,7 +126,7 @@ public final class LuoxiaBow {
         float damage = (float)p.getAttributeValue(ModAttributes.PHYSICAL_ATTACK) * multiplier;
         Cast c = presentation(p);
         LuoxiaVfx.shot(c, full, fast ? 1.38f : 1.05f);
-        LuoxiaArrow.launch(c, p.getLookAngle(), full ? SteadyDusk.RANGE : 18, full ? 2.8 : 1.65,
+        LuoxiaArrow.launch(c, p.getLookAngle(), full ? SteadyDusk.RANGE : NORMAL_RANGE, full ? 2.8 : 1.65,
                 full ? LuoxiaArrow.Shape.FULL_DRAW : fast ? LuoxiaArrow.Shape.QUICK : LuoxiaArrow.Shape.BASIC,
                 true, target -> {
                     DamageCalc.dealBasicDamage(p, target, damage, DamageCalc.Kind.PHYSICAL);

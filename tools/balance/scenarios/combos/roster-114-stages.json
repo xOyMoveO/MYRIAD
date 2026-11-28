@@ -1,0 +1,14 @@
+{
+  "scenarioId": "cherry.roster_stage_comparison",
+  "scenarioVersion": 1,
+  "targetRole": "luoxia",
+  "casterIncoming": [[4, "physical", 160], [24, "magic", 160], [44, "true", 90], [74, "physical", 180], [104, "magic", 180]],
+  "stages": [
+    {"id": "early", "heroLevel": 4, "budgetGold": 500, "attackInvestment": 1, "defense": 0,
+      "skillRanks": {"passive": 2, "q": 1, "w": 1, "e": 1, "r": 1}},
+    {"id": "middle", "heroLevel": 12, "budgetGold": 3600, "attackInvestment": 5, "defense": 2,
+      "skillRanks": {"passive": 4, "q": 3, "w": 3, "e": 4, "r": 2}},
+    {"id": "terminal", "heroLevel": 20, "budgetGold": 4885, "attackInvestment": 6, "defense": 2,
+      "skillRanks": {"passive": 5, "q": 5, "w": 5, "e": 7, "r": 3}}
+  ]
+}

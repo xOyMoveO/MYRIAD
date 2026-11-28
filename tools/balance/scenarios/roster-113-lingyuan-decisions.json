@@ -1,0 +1,62 @@
+{
+  "baseAttributes": {
+    "decision": "retain",
+    "condition": "樱隙前线，1–20 级零购买或临时增益。",
+    "reason": "保留 650 生命与每级 +100、700 法力与每级 +24。其余共享基础值由配对快照逐级读取；清线、清营与带兵推塔分开复核。",
+    "scenario": "lingyuan.zero_preparation 与 balance_roster_113_{lane,camps,towers}"
+  },
+  "basicAttack": {
+    "decision": "retain",
+    "condition": "持初始剑，满恢复且在原版交互距离内有效命中；暴击与其他增量另计。",
+    "reason": "保留 65 基础物攻、每秒 0.70 次基础攻速；零预置、蓄剑与战场共用正常近战节拍。",
+    "scenario": "lingyuan.zero_preparation；balance_roster_113_towers"
+  },
+  "g2_lingyuan_pa": {
+    "decision": "retain",
+    "condition": "普攻同刻最多记一次 10 点剑罡，每 100 点凝剑，最多 4 柄。已凝剑时向最近有效普攻命中的 10 格内可见敌人每 40 真实刻发起一轮，柄间 3 行动刻。",
+    "reason": "保留单柄伤害曲线。引擎两柄预置样本实际反复造成每柄 13.6，零存量短窗无额外伤害。旧设计依赖此前基本攻击。",
+    "scenario": "lingyuan.sword_heart_preloaded / sword_heart_zero；balance_roster_sword_frost"
+  },
+  "g2_lingyuan_pb": {
+    "decision": "retain",
+    "condition": "三次提交主动施法后，下一次有效普攻消耗蓄势，给予 60 真实刻自盾并追加独立法术伤害。",
+    "reason": "保留主动施法更换短窗强度的分支定位；没有普攻命中时不计名义伤害或护盾。",
+    "scenario": "lingyuan.zero_preparation；roster_b"
+  },
+  "g2_lingyuan_n1": {
+    "decision": "retain",
+    "condition": "允许突进时沿开阔方向最多移动 6 格，名义 8 行动刻，每目标只结算一次。",
+    "reason": "保留位移和原物理伤害曲线。前方实际碰撞与后续能否接近战决定收益；当前共享金币力量只进额外物攻分量。",
+    "scenario": "lingyuan.zero_preparation；roster_b"
+  },
+  "g2_lingyuan_n2": {
+    "decision": "retain",
+    "condition": "施放立即获 80 真实刻自盾，前 40 真实刻实际物法伤乘 0.85。",
+    "reason": "保留防身选择和真实伤例外。来伤轨迹同输入对照既记录实际盾耗也记录先行减伤。",
+    "scenario": "lingyuan.zero_preparation；roster_b"
+  },
+  "g2_lingyuan_ma": {
+    "decision": "retain",
+    "condition": "分别瞄准放出三柄飞剑，间隔 4 行动刻；每柄行进不超过 18 格，首敌、地形或风墙可终止。",
+    "reason": "保留每柄伤害与间距。对快速远距离命中和领域分支持续收益分别取读数。",
+    "scenario": "lingyuan.zero_preparation；roster_b"
+  },
+  "g2_lingyuan_mb": {
+    "decision": "retain",
+    "condition": "14 格以内确认地面点，半径 4 格；第 20／40／60／80 真实刻重查范围，依实际命中并应用 25% 持续 20 刻减速。",
+    "reason": "保留与 EA 同单段公式，待在小圈的多段收益可被敌方离场规避，区域优势按在场时间折算。",
+    "scenario": "lingyuan.zero_preparation；roster_b；multi-target-113.json"
+  },
+  "g2_lingyuan_ua": {
+    "decision": "retain",
+    "condition": "14 格内确认地面点，半径 10 格；在第 20～120 真实刻每秒结算，离场后跳过后续命中。",
+    "reason": "保留剑域六跳曲线。引擎固定同次施法留场 6 跳 375，撤离仅首跳 62.5，量化区域控制价值来自站位。",
+    "scenario": "lingyuan.sword_field_stays / sword_field_leaves；balance_roster_sword_frost"
+  },
+  "g2_lingyuan_ub": {
+    "decision": "retain",
+    "condition": "付费后锁朝向，蓄力 24 行动刻、落剑 6 行动刻；长 15 宽 3 格矩形，实际身体与视线均检查。",
+    "reason": "保留高风险单次伤害，引擎无阻固定目标实扣 336，前 29 刻无伤，转头不改变已锁定朝向；中断单独复跑。",
+    "scenario": "lingyuan.heaven_sword_full_charge / heaven_sword_interrupted；balance_roster_sword_frost"
+  }
+}

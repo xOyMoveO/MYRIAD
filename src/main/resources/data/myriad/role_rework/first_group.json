@@ -244,7 +244,7 @@
       "cooldowns": [
         0
       ],
-      "description": "主动直接命中附加3秒灼烧，每秒造成(5＋r)%S真实伤害，即1级6%、5级10%，共3次；后续命中只刷新持续时间，不增加层数。灼烧不暴击、不循环触发自身。",
+      "description": "主动技能直接命中时对该目标施加一层灼烧，持续3秒，每秒造成(5＋r)%S真实伤害。未刷新时共3跳。再次直接命中只延长持续时间，原有跳动节奏不变。灼烧不暴击，间接伤害不会刷新。",
       "iconAlias": "fenjue_passive"
     },
     {
@@ -330,7 +330,7 @@
         1800,
         1600
       ],
-      "description": "选择14格内合法落点，跃进落地，半径5格一次物理伤害；火海持续4秒，每秒物理伤害。灼烧仅按所选被动施加一层。",
+      "description": "选择14格内合法落点，跃进落地，对半径5格内敌人造成一次物理伤害。火海以落点为中心，每秒结算一次物理伤害，共4跳。只有落地的直接伤害可以施加或刷新灼烧。",
       "iconAlias": "fentianhuohai"
     },
     {
@@ -360,7 +360,7 @@
       "cooldowns": [
         240
       ],
-      "description": "成功施放主动技能后，为8格内生命比例最低的一名存活队友提供{support0}护盾2秒；有队友优先队友，无队友则自身。一次施法只触发一次，不回蓝、不缩冷却。",
+      "description": "主动技能提交时，为{allyRange}格内可见队友中生命比例最低的一人提供{support0}护盾，持续{shieldSeconds}秒；无合格队友时保护自己。每{procSeconds}秒最多触发一次。",
       "iconAlias": "xuanchen_passive"
     },
     {
@@ -374,7 +374,7 @@
       "cooldowns": [
         0
       ],
-      "description": "首次主动伤害给英雄留下4秒符印，另一次独立主动直接伤害触发35＋14.4(r－1)＋30%S魔法伤害；单次持续法阵不自触发。走输出路线，队友不负责触发。",
+      "description": "直接主动技能有效命中敌方英雄时留下{markSeconds}秒符印；不同主动技能的有效直接命中可消耗符印并造成额外魔法伤害。触发后该目标进入{procSeconds}秒冷却。",
       "iconAlias": "xuanchen_passive"
     },
     {
@@ -388,7 +388,7 @@
       "cooldowns": [
         220
       ],
-      "description": "射出16格锁链，速度32.5格/秒、半径1.08格；首个目标受45＋18.75(r－1)＋55%S魔法伤害并定身0.6＋0.1(r－1)秒。可被风墙挡。",
+      "description": "射出最远{projectileRange}格的锁链，速度{projectileSpeed}格/秒、实体扫掠扩张{projectilePadding}格。首个合法敌人受到魔法伤害并定身{rootSeconds}秒。地形和风墙可拦截。",
       "iconAlias": "lingfu"
     },
     {
@@ -402,7 +402,7 @@
       "cooldowns": [
         280
       ],
-      "description": "指定10格内可见队友或自身，提供{support0}护盾3秒；不免伤、不回蓝，护盾未消耗前重复施加同源只取较高值。",
+      "description": "给准星下{allyRange}格内可见队友施加{support0}护盾，持续{shieldSeconds}秒；无目标时保护自己。重复施加同源盾时保留较高的剩余量并刷新期限。",
       "iconAlias": "moyanghuzhen"
     },
     {
@@ -416,7 +416,7 @@
       "cooldowns": [
         640
       ],
-      "description": "一次选点在自身与最远14＋r格处布置互通阵点，持续4＋0.3(r－1)秒，仅一组。队友主动交互，传送公共冷却2秒；两点须为合法站立点，无伤害、无回蓝。",
+      "description": "在脚下和最远{pointRange}格的合法站立点布置互通阵点，持续{durationSeconds}秒，仅一组。可见队友靠近任一阵点并下蹲可传送，单人复用间隔{reuseSeconds}秒。",
       "iconAlias": "chuansongzhen"
     },
     {
@@ -430,7 +430,7 @@
       "cooldowns": [
         480
       ],
-      "description": "指定12格内半径4格区域，0.6秒后持续4秒：友军获得12%非真实伤害减免，敌军减速25%；生效时为区域内每个友军施加一次{support0}护盾2秒。不能每tick续盾。",
+      "description": "指定{pointRange}格内半径{radius}格区域，{warningSeconds}秒后成阵，持续{fieldSeconds}秒。可见阵内友军获得{guardPercent}%非真实伤害减免，敌军减速{slowPercent}%。开阵时为阵内可见友军授予一次{support0}护盾，持续{shieldSeconds}秒。",
       "iconAlias": "moyanghuzhen"
     },
     {
@@ -446,7 +446,7 @@
         2000,
         1800
       ],
-      "description": "0.8秒引导后展开自身周围半径6格法阵，持续4秒；友军获得15%非真实伤害减免，敌军减速30%，每秒受45＋23(r－1)＋30%S魔法伤害，共4次。不回蓝，不层叠免伤。蓄力显示读条，期间不能行走、跳跃或疾跑，可转向；眩晕、沉默仍会中断。",
+      "description": "提交扣费后在原地引导{windupSeconds}秒，引导可被眩晕、沉默或强制位移打断。完成后以自身位置展开半径{radius}格法阵，持续{fieldSeconds}秒。可见阵内友军获得{guardPercent}%非真实伤害减免，敌军减速{slowPercent}%并每秒受一次魔法伤害，共{pulseCount}轮。",
       "iconAlias": "zhoutianfuzhen"
     },
     {
@@ -462,7 +462,7 @@
         1900,
         1700
       ],
-      "description": "指定12格内半径4格区域，0.7秒预警后一次170＋74.75(r－1)＋110%S魔法伤害并定身1秒；地面符纹持续3秒，区域敌军减速20%，无额外伤害。定身仍允许非位移技能，不等于沉默。",
+      "description": "指定{pointRange}格内半径{radius}格区域，预警{warningSeconds}秒后造成一次魔法伤害并定身{rootSeconds}秒。地面符纹持续{fieldSeconds}秒，使可见阵内敌军减速{slowPercent}%。定身期间仍可使用原地技能。",
       "iconAlias": "zhoutianfuzhen"
     },
     {

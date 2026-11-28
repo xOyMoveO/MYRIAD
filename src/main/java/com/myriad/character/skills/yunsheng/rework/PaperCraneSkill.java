@@ -8,7 +8,25 @@ import java.util.List;
 import static com.myriad.combat.DamageCalc.Kind.*;
 /** Independent reusable branch. */
 public final class PaperCraneSkill extends AbilitySkill {
-    private static final SupportAmount HEAL = new SupportAmount("heal", 40, 17.5f, .3f);
+    public static final double RANGE = 14;
+    public static final double MAX_TETHER_RANGE = 16;
+    public static final int BASE_FLIGHT_TICKS = 12;
+    public static final int MANA_RESTORE = 20;
+    public static final float SLOW = .25f;
+    public static final int SLOW_TICKS = 20;
+
+    public static double flightWork() { return BASE_FLIGHT_TICKS / com.myriad.combat.HeroProjectileTuning.SPEED; }
+    public static int flightTicks() { return (int) Math.ceil(flightWork()); }
+
+    @Override public java.util.Map<String, Number> descriptionFields(int rank) {
+        return java.util.Map.of(
+            "targetRange", RANGE,
+            "manaRestore", MANA_RESTORE,
+            "slowPercent", Math.round(100 * SLOW),
+            "slowSeconds", SLOW_TICKS / 20.0);
+    }
+
+    private static final SupportAmount HEAL = new SupportAmount(SupportEffect.HEAL, SupportScaling.TOTAL_SPELL, 40, 17.5f, .3f);
 
     @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(HEAL); }
 
@@ -22,16 +40,16 @@ public final class PaperCraneSkill extends AbilitySkill {
  public PaperCraneSkill(Definition definition){super(definition);}
 
 @Override public void release(Cast c){
-    LivingEntity enemy=c.target(14,false),friend=c.target(14,true);
+    LivingEntity enemy=c.target(RANGE,false),friend=c.target(RANGE,true);
     final LivingEntity target=enemy!=null?enemy:friend!=null?friend:c.player;
     final boolean hostile=enemy!=null;Vec3 start=c.player.getEyePosition();final Vec3[] last={start};
     double bend=c.player.getRandom().nextBoolean()?1:-1;int visual=c.newVisualInstance();
     var flight=java.util.UUID.randomUUID();var progress=new ActionTime.Progress(c.now());
     Runnable finish=()->{ActionTime.clearTarget(flight);AbilityVisuals.finishFlight(c,visual);};
-    double duration=12/com.myriad.combat.HeroProjectileTuning.SPEED;
+    double duration=flightWork();
     int timeout=(int)Math.ceil(4*duration);
     c.whileActive(timeout,age->{
-        if(!target.isAlive()||target.level()!=c.player.level()||target.distanceToSqr(c.player)>256||!c.player.hasLineOfSight(target)){
+        if(!target.isAlive()||target.level()!=c.player.level()||target.distanceToSqr(c.player)>MAX_TETHER_RANGE*MAX_TETHER_RANGE||!c.player.hasLineOfSight(target)){
             finish.run();return false;
         }
         progress.advance(c.now(),AbilityRuntime.projectileRate(c.player,flight,last[0],c.now()),duration);
@@ -44,9 +62,9 @@ public final class PaperCraneSkill extends AbilitySkill {
         }
         AbilityVisuals.flight(c,last[0],at,age,false,visual);last[0]=at;if(u<1){if(age>=timeout){finish.run();AbilityVisuals.dissipate(c,at);return false;}return true;}
         finish.run();
-        if(hostile){c.damage(target,DAMAGE.value(c),DAMAGE.kind());c.slow(target,.25f,20);}
+        if(hostile){c.damage(target,DAMAGE.value(c),DAMAGE.kind());c.slow(target,SLOW,SLOW_TICKS);}
         else {c.heal(target,HEAL.value(c));if(target instanceof net.minecraft.server.level.ServerPlayer ally){
-            var d=com.myriad.player.PlayerDataProvider.get(ally);d.setMana(Math.min((float)ally.getAttributeValue(com.myriad.registry.ModAttributes.MAX_MANA),d.getMana()+20));}}
+            var d=com.myriad.player.PlayerDataProvider.get(ally);d.setMana(Math.min((float)ally.getAttributeValue(com.myriad.registry.ModAttributes.MAX_MANA),d.getMana()+MANA_RESTORE));}}
         AbilityVisuals.emit(c,AbilityVfxGeometry.BURST,at,at.add(f),.8,hostile?2:3,9,false);return false;
     },finish);
 }

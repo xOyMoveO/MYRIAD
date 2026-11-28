@@ -1,0 +1,62 @@
+{
+  "baseAttributes": {
+    "decision": "retain",
+    "condition": "1–20 级零购买或临时增益。",
+    "reason": "保留 700 生命、每级 +110，700 法力、每级 +28，其余属性由现行共用规则提供。战场节拍以清线、清营与带兵推塔读数复核。",
+    "scenario": "chixiao.zero_preparation；配对快照 roles.chixiao.attributes"
+  },
+  "basicAttack": {
+    "decision": "retain",
+    "condition": "持初始武器、满恢复且实际合法地面命中，暴击另计。",
+    "reason": "保留 65 基础物攻与每秒 0.70 次基础攻速。实测横刀镇岳耗完时第四次仍为原生普攻约 66.268；旧开局毕业样例有购点、野怪抗性与固定浮动种子。",
+    "scenario": "chixiao.zero_preparation；chixiao_opening_pace；balance_shuo_chixiao"
+  },
+  "g2_chixiao_pa": {
+    "decision": "retain",
+    "condition": "同目标敌方英雄累积三层，满足四刻命中间隔，完整触发还需不同技能实例的直接命中。",
+    "reason": "保留同目标连续交锋的奖励及真实伤害定义，独立附伤不重复叠层；现行一阶零额外法强 32.5。",
+    "scenario": "chixiao.zero_preparation；roster_a"
+  },
+  "g2_chixiao_pb": {
+    "decision": "retain",
+    "condition": "低于或等于 40% 生命且有效命中，12 秒内置冷却结束才给盾和加速。",
+    "reason": "保留低血条件和受压收益，避免将名义盾全算入满血构筑；一阶基准盾 92。",
+    "scenario": "chixiao.zero_preparation；roster_a"
+  },
+  "g2_chixiao_n1": {
+    "decision": "retain",
+    "condition": "扇区 6 格／100° 内合法目标且视线通畅，结算额外物攻。",
+    "reason": "保留基础 98、成长 28.0125、额外物攻系数 0.5。早期力量的立即收益已经过实际野怪复跑，基础值继续承担清营节拍。",
+    "scenario": "chixiao.zero_preparation；chixiao_opening_pace；cherry_first_ten_damage"
+  },
+  "g2_chixiao_n2": {
+    "decision": "retain",
+    "condition": "合法去程最多移动施法者 7 格，墙缩短去程、墙后目标不命中；每目标一次 30% 减速 30 真实刻，回程复用无阻路径且无伤。",
+    "reason": "保持追魂踏是自身位移。固定目标 2／6 格的开阔对照各受 62；固定墙时施法者停在 2.625 格，只有墙前目标受 62。两案目标位置均保持。",
+    "scenario": "chixiao.dash_return；balance_shuo_chixiao"
+  },
+  "g2_chixiao_ma": {
+    "decision": "retain",
+    "condition": "20 真实刻架刃内有可减免来伤，结束时才以当前朝向反击并眩晕 12 刻。",
+    "reason": "保留 35% 减伤与需要来伤的反击；不给无来伤的先起手直接计伤。",
+    "scenario": "chixiao.brace_contact；chixiao.brace_no_contact；roster_a"
+  },
+  "g2_chixiao_mb": {
+    "decision": "retain",
+    "condition": "投射物到达并碰到合法目标，每个目标至多一次，普通墙和风墙能挡。",
+    "reason": "保留实际有效速度 31.2 格/秒，以及 30% 持续 40 刻减速。远程留人与近身架刃按不同条件比较。",
+    "scenario": "chixiao.zero_preparation；roster_a"
+  },
+  "g2_chixiao_ua": {
+    "decision": "retain",
+    "condition": "12 格以内选可站立点，施法者合法弧线落地后才有伤害与 40% 减速。",
+    "reason": "保留落地半径 4.5 格与伤害一次。固定落点开阔可击中并实扣 195.5，悬檐只挡弧线时不扣费、不位移、不伤目标。",
+    "scenario": "chixiao.zero_preparation；balance_shuo_chixiao"
+  },
+  "g2_chixiao_ub": {
+    "decision": "retain",
+    "condition": "合法施放授予盾；120 真实刻内最多三次合格普攻附伤，同一出手不会重复。",
+    "reason": "保留一阶盾 251 和三次各 54 的独立伤害。三次附段由同一 R 实例归属，窗口内第四次仍只承受普攻。",
+    "scenario": "chixiao.war_blade；balance_shuo_chixiao"
+  }
+}

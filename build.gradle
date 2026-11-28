@@ -88,3 +88,48 @@ tasks.named('sourcesJar') { from('LICENSE') }
 tasks.withType(JavaExec).configureEach { standardInput = System.in }
 
 tasks.named('check') { dependsOn tasks.named('compileGametestJava') }
+
+// Build-only tool runs against the same classes and seven packaged role definitions as the release JAR.
+sourceSets {
+    balanceSnapshot {
+        java.setSrcDirs(['tools/balance/java'])
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.main.runtimeClasspath
+    }
+}
+
+def balanceDirectory = layout.buildDirectory.dir('balance')
+// Archive builds have no Git data. Do not resolve a commit from an enclosing checkout.
+def hasRepositoryMetadata = file('.git').exists()
+def snapshotRevision = hasRepositoryMetadata ? providers.exec {
+    commandLine 'git', 'rev-parse', 'HEAD'
+}.standardOutput.asText.map { it.trim() } : providers.provider { 'unknown' }
+def snapshotDirty = hasRepositoryMetadata ? providers.exec {
+    commandLine 'git', 'status', '--porcelain', '--untracked-files=normal'
+}.standardOutput.asText.map { (!it.isBlank()).toString() } : providers.provider { 'unknown' }
+
+def exportBalanceSnapshot = tasks.register('exportBalanceSnapshot', JavaExec) {
+    group = 'build'
+    description = 'Export the current gameplay rules and coverage report.'
+    dependsOn tasks.named('balanceSnapshotClasses')
+    mainClass = 'com.myriad.game.BalanceSnapshot'
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
+    classpath = sourceSets.balanceSnapshot.runtimeClasspath
+    inputs.files(fileTree('maps') { include '**/myriad_monster_spawns.json', '**/myriad_lane_layout.json', '**/myriad_match_tempo.json', '**/myriad_vein_spawns.json' })
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.files('tools/balance/archived/zh_cn.json').withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.property 'sourceRevision', snapshotRevision
+    inputs.property 'sourceDirty', snapshotDirty
+    outputs.dir balanceDirectory
+    argumentProviders.add({
+        [projectDir.absolutePath, balanceDirectory.get().asFile.absolutePath,
+         snapshotRevision.get(), snapshotDirty.get()]
+    } as CommandLineArgumentProvider)
+}
+
+tasks.named('jar') {
+    dependsOn exportBalanceSnapshot
+    from(balanceDirectory.map { it.file('myriad-balance-snapshot.sha256') }) {
+        into 'META-INF'
+    }
+}

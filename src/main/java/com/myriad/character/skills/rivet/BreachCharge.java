@@ -17,6 +17,7 @@ public final class BreachCharge extends RivetSkill {
     }
 
     public static final double DISTANCE = 10;
+    public static final int MOTION_TICKS = 20, WALL_ROOT_TICKS = 16, ANCHOR_ROOT_TICKS = 20;
     public BreachCharge(Definition definition) { super(definition); }
     @Override public int commitWindupTicks() { return 14; }
     @Override public boolean canRelease(AbilityRuntime.Cast c) {
@@ -25,10 +26,10 @@ public final class BreachCharge extends RivetSkill {
     @Override public void preparing(AbilityRuntime.Cast c) { RivetVfx.chargeWindup(c); }
     @Override public void release(AbilityRuntime.Cast c) {
         var direction = c.forward(1);
-        c.actionDashCarrying(direction.scale(DISTANCE), 20, .45, target -> {
+        c.actionDashCarrying(direction.scale(DISTANCE), MOTION_TICKS, .45, target -> {
             boolean effective = c.damage(target, DIRECT.value(c), DamageCalc.Kind.PHYSICAL);
             RivetVfx.chargeHit(c, target, direction);
-            return effective && target.isAlive() ? RivetPush.escort(c, target, direction, WALL.value(c), 16, 20) : null;
+            return effective && target.isAlive() ? RivetPush.escort(c, target, direction, WALL.value(c), WALL_ROOT_TICKS, ANCHOR_ROOT_TICKS) : null;
         }, () -> { });
         RivetVfx.chargeStart(c);
     }

@@ -12,7 +12,11 @@ import com.myriad.character.ability.AbilityDamageFormula;
 import com.myriad.character.ability.AbilityFormulaText;
 import com.myriad.character.ability.AbilitySkill;
 import com.myriad.character.rework.FirstGroupGrowth;
+import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.character.skills.shuo.ShuoForms;
+import com.myriad.character.skills.yike.RainbowShell;
+import com.myriad.character.skills.yike.YikeStance.ShotForm;
+import com.myriad.network.NetworkSetup.PlayerDataPayload;
 import com.myriad.registry.ModAttributes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.locale.Language;
@@ -171,33 +175,39 @@ public final class SkillTooltipDescriptions {
         boolean currentRole = usePlayer && data != null && skill.role().equals(data.characterId());
         double physical = currentRole ? ClientDataHolder.attrValue(ModAttributes.PHYSICAL_ATTACK.value().getDescriptionId()) : Double.NaN;
         double spell = currentRole ? ClientDataHolder.attrValue(ModAttributes.SPELL_POWER.value().getDescriptionId()) : Double.NaN;
-        int strength = currentRole ? data.buffs().getOrDefault("g1_attribute_strength", 0) : 0;
         int wisdom = currentRole ? data.buffs().getOrDefault("g1_attribute_wisdom", 0) : 0;
         double innateSpell = FirstGroupGrowth.baselineSpellPower();
-        double innatePhysical = FirstGroupGrowth.baselinePhysicalAttack(CharacterType.byId(skill.role()));
+        var role = CharacterType.byId(skill.role());
+        double innatePhysical = FirstGroupGrowth.baselinePhysicalAttack(role);
+        double bonusPhysical = Double.isFinite(physical) ? FirstGroupGrowth.bonusPhysicalAttack(role, physical) : 0;
 
+        double power = Double.isFinite(spell) ? spell : innateSpell;
         String mechanics = skill.description();
         String language = Minecraft.getInstance().getLanguageManager().getSelected();
         if (!language.startsWith("zh_")) mechanics = Language.getInstance().getOrDefault(skill.descKey(), mechanics);
-        double power = Double.isFinite(spell) ? spell : innateSpell;
-        mechanics = skill.resolveSupportText(mechanics, rank, power);
+        mechanics = skill.resolveSupportText(skill.resolveDescriptionFields(mechanics, rank), rank, power, bonusPhysical);
         var formulas = skill.damageFormulas();
         if (!formulas.isEmpty()) mechanics = AbilityFormulaText.withoutInlineDamageAmounts(mechanics);
         var lines = new ArrayList<>(readableLines(AbilityFormulaText.evaluate(mechanics, rank, Double.isFinite(spell) ? spell : innateSpell)));
+        if (skill instanceof RainbowShell) {
+            lines.add(fieldText(skill, skill.nameKey() + ".guide_cooldown", rank));
+            lines.add(rainbowArtilleryLine(ShotForm.FIXED));
+            lines.add(rainbowArtilleryLine(ShotForm.MOBILE));
+        }
         if (currentRole && skill.role().equals("shuo") && !skill.isPassive()) {
             String form = ShuoForms.name(skill.getId(), ClientDataHolder.syncedCounter("g1_shuo_drawn") > 0,
                     ClientDataHolder.buffTicks(skill.getId() + "_recast") > 0);
             if (!form.isEmpty()) lines.add(0, text("skill.myriad.current_form", form));
         }
-        for (var amount : skill.supportAmounts()) lines.add(supportLine(amount, rank, power));
+        for (var amount : skill.supportAmounts()) lines.add(supportLine(amount, rank, power, bonusPhysical));
         double total = 0;
         for (var formula : formulas) {
             boolean current = currentRole && switch (formula.scaling()) {
-                case TOTAL_PHYSICAL -> Double.isFinite(physical);
+                case BONUS_PHYSICAL, TOTAL_PHYSICAL -> Double.isFinite(physical);
                 case TOTAL_SPELL -> Double.isFinite(spell);
                 default -> true;
             };
-            double value = current ? formula.value(rank, physical, spell, strength, wisdom)
+            double value = current ? formula.value(rank, physical, spell, bonusPhysical, wisdom)
                     : formula.value(rank, innatePhysical, innateSpell, 0, 0);
             if (Double.isFinite(value)) lines.add(damageLine(formula, rank, value, current));
             total += value * formula.maxHits();
@@ -207,27 +217,44 @@ public final class SkillTooltipDescriptions {
         return lines;
     }
 
-    static String supportLine(AbilitySkill.SupportAmount amount, int rank, double power) {
-        return text("screen.myriad.hover.amount_" + amount.effect(),
-                AbilityFormulaText.amount(amount.value(rank, power)));
+    static String fieldText(AbilitySkill skill, String key, int rank, Object... args) {
+        return skill.resolveDescriptionFields(text(key, args), rank);
     }
 
-    static String hoverDamage(AbilitySkill skill, int index, int rank, com.myriad.network.NetworkSetup.PlayerDataPayload data) {
+    static String rainbowArtilleryLine(ShotForm form) {
+        var stance = FirstGroupSkills.byId(form == ShotForm.FIXED ? "yike_fixed_artillery" : "yike_mobile_array");
+        return fieldText(stance, "skill.myriad.yike_rainbow_shell.hover.artillery", 1, abilityName(stance));
+    }
+
+    static String supportLine(AbilitySkill.SupportAmount amount, int rank, double spellPower, double bonusPhysicalAttack) {
+        String line = text("screen.myriad.hover.amount_" + amount.effect().id(),
+                AbilityFormulaText.amount(amount.value(rank, spellPower, bonusPhysicalAttack)));
+        if (amount.scaling() == AbilitySkill.SupportScaling.BONUS_PHYSICAL) {
+            double perPoint = amount.scale() * FirstGroupGrowth.purchasedPhysicalAttack(1);
+            line += " · " + text("skill.myriad.bonus_physical_per_point", AbilityFormulaText.amount(perPoint));
+        }
+        return line;
+    }
+
+    static String hoverDamage(AbilitySkill skill, int index, int rank, PlayerDataPayload data) {
         var formulas = skill.damageFormulas();
         if (index < 0 || index >= formulas.size()) return "";
         var formula = formulas.get(index);
-        double attack = ClientDataHolder.attrValue(ModAttributes.PHYSICAL_ATTACK.value().getDescriptionId());
-        double spell = ClientDataHolder.attrValue(ModAttributes.SPELL_POWER.value().getDescriptionId());
-        int strength = data.buffs().getOrDefault("g1_attribute_strength", 0);
+        var role = CharacterType.byId(skill.role());
+        double attack = data.attrs().getOrDefault(ModAttributes.PHYSICAL_ATTACK.value().getDescriptionId(),
+                FirstGroupGrowth.baselinePhysicalAttack(role));
+        double spell = data.attrs().getOrDefault(ModAttributes.SPELL_POWER.value().getDescriptionId(),
+                FirstGroupGrowth.baselineSpellPower());
+        double bonusPhysical = FirstGroupGrowth.bonusPhysicalAttack(role, attack);
         int wisdom = data.buffs().getOrDefault("g1_attribute_wisdom", 0);
-        double value = formula.value(rank, attack, spell, strength, wisdom);
+        double value = formula.value(rank, attack, spell, bonusPhysical, wisdom);
         if (!Double.isFinite(value)) return "";
         String kind = text("skill.myriad.damage." + formula.kind().name().toLowerCase(Locale.ROOT));
         String line = text("screen.myriad.hover.damage", AbilityFormulaText.amount(value), kind);
         if (!formula.labelKey().isEmpty()) line = text(formula.labelKey()) + " · " + line;
         if (index == 0 && !skill.singleTargetTotalKey().isEmpty()) {
             double total = formulas.stream().mapToDouble(segment ->
-                    segment.value(rank, attack, spell, strength, wisdom) * segment.maxHits()).sum();
+                    segment.value(rank, attack, spell, bonusPhysical, wisdom) * segment.maxHits()).sum();
             if (Double.isFinite(total)) line += " · " + text(skill.singleTargetTotalKey(), AbilityFormulaText.amount(total));
         }
         return line;
@@ -245,7 +272,8 @@ public final class SkillTooltipDescriptions {
         }
         fragments.add(text(current ? "skill.myriad.damage.current" : "skill.myriad.damage.reference", AbilityFormulaText.amount(value), kind));
         var slopeKey = switch (formula.scaling()) {
-            case PURCHASED_PHYSICAL, TOTAL_PHYSICAL -> "skill.myriad.damage.strength_per_point";
+            case BONUS_PHYSICAL -> "skill.myriad.bonus_physical_per_point";
+            case TOTAL_PHYSICAL -> "skill.myriad.damage.strength_per_point";
             case PURCHASED_SPELL, TOTAL_SPELL -> "skill.myriad.damage.wisdom_per_point";
             case FIXED -> "";
         };

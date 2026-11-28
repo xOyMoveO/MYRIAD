@@ -249,6 +249,20 @@ public final class ArenaFixtureChecks implements ModInitializer {
             DamageCalc.dealBasicDamage(finisher, afterDeath, 100000, DamageCalc.Kind.TRUE);
             suite.check(shared.getXp() == excludedStart,
                     "spectating, offline, other dimension, administrator removal, friendly fire and death give no shared XP");
+            suite.clock(start + 4600);
+            suite.tick();
+            var nearby = suite.players.stream().filter(p -> p != finisher && p != ally
+                    && match.factionOf(p) == match.factionOf(finisher)).findFirst().orElseThrow();
+            nearby.setPos(center);
+            HeroRespawnSystem.begin(finisher);
+            var staleProjectileTarget = suite.units("MELEE", enemyTeam).getFirst();
+            staleProjectileTarget.setPos(center);
+            int waitingGold = own.getGold();
+            int nearbyGold = PlayerDataProvider.get(nearby).getGold();
+            LaneSystem.onDeath(staleProjectileTarget, finisher);
+            staleProjectileTarget.discard();
+            suite.check(own.getGold() == waitingGold && PlayerDataProvider.get(nearby).getGold() > nearbyGold,
+                    "stale last hit from a respawning hero becomes nearby non-player credit");
             suite.report("lane-rewards", null);
             helper.succeed();
         } catch (Exception error) {
@@ -301,6 +315,7 @@ public final class ArenaFixtureChecks implements ModInitializer {
                 }
             }
             Files.deleteIfExists(world.resolve("myriad_fabric_match.json"));
+            Files.deleteIfExists(MatchArena.configuration(world, MatchArena.Mode.DUEL, "myriad_match_tempo.json"));
             PlayerDataProvider.onServerStopped(server); PlayerDataProvider.onServerStarting(server); PlayerDataProvider.onServerStarted(server);
             // Test world has no imported terrain. Place walking support, not an original-map reconstruction.
             for (int ox : new int[]{0,256}) for (int z=0; z<=128; z++)

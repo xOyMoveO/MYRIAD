@@ -6,7 +6,7 @@ import net.minecraft.world.phys.Vec3;
 import static com.myriad.combat.DamageCalc.Kind.*;
 /** Independent reusable branch. */
 public final class HerbalEssenceSkill extends AbilitySkill {
-    private static final SupportAmount HEAL = new SupportAmount("heal", 12, 6, .1f);
+    private static final SupportAmount HEAL = new SupportAmount(SupportEffect.HEAL, SupportScaling.TOTAL_SPELL, 12, 6, .1f);
 
     @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(HEAL); }
 

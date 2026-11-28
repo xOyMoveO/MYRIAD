@@ -15,8 +15,9 @@ import java.util.*;
 
 /** Free physical attack: a left-button flight, separate from every paid spell. */
 public final class YikeBasicAttack {
-    private static final double RANGE = 10;
-    private static final double FLIGHT_SPEED = 1.3 * HeroProjectileTuning.SPEED;
+    public static final double RANGE = 10;
+    public static final double FLIGHT_SPEED = 1.3 * HeroProjectileTuning.SPEED;
+    public static final double MUZZLE_OFFSET = .4;
     private static final int MAX_FLIGHT_TICKS = (int) Math.ceil(RANGE / (FLIGHT_SPEED * .30)) + 2;
     private static final double HIT_RADIUS = .12 * HeroProjectileTuning.ENTITY_PADDING;
     private static final class Recovery {ActionTime.Progress progress;int total;long tick;}
@@ -25,7 +26,8 @@ public final class YikeBasicAttack {
     public static void tick(ServerPlayer p){var s=RECOVERY.get(p.getUUID());if(s==null)return;
         if(s.progress.advance(p.level().getGameTime(),ActionTime.multiplier(p.getUUID(),p.level().getGameTime()),s.total))RECOVERY.remove(p.getUUID());}
     public static int remaining(ServerPlayer p){var s=RECOVERY.get(p.getUUID());return s==null?0:(int)Math.ceil(s.total-s.progress.completed());}
-    public static int total(ServerPlayer p){var s=RECOVERY.get(p.getUUID());return s==null?(int)Math.ceil(20/Math.max(.1,p.getAttributeValue(ModAttributes.ATTACK_SPEED))):s.total;}
+    public static int recoveryTicks(double attackSpeed) { return (int) Math.ceil(20 / Math.max(.1, attackSpeed)); }
+    public static int total(ServerPlayer p){var s=RECOVERY.get(p.getUUID());return s==null?recoveryTicks(p.getAttributeValue(ModAttributes.ATTACK_SPEED)):s.total;}
     public static void tryFire(ServerPlayer p){
         var data=PlayerDataProvider.get(p);tick(p);
         if(!AbilityRuntime.valid(p)||!"yike".equals(data.getCharacterId())||!p.getMainHandItem().is(ModItems.HONG_LIE.get())
@@ -37,7 +39,7 @@ public final class YikeBasicAttack {
         var s=new Recovery();s.total=total(p);s.progress=new ActionTime.Progress(p.level().getGameTime());RECOVERY.put(p.getUUID(),s);
         var c=AbilityRuntime.context(p,YikeRework.q(p));Vec3 direction=p.getLookAngle().normalize();
         Vec3 origin=p.getEyePosition();
-        Vec3[] pos={origin.add(direction.scale(.4))};double[] distance={0};long[] last={c.now()};UUID flight=UUID.randomUUID();int visual=c.newVisualInstance();
+        Vec3[] pos={origin.add(direction.scale(MUZZLE_OFFSET))};double[] distance={0};long[] last={c.now()};UUID flight=UUID.randomUUID();int visual=c.newVisualInstance();
         float damage=(float)p.getAttributeValue(ModAttributes.PHYSICAL_ATTACK);
         WeaponPosePayload.play(p, Move.CANNON_BASIC, 5);
         YikeVfx.event(c,"basic_muzzle",pos[0],pos[0].add(direction),.2f,3);YikeAudio.play(p,"basic",pos[0],.35f,1.2f);PlayerDataProvider.syncToClient(p);

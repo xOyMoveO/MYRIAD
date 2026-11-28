@@ -43,17 +43,25 @@ public class PlayerData {
     private int matchGoldEarned = 0;
     private java.util.UUID queueRound;
     private boolean openingPurseClaimed;
+    private final java.util.Set<java.util.UUID> offlineAssistReceipts = new java.util.HashSet<>();
+
+    public boolean claimOfflineAssist(java.util.UUID receipt) {
+        return offlineAssistReceipts.add(receipt);
+    }
 
     public boolean belongsToQueueRound(java.util.UUID id) { return id.equals(queueRound); }
     public void beginQueueRound(java.util.UUID id) {
         queueRound = id;
         openingPurseClaimed = false;
+        offlineAssistReceipts.clear();
     }
     public boolean openingPurseClaimed() { return openingPurseClaimed; }
+    public static final int OPENING_PURSE_GOLD = 500;
+
     public void grantOpeningPurse() {
         if (openingPurseClaimed) return;
-        setGold(500);
-        resetMatchGoldEarned(500);
+        setGold(OPENING_PURSE_GOLD);
+        resetMatchGoldEarned(OPENING_PURSE_GOLD);
         openingPurseClaimed = true;
     }
     private transient boolean practiceWallet;
@@ -376,10 +384,15 @@ public class PlayerData {
 
     /** 技能附加效果剩余刻数 */
     public int getBuff(String skillId) {
-        int remaining = buffs.getOrDefault(skillId, 0);
+        int remaining = getDirectBuff(skillId);
         if (skillId.equals("g1_root")) for (var entry : buffs.entrySet())
             if (entry.getKey().startsWith("g1_root/")) remaining = Math.max(remaining, entry.getValue());
         return remaining;
+    }
+
+    /** 单一记录的剩余刻数，不含其他来源的禁锢。 */
+    public int getDirectBuff(String skillId) {
+        return buffs.getOrDefault(skillId, 0);
     }
 
     public void setBuff(String skillId, int ticks) {
@@ -572,6 +585,8 @@ public class PlayerData {
         this.matchGoldEarned = old.matchGoldEarned;
         this.queueRound = old.queueRound;
         this.openingPurseClaimed = old.openingPurseClaimed;
+        this.offlineAssistReceipts.clear();
+        this.offlineAssistReceipts.addAll(old.offlineAssistReceipts);
         this.faction = old.faction;
         this.mana = old.mana;
         this.modMaxHealth = old.modMaxHealth;

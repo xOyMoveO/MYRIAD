@@ -2,6 +2,7 @@ package com.myriad.game;
 
 import com.myriad.character.*;
 import com.myriad.character.ability.*;
+import com.myriad.character.rework.FirstGroupGrowth;
 import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.network.ThunderSkillViewPayload;
 import com.myriad.player.*;
@@ -111,7 +112,11 @@ final class ThunderSkillReleaseChecks {
         var caster=player(h,origin,Faction.GUARDIAN,players,cues,false);var d=PlayerDataProvider.get(caster);d.setCharacterId("tianxing");d.setLevel(20);d.setMana(700);
         int rank=index==1?7:index==5?3:1;float spellPower=index==1||index==5?100:0;int strength=index==5?1:0;
         var skill=FirstGroupSkills.node("tianxing",slash(index)?5:7);d.setSkillLevel(skill.getId(),rank);
-        caster.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(spellPower);d.setFirstGroupAttribute("strength",strength);caster.getAttribute(ModAttributes.CRIT_CHANCE).setBaseValue(0);caster.getAttribute(ModAttributes.COOLDOWN_REDUCTION).setBaseValue(0);
+        d.setFirstGroupAttribute("strength",strength);
+        FirstGroupGrowth.initialize(caster, d);
+        h.assertTrue(caster.getAttributeValue(ModAttributes.PHYSICAL_ATTACK) == (strength == 1 ? 80 : 65),
+                "Thunder Skill fixture has the actual innate and purchased physical attack");
+        caster.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(spellPower);caster.getAttribute(ModAttributes.CRIT_CHANCE).setBaseValue(0);caster.getAttribute(ModAttributes.COOLDOWN_REDUCTION).setBaseValue(0);
         var hits=new ArrayList<LivingEntity>();var excluded=new ArrayList<LivingEntity>();
         List<Vec3> hitPositions=slash(index)?List.of(new Vec3(0,0,4),new Vec3(0,0,8),new Vec3(.8,0,11),new Vec3(0,0,19.5)):
                 List.of(new Vec3(0,0,4),new Vec3(-6*Math.sin(Math.toRadians(55)),0,6*Math.cos(Math.toRadians(55))),new Vec3(8*Math.sin(Math.PI/3),0,4));

@@ -5,6 +5,7 @@ import com.myriad.character.ability.AbilityRuntime.Cast;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import java.util.List;
+import java.util.Map;
 
 import static com.myriad.combat.DamageCalc.Kind.*;
 
@@ -19,6 +20,10 @@ public final class HeavenSwordSkill extends AbilitySkill {
 
     public static final int CHARGE_TICKS=24,CHOP_TICKS=6;
     public static final double REACH=15,WIDTH=3;
+    @Override public Map<String, Number> descriptionFields(int rank) {
+        return Map.of("charge", CHARGE_TICKS / 20.0, "chop", CHOP_TICKS / 20.0, "range", REACH, "width", WIDTH);
+    }
+
     public HeavenSwordSkill(Definition definition){super(definition);}
 
     @Override public void windupPose(Cast c,boolean active){LingyuanHandCues.heaven(c,active);}

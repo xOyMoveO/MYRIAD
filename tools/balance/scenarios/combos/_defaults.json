@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "baselineCommit": "d94b3534ef6fcff7d7fef1263b33425575a4a479",
+  "timeUnit": "real_tick",
+  "ticksPerSecond": 20,
+  "windows": {"burst": 30, "sustained": 120},
+  "delayProfiles": {
+    "human_default": {"point": 4, "judgment": 2},
+    "zero_extra_delay": {"point": 0, "judgment": 0}
+  },
+  "startState": {
+    "heroLevel": 20,
+    "budgetGold": 4885,
+    "targetRole": "luoxia",
+    "targetPurchases": {"defense": 2},
+    "hpRatio": 1,
+    "manaRatio": 1,
+    "facing": "front",
+    "stance": "default",
+    "cooldowns": "all_ready",
+    "terrain": "clear_line_and_legal_ground",
+    "targetCollisionDistanceAllowance": 0.30,
+    "preconditions": []
+  },
+  "opponents": {
+    "solo": {"weight": 0.5, "stunTicks": 0, "retreatPerActionTick": 0.04},
+    "ally_cc": {"weight": 0.5, "stunTicks": 20, "retreatPerActionTick": 0.04}
+  },
+  "controlActionWeights": {"move": 0.3333333333333333, "basicAttack": 0.3333333333333333, "stationaryCast": 0.3333333333333333},
+  "supportTemplates": {
+    "primary": {"hpRatio": 0.5, "incoming": [[8, "physical", 240], [28, "magic", 220], [48, "true", 170], [68, "physical", 215], [88, "magic", 220], [108, "physical", 240]]},
+    "secondary": {"hpRatio": 0.75, "incoming": [[28, "magic", 160], [68, "physical", 150], [108, "magic", 160]]},
+    "lowPressure": {"hpRatio": 0.92, "incoming": [[48, "true", 65], [108, "physical", 85]]}
+  },
+  "modelNotes": [
+    "初始金币是冻结的历史终局试算预算。一般场景和夜影绕背分别登记配点，真实樱隙购物可达性见 L2。",
+    "正面零预置。独自出手目标沿直线撤步，队友先控目标在前 20 真实刻眩晕。移动、地形和碰撞均为声明的合成条件。",
+    "带权行动损失把移动、普攻和原地施法视为三项等权。等权是假设。控制按生效规则取最长，缓时取最低倍率。",
+    "武器为初始装备模板，近战随机伤害取均值并关闭随机暴击。自然回血、技能随动弹道弯折、网络时延和帧级几何由引擎另查。",
+    "没有把固定优先序得到的结果当作游戏极值。被动、动态姿态和未接入通道按影响指标列覆盖缺口。"
+  ]
+}

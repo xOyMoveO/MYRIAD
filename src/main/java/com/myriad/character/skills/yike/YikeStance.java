@@ -4,11 +4,11 @@ import com.myriad.Myriad;
 import com.myriad.character.ability.AbilityRuntime;
 import com.myriad.character.ability.AbilityRuntime.Cast;
 import com.myriad.character.ability.AbilitySkill;
+import com.myriad.combat.HeroProjectileTuning;
 import com.myriad.combat.KnockbackBuffer;
 import com.myriad.combat.SilenceSystem;
 import com.myriad.game.TrainingMode;
 import com.myriad.player.PlayerDataProvider;
-import com.myriad.registry.ModAttributes;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -25,7 +25,9 @@ public final class YikeStance {
     private static final Identifier CHARGE = Identifier.fromNamespaceAndPath("myriad", "skill_charge_lock");
     private static final Map<UUID, State> STATES = new HashMap<>();
     private static final Map<UUID, String> EXIT_REASONS = new HashMap<>();
-    private static final double TURN_PER_TICK = Math.toRadians(90.0 / 20);
+    public static final double TURN_DEGREES_PER_SECOND = 90;
+    public static final double MOBILE_MOVEMENT = .7;
+    private static final double TURN_PER_TICK = Math.toRadians(TURN_DEGREES_PER_SECOND / 20);
 
     private YikeStance() {}
 
@@ -44,8 +46,8 @@ public final class YikeStance {
             deployment = c;
             level = c.player.level();
             this.mobile = mobile;
-            shots = mobile ? 4 : 5;
-            until = c.now() + 120;
+            shots = artilleryForm(mobile).shells;
+            until = c.now() + DURATION_TICKS;
             q = YikeRework.q(c.player);
             originalQReady = c.now() + (q == null ? 0 : c.data.getCooldown(q.getId()));
             nextShot = c.now();
@@ -76,14 +78,56 @@ public final class YikeStance {
         }
         return (int) Math.max(0, ready - now);
     }
+    /** Static shot rules also consumed by the build snapshot. */
+    public enum ShotForm {
+        NORMAL(16, 30, 1.5, 1, 0, 0, 0),
+        FIXED(26, 34, 1.5, .65f, .025f, 5, 22),
+        MOBILE(20, 30, 1, .55f, .025f, 4, 27);
+
+        public final double range, speed, radius;
+        public final float baseMultiplier, multiplierPerRank;
+        public final int shells, nextShotTicks;
+
+        ShotForm(double range, double speed, double radius, float baseMultiplier,
+                float multiplierPerRank, int shells, int nextShotTicks) {
+            this.range = range;
+            this.speed = speed;
+            this.radius = radius;
+            this.baseMultiplier = baseMultiplier;
+            this.multiplierPerRank = multiplierPerRank;
+            this.shells = shells;
+            this.nextShotTicks = nextShotTicks;
+        }
+
+        public float multiplier(int stanceRank) {
+            return baseMultiplier + multiplierPerRank * (stanceRank - 1);
+        }
+
+        Map<String, Number> artilleryDescriptionFields(AbilitySkill stance, int rank) {
+            return Map.of("range_blocks", range, "shell_count", shells, "shot_interval_ticks", nextShotTicks,
+                    "windup_seconds", stance.commitWindupTicks() / 20.0, "stance_seconds", DURATION_TICKS / 20.0,
+                    "damage_percent", multiplier(rank) * 100, "blast_radius_blocks", radius,
+                    "flight_speed_blocks_per_second", speed * HeroProjectileTuning.SPEED,
+                    "movement_percent", this == MOBILE ? MOBILE_MOVEMENT * 100 : 0);
+        }
+    }
+
+    public static final int SHOT_REQUEST_BUFFER_TICKS = 5;
+    public static final int DURATION_TICKS = 120;
+    public static final int PAUSE_FOR_W_TICKS = 11;
+    private static ShotForm artilleryForm(boolean mobile) { return mobile ? ShotForm.MOBILE : ShotForm.FIXED; }
+    private static ShotForm shotForm(ServerPlayer p) {
+        var state = STATES.get(p.getUUID());
+        return state == null ? ShotForm.NORMAL : artilleryForm(state.mobile);
+    }
     public static float multiplier(ServerPlayer p) {
         var s = STATES.get(p.getUUID());
-        return s == null ? 1 : (s.mobile ? .55f : .65f) + .025f * (s.deployment.rank - 1);
+        return s == null ? ShotForm.NORMAL.baseMultiplier : artilleryForm(s.mobile).multiplier(s.deployment.rank);
     }
-    public static double shotRange(ServerPlayer p) { return active(p) ? mobile(p) ? 20 : 26 : 16; }
+    public static double shotRange(ServerPlayer p) { return shotForm(p).range; }
     /** Blocks per second; callers convert to their projectile's tick step. */
-    public static double shotSpeed(ServerPlayer p) { return active(p) && !mobile(p) ? 34 : 30; }
-    public static double shotRadius(ServerPlayer p) { return mobile(p) ? 1 : 1.5; }
+    public static double shotSpeed(ServerPlayer p) { return shotForm(p).speed; }
+    public static double shotRadius(ServerPlayer p) { return shotForm(p).radius; }
 
     /** Called only by the paid deployment release, after its 9/7 local-action ticks. */
     public static void enter(Cast c, boolean mobile) {
@@ -103,7 +147,7 @@ public final class YikeStance {
         if (!usable(c.player, s)) return false;
         var q = YikeRework.q(c.player);
         return q != null && c.skill == q && c.data.skillLevel(q.getId()) > 0
-                && s.shots > 0 && nextShotTicks(c.player) <= (s.fired && !c.accepted() ? 5 : 0)
+                && s.shots > 0 && nextShotTicks(c.player) <= (s.fired && !c.accepted() ? SHOT_REQUEST_BUFFER_TICKS : 0)
                 && (TrainingMode.isNoMana(c.player) || c.data.getMana() >= q.manaCost(c.rank));
     }
 
@@ -116,7 +160,7 @@ public final class YikeStance {
         s.lastShotCast = c.castId();
         s.fired = true;
         s.shots--;
-        s.nextShot = c.now() + (s.mobile ? 27 : 22);
+        s.nextShot = c.now() + artilleryForm(s.mobile).nextShotTicks;
         if (s.shots == 0) exit(c.player, "empty");
         else if (!canAffordShot(c.player, s)) exit(c.player, "mana");
     }
@@ -124,7 +168,7 @@ public final class YikeStance {
     /** W calls this only after its legal ground warning has actually been committed. */
     public static void pauseForW(ServerPlayer p) {
         var s = STATES.get(p.getUUID());
-        if (s != null) s.pausedUntil = Math.max(s.pausedUntil, p.level().getGameTime() + 11);
+        if (s != null) s.pausedUntil = Math.max(s.pausedUntil, p.level().getGameTime() + PAUSE_FOR_W_TICKS);
     }
     public static boolean recastAvailable(Cast c) { return c.skill.slot() == 2 && active(c.player); }
     public static void recast(Cast c) { if (recastAvailable(c)) exit(c.player, "manual"); }
@@ -171,7 +215,7 @@ public final class YikeStance {
         var speed = p.getAttribute(Attributes.MOVEMENT_SPEED);
         if (speed == null) return;
         if (s == null) { speed.removeModifier(MOVEMENT); return; }
-        double factor = s.mobile ? .7 : 0;
+        double factor = s.mobile ? MOBILE_MOVEMENT : 0;
         var charge = speed.getModifier(CHARGE);
         if (charge != null) {
             double chargeFactor = Math.max(0, 1 + charge.amount());
@@ -223,8 +267,7 @@ public final class YikeStance {
         var q = s.q;
         if (s.fired && q != null && !TrainingMode.isNoCooldown(p)) {
             var d = PlayerDataProvider.get(p);
-            double reduction = Math.clamp(p.getAttributeValue(ModAttributes.COOLDOWN_REDUCTION), 0, 60);
-            int full = Math.max(1, (int) (q.getCooldownTicks(Math.max(1, d.skillLevel(q.getId()))) * (1 - reduction / 100)));
+            int full = AbilityRuntime.effectiveCooldownTicks(p, d, q.getCooldownTicks(Math.max(1, d.skillLevel(q.getId()))));
             d.setCooldown(q.getId(), Math.max(d.getCooldown(q.getId()), full));
         }
         YikeVfx.event(s.deployment, "exit", p.getEyePosition(), p.getEyePosition().add(s.aim), 0, 1);

@@ -9,12 +9,11 @@ import net.minecraft.network.chat.Component;
 
 import java.util.List;
 
-import static com.myriad.combat.DamageCalc.Kind.PHYSICAL;
-
 /** Independent reusable branch. */
 public final class MountainCleaveSkill extends AbilitySkill {
+    public static final double RANGE = 6;
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.purchased(PHYSICAL, 98, 28.0125f, .5f);
+            AbilityDamageFormula.bonusPhysical(98, 28.0125f, .5f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);
@@ -26,18 +25,18 @@ public final class MountainCleaveSkill extends AbilitySkill {
     }
 
     @Override
-    public String evaluatedDescription(int rank, double skillPower, int purchasedStrength) {
-        var currentDamage = AbilityFormulaText.number(DAMAGE.value(Math.clamp(rank, 1, maxRank()), 0, skillPower, purchasedStrength, 0));
+    public String evaluatedDescription(int rank, double skillPower, double bonusPhysicalAttack) {
+        var currentDamage = AbilityFormulaText.number(DAMAGE.value(Math.clamp(rank, 1, maxRank()), 0, skillPower, bonusPhysicalAttack, 0));
         var perStrength = AbilityFormulaText.number(DAMAGE.perPoint(rank));
         return description() + Component.translatableWithFallback("skill.myriad.g2_chixiao_n1.current_damage",
-                "当前造成 %s 物理伤害。技能每升一级增加 %s 伤害，每点已购力量增加 %s 伤害。",
+                "当前造成 %s 物理伤害。技能每升一级增加 %s 伤害，每点力量增加 %s 伤害，临时物攻也计入。",
                 currentDamage, AbilityFormulaText.number(DAMAGE.rankGrowth()), perStrength).getString();
     }
 
     @Override
     public void release(Cast cast) {
         WarSpiritHandCues.cast(cast);
-        cast.cone(6, 100, DAMAGE.value(cast), DAMAGE.kind());
+        cast.cone(RANGE, 100, DAMAGE.value(cast), DAMAGE.kind());
     }
 }
 

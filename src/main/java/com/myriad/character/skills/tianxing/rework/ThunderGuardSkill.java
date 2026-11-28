@@ -15,6 +15,8 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class ThunderGuardSkill extends AbilitySkill {
+    public static final int GUARD_TICKS = 80, PULSE_INTERVAL = 20;
+    public static final double PULSE_RADIUS = 4;
     private static final AbilityDamageFormula DAMAGE =
             AbilityDamageFormula.spellPower(MAGIC, 20, 10, .15f).segment("skill.myriad.damage.segment.pulse", 4);
 
@@ -24,9 +26,9 @@ public final class ThunderGuardSkill extends AbilitySkill {
 
     public ThunderGuardSkill(Definition definition){super(definition);}
     @Override public boolean hasOwnCastSound(){return true;}
-    @Override public void present(Cast c){c.whileActive(80,age->{if(c.data.getBuff(getId())<=0)return false;
+    @Override public void present(Cast c){c.whileActive(GUARD_TICKS,age->{if(c.data.getBuff(getId())<=0)return false;
         if(age%6==0)com.myriad.character.ability.AbilityVisuals.following(c,com.myriad.character.ability.AbilityVfxGeometry.SHIELD,c.player,.65,8);return true;});}
-    @Override public void release(Cast c){ThunderSkillPresentation.play(c,com.myriad.network.ThunderSkillViewPayload.GUARD,14);c.buff("g1_guard15",80);c.buff(getId(),80);
+    @Override public void release(Cast c){ThunderSkillPresentation.play(c,com.myriad.network.ThunderSkillViewPayload.GUARD,14);c.buff("g1_guard15",GUARD_TICKS);c.buff(getId(),GUARD_TICKS);
  ThunderAudio.play(c,ThunderAudio.Cue.GUARD);
- c.repeat(80,20,i->{ThunderAudio.play(c,ThunderAudio.Cue.PULSE);c.pulse(c.player.position(),4,DAMAGE.value(c),DAMAGE.kind());});}
+ c.repeat(GUARD_TICKS,PULSE_INTERVAL,i->{ThunderAudio.play(c,ThunderAudio.Cue.PULSE);c.pulse(c.player.position(),PULSE_RADIUS,DAMAGE.value(c),DAMAGE.kind());});}
 }

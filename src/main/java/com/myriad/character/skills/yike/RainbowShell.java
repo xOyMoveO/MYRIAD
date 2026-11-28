@@ -4,7 +4,9 @@ import com.myriad.network.WeaponPosePayload.Move;
 
 import com.myriad.character.ability.*;
 import com.myriad.combat.DamageCalc;
+import com.myriad.combat.HeroProjectileTuning;
 import java.util.List;
+import java.util.Map;
 
 /** The shell is paid at the muzzle, never when the Q input begins. */
 public final class RainbowShell extends AbilitySkill {
@@ -14,11 +16,23 @@ public final class RainbowShell extends AbilitySkill {
         return List.of(DAMAGE);
     }
 
+    @Override public Map<String, Number> descriptionFields(int rank) {
+        return Map.of("range_blocks", YikeStance.ShotForm.NORMAL.range,
+                "blast_radius_blocks", YikeStance.ShotForm.NORMAL.radius,
+                "flight_speed_blocks_per_second", YikeStance.ShotForm.NORMAL.speed * HeroProjectileTuning.SPEED,
+                "windup_seconds", commitWindupTicks() / 20.0,
+                "normal_cooldown_ticks", cooldownTicks(rank, false),
+                "artillery_cooldown_ticks", cooldownTicks(rank, true));
+    }
+
     public RainbowShell(Definition d){super(d);}
     @Override public int commitWindupTicks(){return 5;}
     @Override public float windupWalkFactor(AbilityRuntime.Cast c){return .5f;}
     @Override public boolean cooldownReady(AbilityRuntime.Cast c){return YikeStance.active(c.player)||super.cooldownReady(c);}
-    @Override public int cooldownTicks(AbilityRuntime.Cast c){return YikeStance.active(c.player)?0:super.cooldownTicks(c);}
+    @Override public int cooldownTicks(AbilityRuntime.Cast c){return cooldownTicks(c.rank, YikeStance.active(c.player));}
+    public int cooldownTicks(int rank, boolean artillery) {
+        return artillery ? 0 : getCooldownTicks(rank);
+    }
     @Override public boolean canRelease(AbilityRuntime.Cast c){return c.data.skillLevel(getId())>0&&!PrismaticBeam.active(c.player)&&YikeStance.canFire(c);}
     @Override public void preparing(AbilityRuntime.Cast c){YikeVfx.event(c,"muzzle_charge",c.player.getEyePosition(),c.player.getEyePosition().add(c.player.getLookAngle()),.35f,commitWindupTicks());}
     @Override public boolean hasOwnCastSound(){return true;}

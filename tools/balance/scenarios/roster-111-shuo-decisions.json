@@ -1,0 +1,62 @@
+{
+  "baseAttributes": {
+    "decision": "retain",
+    "condition": "1–20 级零购买或临时增益。",
+    "reason": "保留 640 生命、每级 +100，700 法力、每级 +24；位移和有条件护盾由对应技能评价。其余共用属性沿现版块。",
+    "scenario": "shuo.zero_preparation；配对快照 roles.shuo.attributes"
+  },
+  "basicAttack": {
+    "decision": "retain",
+    "condition": "持初始武器、满恢复、合法近战命中；首次出鞘可结算所选被动。",
+    "reason": "保留 65 基础物攻与每秒 0.70 次的基础攻速。拔刀附段仍读被动，不抬高所有普攻。",
+    "scenario": "shuo.zero_preparation；shuo_pilot"
+  },
+  "shuo_cangfeng": {
+    "decision": "retain",
+    "condition": "收鞘未被行动锁定时每真实刻加 2 锋意，上限 100，出鞘按比例附伤。",
+    "reason": "保留可蓄势后出手的分支。零预置将首刀与满锋意上限分开。",
+    "scenario": "shuo.zero_preparation"
+  },
+  "shuo_jianqie": {
+    "decision": "retain",
+    "condition": "成功格挡后 80 刻内下一次出鞘才可追加伤害，空刀也会消耗。",
+    "reason": "保留反制要求。W 格挡虽然成功仍要自己出刀，避免把无来伤的先控场景算成免费被动触发。",
+    "scenario": "shuo.zero_preparation；balance_shuo_chixiao"
+  },
+  "shuo_nadao": {
+    "decision": "retain",
+    "condition": "侧退 3 格；收鞘为位移与加速，出鞘为首刀、原地回斩减速再归鞘。",
+    "reason": "保留侧退和可躲回斩的取舍。单轴模型只计算后退投影，模型外侧向空间和受控中断保留具体条件。",
+    "scenario": "shuo.zero_preparation；roster_a"
+  },
+  "shuo_qiaofan": {
+    "decision": "retain",
+    "condition": "收鞘时仅格挡 7 真实刻内符合朝向的非真伤；格挡后 40 刻内反刀，实际命中才给盾与 6 刻眩晕。出鞘只作短横扫。",
+    "reason": "保留一阶 57.5＋额外物攻/3 护盾和 62 零购反击原始伤害。一次力量将实伤和实际护盾分别变为 69.5／62.5，零购与一力的后续实际吸盾均约 45.702；空刀和背袭均不给盾。",
+    "scenario": "shuo.guard_contact；shuo.guard_whiff；shuo.guard_from_rear；balance_shuo_chixiao；balance_damage_support"
+  },
+  "shuo_yishan": {
+    "decision": "retain",
+    "condition": "收鞘蓄势后先扫掠接触再按首击记录引爆刀痕；出鞘为短突进一次命中。",
+    "reason": "保留首刀／延迟刀痕 60/40 与长短突进。现行引擎单例分段 71.4／47.6，刀痕按实际挂标记和正常结束计算。",
+    "scenario": "shuo.zero_preparation；shuo_pilot"
+  },
+  "shuo_duanliu": {
+    "decision": "retain",
+    "condition": "收鞘两次固定窄线；出鞘可在两刀间转向，两次同目标命中才禁锢。",
+    "reason": "保留双段与可躲第二刀。8／6 刻禁锢以相同目标连中为前提，避免以单刀伤害当作已完整控制。",
+    "scenario": "shuo.zero_preparation；roster_a"
+  },
+  "shuo_wusheng": {
+    "decision": "retain",
+    "condition": "收鞘穿行挂标记，停步回鞘结算，缺血倍率上限 +25%；出鞘先移动再劈斩眩晕。",
+    "reason": "保留收尾型和开团型的不同收益。远端遮挡及回鞘前受控会截断实际收益；缺血加成为有限乘区。",
+    "scenario": "shuo.zero_preparation；roster_a"
+  },
+  "shuo_canyue": {
+    "decision": "retain",
+    "condition": "收鞘开启的同一套短按续段最多三式，前两段共享每段公式；三式同一目标全中才禁锢。已出鞘为单次大角度终斩。",
+    "reason": "保留手动续段、第三段的命中门槛与单次起手形态。原位连按用于离线，追斩手势由既有引擎用例覆盖。",
+    "scenario": "shuo.zero_preparation；roster_a"
+  }
+}

@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "scenarioId": "rivet.zero_preparation",
+  "scenarioVersion": 1,
+  "baselineCommit": "fee6c1ca91d181ce34c3d7f3aab47be7d719ec1c",
+  "role": "rivet",
+  "applicableBuilds": "all_terminal_combinations",
+  "category": "zero_preparation",
+  "status": "candidate_l3_partial",
+  "startState": {
+    "distance": 2.4,
+    "purchases": {"strength": 5, "defense": 3, "cooldown": 2},
+    "anchor": false,
+    "anchorPlacement": false,
+    "casterInAnchorZone": false
+  },
+  "opponentCondition": ["solo", "ally_cc"],
+  "windows": ["burst", "sustained"],
+  "delayProfile": ["human_default", "zero_extra_delay"],
+  "basicAttack": {
+    "range": 3,
+    "source": "src/main/java/com/myriad/combat/VanillaMeleeAttack.java"
+  },
+  "skills": {
+    "rivet_impact_hammer": {
+      "source": "src/main/java/com/myriad/character/skills/rivet/ImpactHammer.java",
+      "range": "hit_range",
+      "prepayWindup": "commit_windup",
+      "events": [{"kind": "damage", "effect": "direct_hit", "at": 0, "radius": "hit_range"}]
+    },
+    "rivet_tactical_anchor": {
+      "source": "src/main/java/com/myriad/character/skills/rivet/TacticalAnchor.java",
+      "requires": {"anchorPlacement": true},
+      "events": []
+    },
+    "rivet_emergency_strut": {
+      "source": "src/main/java/com/myriad/character/skills/rivet/EmergencyStrut.java",
+      "events": [{"kind": "shield", "effect": "shield", "at": 0, "duration": "shield_duration", "target": "self"}]
+    },
+    "rivet_tow_cable": {
+      "source": "src/main/java/com/myriad/character/skills/rivet/TowCable.java",
+      "requires": {"anchor": true},
+      "motion": "motion_duration",
+      "events": []
+    },
+    "rivet_hold_protocol": {
+      "source": "src/main/java/com/myriad/character/skills/rivet/HoldProtocol.java",
+      "requires": {"anchor": true},
+      "events": [{"kind": "shield", "effect": "shield", "at": 0, "duration": "zone_duration", "target": "self",
+        "requires": {"casterInAnchorZone": true}}]
+    },
+    "rivet_breach_charge": {
+      "source": "src/main/java/com/myriad/character/skills/rivet/BreachCharge.java",
+      "prepayWindup": "commit_windup",
+      "motion": "motion_duration",
+      "events": [{"kind": "damage", "effect": "direct_hit", "at": 0, "radius": "dash_range", "speed": 0.5}]
+    }
+  },
+  "execution": {
+    "type": "apl",
+    "steps": [
+      {"action": "cast", "skill": "w"},
+      {"action": "cast", "skill": "r", "judgment": true},
+      {"action": "cast", "skill": "q", "judgment": true},
+      {"action": "cast", "skill": "e", "judgment": true},
+      {"action": "basic_attack"},
+      {"action": "wait_until"}
+    ]
+  },
+  "coverageGaps": {
+    "rivet_station_armor": {
+      "axes": ["support"],
+      "reason": "清地零预置无锚点，驻地装甲在本条件无法启动；有锚地形中的接地累计、破盾和离阵未建模。"
+    },
+    "rivet_breach_rhythm": {
+      "axes": ["damage", "timing"],
+      "reason": "清地零预置无侧墙，无法打开破阵节拍。侧墙场景中的强化普攻和 E 冷却变化见服务端专项。"
+    },
+    "rivet_impact_hammer": {
+      "axes": ["damage", "control"],
+      "reason": "合成轨只计算合规直线伤害，未复算扇区多目标、身体推移、撞墙奖励、定身和锚击。"
+    },
+    "rivet_tactical_anchor": {
+      "axes": ["damage", "control", "support"],
+      "reason": "场景无可指向的已加载侧墙，锚点条件为假；追踪有墙布设及失效后的收益需要引擎地形。"
+    },
+    "rivet_emergency_strut": {
+      "axes": ["support", "timing"],
+      "reason": "只计自身源护盾在固定来伤下的实际吸收；友军在场、强盾取值、击退减免与近锚返还见服务端专项。"
+    },
+    "rivet_tow_cable": {
+      "axes": ["damage", "control", "timing"],
+      "reason": "清地零预置缺锚，牵引不可用。预置有锚的显式样例只复算许可、费用与名义移动时间；落点、途中阻挡、松索与接 Q 命中需引擎。"
+    },
+    "rivet_hold_protocol": {
+      "axes": ["support", "control"],
+      "reason": "清地零预置缺锚，区域不可用。显式样例以施法者已在区域内为条件计算自盾，区域减伤、入区时点及推移变化见服务端专项。"
+    },
+    "rivet_breach_charge": {
+      "axes": ["damage", "control"],
+      "reason": "只复算按起跑时直线对齐的首段命中与名义冲锋时间。相交位置、带行、取消、打断和实际撞墙奖励见服务端专项。"
+    }
+  },
+  "scripted": [
+    {
+      "scenarioId": "rivet.anchor_tow",
+      "scenarioVersion": 1,
+      "category": "terrain_advantage",
+      "status": "candidate_l3_partial",
+      "applicableBuilds": ["rivet_station_armor", "rivet_tow_cable", "rivet_hold_protocol"],
+      "startState": {
+        "anchor": true,
+        "distance": 2.35,
+        "purchases": {},
+        "manaRatio": 0.5438311688311688,
+        "skillRanks": {"q": 1, "w": 0, "e": 7, "r": 1},
+        "preconditions": ["对照 myriad:rivet 用例 24。正式 W0 已花 30 蓝，670/1232 蓝起手。自身锚点有效，无遮挡且墙前路径合法。只比较牵引索的实扣蓝和基础冷却，牵引终点和后续命中取服务端证据。"]
+      },
+      "opponentCondition": "solo",
+      "windows": {"burst": 30, "sustained": 120},
+      "execution": {"type": "scripted", "steps": [{"action": "cast", "skill": "e"}]}
+    },
+    {
+      "scenarioId": "rivet.anchor_hold",
+      "scenarioVersion": 1,
+      "category": "terrain_advantage",
+      "status": "candidate_l3_partial",
+      "applicableBuilds": ["rivet_hold_protocol"],
+      "startState": {"anchor": true, "casterInAnchorZone": true, "preconditions": ["已有未失效自身锚点，施法者位于距锚点 4 格范围内。"]},
+      "opponentCondition": "solo",
+      "windows": {"burst": 30, "sustained": 120},
+      "execution": {"type": "scripted", "steps": [{"action": "cast", "skill": "r"}, {"action": "basic_attack"}, {"action": "cast", "skill": "q", "judgment": true}]}
+    },
+    {
+      "scenarioId": "rivet.anchor_hold_outside_zone",
+      "scenarioVersion": 1,
+      "category": "terrain_advantage",
+      "status": "candidate_l3_partial",
+      "applicableBuilds": ["rivet_hold_protocol"],
+      "startState": {"anchor": true, "casterInAnchorZone": false, "preconditions": ["自锚有效且在 10 格起手距离内，施法者位于 4 格阵地之外并保持站位。"]},
+      "opponentCondition": "solo",
+      "windows": {"burst": 30, "sustained": 120},
+      "execution": {"type": "scripted", "steps": [{"action": "cast", "skill": "r"}]}
+    }
+  ]
+}

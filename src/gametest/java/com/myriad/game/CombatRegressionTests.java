@@ -1,5 +1,6 @@
 package com.myriad.game;
 
+import com.myriad.character.CharacterType;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -18,15 +19,37 @@ import com.myriad.combat.DamageCalc;
 
 /** Explicit /test or runGameTestServer only; never runs as part of a match. */
 public final class CombatRegressionTests {
+    private static final List<CharacterType> BALANCE_ROSTER_112 = List.of(
+            CharacterType.TIANXING, CharacterType.SULAN, CharacterType.FENJUE);
+    private static final List<CharacterType> BALANCE_ROSTER_113 = List.of(
+            CharacterType.LINGYUAN, CharacterType.HANZE, CharacterType.XUANCHEN, CharacterType.YUNSHENG);
+
     public static void register() {
         register("faction_identity",FactionIdentityChecks::run);
         register("training_ui",TrainingUiChecks::run);
         register("combat_feedback",CombatFeedbackChecks::run);
         register("battle_tuning",BattleTuningChecks::run);
         register("tower_cover", TowerCoverChecks::run);
+        register("battlefield_buildings", BattlefieldBuildingChecks::run);
+        register("balance_roster_lane", BattlefieldLaneChecks::roster);
+        register("balance_roster_towers", BattlefieldBuildingChecks::roster);
+        register("balance_roster_camps", BattlefieldMonsterChecks::rosterCamps);
+        registerBattlefieldRoster("balance_roster_112", BALANCE_ROSTER_112);
+        registerBattlefieldRoster("balance_roster_113", BALANCE_ROSTER_113);
+        register("balance_roster_114_lane", BattlefieldLaneChecks::fullRoster);
+        register("balance_roster_114_camps", BattlefieldMonsterChecks::fullRosterCamps);
+        register("balance_roster_114_towers", BattlefieldBuildingChecks::fullRoster);
         register("match_economy", MatchEconomyChecks::run);
+        register("balance_small_modes", SmallModeBalanceChecks::run);
+        register("mode_supply_rift", ModeSupplyChecks::rift);
+        register("mode_supply_cherry", ModeSupplyChecks::cherry);
         register("match_assists", MatchAssistChecks::run);
         register("cherry_rift_camps", CherryRiftCampChecks::run);
+        register("battlefield_small_medium_camps", BattlefieldMonsterChecks::camps);
+        register("battlefield_rift_crab", BattlefieldMonsterChecks::crab);
+        register("battlefield_rift_crab_duo", BattlefieldMonsterChecks::crabDuo);
+        register("battlefield_rift_crab_trio", BattlefieldMonsterChecks::crabTrio);
+        register("battlefield_peng_king", BattlefieldMonsterChecks::pengKing);
         register("rift_crab_minimap", RiftCrabMinimapChecks::run);
         register("cherry_flat_lane", CherryFlatLaneChecks::run);
         register("arena_switch", ArenaSwitchRegression::run);
@@ -36,6 +59,16 @@ public final class CombatRegressionTests {
         register("yike", YikeChecks::run);
         register("rivet", RivetChecks::run);
         register("luoxia", LuoxiaChecks::run);
+        register("balance_vertical", BalanceVerticalChecks::run);
+        register("balance_calibration_damage", BalanceCalibrationDamageChecks::run);
+        register("calibration_keheng", CalibrationSupportChecks::keheng);
+        register("calibration_qingluo", CalibrationSupportChecks::qingluo);
+        register("balance_haste", BalanceVerticalChecks::hasteAndPurchases);
+        register("balance_shuo_chixiao", ShuoChixiaoBalanceChecks::run);
+        register("balance_tianxing", TianxingBalanceChecks::run);
+        register("balance_sulan_fenjue", SulanFenjueBalanceChecks::run);
+        register("balance_damage_support", BalanceDamageSupportChecks::run);
+        register("balance_control_supply", BalanceControlSupplyChecks::run);
         register("projectile_basic_assist", ProjectileBasicAssistChecks::run);
         register("damage_growth", DamageGrowthChecks::run);
         register("cherry_first_ten_damage", CherryFirstTenDamageChecks::run);
@@ -43,10 +76,15 @@ public final class CombatRegressionTests {
         register("chixiao_opening_pace", ChixiaoOpeningPaceChecks::run);
         register("hero_action_time", HeroActionTimeChecks::run);
         register("first_group", FirstGroupRegressionChecks::run);
+        register("wind_cast_animation", WindCastAnimationChecks::run);
+        register("fenjue_leap", FenjueLeapChecks::run);
         register("melee_assist", MeleeAssistChecks::run);
         register("staff_first_person", StaffCastChecks::run);
         register("lingyuan_first_person", LingyuanHandCueChecks::run);
         register("war_spirit_first_person", WarSpiritHandChecks::run);
+        register("ink_cast_animation", InkCastAnimationChecks::run);
+        register("balance_roster_sword_frost", BalanceSwordFrostChecks::run);
+        register("balance_mage_support_113", MageSupportBalanceChecks::run);
         register("roster_delivery", RosterDeliveryChecks::run);
         register("roster_a", RosterAChecks::run);
         register("shuo_pilot", ShuoPilotChecks::run);
@@ -55,6 +93,12 @@ public final class CombatRegressionTests {
             verifyMeleeArc(helper);
             helper.succeed();
         });
+    }
+
+    private static void registerBattlefieldRoster(String name, List<CharacterType> roles) {
+        register(name + "_lane", helper -> BattlefieldLaneChecks.roster(helper, roles));
+        register(name + "_camps", helper -> BattlefieldMonsterChecks.rosterCamps(helper, roles));
+        register(name + "_towers", helper -> BattlefieldBuildingChecks.roster(helper, roles));
     }
 
     private static void register(String name, Consumer<GameTestHelper> function) {
@@ -422,10 +466,10 @@ public final class CombatRegressionTests {
         var phase=GameManager.class.getDeclaredField("phase");phase.setAccessible(true);phase.set(manager,GameManager.Phase.PLAYING);
         var bases=laneFixtureLayout().fountains;bases.put(Faction.GUARDIAN,a);
         player.setPos(a.getX()+.5,a.getY(),a.getZ()+.5);
-        helper.assertTrue(BaseRules.canShop(player),"Own base permits equipment buying");
+        helper.assertTrue(BaseRules.canBuyEquipment(player),"Own base permits equipment buying");
         BaseRules.tick(player);
         player.setPos(a.getX()+12,a.getY(),a.getZ()+.5);
-        helper.assertTrue(!BaseRules.canShop(player),"Equipment buying must be rejected outside 10 blocks");
+        helper.assertTrue(!BaseRules.canBuyEquipment(player),"Equipment buying must be rejected outside 10 blocks");
         var data=com.myriad.player.PlayerDataProvider.get(player);int gold=data.getGold();
         helper.assertTrue(!com.myriad.player.EquipmentSystem.buy(player,data,"not_an_equipment")&&data.getGold()==gold,
                 "Rejected purchase cannot spend gold");

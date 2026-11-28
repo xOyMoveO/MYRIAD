@@ -134,6 +134,21 @@ public enum MonsterType {
         return attack;
     }
 
+    double healthFor(MatchTempo tempo) {
+        if (!tempo.usesCherryV2CombatStats()) return health;
+        return switch (this) {
+            case CHERRY_FROST_HARE, CHERRY_DUSK_FOX -> 400;
+            case CHERRY_SCOUT_BOT -> 395;
+            case CHERRY_JADE_BEAST, CHERRY_HEAVY_WALKER -> 550;
+            case CHERRY_RIFT_CRAB -> 1000;
+            default -> health;
+        };
+    }
+
+    double attackFor(MatchTempo tempo) {
+        return tempo.usesCherryV2CombatStats() && this == CHERRY_RIFT_CRAB ? 60 : attack;
+    }
+
     public int getXp() {
         return xp;
     }

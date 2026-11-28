@@ -1,0 +1,221 @@
+{
+  "scenarioId": "yike.zero_preparation",
+  "scenarioVersion": 1,
+  "schemaVersion": 1,
+  "baselineCommit": "fee6c1ca91d181ce34c3d7f3aab47be7d719ec1c",
+  "role": "yike",
+  "applicableBuilds": "all_terminal_combinations",
+  "category": "zero_preparation",
+  "status": "candidate_l3_partial",
+  "startState": {
+    "distance": 8,
+    "purchases": {"wisdom": 6, "cooldown": 3},
+    "casterIncoming": [[28, "magic", 160], [50, "physical", 150], [75, "magic", 160], [108, "physical", 120]]
+  },
+  "opponentCondition": ["solo", "ally_cc"],
+  "windows": ["burst", "sustained"],
+  "delayProfile": ["human_default", "zero_extra_delay"],
+  "basicAttack": {
+    "source": "src/main/java/com/myriad/character/skills/yike/YikeBasicAttack.java"
+  },
+  "skills": {
+    "yike_rainbow_shell": {
+      "source": "src/main/java/com/myriad/character/skills/yike/RainbowShell.java",
+      "prepayWindup": "commit_windup",
+      "events": []
+    },
+    "yike_refraction_denial": {
+      "source": "src/main/java/com/myriad/character/skills/yike/RefractionDenial.java",
+      "range": "target_range",
+      "point": true,
+      "inputRecovery": 0,
+      "events": []
+    },
+    "yike_fixed_artillery": {
+      "source": "src/main/java/com/myriad/character/skills/yike/FixedArtillery.java",
+      "prepayWindup": "commit_windup",
+      "events": []
+    },
+    "yike_mobile_array": {
+      "source": "src/main/java/com/myriad/character/skills/yike/MobileArray.java",
+      "prepayWindup": "commit_windup",
+      "events": []
+    },
+    "yike_distant_bombardment": {
+      "source": "src/main/java/com/myriad/character/skills/yike/DistantBombardment.java",
+      "range": "target_range",
+      "point": true,
+      "paidWindup": "release_windup",
+      "events": []
+    },
+    "yike_prismatic_beam": {
+      "source": "src/main/java/com/myriad/character/skills/yike/PrismaticBeam.java",
+      "range": "beam_range",
+      "paidWindup": "release_windup",
+      "events": []
+    }
+  },
+  "execution": {
+    "type": "apl",
+    "steps": [
+      {"action": "cast", "skill": "r"},
+      {"action": "cast", "skill": "w"},
+      {"action": "cast", "skill": "e"},
+      {"action": "cast", "skill": "q"},
+      {"action": "basic_attack"},
+      {"action": "wait_until"}
+    ]
+  },
+  "coverageGaps": {
+    "yike_rainbow_mark": {
+      "axes": ["damage"],
+      "reason": "默认英雄无盾、无免疫，只有实际伤害可触发。吸盾有效命中及免疫对照取 YikeChecks。"
+    },
+    "yike_steady_barrier": {
+      "axes": ["support"],
+      "reason": "零预置施法者在原地操作，水平路径由条件场景注入，承压时点为合成输入。"
+    },
+    "yike_rainbow_shell": {
+      "axes": ["damage", "multiTarget"],
+      "reason": "一维直线推演包含射程末爆炸。实际三维碰撞、风墙、地形和弹体缓时由引擎另测。"
+    },
+    "yike_refraction_denial": {
+      "axes": ["damage", "control", "multiTarget"],
+      "reason": "落点在确认时按目标一维位置采样。实际高度、中心遮挡和韧性折减由引擎复核。"
+    },
+    "yike_fixed_artillery": {
+      "axes": ["damage"],
+      "reason": "默认直线方向不需转动炮口。中断与姿态关闭的真实输入场景见 YikeChecks。"
+    },
+    "yike_mobile_array": {
+      "axes": ["damage"],
+      "reason": "默认对照双方角色站定出手，移动与转向带来的命中变化留给几何和实机对照。"
+    },
+    "yike_distant_bombardment": {
+      "axes": ["damage", "multiTarget"],
+      "reason": "以确认时的一维位置作为落点，按无弹体缓时计抛射时长。条件脚本模拟途中完全拦截，碰撞点实测另见 YikeChecks。"
+    },
+    "yike_prismatic_beam": {
+      "axes": ["damage", "multiTarget"],
+      "reason": "一维直线固定对齐，未模拟目标横移、实际障碍与炮口转向。真实六跳、提前取消以及宽度边界由 YikeChecks 对照。"
+    }
+  },
+  "scripted": [
+    {
+      "scenarioId": "yike.normal_then_stance_no_shot",
+      "scenarioVersion": 1,
+      "category": "stance_boundary",
+      "status": "candidate_l3_partial",
+      "applicableBuilds": ["yike_rainbow_mark", "yike_fixed_artillery", "yike_distant_bombardment"],
+      "opponentCondition": "solo",
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {"action": "cast", "skill": "q"},
+          {"action": "cast", "skill": "e"},
+          {"action": "wait_until", "condition": "stance_deployed", "maxTicks": 20},
+          {"action": "recast", "skill": "e"}
+        ]
+      }
+    },
+    {
+      "scenarioId": "yike.fixed_then_two_shells_manual_exit",
+      "scenarioVersion": 1,
+      "category": "stance_boundary",
+      "status": "candidate_l3_partial",
+      "applicableBuilds": ["yike_rainbow_mark", "yike_fixed_artillery", "yike_distant_bombardment"],
+      "opponentCondition": "solo",
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {"action": "cast", "skill": "e"},
+          {"action": "cast", "skill": "q"},
+          {"action": "cast", "skill": "q"},
+          {"action": "wait_until", "condition": "channel_finished", "maxTicks": 8},
+          {"action": "recast", "skill": "e"}
+        ]
+      }
+    },
+    {
+      "scenarioId": "yike.mobile_exhaustion",
+      "scenarioVersion": 1,
+      "category": "stance_boundary",
+      "status": "candidate_l3_partial",
+      "applicableBuilds": ["yike_rainbow_mark", "yike_mobile_array", "yike_distant_bombardment"],
+      "opponentCondition": "solo",
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {"action": "cast", "skill": "e"},
+          {"action": "cast", "skill": "q"},
+          {"action": "cast", "skill": "q"},
+          {"action": "cast", "skill": "q"},
+          {"action": "cast", "skill": "q"}
+        ]
+      }
+    },
+    {
+      "scenarioId": "yike.w_cancels_unpaid_q",
+      "scenarioVersion": 1,
+      "category": "cast_boundary",
+      "status": "candidate_l3_partial",
+      "applicableBuilds": ["yike_rainbow_mark", "yike_fixed_artillery", "yike_prismatic_beam"],
+      "opponentCondition": "solo",
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {"action": "cast", "skill": "e"},
+          {"action": "cast", "skill": "q"},
+          {"action": "cast", "skill": "w"},
+          {"action": "cast", "skill": "q"}
+        ]
+      }
+    },
+    {
+      "scenarioId": "yike.barrier_after_pacing",
+      "scenarioVersion": 1,
+      "category": "stationary_precondition",
+      "status": "candidate_l3_partial",
+      "applicableBuilds": ["yike_steady_barrier", "yike_fixed_artillery", "yike_distant_bombardment"],
+      "startState": {"casterHorizontalPath": [[21, 0.18], [22, 0.18]]},
+      "opponentCondition": "ally_cc",
+      "execution": {
+        "type": "scripted",
+        "steps": [
+          {"action": "wait_until", "condition": "barrier_ready", "maxTicks": 55},
+          {"action": "cast", "skill": "w"}
+        ]
+      }
+    },
+    {
+      "scenarioId": "yike.heavy_intercepted",
+      "scenarioVersion": 1,
+      "category": "terrain_boundary",
+      "status": "candidate_l3_partial",
+      "applicableBuilds": ["yike_steady_barrier", "yike_fixed_artillery", "yike_distant_bombardment"],
+      "startState": {"heavyPathBlocked": true},
+      "opponentCondition": "solo",
+      "execution": {"type": "scripted", "steps": [{"action": "cast", "skill": "r"}]}
+    },
+    {
+      "scenarioId": "yike.beam_reach_retreat",
+      "scenarioVersion": 1,
+      "category": "range_boundary",
+      "status": "candidate_l3_partial",
+      "applicableBuilds": ["yike_rainbow_mark", "yike_fixed_artillery", "yike_prismatic_beam"],
+      "startState": {"distance": 21.8},
+      "opponentCondition": "solo",
+      "execution": {"type": "scripted", "steps": [{"action": "cast", "skill": "r"}]}
+    },
+    {
+      "scenarioId": "yike.beam_reach_ally_cc",
+      "scenarioVersion": 1,
+      "category": "range_boundary",
+      "status": "candidate_l3_partial",
+      "applicableBuilds": ["yike_rainbow_mark", "yike_fixed_artillery", "yike_prismatic_beam"],
+      "startState": {"distance": 21.8},
+      "opponentCondition": "ally_cc",
+      "execution": {"type": "scripted", "steps": [{"action": "cast", "skill": "r"}]}
+    }
+  ]
+}

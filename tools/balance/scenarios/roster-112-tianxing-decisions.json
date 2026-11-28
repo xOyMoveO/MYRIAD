@@ -1,0 +1,72 @@
+{
+  "baseAttributes": {
+    "decision": "retain",
+    "reason": "保留 660 初始生命及每级 100 的生命成长，同输入前中后期并排记录实际或模型承伤。",
+    "scenario": [
+      "roster-112.stage_comparison"
+    ]
+  },
+  "basicAttack": {
+    "decision": "retain",
+    "reason": "保留满恢复近战物理普攻，真实命中读数与独立附伤分开记录。",
+    "scenario": [
+      "myriad:balance_tianxing"
+    ]
+  },
+  "g1_tianxing_pa": {
+    "decision": "retain",
+    "reason": "保留第三次有效普攻的真实伤害与双目标溅射。独立记录漏击、换目标、超时和禁止递归。",
+    "scenario": [
+      "myriad:balance_tianxing"
+    ]
+  },
+  "g1_tianxing_pb": {
+    "decision": "retain",
+    "reason": "保留英雄直接技能命中才能蓄共鸣的路线，以有窗口的下一次有效普攻区别于持续同目标计数。",
+    "scenario": [
+      "tianxing.zero_preparation"
+    ]
+  },
+  "g1_tianxing_n1": {
+    "decision": "retain",
+    "reason": "保留受落点限制的闪入和落点周围单次物理伤害，起手增益受选点延迟与站位约束。",
+    "scenario": [
+      "tianxing.zero_preparation"
+    ]
+  },
+  "g1_tianxing_n2": {
+    "decision": "retain",
+    "reason": "保留首个目标减速与旁路连锁，近身开窗条件和施法延迟由单体回放记录。",
+    "scenario": [
+      "tianxing.zero_preparation"
+    ]
+  },
+  "g1_tianxing_ma": {
+    "decision": "retain",
+    "reason": "保留贴身多次脉冲与非真伤减免。减伤列入承伤对照，当作实际防护渠道独立观察。",
+    "scenario": [
+      "roster-112.stage_comparison"
+    ]
+  },
+  "g1_tianxing_mb": {
+    "decision": "retain",
+    "reason": "保留穿透单击和第一英雄定身，作为雷环持续承伤路线的相同 E 层对照。",
+    "scenario": [
+      "tianxing.zero_preparation"
+    ]
+  },
+  "g1_tianxing_ua": {
+    "decision": "retain",
+    "reason": "保留预警后的六次真实刻落雷及末次定身，对照自由撤步与队友先控。",
+    "scenario": [
+      "tianxing.zero_preparation"
+    ]
+  },
+  "g1_tianxing_ub": {
+    "decision": "retain",
+    "reason": "保留起手后单次扇形物理伤害和群晕，对照九天神雷的区域留场收益。",
+    "scenario": [
+      "tianxing.zero_preparation"
+    ]
+  }
+}

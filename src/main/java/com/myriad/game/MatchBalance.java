@@ -1,10 +1,17 @@
 package com.myriad.game;
 
-import com.myriad.player.PlayerDataProvider;
 import net.minecraft.server.level.ServerPlayer;
 
 /** Bounded economy and objective scaling. Values are shared by runtime and regression tests. */
 public final class MatchBalance {
+    static final double FARM_GOLD_GAP_WEIGHT = .9;
+    static final double FARM_LEVEL_GAP_WEIGHT = .15;
+    static final double FARM_CATCH_UP_CAP = .45;
+    static final int FARM_GOLD_INCOME_FLOOR = 500;
+    static final double PASSIVE_GOLD_CATCH_UP_WEIGHT = 0.0;
+    static final int ASSIST_GOLD_POOL = 101;
+    static final int ASSIST_XP_POOL = 51;
+
     private MatchBalance() { }
     public static long elapsed(ServerPlayer p) {
         var m=GameManager.get(); return m==null?0:Math.max(0,m.getMatchElapsedTicks(p.level().getGameTime()));
@@ -33,25 +40,35 @@ public final class MatchBalance {
     }
     public static int pigGold(long ticks) { return 160+(int)(240*Math.min(1,Math.max(0,ticks)/9600.0)); }
     public static boolean isUnderdog(int ownLevel,int enemyLevel) { return enemyLevel-ownLevel>=2; }
-    public static int farmReward(ServerPlayer p,int base,boolean xp) {
-        var m=GameManager.get();
-        if(!ModState.isEnabled()||m==null||m.getPhase()!=GameManager.Phase.PLAYING||TrainingMode.isEnabled(p))return base;
-        Faction faction=m.factionOf(p);
-        if(faction==null)return base;
-        double enemyLevel=0,ownIncome=0,enemyIncome=0; int own=0,enemy=0;
-        for(var other:p.level().getServer().getPlayerList().getPlayers()) {
-            if (!m.isParticipant(other.getUUID())) continue;
-            Faction otherFaction=m.factionOf(other);
-            if(otherFaction==null)continue;
-            var data=PlayerDataProvider.get(other);
-            if(data.getCharacterId()==null)continue;
-            if(otherFaction==faction){own++;ownIncome+=data.getMatchGoldEarned();}
-            else{enemy++;enemyLevel+=data.getLevel();enemyIncome+=data.getMatchGoldEarned();}
-        }
-        if(own==0||enemy==0)return base;
-        double averageEnemyIncome=enemyIncome/enemy;
-        double bonus=xp?Math.min(.45,Math.max(0,enemyLevel/enemy-PlayerDataProvider.get(p).getLevel())*.15)
-                :Math.min(.45,Math.max(0,(averageEnemyIncome-ownIncome/own)/Math.max(500,averageEnemyIncome))*.9);
-        return (int)Math.round(base*(1+bonus));
+    public static int farmReward(ServerPlayer player, int base, boolean xp) {
+        return farmReward(player, base, xp, 1.0);
+    }
+
+    static int passiveGoldReward(ServerPlayer player) {
+        int base = GameManager.combatTempo().supply().wage(GameManager.PASSIVE_GOLD_BASE);
+        return GlobalBalance.goldIncome(farmReward(player, base,
+                false, PASSIVE_GOLD_CATCH_UP_WEIGHT));
+    }
+
+    private static int farmReward(ServerPlayer player, int base, boolean xp, double catchUpWeight) {
+        if (catchUpWeight == 0) return base;
+        var match = GameManager.get();
+        if (!ModState.isEnabled() || match == null || match.getPhase() != GameManager.Phase.PLAYING
+                || TrainingMode.isEnabled(player)) return base;
+        double bonus = match.farmBonus(player, xp);
+        return (int) Math.round(base * (1 + bonus * catchUpWeight));
+    }
+
+    static double goldCatchUp(double ownIncome, double enemyIncome) {
+        return Math.min(FARM_CATCH_UP_CAP, Math.max(0,
+                (enemyIncome - ownIncome) / Math.max(FARM_GOLD_INCOME_FLOOR, enemyIncome)) * FARM_GOLD_GAP_WEIGHT);
+    }
+
+    static double xpCatchUp(int ownLevel, double enemyLevel) {
+        return Math.min(FARM_CATCH_UP_CAP, Math.max(0, enemyLevel - ownLevel) * FARM_LEVEL_GAP_WEIGHT);
+    }
+
+    static int assistShare(int pool, int count, int index) {
+        return pool / count + (index < pool % count ? 1 : 0);
     }
 }

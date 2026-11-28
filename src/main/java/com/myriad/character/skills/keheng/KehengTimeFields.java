@@ -22,6 +22,8 @@ import static com.myriad.combat.DamageCalc.Kind.MAGIC;
  * Actor rates and independent projectile sampling deliberately have separate entry points. */
 public final class KehengTimeFields {
     private KehengTimeFields(){}
+    public static final int FIELD_PULSE_TICKS = 10, NEEDLE_TICKS = 25;
+    public static final double FOLLOW_RADIUS = 3;
     private static final Identifier MOVE=Identifier.fromNamespaceAndPath("myriad","local_action_movement");
     private static final double CORRIDOR_LENGTH=14, CORRIDOR_HALF_WIDTH=1.8;
     public static final class Field {
@@ -68,7 +70,7 @@ public final class KehengTimeFields {
     }
     public static void follow(AbilityRuntime.Cast c,int duration,double rate,float ending){
         WeaponPosePayload.play(c.player, Move.FOLLOW, duration);
-        add(new Field(c,c.player.position(),Vec3.ZERO,3,0,duration,rate,rate,0,0,ending,true,false));
+        add(new Field(c,c.player.position(),Vec3.ZERO,FOLLOW_RADIUS,0,duration,rate,rate,0,0,ending,true,false));
         c.buff("g1_keheng_follow",duration);
     }
     public static Field corridor(AbilityRuntime.Cast c,Vec3 origin,Vec3 facing){
@@ -101,7 +103,7 @@ public final class KehengTimeFields {
             if(now>=f.ends){if(f.follows)damage(f,f.ending);if(f.pulse>0&&now==f.ends){damage(f,f.pulse);KehengVisuals.pulse(f.cast,f.center(),f.radius);}remove(f,true,false);continue;}
             if(now<f.begins){if(now==f.created||(now-f.created)%3==0)KehengVisuals.warning(f.cast,f.center(),f.radius,now-f.created,f.visual);continue;}
             if(!f.opened){f.opened=true;if(f.opening>0)damage(f,f.opening);KehengAudio.play(f.cast.player,"field");}
-            if(f.pulse>0&&now>f.begins&&(now-f.begins)%10==0){damage(f,f.pulse);KehengVisuals.pulse(f.cast,f.center(),f.radius);KehengAudio.play(f.cast.player,"pulse");}
+            if(f.pulse>0&&now>f.begins&&(now-f.begins)%FIELD_PULSE_TICKS==0){damage(f,f.pulse);KehengVisuals.pulse(f.cast,f.center(),f.radius);KehengAudio.play(f.cast.player,"pulse");}
             if(now==f.begins||now%3==0){if(f.corridor)KehengVisuals.corridor(f.cast,f.origin,f.origin.add(f.direction.scale(f.length())),f.radius,f.visual);else KehengVisuals.field(f.cast,f.center(),f.radius,f.follows,now-f.begins,f.visual);}
             boolean inside=!f.corridor&&f.contains(f.cast.player.position());if(inside&&!f.inside)ConstantStepSkill.entered(f.cast.player);f.inside=inside;
         }
@@ -113,7 +115,7 @@ public final class KehengTimeFields {
         if(t instanceof ServerPlayer p){if(!susceptible(p,c.now()))return;}
         else if(!susceptibleNpc(t))return;
         var tenacity=t.getAttribute(ModAttributes.TENACITY);
-        int duration=(int)Math.ceil(25*(1-Math.clamp(tenacity==null?0:tenacity.getValue(),0,60)/100));
+        int duration=(int)Math.ceil(NEEDLE_TICKS*(1-Math.clamp(tenacity==null?0:tenacity.getValue(),0,60)/100));
         NEEDLES.add(new Needle(c,t,rate,c.now()+duration,"keheng_needle_"+c.castId()));
         if(t instanceof ServerPlayer p)refreshActor(p);
     }
