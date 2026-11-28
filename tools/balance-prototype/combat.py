@@ -36,6 +36,35 @@ def ranks(level, skills, bits, passive_rank):
     return result
 
 
+def assess_night_finisher(replay):
+    """Score the rear 21A34 opener by the actual lethal hit, before rounding any displayed HP."""
+    first_r, lethal = replay["firstR"], replay["kill"]
+    basics = []
+    if first_r is not None:
+        after_r = replay["hits"].index(first_r) + 1
+        for hit in replay["hits"][after_r : after_r + 2]:
+            if hit["key"] != "A":
+                break
+            basics.append(hit)
+
+    if lethal is not None and (first_r is None or lethal == first_r):
+        status, met = "首套已击杀", False
+    elif basics and lethal == basics[0]:
+        status, met = "第一下补 A 已击杀", False
+    elif len(basics) == 2:
+        met = lethal == basics[1]
+        status = "第二下补 A 击杀" if met else "两下补 A 后仍存活"
+    else:
+        status, met = "缺少连续补 A 的命中记录", None
+
+    band = None
+    if len(basics) == 2:
+        band = dict(minExclusive=basics[0]["damage"], maxInclusive=sum(h["damage"] for h in basics))
+    return dict(
+        intent="一套打残，补两个平 A 收下", status=status, met=met, basics=basics, openerHpRange=band
+    )
+
+
 def simulate(
     rules,
     role,
@@ -77,6 +106,9 @@ def simulate(
     ):
         raise ValueError("21A34 uses the learned offensive AAA kit, with each input available")
     opening = [3, 2, -1, e, r] if night_opener else []
+    if night_opener and assisted:
+        # Only the rear-start reference has a two-basic finishing target. The A inside 21A34 is separate.
+        opening.extend((-1, -1))
     if night_opener:
         priority = [
             2,
@@ -463,4 +495,6 @@ def simulate(
             firstR=first_r,
             kill=hits[-1] if death is not None else None,
         )
+        if assisted:
+            result["rotation"]["finisherTarget"] = assess_night_finisher(result["rotation"])
     return result

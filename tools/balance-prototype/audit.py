@@ -397,6 +397,8 @@ def night_calibration(rules, data):
             firstRemainingPct=None if residual is None else 100 * residual / replay["targetHp"],
             shortSkills=short_skills,
         )
+    rear = options["背面开手"]
+    rear["finisherTarget"]["notes"] = night_finisher_notes(rear)
     return dict(
         feedback="要等第二轮技能，出手是21A34",
         level=level,
@@ -405,6 +407,40 @@ def night_calibration(rules, data):
         defender=night["defender"]["points"],
         scenes=options,
     )
+
+
+def night_finisher_notes(rear):
+    goal = rear["finisherTarget"]
+    notes = [
+        "同经济、绕背成功且 21A34 全中时，大招命中后再接两次普通攻击。落霞应扛住第一下，在第二下被击杀。"
+    ]
+    if not goal["openerHpRange"]:
+        return notes + [f'当前快照的离线结果为「{goal["status"]}」。']
+    first, second = goal["basics"]
+    minimum = goal["openerHpRange"]["minExclusive"]
+    maximum = goal["openerHpRange"]["maxInclusive"]
+    hp = rear["targetHp"]
+    notes.append(
+        f'本样例两下补 A 的期望伤害分别为 {first["damage"]:.2f} 和 {second["damage"]:.2f}。'
+        f'按这两个数值，首套结束时余血应高于第一下伤害、至多等于两下合计，约占满血的 {100*minimum/hp:.1f}%–{100*maximum/hp:.1f}%。'
+    )
+    notes.append(
+        f'当前算出首套后还剩 {rear["firstR"]["hpLeft"]:.1f} 血（{rear["firstRemainingPct"]:.1f}%），'
+        f'两下补 A 后还剩 {second["hpLeft"]:g}/{hp:g}。本次结果为「{goal["status"]}」。'
+    )
+    burst_limit = LIMITS["yingxiao"][0]
+    example_hp = hp * (100 - burst_limit) / 100
+    if rear["firstR"]["tick"] < 30 <= first["tick"] and minimum < example_hp <= maximum:
+        notes.append(
+            f"用刺客前 1.5 秒的 {burst_limit:g}% 爆发试测线作为算例，首套后留下 {example_hp:g} 血，"
+            f"第一下补 A 后约剩 {example_hp-minimum:.0f} 血，第二下即可收尾。"
+        )
+    low, high = CORRIDORS["yingxiao"]
+    notes.append(
+        f'从按下化影计时，此配点的第二下补 A 在 {second["tick"]/20:g} 秒命中。'
+        f'刺客对脆皮的通用击杀时间参考为 {low:g}–{high:g} 秒，此场景另按补 A 次数核对。'
+    )
+    return notes
 
 
 def night_table(calibration):
@@ -432,10 +468,12 @@ def night_table(calibration):
     rows.extend(
         [
             "",
-            "后续脚本在普攻完整恢复时补 A，1 和 3 转好后优先施放。化影提供隐身和移速，下一次施法提交时破隐；背击另看落点与朝向。两组的击杀时点和余血都是模型读数。",
+            "绕背回放先补两次完整普攻，随后优先施放转好的 1 和 3。化影提供隐身和移速，下一次施法提交时破隐；背击另看落点与朝向。两组的击杀时点和余血都是模型读数。",
             "",
         ]
     )
+    goal = calibration["scenes"]["背面开手"]["finisherTarget"]
+    rows.extend([f'### 已定目标 · {goal["intent"]}', "", "\n\n".join(goal["notes"]), ""])
     return rows
 
 

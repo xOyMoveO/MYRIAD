@@ -100,11 +100,13 @@ function draw(){
  }else{
  const review=DATA.nightCalibration;
  const entries=Object.entries(review.scenes);
+ const target=review.scenes["背面开手"].finisherTarget;
  const when=t=>t==null?"—":num(t/20)+" 秒";
  html=head("夜影 · 21A34")+lead("策划反馈「"+review.feedback+"」")+
  para("化影 → 影杀 → 普攻 → 影袭 → 绝影追击。沿用 Lv"+review.level+"、双方各有 "+num(review.gold)+" 金预算的满血落霞样例。首套余血在大招命中时读取。")+
+ sub("已定目标 · "+target.intent)+target.notes.map(para).join("")+
  table(["方位","首套后落霞余血","第二个影杀就绪","第二个影袭就绪","击杀时点"],entries.map(([f,v])=>[f,v.firstRemainingPct==null?"—":num(v.firstRemainingPct,1)+"%",when(v.shortSkills["1"].readyAt),when(v.shortSkills["3"].readyAt),v.kill?when(v.kill.tick)+" · "+v.kill.key:"60 秒内未击杀"]))+
- para("从按下化影起计时。首套后的试算假定可以持续贴身，1、3 转好优先施放，空档补打完整普攻。伤害、余血与秒数为离线读数。")+
+ para("从按下化影起计时。试算假定可以持续贴身。绕背回放先补两次完整普攻，随后优先施放转好的 1、3。伤害、余血与秒数为离线读数。")+
  entries.map(([f,v])=>details(f+" · 逐次命中",table(["距开手","按键","本次伤害","落霞余血"],v.hits.map(hit=>[when(hit.tick),hit.key,num(hit.damage),num(hit.hpLeft)])))).join("");
  }
  el("body").innerHTML=html+guide();el("body").querySelectorAll("[data-step]").forEach((btn,i)=>btn.onclick=()=>change(guides[state.tab][i][1]));
