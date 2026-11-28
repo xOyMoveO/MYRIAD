@@ -126,7 +126,7 @@ final class ModeSupplyChecks {
             long nextWage = start + ((suite.server.overworld().getGameTime() - start) / 100 + 1) * 100;
             var afterRestore = readAll(suite.players);
             advance(suite, nextWage);
-            int possibleVeinGold = rift && nextWage % 100 == 0 ? 4 : 0;
+            int possibleVeinGold = rift && nextWage % 100 == 0 ? 1 : 0;
             award(suite, events, "wage_after_restore", actor, afterRestore.getFirst(), wage + possibleVeinGold,
                     possibleVeinGold == 0 ? 0 : 1);
             if (rift) {
@@ -179,7 +179,7 @@ final class ModeSupplyChecks {
         var before = readAll(team);
         advance(suite, pulse);
         for (int i = 0; i < team.size(); i++) award(suite, events, "vein_pulse", team.get(i), before.get(i),
-                4 + ((pulse - start) % 100 == 0 ? wage : 0), 1);
+                1 + ((pulse - start) % 100 == 0 ? wage : 0), 1);
         actor.setPos(Vec3.atBottomCenterOf(LaneSystem.fountainPoint(match.factionOf(actor))));
     }
 

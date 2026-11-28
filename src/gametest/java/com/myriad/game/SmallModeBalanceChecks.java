@@ -47,6 +47,8 @@ final class SmallModeBalanceChecks {
             suite.command("myriad mod on");
             var players = IntStream.range(0, 4).mapToObj(suite::player).toList();
             var waiting = suite.player(4);
+            // Apply any saved world-reset generation at first login, before reserving match seats.
+            for (var player : suite.players) ServerPlayerEvents.JOIN.invoker().onJoin(player);
             for (int seats : List.of(2, 4)) {
                 var roster = players.subList(0, seats);
                 rounds.add(checks.combat(suite, roster));

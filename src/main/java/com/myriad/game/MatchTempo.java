@@ -12,7 +12,7 @@ enum MatchTempo {
             65, 65,       // Lane gold and experience percentages.
             90, 90, 1800, // Camp gold, camp experience and Gold Pig team gold cap after global scaling.
             75, 80,       // Tower gold and wage percentages.
-            3, 1));       // Attribute vein base gold and experience per pulse.
+            1, 1));       // Attribute vein base gold and experience per pulse.
 
     private final int wave, small, medium, boss;
     private final Supply supply;
