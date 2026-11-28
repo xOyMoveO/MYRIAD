@@ -323,9 +323,11 @@ public final class AbilityRuntime {
                     kind==2?DamageCalc.Kind.TRUE:kind==1?DamageCalc.Kind.MAGIC:DamageCalc.Kind.PHYSICAL));
         }
     }
+    public static final double GUARD_15_DAMAGE_TAKEN = .85;
+
     public static double incoming(ServerPlayer p,DamageCalc.Kind kind){
         if(kind==DamageCalc.Kind.TRUE)return 1;var d=PlayerDataProvider.get(p);
-        double scale=d.getBuff("g1_guard15")>0?.85:d.getBuff("g1_guard12")>0?.88:1;
+        double scale=d.getBuff("g1_guard15")>0?GUARD_15_DAMAGE_TAKEN:d.getBuff("g1_guard12")>0?.88:1;
         if(FirstGroupSkills.active(d.getCharacterId()))for(var skill:FirstGroupSkills.candidates(d.getCharacterId()))
             if(d.skillLevel(skill.getId())>0)scale*=skill.incomingMultiplier(context(p,skill));
         scale*=com.myriad.character.skills.rivet.HoldProtocol.incoming(p);

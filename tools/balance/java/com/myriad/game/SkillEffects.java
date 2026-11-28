@@ -30,10 +30,13 @@ final class SkillEffects {
     private SkillEffects() {}
 
     static String damageCondition(AbilitySkill skill, String id) {
+        if (skill.role().equals("tianxing")) return TianxingSkillEffects.damageCondition(skill, id);
         if (skill.role().equals("yike")) return YikeSkillEffects.damageCondition(skill);
         if (skill.role().equals("rivet")) return RivetSkillEffects.damageCondition(skill, id);
         if (skill.role().equals("shuo")) return ShuoSkillEffects.damageCondition(skill, id);
         if (skill.role().equals("chixiao")) return ChixiaoSkillEffects.damageCondition(skill, id);
+        if (skill.role().equals("sulan")) return SulanSkillEffects.damageCondition(skill, id);
+        if (skill.role().equals("fenjue")) return FenjueSkillEffects.damageCondition(skill, id);
         return switch (skill) {
             case EngravedEchoSkill ignored -> "同一敌方英雄在窗口内受不同次主动直接技能有效命中，达到刻痕触发层数";
             case DelayedNeedleSkill ignored -> "起手完成，针体首次有效接触合法敌人";
@@ -50,6 +53,7 @@ final class SkillEffects {
         if (skill.role().equals("rivet")) return RivetSkillEffects.supportCondition(skill);
         if (skill.role().equals("shuo")) return ShuoSkillEffects.supportCondition(skill);
         if (skill.role().equals("chixiao")) return ChixiaoSkillEffects.supportCondition(skill);
+        if (skill.role().equals("fenjue")) return FenjueSkillEffects.supportCondition(skill);
         return switch (skill) {
             case ConstantStepSkill ignored -> "选择恒步分支，进入自己领域的瞬间且内置冷却已结束";
             case OffbeatStepSkill ignored -> "错拍步合法施放后给自身加盾";
@@ -59,10 +63,13 @@ final class SkillEffects {
 
     static void add(JsonArray effects, AbilitySkill skill) {
         switch (skill.role()) {
+            case "tianxing" -> TianxingSkillEffects.add(effects, skill);
             case "yike" -> YikeSkillEffects.add(effects, skill);
             case "rivet" -> RivetSkillEffects.add(effects, skill);
             case "shuo" -> ShuoSkillEffects.add(effects, skill);
             case "chixiao" -> ChixiaoSkillEffects.add(effects, skill);
+            case "sulan" -> SulanSkillEffects.add(effects, skill);
+            case "fenjue" -> FenjueSkillEffects.add(effects, skill);
             default -> addStandard(effects, skill);
         }
     }

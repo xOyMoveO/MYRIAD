@@ -1,0 +1,62 @@
+{
+  "baseAttributes": {
+    "decision": "retain",
+    "condition": "1–20 级，无购点和临时状态。",
+    "reason": "保留生命 700、每级 +105 和法力 700、每级 +32，其余属性按当前公共角色规则。",
+    "scenario": "fenjue.zero_preparation；balance_tianxing"
+  },
+  "basicAttack": {
+    "decision": "retain",
+    "condition": "初始武器、满恢复、有效普攻。",
+    "reason": "保留基础物攻 65 与每秒 0.70 次基础攻速。主动直接命中的被动收益单记。",
+    "scenario": "fenjue.zero_preparation；balance_roster_camps"
+  },
+  "g1_fenjue_pa": {
+    "decision": "retain",
+    "condition": "主动直接命中每个敌人各附一层，按相同真实刻节拍继续跳，重命中只刷新 60 刻期限。",
+    "reason": "保留每跳 6%–10% 总法强真伤。单次挂上有三跳。连续命中时只抬高原一层的总持续时间。",
+    "scenario": "fenjue.ember_refresh；balance_sulan_fenjue；hero_action_time"
+  },
+  "g1_fenjue_pb": {
+    "decision": "retain",
+    "condition": "生命不高于 20%，下一次非真实主动直接伤害触发 160 真实刻冷却，同一施放后续直接段享同增幅。",
+    "reason": "保留 10%–26% 等级增幅。低血脚本独立取证，普通满血起手时按实际血量结算。",
+    "scenario": "fenjue.last_stand；roster_a"
+  },
+  "g1_fenjue_n1": {
+    "decision": "retain",
+    "condition": "锁定施放视角，两段各按本段刀光碰撞，在第 3 和 7 行动刻分别命中。",
+    "reason": "保留基础合计 104、每阶 +16.875、两段合计额外物攻 50%；命中与刷新事件按独立段判定。",
+    "scenario": "fenjue.ember_refresh；first_group；balance_damage_support"
+  },
+  "g1_fenjue_n2": {
+    "decision": "retain",
+    "condition": "沿实际向前冲刺路径，每个合法敌人一次，碰到实墙就结束。",
+    "reason": "保留基础 47、成长 15 与额外物攻 50%，8 格／6 行动刻的技能位移。",
+    "scenario": "fenjue.zero_preparation；first_group；hero_action_time"
+  },
+  "g1_fenjue_ma": {
+    "decision": "retain",
+    "condition": "12 格选点，预警 12 真实刻，在半径 3.5 格内结算四个间接物理伤害脉冲，离场可避。",
+    "reason": "保留每跳基础 31、每阶 11.25、额外物攻 12.5%，以及区域内 25% 移速减慢。",
+    "scenario": "fenjue.zero_preparation；hero_action_time"
+  },
+  "g1_fenjue_mb": {
+    "decision": "retain",
+    "condition": "13 行动刻可步行起手，完成时半径 6 格；按当时缺失生命每满 10% 加 2%，累计封顶 16%。",
+    "reason": "保留基础 143、成长 31.25、额外物攻 50%。留存来伤平行样本，并把低血增幅另列。",
+    "scenario": "fenjue.last_stand；first_group；balance_sulan_fenjue"
+  },
+  "g1_fenjue_ua": {
+    "decision": "retain",
+    "condition": "14 格内合法点成功实际着地；以实际落地点计 5 格范围。后续 20、40、60、80 真实刻各结算一次。",
+    "reason": "保留落地 170 与四跳各 36 的一阶零购点基线。逐跳按当前是否在固定区域内判定，重复推进同一世界刻只结算一次。",
+    "scenario": "fenjue.sea_stay；fenjue.sea_leave；fenjue_leap；first_group"
+  },
+  "g1_fenjue_ub": {
+    "decision": "retain",
+    "condition": "立即获得自身火盾，名义 100 刻；每 20 刻在 3 格范围内结算，护盾失效即停，最多四跳。",
+    "reason": "保留一阶 204 盾与每跳基础 36；用实际有效吸收记录护盾收益，触发自身护盾不会自动给攻击属性。",
+    "scenario": "fenjue.armor_pressure；roster_a"
+  }
+}

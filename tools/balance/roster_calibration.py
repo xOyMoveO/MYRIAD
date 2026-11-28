@@ -184,6 +184,11 @@ def display(values):
     return "／".join("—" if v is None else str(v) for v in values)
 
 
+def scenario_links(scenarios):
+    ids = [scenarios] if isinstance(scenarios, str) else scenarios
+    return "、".join(f"`{item}`" for item in ids)
+
+
 def markdown(report, spec):
     before, after = report["baseline"], report["release"]
     counts = report["counts"]
@@ -203,7 +208,7 @@ def markdown(report, spec):
         for key in ("baseAttributes", "basicAttack"):
             row = role["values"][key]
             title = "基础属性与逐级成长" if key == "baseAttributes" else "普攻"
-            lines.append(f"- {title}：{DECISIONS[row['decision']]}。{row['reason']} 复跑 `{row['scenario']}`。")
+            lines.append(f"- {title}：{DECISIONS[row['decision']]}。{row['reason']} 复跑 {scenario_links(row['scenario'])}。")
         lines.extend(["", "| 候选 | 状态 | 各阶蓝耗 改前 → 采用 | 各阶基础冷却刻 改前 → 采用 | 依据与复跑 |",
                       "| --- | --- | --- | --- | --- |"])
         for key, row in role["values"].items():
@@ -212,7 +217,7 @@ def markdown(report, spec):
             old, new = row["previous"], row["adopted"]
             mana = f"{display(rank_values(old, 'mana'))} → {display(rank_values(new, 'mana'))}"
             cd = f"{display(rank_values(old, 'cooldown'))} → {display(rank_values(new, 'cooldown'))}"
-            lines.append(f"| `{key}` | {DECISIONS[row['decision']]} | {mana} | {cd} | {row['reason']} `{row['scenario']}` |")
+            lines.append(f"| `{key}` | {DECISIONS[row['decision']]} | {mana} | {cd} | {row['reason']} {scenario_links(row['scenario'])} |")
         lines.extend(["", "| 起手 | 延迟 | 指标 | 最低构筑／读数 | 最高构筑／读数 | 覆盖 |",
                       "| --- | --- | --- | --- | --- | --- |"])
         for mode, profiles in role["replay"]["envelopeOfModeledReplay"].items():

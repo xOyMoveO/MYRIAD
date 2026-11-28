@@ -59,6 +59,8 @@ public final class CombatRegressionTests {
         register("calibration_qingluo", CalibrationSupportChecks::qingluo);
         register("balance_haste", BalanceVerticalChecks::hasteAndPurchases);
         register("balance_shuo_chixiao", ShuoChixiaoBalanceChecks::run);
+        register("balance_tianxing", TianxingBalanceChecks::run);
+        register("balance_sulan_fenjue", SulanFenjueBalanceChecks::run);
         register("balance_damage_support", BalanceDamageSupportChecks::run);
         register("balance_control_supply", BalanceControlSupplyChecks::run);
         register("projectile_basic_assist", ProjectileBasicAssistChecks::run);
@@ -68,6 +70,8 @@ public final class CombatRegressionTests {
         register("chixiao_opening_pace", ChixiaoOpeningPaceChecks::run);
         register("hero_action_time", HeroActionTimeChecks::run);
         register("first_group", FirstGroupRegressionChecks::run);
+        register("wind_cast_animation", WindCastAnimationChecks::run);
+        register("fenjue_leap", FenjueLeapChecks::run);
         register("melee_assist", MeleeAssistChecks::run);
         register("staff_first_person", StaffCastChecks::run);
         register("lingyuan_first_person", LingyuanHandCueChecks::run);

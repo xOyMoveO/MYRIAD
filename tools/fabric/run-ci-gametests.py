@@ -15,6 +15,7 @@ CORE_TESTS = (
 )
 EXTRA_TESTS = ("balance_calibration_damage", "calibration_keheng", "calibration_qingluo",
                "match_economy", "match_assists", "balance_haste", "balance_vertical",
+               "wind_cast_animation", "fenjue_leap", "balance_tianxing", "balance_sulan_fenjue",
                "balance_shuo_chixiao", "balance_roster_lane", "balance_roster_camps", "balance_roster_towers",
                *(f"balance_roster_{roster}_{scene}" for roster in (112, 113) for scene in ("lane", "camps", "towers")))
 parser = argparse.ArgumentParser(description=__doc__)

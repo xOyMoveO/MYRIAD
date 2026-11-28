@@ -16,6 +16,9 @@ import java.util.List;
 
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class FlameStepSkill extends AbilitySkill {
+    public static final int DASH_TICKS = 6;
+    public static final double PATH_RADIUS = 1.2;
+
     private static final AbilityDamageFormula DAMAGE =
             AbilityDamageFormula.physicalFromSpell(35, 15, .4f, .5f);
 
@@ -29,9 +32,9 @@ public final class FlameStepSkill extends AbilitySkill {
     @Override public void present(Cast c){com.myriad.character.ability.AbilityVisuals.burst(c,c.player.position(),.8);}
     @Override public boolean canRelease(Cast c){return c.data.getBuff("g1_root")==0;} @Override public void release(Cast c){
         var delta=c.forward(DISTANCE);
-        boolean begins=AbilityTargeting.clearSweep(c.player,delta.scale(1.0/6));
+        boolean begins=AbilityTargeting.clearSweep(c.player,delta.scale(1.0/DASH_TICKS));
         if(begins){FlameStepVfx.follow(c,0);FlameStepAudio.start(c);}
-        c.actionDash(delta,6,1.2,(t,first)->c.damage(t,DAMAGE.value(c),DAMAGE.kind()),()->{
+        c.actionDash(delta,DASH_TICKS,PATH_RADIUS,(t,first)->c.damage(t,DAMAGE.value(c),DAMAGE.kind()),()->{
             if(!begins)return;
             if(!AbilityRuntime.valid(c.player)||c.data.getBuff("g1_stun")>0||c.data.getBuff("g1_root")>0){AbilityVisuals.cancelSkill(c);return;}
             // Cosmetic finish only. The dash's existing once-per-target damage remains unchanged.

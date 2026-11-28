@@ -14,6 +14,11 @@ import java.util.List;
 
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class SpiritWindMarkSkill extends AbilitySkill {
+    public static final double RANGE = 14;
+    public static final int MARK_TICKS = 80, SLOW_TICKS = 30;
+    public static final float SLOW_RATE = .20f;
+    public static double damageMultiplier(int rank) { return 1 + (5 + rank) / 100.0; }
+
     private static final AbilityDamageFormula DAMAGE =
             AbilityDamageFormula.physicalFromSpell(25, 13.5f, .25f, .5f);
 
@@ -22,17 +27,17 @@ public final class SpiritWindMarkSkill extends AbilitySkill {
     }
 
     public SpiritWindMarkSkill(Definition definition){super(definition);}
-    @Override public boolean canRelease(Cast c){return c.target(14,false)!=null;}
- @Override public void release(Cast c){LivingEntity t=c.target(14,false);if(t==null)return;
+    @Override public boolean canRelease(Cast c){return c.target(RANGE,false)!=null;}
+ @Override public void release(Cast c){LivingEntity t=c.target(RANGE,false);if(t==null)return;
  WindCastCues.release(c,t.position().add(0,t.getBbHeight()*.6,0).subtract(c.player.getEyePosition()));
  var m=c.memory(t.getUUID().toString());c.damage(t,DAMAGE.value(c),DAMAGE.kind());
- m.until=c.now()+80;c.slow(t,.2f,30);
+ m.until=c.now()+MARK_TICKS;c.slow(t,SLOW_RATE,SLOW_TICKS);
  long active=m.until;
- c.whileActive(80,a->{
+ c.whileActive(MARK_TICKS,a->{
      if(m.until!=active||m.until<=c.now()||!t.isAlive())return false;
      if(a%5==0&&c.player.hasLineOfSight(t))WindVisuals.mark(c,t);
      return true;
  });}
  @Override public double modifyDamage(AbilityRuntime.Hit h){Cast c=AbilityRuntime.context(h.player(),this);var m=c.memory(h.target().getUUID().toString());
- if(m.until>c.now()){m.until=0;WindVisuals.consumeMark(c,h.target());return 1+(5+c.rank)/100.0;}return 1;}
+ if(m.until>c.now()){m.until=0;WindVisuals.consumeMark(c,h.target());return damageMultiplier(c.rank);}return 1;}
 }

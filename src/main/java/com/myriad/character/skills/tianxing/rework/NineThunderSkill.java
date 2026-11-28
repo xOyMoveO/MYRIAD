@@ -15,8 +15,10 @@ import static com.myriad.combat.DamageCalc.Kind.*;
 
 /** Independent reusable skill module; tuning metadata is supplied by the role binding. */
 public final class NineThunderSkill extends AbilitySkill {
+    public static final int WARNING_TICKS = 8, STRIKE_INTERVAL = 10, STRIKES = 6, ROOT_TICKS = 16;
+    public static final double RANGE = 12, RADIUS = 5;
     private static final AbilityDamageFormula DAMAGE =
-            AbilityDamageFormula.spellPower(MAGIC, 45, 20.7f, .25f).segment("skill.myriad.damage.segment.pulse", 6);
+            AbilityDamageFormula.spellPower(MAGIC, 45, 20.7f, .25f).segment("skill.myriad.damage.segment.pulse", STRIKES);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
         return List.of(DAMAGE);
@@ -24,9 +26,10 @@ public final class NineThunderSkill extends AbilitySkill {
 
     public NineThunderSkill(Definition definition){super(definition);}
     @Override public boolean hasOwnCastSound(){return true;}
-    @Override public void present(Cast c){com.myriad.character.ability.AbilityVisuals.warning(c,c.point,5,8);}
-    @Override public boolean needsPoint(){return true;} @Override public double previewRadius(Cast c){return 5;}
- @Override public void release(Cast c){ThunderAudio.play(c,ThunderAudio.Cue.CHARGE);ThunderSkillPresentation.play(c,com.myriad.network.ThunderSkillViewPayload.NINE_FIRE,10);Vec3 at=c.point;c.later(8,false,()->com.myriad.character.ability.AbilityVisuals.field(c,at,5,51));for(int hit=0;hit<6;hit++){final int i=hit;c.later(8+hit*10,false,()->{
- ThunderAudio.play(c,i==5?ThunderAudio.Cue.JUDGMENT:ThunderAudio.Cue.PULSE,at);
- com.myriad.character.ability.AbilityVisuals.emit(c,com.myriad.character.ability.AbilityVfxGeometry.PILLAR,at.add(0,.05,0),at.add(0,6,0),5,i==5?1:0,9,false);c.area(at,5,DAMAGE.value(c),DAMAGE.kind());if(i==5)for(var t:c.enemies(at,5))c.root(t,16,false);});}}
+    @Override public void present(Cast c){com.myriad.character.ability.AbilityVisuals.warning(c,c.point,RADIUS,WARNING_TICKS);}
+    @Override public boolean needsPoint(){return true;} @Override public double previewRadius(Cast c){return RADIUS;}
+    @Override public double pointRange(Cast c){return RANGE;}
+ @Override public void release(Cast c){ThunderAudio.play(c,ThunderAudio.Cue.CHARGE);ThunderSkillPresentation.play(c,com.myriad.network.ThunderSkillViewPayload.NINE_FIRE,10);Vec3 at=c.point;c.later(WARNING_TICKS,false,()->com.myriad.character.ability.AbilityVisuals.field(c,at,RADIUS,51));for(int hit=0;hit<STRIKES;hit++){final int i=hit;c.later(WARNING_TICKS+hit*STRIKE_INTERVAL,false,()->{
+ ThunderAudio.play(c,i==STRIKES-1?ThunderAudio.Cue.JUDGMENT:ThunderAudio.Cue.PULSE,at);
+ com.myriad.character.ability.AbilityVisuals.emit(c,com.myriad.character.ability.AbilityVfxGeometry.PILLAR,at.add(0,.05,0),at.add(0,6,0),5,i==STRIKES-1?1:0,9,false);c.area(at,RADIUS,DAMAGE.value(c),DAMAGE.kind());if(i==STRIKES-1)for(var t:c.enemies(at,RADIUS))c.root(t,ROOT_TICKS,false);});}}
 }

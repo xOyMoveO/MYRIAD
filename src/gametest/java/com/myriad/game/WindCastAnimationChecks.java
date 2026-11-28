@@ -2,6 +2,7 @@ package com.myriad.game;
 
 import com.myriad.character.ability.AbilityRuntime;
 import com.myriad.character.ability.AbilityVfxGeometry;
+import com.myriad.character.ability.ActionTime;
 import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.character.skills.sulan.rework.WindCastAnimation;
 import com.myriad.network.AbilityVfxPayload;
@@ -44,13 +45,21 @@ final class WindCastAnimationChecks {
     }
     private WindCastAnimationChecks(){}
 
+    static void run(GameTestHelper h){
+        ModState.setEnabled(true);
+        TrainingMode.setEnabled(true);
+        start(h);
+        h.runAfterDelay(31,h::succeed);
+    }
+
     static void start(GameTestHelper h){
         var throwsAndSpells=actor(h,148);
         var thrust=actor(h,163);
         var run=actor(h,178);
         var cancelled=actor(h,193);
         var blocked=actor(h,208);
-        var actors=List.of(throwsAndSpells,thrust,run,cancelled,blocked);
+        var slowed=actor(h,218);
+        var actors=List.of(throwsAndSpells,thrust,run,cancelled,blocked,slowed);
         var pig=h.spawn(EntityTypes.PIG,new BlockPos(8,148,8));
         pig.setPos(throwsAndSpells.player.position().add(0,.7,4));
         pig.setNoGravity(true);pig.setNoAi(true);
@@ -62,15 +71,22 @@ final class WindCastAnimationChecks {
         };
         try{
             throwsAndSpells.cast(3);throwsAndSpells.cast(4);throwsAndSpells.cast(5);throwsAndSpells.cast(7);
-            thrust.cast(2);run.cast(6);cancelled.cast(6);blocked.cast(2);
+            ActionTime.apply(slowed.player.getUUID(),slowed.player.getUUID(),"wind_cast_animation",.5,h.getLevel().getGameTime()+50);
+            thrust.cast(2);run.cast(6);cancelled.cast(6);blocked.cast(2);slowed.cast(6);
         }catch(Throwable error){clear.run();throw error;}
         boolean[] done={false};
+
         for(int i=1;i<=30;i++){
             int elapsed=i;
             h.runAfterDelay(i,()->{
                 if(done[0])return;
                 try{
                     actors.forEach(Actor::tick);
+                    if(elapsed==5){
+                        AbilityRuntime.tick(run.player);
+                        AbilityRuntime.tick(slowed.player);
+                    }
+
                     if(elapsed==4)AbilityRuntime.cancel(cancelled.player);
                     if(elapsed==30){
                         for(int index:new int[]{3,4,5,7})
@@ -83,8 +99,14 @@ final class WindCastAnimationChecks {
                                 "Only the caster receives hand poses, while flight and impact remain world effects");
                         verifyMotion(h,thrust,2);
                         verifyMotion(h,run,6);
-                        h.assertTrue(run.cues(6,DASH_START).getFirst().started()-run.cues(6,WINDUP).getFirst().started()==10,
-                                "Ten actual channel ticks precede the long dash");
+                        long windupTick=run.cues(6,WINDUP).getFirst().started();
+                        long dashTick=run.cues(6,DASH_START).getFirst().started();
+                        h.assertTrue(dashTick-windupTick==10,
+                                "Ten actual channel ticks precede the long dash: windup="+windupTick+" dash="+dashTick);
+                        long slowedElapsed=slowed.cues(6,DASH_START).getFirst().started()-slowed.cues(6,WINDUP).getFirst().started();
+                        h.assertTrue(slowedElapsed==20,"Ten action ticks take twenty real ticks at half rate");
+                        System.out.printf("MYRIAD_ROSTER_112 {\"scenario\":\"sulan.windup_timeline\",\"windupRealTick\":%d,\"dashRealTick\":%d,\"actionTicks\":10,\"halfRateElapsed\":%d}%n",
+                                windupTick,dashTick,slowedElapsed);
                         h.assertTrue(cancelled.cues(6,CANCEL).size()==1&&cancelled.cues(6,DASH_START).isEmpty(),
                                 "Interrupted windup releases the pose without a launch");
                         h.assertTrue(blocked.cues(2,CANCEL).size()==1&&blocked.cues(2,DASH_START).isEmpty()
