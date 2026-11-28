@@ -1,0 +1,4 @@
+interface:
+  display_name: "万象数值平衡"
+  short_description: "核对万象角色与战场数值，将快照、连招和经济场景整理成可复核的平衡报告"
+  default_prompt: "使用 $myriad-balance 核对这项数值改动，列出现行规则、策划目标、已取得的证据和仍缺的读数。"

@@ -1,0 +1,24 @@
+{
+  "title": "待填写的平衡问题",
+  "baseline": "填写游戏提交或快照规则摘要",
+  "scenario": "填写模式、场景及版本",
+  "conditions": "填写等级、预算、配点、分支、目标和起始状态",
+  "observations": [
+    {
+      "metric": "待观察指标",
+      "basis": "未测",
+      "value": null,
+      "unit": "",
+      "note": "填写待测内容与所需输入",
+      "source": ""
+    }
+  ],
+  "checks": [
+    {
+      "name": "本次 Fabric GameTest",
+      "status": "未运行",
+      "source": ""
+    }
+  ],
+  "reproduce": []
+}

@@ -1,0 +1,77 @@
+{
+  "title": "夜影绕背后，两下补 A 能否收尾",
+  "baseline": "游戏 bae9d06，归档原型 b97a9e0",
+  "scenario": "樱隙前线 3v3，夜影 21A34 绕背样例，剧本版本 b97a9e0",
+  "conditions": "双方 Lv20、各 4,885 金预算。夜影选暗影猎手、影袭、绝影追击，绕背全中，落霞起始 2,000 血。等级是强制样例条件。",
+  "observations": [
+    {
+      "metric": "首套结束时落霞剩余生命",
+      "basis": "离线推演",
+      "value": 1114.7,
+      "unit": "HP",
+      "note": "从化影起手到大招命中。21A34 中的 A 已计入首套。",
+      "source": "https://github.com/xOyMoveO/MYRIAD/issues/96#issuecomment-7233469433"
+    },
+    {
+      "metric": "第一下补 A 后落霞剩余生命",
+      "basis": "离线推演",
+      "value": 997.323,
+      "unit": "HP",
+      "note": "归档的背面开手 finisherTarget.basics[0]。第一下在第 35 真实刻命中，第二下在第 64 刻命中。",
+      "source": "https://github.com/xOyMoveO/MYRIAD/blob/b97a9e0348c9716ecca7eafa7d85f325a8109eb1/tools/balance-prototype/samples/report.json"
+    },
+    {
+      "metric": "第二下补 A 后落霞剩余生命",
+      "basis": "离线推演",
+      "value": 907,
+      "unit": "HP",
+      "level": 2,
+      "note": "近似值。两次期望伤害为 117.42 和 90.32，与已确认的收尾目标有差距。",
+      "source": "https://github.com/xOyMoveO/MYRIAD/blob/b97a9e0348c9716ecca7eafa7d85f325a8109eb1/tools/balance-prototype/REPORT.md"
+    },
+    {
+      "metric": "当前实战轮次",
+      "basis": "真人反馈",
+      "value": "要等第二轮技能",
+      "unit": "",
+      "note": "策划给出开手顺序和轮次判断。",
+      "source": "https://github.com/xOyMoveO/MYRIAD/issues/96#issuecomment-7233274645"
+    },
+    {
+      "metric": "目标收尾",
+      "basis": "策划目标",
+      "value": "第一下补 A 后存活，第二下击杀",
+      "unit": "",
+      "note": "条件为同经济、满血、成功绕背并全中。",
+      "source": "https://github.com/xOyMoveO/MYRIAD/issues/96#issuecomment-7233469433"
+    },
+    {
+      "metric": "独立专项中一阶影杀背击伤害",
+      "basis": "引擎抽检",
+      "value": 75.90039,
+      "unit": "HP",
+      "note": "这个单段专项取一点力量并从背面命中。正面读数为 69，正面另加 15% 临时物攻后仍为 69。该项只覆盖影杀。",
+      "source": "https://github.com/xOyMoveO/MYRIAD/blob/b97a9e0348c9716ecca7eafa7d85f325a8109eb1/tools/balance-prototype/samples/engine-evidence.json"
+    },
+    {
+      "metric": "相同初态下整套连招的引擎余血",
+      "basis": "未测",
+      "value": null,
+      "unit": "HP",
+      "note": "已有夜影单段专项，完整 21A34 与两次补 A 的同输入引擎记录仍缺。",
+      "source": ""
+    }
+  ],
+  "checks": [
+    {
+      "name": "本报告的整套连招 GameTest",
+      "status": "未运行",
+      "source": ""
+    }
+  ],
+  "reproduce": [
+    "在归档原型提交 b97a9e0348c9716ecca7eafa7d85f325a8109eb1 的检出中，从仓库根目录运行下列命令。",
+    "python tools/balance-prototype/audit.py --trace yingxiao AAA --night-opener --level 20 --mode 当前 --scene 队友先控",
+    "该版 CLI 以“队友先控”选择这段剧本的绕背开手。读取 rotation.firstR.hpLeft，以及随后两次 A 的 rotation.hits 条目。"
+  ]
+}
