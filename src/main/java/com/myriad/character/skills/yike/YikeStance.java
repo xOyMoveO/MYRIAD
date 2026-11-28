@@ -4,6 +4,7 @@ import com.myriad.Myriad;
 import com.myriad.character.ability.AbilityRuntime;
 import com.myriad.character.ability.AbilityRuntime.Cast;
 import com.myriad.character.ability.AbilitySkill;
+import com.myriad.combat.HeroProjectileTuning;
 import com.myriad.combat.KnockbackBuffer;
 import com.myriad.combat.SilenceSystem;
 import com.myriad.game.TrainingMode;
@@ -24,7 +25,9 @@ public final class YikeStance {
     private static final Identifier CHARGE = Identifier.fromNamespaceAndPath("myriad", "skill_charge_lock");
     private static final Map<UUID, State> STATES = new HashMap<>();
     private static final Map<UUID, String> EXIT_REASONS = new HashMap<>();
-    private static final double TURN_PER_TICK = Math.toRadians(90.0 / 20);
+    public static final double TURN_DEGREES_PER_SECOND = 90;
+    public static final double MOBILE_MOVEMENT = .7;
+    private static final double TURN_PER_TICK = Math.toRadians(TURN_DEGREES_PER_SECOND / 20);
 
     private YikeStance() {}
 
@@ -100,8 +103,12 @@ public final class YikeStance {
             return baseMultiplier + multiplierPerRank * (stanceRank - 1);
         }
 
-        Map<String, Number> artilleryDescriptionFields() {
-            return Map.of("range_blocks", range, "shell_count", shells, "shot_interval_ticks", nextShotTicks);
+        Map<String, Number> artilleryDescriptionFields(AbilitySkill stance, int rank) {
+            return Map.of("range_blocks", range, "shell_count", shells, "shot_interval_ticks", nextShotTicks,
+                    "windup_seconds", stance.commitWindupTicks() / 20.0, "stance_seconds", DURATION_TICKS / 20.0,
+                    "damage_percent", multiplier(rank) * 100, "blast_radius_blocks", radius,
+                    "flight_speed_blocks_per_second", speed * HeroProjectileTuning.SPEED,
+                    "movement_percent", this == MOBILE ? MOBILE_MOVEMENT * 100 : 0);
         }
     }
 
@@ -208,7 +215,7 @@ public final class YikeStance {
         var speed = p.getAttribute(Attributes.MOVEMENT_SPEED);
         if (speed == null) return;
         if (s == null) { speed.removeModifier(MOVEMENT); return; }
-        double factor = s.mobile ? .7 : 0;
+        double factor = s.mobile ? MOBILE_MOVEMENT : 0;
         var charge = speed.getModifier(CHARGE);
         if (charge != null) {
             double chargeFactor = Math.max(0, 1 + charge.amount());

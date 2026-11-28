@@ -17,10 +17,6 @@ import com.myriad.character.skills.keheng.FollowingSecondSkill;
 import com.myriad.character.skills.keheng.KehengTimeFields;
 import com.myriad.character.skills.keheng.OffbeatStepSkill;
 import com.myriad.character.skills.luoxia.LastSun;
-import com.myriad.character.skills.rivet.ImpactHammer;
-import com.myriad.character.skills.rivet.TacticalAnchor;
-import com.myriad.character.skills.shuo.QiaoFanSkill;
-import com.myriad.character.skills.yike.RainbowShell;
 import java.util.List;
 import java.util.function.IntFunction;
 import java.util.stream.IntStream;
@@ -34,32 +30,44 @@ final class SkillEffects {
     private SkillEffects() {}
 
     static String damageCondition(AbilitySkill skill, String id) {
+        if (skill.role().equals("yike")) return YikeSkillEffects.damageCondition(skill);
+        if (skill.role().equals("rivet")) return RivetSkillEffects.damageCondition(skill, id);
+        if (skill.role().equals("shuo")) return ShuoSkillEffects.damageCondition(skill, id);
+        if (skill.role().equals("chixiao")) return ChixiaoSkillEffects.damageCondition(skill, id);
         return switch (skill) {
             case EngravedEchoSkill ignored -> "同一敌方英雄在窗口内受不同次主动直接技能有效命中，达到刻痕触发层数";
             case DelayedNeedleSkill ignored -> "起手完成，针体首次有效接触合法敌人";
             case DelayedBoundarySkill ignored -> "地面预警完成，开场时目标留在迟界中";
             case FollowingSecondSkill ignored -> "随行领域自然结束时目标仍在圈内，不能提前关闭或被硬控打断";
             case BeyondOneSecondSkill ignored -> "目标在本次脉冲结算时仍在穹层内，检查空间遮挡";
-            case RainbowShell ignored -> "炮弹出膛后发生合法命中；基础段须应用对应炮台姿态的伤害倍率";
             case LastSun ignored -> "起手完成后发射，命中首个合法敌方单位";
-            case ImpactHammer ignored -> id.equals("wall_collision")
-                    ? "主目标有效受击并撞墙" : "符合锤击扇区的合法敌方单位";
-            case QiaoFanSkill ignored -> id.equals("riposte")
-                    ? "收鞘成功格挡后反击命中，可能另有拔刀增量" : "拔刀姿态下斩击范围内命中";
             default -> "对应伤害段有效命中，需另核对实际命中、触发以及其他乘区";
         };
     }
 
     static String supportCondition(AbilitySkill skill) {
+        if (skill.role().equals("yike")) return YikeSkillEffects.supportCondition(skill);
+        if (skill.role().equals("rivet")) return RivetSkillEffects.supportCondition(skill);
+        if (skill.role().equals("shuo")) return ShuoSkillEffects.supportCondition(skill);
+        if (skill.role().equals("chixiao")) return ChixiaoSkillEffects.supportCondition(skill);
         return switch (skill) {
             case ConstantStepSkill ignored -> "选择恒步分支，进入自己领域的瞬间且内置冷却已结束";
             case OffbeatStepSkill ignored -> "错拍步合法施放后给自身加盾";
-            case QiaoFanSkill ignored -> "收鞘成功格挡后反击命中至少一个敌人，再给自身加盾";
             default -> "对应支援段触发并作用于合法友方，战斗场景需给出目标状态";
         };
     }
 
     static void add(JsonArray effects, AbilitySkill skill) {
+        switch (skill.role()) {
+            case "yike" -> YikeSkillEffects.add(effects, skill);
+            case "rivet" -> RivetSkillEffects.add(effects, skill);
+            case "shuo" -> ShuoSkillEffects.add(effects, skill);
+            case "chixiao" -> ChixiaoSkillEffects.add(effects, skill);
+            default -> addStandard(effects, skill);
+        }
+    }
+
+    private static void addStandard(JsonArray effects, AbilitySkill skill) {
         switch (skill) {
             case EngravedEchoSkill ignored -> {
                 add(effects, skill, "marks_to_trigger", "trigger", EngravedEchoSkill.TRIGGER_STACKS,
@@ -145,39 +153,7 @@ final class SkillEffects {
                 inapplicable(effects, skill, "heal", "一秒之外无治疗");
                 inapplicable(effects, skill, "shield", "一秒之外无护盾");
             }
-            case ImpactHammer ignored -> {
-                add(effects, skill, "push", "displacement", ImpactHammer.PUSH_DISTANCE,
-                        "blocks", "PUSH_DISTANCE", "锤击主要目标有效命中；障碍和推移减免可截断", "on_effective_hit", NONE);
-                add(effects, skill, "protocol_push", "displacement", ImpactHammer.ANCHORED_PUSH_DISTANCE,
-                        "blocks", "ANCHORED_PUSH_DISTANCE", "主要目标有效命中且坚守协议加长该推移", "on_effective_hit", NONE);
-                add(effects, skill, "wall_root", "control_duration", ImpactHammer.WALL_ROOT_TICKS,
-                        "ticks", "WALL_ROOT_TICKS", "主要目标被实际推得撞墙，未触发强化锚击", "on_collision", REAL);
-                add(effects, skill, "anchor_root", "control_duration", ImpactHammer.ANCHOR_ROOT_TICKS,
-                        "ticks", "ANCHOR_ROOT_TICKS", "主要目标实际撞墙且锚击增强可用", "on_collision", REAL);
-                inapplicable(effects, skill, "shield", "锤击本身无护盾");
-                inapplicable(effects, skill, "heal", "锤击本身无治疗");
-            }
-            case QiaoFanSkill ignored -> {
-                add(effects, skill, "counter_stun", "control_duration", QiaoFanSkill.COUNTER_STUN_TICKS,
-                        "ticks", "COUNTER_STUN_TICKS", "收鞘成功格挡再反击命中，名义时长未减韧性", "on_counter_hit", REAL);
-                add(effects, skill, "counter_shield_duration", "shield_duration", QiaoFanSkill.COUNTER_SHIELD_TICKS,
-                        "ticks", "COUNTER_SHIELD_TICKS", "收鞘成功格挡再反击命中至少一个合法敌人", "on_shield_grant", REAL);
-                add(effects, skill, "drawn_slow_duration", "control_duration", QiaoFanSkill.DRAWN_SLOW_TICKS,
-                        "ticks", "DRAWN_SLOW_TICKS", "拔刀姿态扫击命中，名义时长未减韧性", "on_sweep_hit", REAL);
-                add(effects, skill, "drawn_slow_rate", "movement_slow", QiaoFanSkill.DRAWN_SLOW,
-                        "ratio", "DRAWN_SLOW", "拔刀姿态扫击命中", "on_sweep_hit", NONE);
-                inapplicable(effects, skill, "heal", "鞘返只有触发护盾");
-                missing(effects, skill, "conditional_damage", "hp_before_mitigation", "拔刀储力额外段及实际格挡序列尚需独立输入");
-            }
             case LastSun ignored -> markDamageOnly(effects, skill, "重箭只有直接伤害，命中可受到通用效果和其他技能修饰");
-            case RainbowShell ignored -> markDamageOnly(effects, skill, "虹轨弹只有直接伤害，命中可受到通用效果和其他技能修饰");
-            case TacticalAnchor ignored -> {
-                inapplicable(effects, skill, "damage", "锚点本身不造成伤害；锚击计在对应推移技能");
-                inapplicable(effects, skill, "heal", "锚点无治疗");
-                inapplicable(effects, skill, "shield", "锚点无护盾");
-                inapplicable(effects, skill, "control", "锚点部署本身无直接控制；锚击计在对应推移技能");
-                missing(effects, skill, "anchor_conditions", "rule", "有效墙面、支点寿命和地图几何需要完整回放条件");
-            }
             default -> documentUnmapped(effects, skill);
         }
     }

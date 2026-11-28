@@ -25,6 +25,9 @@ public final class CombatRegressionTests {
         register("battle_tuning",BattleTuningChecks::run);
         register("tower_cover", TowerCoverChecks::run);
         register("battlefield_buildings", BattlefieldBuildingChecks::run);
+        register("balance_roster_lane", BattlefieldLaneChecks::roster);
+        register("balance_roster_towers", BattlefieldBuildingChecks::roster);
+        register("balance_roster_camps", BattlefieldMonsterChecks::rosterCamps);
         register("match_economy", MatchEconomyChecks::run);
         register("match_assists", MatchAssistChecks::run);
         register("cherry_rift_camps", CherryRiftCampChecks::run);
@@ -47,6 +50,7 @@ public final class CombatRegressionTests {
         register("calibration_keheng", CalibrationSupportChecks::keheng);
         register("calibration_qingluo", CalibrationSupportChecks::qingluo);
         register("balance_haste", BalanceVerticalChecks::hasteAndPurchases);
+        register("balance_shuo_chixiao", ShuoChixiaoBalanceChecks::run);
         register("balance_damage_support", BalanceDamageSupportChecks::run);
         register("balance_control_supply", BalanceControlSupplyChecks::run);
         register("projectile_basic_assist", ProjectileBasicAssistChecks::run);

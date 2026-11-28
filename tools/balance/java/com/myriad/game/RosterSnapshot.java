@@ -16,9 +16,7 @@ import com.myriad.character.rework.FirstGroupSkills;
 import com.myriad.character.skills.luoxia.LastSun;
 import com.myriad.character.skills.luoxia.LuoxiaBow;
 import com.myriad.character.skills.rivet.TacticalAnchor;
-import com.myriad.character.skills.yike.RainbowShell;
 import com.myriad.character.skills.yike.YikeBasicAttack;
-import com.myriad.character.skills.yike.YikeStance;
 import com.myriad.combat.MagicBullet;
 import com.myriad.combat.VanillaMeleeAttack;
 import com.myriad.player.PlayerDataProvider;
@@ -112,6 +110,10 @@ final class RosterSnapshot {
                     "普通形态，无购买或临时增益，物理", "出膛", NO_CLOCK));
             result.add("range", field(YikeBasicAttack.RANGE, "blocks", source(YikeBasicAttack.class, "RANGE"),
                     "普通形态且持虹裂，炮台姿态禁止普攻；墙体能截断弹道", "发射", NO_CLOCK));
+            result.add("flightSpeed", field(YikeBasicAttack.FLIGHT_SPEED, "blocks_per_tick",
+                    source(YikeBasicAttack.class, "FLIGHT_SPEED"), "未进入缓时领域", "飞行时", ACTION));
+            result.add("muzzleOffset", field(YikeBasicAttack.MUZZLE_OFFSET, "blocks",
+                    source(YikeBasicAttack.class, "MUZZLE_OFFSET"), "从眼睛沿发射方向向前", "出膛", NO_CLOCK));
             result.add("recovery", field(YikeBasicAttack.recoveryTicks(attackSpeed), "ticks", source(YikeBasicAttack.class, "recoveryTicks"),
                     "无购买或临时增益", "出膛后", ACTION));
         } else if (role == CharacterType.LUOXIA) {
@@ -304,7 +306,6 @@ final class RosterSnapshot {
                     "blocks", source(LastSun.class, "entityPaddingBlocks"),
                     "碰撞候选箱向外扩张；射程仍核对实体本体箱", "on_projectile_step", NO_CLOCK)));
         }
-        if (skill instanceof RainbowShell rainbowShell) yikeForms(result, rainbowShell);
         SkillEffects.add(result, skill);
         return result;
     }
@@ -317,53 +318,5 @@ final class RosterSnapshot {
         result.addProperty("maxRank", skill.maxRank());
         result.add("rule", value);
         return result;
-    }
-
-    private static void yikeForms(JsonArray result, RainbowShell skill) {
-        for (var form : YikeStance.ShotForm.values()) {
-            boolean artillery = form != YikeStance.ShotForm.NORMAL;
-            String id = form.name().toLowerCase(Locale.ROOT);
-            String condition = switch (form) {
-                case NORMAL -> "普通形态且 Q 已学习";
-                case FIXED -> "定轨炮台；Q 已学习、有弹有蓝且射击时点已到";
-                case MOBILE -> "游走阵列；Q 已学习、有弹有蓝且射击时点已到";
-            };
-            String formSource = source(YikeStance.class, "ShotForm." + form.name());
-            var fields = new JsonObject();
-            var cooldowns = new JsonArray();
-            for (int rank = 1; rank <= skill.maxRank(); rank++) {
-                var value = field(skill.cooldownTicks(rank, artillery), "ticks", artillery
-                        ? source(RainbowShell.class, "cooldownTicks") : "src/main/resources/"
-                        + FirstGroupSkills.definitionResource(skill.getId()) + "#skills/" + skill.getId() + "/cooldowns",
-                        condition, "on_projectile_launch", REAL);
-                value.addProperty("rank", rank);
-                cooldowns.add(value);
-            }
-            fields.add("skillCooldown", cooldowns);
-            fields.add("range", field(form.range, "blocks", formSource, condition, "on_projectile_launch", NO_CLOCK));
-            fields.add("speed", field(form.speed, "blocks_per_second", formSource, condition, "on_projectile_launch", ACTION));
-            fields.add("radius", field(form.radius, "blocks", formSource, condition, "on_projectile_launch", NO_CLOCK));
-            fields.add("damageMultiplier", field(Map.of("base", form.baseMultiplier, "growthPerStanceRank", form.multiplierPerRank),
-                    "ratio", formSource, condition, "on_projectile_launch", NO_CLOCK));
-            if (artillery) {
-                fields.add("shots", field(form.shells, "shell", formSource, condition, "on_stance_deploy", NO_CLOCK));
-                fields.add("duration", field(YikeStance.DURATION_TICKS, "ticks", source(YikeStance.class, "DURATION_TICKS"),
-                        condition, "on_stance_deploy", REAL));
-                fields.add("nextShot", field(form.nextShotTicks, "ticks", formSource,
-                        condition + "；从上一发出膛计，原 Q 冷却挡首发，W 暂停可以推迟下一发", "on_projectile_launch", REAL));
-                fields.add("shotRequestBuffer", field(YikeStance.SHOT_REQUEST_BUFFER_TICKS, "ticks",
-                        source(YikeStance.class, "SHOT_REQUEST_BUFFER_TICKS"),
-                        condition + "；只允许上膛后提前起手，出膛仍要等真实截止刻", "on_cast_request", REAL));
-                fields.add("pauseForW", field(YikeStance.PAUSE_FOR_W_TICKS, "ticks", source(YikeStance.class, "PAUSE_FOR_W_TICKS"),
-                        condition + "且 W 已完成合法预警提交", "on_w_commit", REAL));
-                fields.add("exitCooldown", field("max_of_existing_and_haste_adjusted_normal", "rule",
-                        source(YikeStance.class, "finish"), "本次炮台至少出膛一次且未启用训练免冷却", "on_stance_exit", REAL));
-            } else {
-                fields.add("shots", gap("not_applicable", "shell", formSource, condition, "on_projectile_launch",
-                        NO_CLOCK, "离开炮台姿态没有弹仓，仅看共用蓝耗与冷却"));
-            }
-            result.add(effect(skill, "form_" + id, "form", field(fields, "rule_set", formSource, condition,
-                    "on_projectile_launch", NO_CLOCK)));
-        }
     }
 }

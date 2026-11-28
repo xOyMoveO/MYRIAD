@@ -84,7 +84,7 @@ class Combatant:
 
 class Replay:
     def __init__(self, rules, defaults, config, combination, opponent, delay, script=None, probe=None, affected=1,
-                 omit=False):
+                 omit=False, omitted_slot=None):
         roles = named(rules["roles"])
         self.config = config
         self.script = script
@@ -100,6 +100,7 @@ class Replay:
         self.own = roles[config["role"]]
         self.skills = named(self.own["skills"])
         self.selected = dict(zip(SLOTS, combination, strict=True))
+        self.omitted_slot = omitted_slot
         self.level = self.initial["heroLevel"]
         self.ranks = {key: self.initial.get("skillRanks", {}).get(slot, self.skills[key]["rank"]["value"])
                       for slot, key in self.selected.items()}
@@ -136,6 +137,8 @@ class Replay:
         self.prepositioned_behind = self.initial["facing"] == "behind"
         self.ready = {}
         self.events, self.queue, self.waits = [], [], {}
+        self.action_queue = []
+        self.conditions = {**self.initial, **self.initial.get("conditions", {})}
         self.tiebreak = count()
         self.pending = self.channel = self.motion = self.draw = None
         self.recasts = {}
@@ -163,6 +166,12 @@ class Replay:
     def later(self, delay, fn, *args):
         heappush(self.queue, (self.tick + delay, next(self.tiebreak), fn, args))
 
+    def after_action(self, delay, fn, *args):
+        heappush(self.action_queue, (self.action_progress + delay, next(self.tiebreak), fn, args))
+
+    def selected_passive(self):
+        return None if self.omitted_slot == "passive" else self.selected["passive"]
+
     def distance(self, enemy=None):
         return abs((enemy or self.enemies[0]).position - self.position)
 
@@ -181,6 +190,7 @@ class Replay:
     def loss(self, target, tick, include_skill=True):
         blocked = set()
         rate = 1
+        movement_rate = 1
         if target is self.enemies[0] and tick < self.opponent["stunTicks"]:
             blocked.update(self.defaults["controlActionWeights"])
         for start, end, kind, value, _ in (target.controls if include_skill else ()):
@@ -188,10 +198,13 @@ class Replay:
                 continue
             if kind == "slow":
                 rate = min(rate, value)
+            elif kind == "movement_slow":
+                movement_rate = min(movement_rate, value)
             else:
                 blocked.update(key for key, available in self.availability[kind]["value"].items() if not available)
         weights = self.defaults["controlActionWeights"]
-        return 1 - sum(weight * rate for key, weight in weights.items() if key not in blocked)
+        return 1 - sum(weight * (min(rate, movement_rate) if key == "move" else rate)
+                       for key, weight in weights.items() if key not in blocked)
 
     def control(self, target, kind, duration, source, rate=0):
         if duration <= 0 or target.hp <= 0:
@@ -222,7 +235,7 @@ class Replay:
             self.support_passive(target)
 
     def support_passive(self, target):
-        skill = self.selected["passive"]
+        skill = self.selected_passive()
         if skill == "g2_qingluo_pa" and target.hp < 0.6 * target.stats["health"] and self.tick >= target.passive_ready:
             target.passive_ready = self.tick + 80
             self.heal(target, amount(effect(self.skills[skill], "heal"), self.ranks[skill], self.stats), skill, False)
@@ -255,7 +268,7 @@ class Replay:
         if not rapid and kind != "true" and self.tick - enemy.last_hit < 3:
             self.record("hurt_recovery", skill=skill, label=label, target=self.enemies.index(enemy))
             return False
-        passive = self.selected["passive"]
+        passive = self.selected_passive()
         if passive == "g1_yingxiao_pa" and not indirect and (self.prepositioned_behind or skill == "g1_yingxiao_ua"):
             dealt = min(enemy.hp, dealt * (1 + (10 + 5 * (self.ranks[passive] - 1)) / 100))
         enemy.hp -= dealt
@@ -308,7 +321,7 @@ class Replay:
     def begin(self, skill, step):
         data = self.config["skills"][skill]
         self.pending = None
-        self.input_ready = self.tick + 3
+        self.input_ready = self.tick + self.value(skill, data.get("inputRecovery", 3))
         self.record("input_accepted", skill=skill, label=step.get("label"))
         if data.get("prepayWindup"):
             self.start_windup(skill, step, data["prepayWindup"], paid=False)
@@ -343,7 +356,7 @@ class Replay:
         token = (skill, self.tick)
         if data.get("motion"):
             self.motion = (skill, self.action_progress + self.value(skill, data["motion"]))
-        passive = self.selected["passive"]
+        passive = self.selected_passive()
         if (passive == "keheng_hengbu" and skill in ("keheng_cuopaibu", "keheng_suixing")
                 and self.tick >= self.constant_step_ready):
             self.constant_step_ready = self.tick + effect(self.skills[passive], "internal_cooldown")
@@ -354,12 +367,13 @@ class Replay:
             self.field_token[skill] = token
         for row in data["events"]:
             at = self.value(skill, row.get("at", 0))
+            schedule = self.after_action if row.get("clock") == "action_tick" else self.later
             if "repeat" in row:
                 period, duration = (self.value(skill, x) for x in row["repeat"])
                 for elapsed in range(period, duration + 1, period):
-                    self.later(at + elapsed, self.apply, skill, row, token, elapsed, step.get("label"))
+                    schedule(at + elapsed, self.apply, skill, row, token, elapsed, step.get("label"))
             else:
-                self.later(at, self.apply, skill, row, token, 0, step.get("label"))
+                schedule(at, self.apply, skill, row, token, 0, step.get("label"))
 
     def impact(self, skill, row, enemy, index, token, label):
         if row.get("perTargetEffect"):
@@ -367,14 +381,20 @@ class Replay:
         else:
             name = row["effect"]
         hit = self.formula_hit(enemy, skill, name, token=token, label=label, rapid=row.get("rapid", False))
-        if "root" in row:
-            self.control(enemy, "root", row["root"], skill)
+        for kind in ("root", "stun", "silence"):
+            if hit and kind in row:
+                self.control(enemy, kind, self.value(skill, row[kind]), skill)
+        if hit and "movementSlow" in row:
+            rate, duration = (self.value(skill, x) for x in row["movementSlow"])
+            self.control(enemy, "movement_slow", duration, skill, rate)
         if hit and "slow" in row:
             rate, duration = (self.value(skill, x) for x in row["slow"])
             self.control(enemy, "slow", duration, skill, rate)
 
     def apply(self, skill, row, token, elapsed, label):
         if self.config["skills"][skill].get("recast") == "cancel_follow" and self.field_token.get(skill) != token:
+            return
+        if not self.meets(row.get("requires")):
             return
         kind = row["kind"]
         if kind == "position":
@@ -385,6 +405,8 @@ class Replay:
             elif skill in ("g1_yingxiao_ma", "g1_yingxiao_mb"):
                 self.position += self.config["skills"][skill]["range"]
                 self.prepositioned_behind = not self.prepositioned_behind
+            elif "distance" in row:
+                self.position += self.value(skill, row["distance"])
             else:
                 self.position += effect(self.skills[skill], "dash_range")
             self.record("position", skill=skill, distanceBlocks=self.distance())
@@ -407,7 +429,9 @@ class Replay:
             stay = self.probe["fieldStayTicks"][index] if self.probe else None
             if stay is not None and elapsed > stay:
                 continue
-            if kind == "slow":
+            if kind == "control":
+                self.control(enemy, row["control"], self.value(skill, row["duration"]), skill)
+            elif kind == "slow":
                 duration = self.value(skill, row["duration"])
                 if stay is not None and row.get("area"):
                     duration = min(duration, stay)
@@ -428,7 +452,7 @@ class Replay:
             return False
         label = step.get("label")
         if mode == "bow":
-            passive = self.selected["passive"]
+            passive = self.selected_passive()
             quick = passive == "luoxia_chase_dusk" and self.tick < self.quick_until
             full = passive == "luoxia_steady_dusk" and not quick
             work = 20 if full else 11 - 0.4 * self.ranks[passive] if quick else row["drawWork"]["value"]
@@ -446,7 +470,7 @@ class Replay:
         enemy = self.enemies[0]
         self.record("basic_release", label=label, mode="full" if full else "quick" if quick else mode)
         if mode == "bow":
-            passive = self.selected["passive"]
+            passive = self.selected_passive()
             raw = amount(effect(self.skills[passive], "damage"), self.ranks[passive], self.stats) if quick or full else self.stats["total_physical"]
             reach = data["overdrawRange"] if full else row["drawRange"]["value"]
             speed = data["overdrawSpeed"] if full else speed
@@ -457,16 +481,21 @@ class Replay:
             self.basic_ready = self.action_progress + ceil(20 / self.stats["attackSpeed"])
         else:
             raw = self.stats["total_physical"]
-            reach = data["range"]
+            reach = data.get("range", row["range"].get("value"))
             self.basic_ready = self.action_progress + ceil(20 / self.stats["attackSpeed"])
         if self.distance() <= reach:
             flight = ceil(max(0.01, self.distance() - self.initial["targetCollisionDistanceAllowance"]) / speed) if speed else 0
             kind = "magic" if mode == "magic_bullet" else "physical"
             self.later(flight, self.damage, enemy, raw, kind, "basic", label)
 
+    def meets(self, conditions):
+        return all(self.conditions.get(key, False) == expected for key, expected in (conditions or {}).items())
+
     def execute(self, step):
         action = step["action"]
         skill = self.selected.get(step.get("skill"), step.get("skill"))
+        if not self.meets(step.get("requires")):
+            return False
         if action == "wait_until":
             limit = step.get("maxTicks")
             if limit is None:
@@ -485,7 +514,8 @@ class Replay:
             return False
         if action == "basic_attack":
             return self.basic(step)
-        if skill not in self.selected.values() or skill not in self.config["skills"]:
+        if (skill not in self.selected.values() or skill not in self.config["skills"]
+                or self.omitted_slot is not None and self.selected[self.omitted_slot] == skill):
             return False
         if action in ("recast", "cancel"):
             if action == "cancel" and self.pending and self.pending[0] == skill:
@@ -513,7 +543,7 @@ class Replay:
         if self.channel or self.motion or self.pending or self.tick < self.input_ready or self.tick < self.ready.get(skill, 0):
             return False
         data = self.config["skills"][skill]
-        if data.get("omitted") or self.mana_cost(skill) > self.mana:
+        if data.get("omitted") or not self.meets(data.get("requires")) or self.mana_cost(skill) > self.mana:
             return False
         reach = self.value(skill, data.get("range"))
         if reach is not None and self.distance() > reach:
@@ -533,7 +563,9 @@ class Replay:
         return True
 
     def advance(self):
-        self.action_progress += 1
+        rates = self.initial.get("casterActionRate", 1)
+        self.action_progress += (next((rate for start, end, rate in rates if start <= self.tick < end), 1)
+                                 if isinstance(rates, list) else rates)
         if self.motion and self.action_progress >= self.motion[1]:
             self.motion = None
         if self.pending and self.tick >= self.pending[2]:
@@ -562,8 +594,13 @@ class Replay:
                 self.execute({"action": "cast", "skill": self.probe["skill"]})
             return
         if self.execution["type"] == "apl":
-            if not self.channel and not self.draw and not self.pending:
-                next((step for step in self.actions if self.execute(step)), None)
+            if (self.config.get("checkActionsDuringChannel")
+                    or not self.channel and not self.draw and not self.pending):
+                chosen = next((step for step in self.actions
+                               if (not step.get("judgment") or self.tick >= self.last_action_tick + self.delay["judgment"])
+                               and self.execute(step)), None)
+                if chosen and chosen["action"] != "wait_until":
+                    self.last_action_tick = self.tick
         elif self.cursor < len(self.actions) and not self.pending:
             step = self.actions[self.cursor]
             delay = self.delay["judgment"] if step.get("judgment") or self.cursor > 0 else 0
@@ -572,15 +609,20 @@ class Replay:
                 self.last_action_tick = self.tick
 
     def process_events(self):
-        while self.queue and self.queue[0][0] <= self.tick:
-            _, _, fn, args = heappop(self.queue)
+        while True:
+            if self.action_queue and self.action_queue[0][0] <= self.action_progress:
+                _, _, fn, args = heappop(self.action_queue)
+            elif self.queue and self.queue[0][0] <= self.tick:
+                _, _, fn, args = heappop(self.queue)
+            else:
+                break
             fn(*args)
 
     def run(self):
         for name, ally in zip(self.defaults["supportTemplates"], self.allies, strict=True):
             for tick, kind, raw in self.defaults["supportTemplates"][name]["incoming"]:
                 self.later(tick, self.incoming, ally, kind, raw)
-        for tick, kind, raw in self.defaults["supportTemplates"]["secondary"]["incoming"]:
+        for tick, kind, raw in self.initial.get("casterIncoming", self.defaults["supportTemplates"]["secondary"]["incoming"]):
             self.later(tick, self.incoming, self.caster, kind, raw)
         for self.tick in range(self.end):
             if self.tick:
@@ -595,7 +637,7 @@ class Replay:
                 if enemy is self.enemies[0] and self.tick < self.opponent["stunTicks"]:
                     continue
                 rate = min([value for start, end, kind, value, _ in enemy.controls
-                            if kind == "slow" and start <= self.tick < end], default=1)
+                            if kind in ("slow", "movement_slow") and start <= self.tick < end], default=1)
                 enemy.position += rate * self.opponent["retreatPerActionTick"]
         return self
 
@@ -701,8 +743,7 @@ def static_skill(skill, stats):
 
 
 def read_scenarios():
-    configs = {path.stem: load(path) for path in sorted(SCENARIOS.glob("*.json"))
-               if path.stem not in ("_defaults", "multi-target")}
+    configs = {role: load(SCENARIOS / f"{role}.json") for role in ("keheng", "luoxia", "qingluo", "yingxiao")}
     return load(SCENARIOS / "_defaults.json"), configs, load(SCENARIOS / "multi-target.json")
 
 
@@ -716,14 +757,14 @@ def verify_combinations(role):
     return combinations
 
 
-def case_report(rules, defaults, config, combination, mode, delay, script=None):
-    replay = Replay(rules, defaults, config, combination, mode, delay, script=script).run()
+def case_report(rules, defaults, config, combination, mode, delay, script=None, replay_type=Replay):
+    replay = replay_type(rules, defaults, config, combination, mode, delay, script=script).run()
     result = replay.result()
     abilities = set(combination)
-    gaps = dict(config["coverageGaps"])
+    gaps = {**config["coverageGaps"], **(script or {}).get("coverageGaps", {})}
     if any(row["event"] == "wait_until" and not row["met"] for row in replay.events):
         gaps["wait"] = {"axes": ["damage", "control", "support"], "reason": "至少一个等待条件到时仍未满足。"}
-    if not any(row["event"] == "hit" for row in replay.events):
+    if not config.get("zeroContactIsObservable") and not any(row["event"] == "hit" for row in replay.events):
         gaps["contact"] = {"axes": ["damage"], "reason": "该场景在观察窗内没有模型内合法命中。"}
     result.update({"events": replay.events, "combination": combination, "ranks": replay.ranks, "opponent": mode,
                    "delay": delay, "initial": replay.initial, "actorStats": replay.stats,
@@ -732,11 +773,11 @@ def case_report(rules, defaults, config, combination, mode, delay, script=None):
     return result
 
 
-def run_role(rules, defaults, config, role):
+def run_role(rules, defaults, config, role, replay_type=Replay):
     combinations = verify_combinations(role)
     delays = defaults["delayProfiles"]
     opponents = defaults["opponents"]
-    cases = [case_report(rules, defaults, config, combination, mode, delay)
+    cases = [case_report(rules, defaults, config, combination, mode, delay, replay_type=replay_type)
              for combination in combinations for mode in opponents for delay in delays]
     result = {mode: {delay: {} for delay in delays} for mode in opponents}
     for mode, profiles in result.items():
@@ -751,7 +792,7 @@ def run_role(rules, defaults, config, role):
     for script in config["scripted"]:
         combination = next(row for row in combinations if set(script["applicableBuilds"]).issubset(row))
         scripts.append({"scenario": script, "results": {
-            delay: case_report(rules, defaults, config, combination, script["opponentCondition"], delay, script)
+            delay: case_report(rules, defaults, config, combination, script["opponentCondition"], delay, script, replay_type)
             for delay in delays}})
     return {
         "scenario": config["scenarioId"], "scenarioVersion": config["scenarioVersion"],

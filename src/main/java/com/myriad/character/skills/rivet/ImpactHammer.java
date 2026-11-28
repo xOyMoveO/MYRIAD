@@ -11,6 +11,7 @@ import java.util.List;
 /** The broad hammer hits several enemies; only the nearest aim-line contact is pushed. */
 public final class ImpactHammer extends RivetSkill {
     public static final int WALL_ROOT_TICKS = 10, ANCHOR_ROOT_TICKS = 16;
+    public static final double HIT_RANGE = 3;
     public static final double PUSH_DISTANCE = 2, ANCHORED_PUSH_DISTANCE = 2.5;
     private static final AbilityDamageFormula DIRECT = AbilityDamageFormula.physicalFromSpell(75, 25, .50f, 5f / 14)
             .segment("skill.myriad.damage.direct_hit", 1);
@@ -27,7 +28,7 @@ public final class ImpactHammer extends RivetSkill {
     @Override public void release(AbilityRuntime.Cast c) {
         var direction = c.forward(1);
         var targets = c.enemies(c.player.position(), 3.8).stream()
-                .filter(t -> BasicAttackSystem.inMeleeArc(c.player.position(), direction, t.getBoundingBox(), 3,
+                .filter(t -> BasicAttackSystem.inMeleeArc(c.player.position(), direction, t.getBoundingBox(), HIT_RANGE,
                         Math.toRadians(55))).toList();
         var eye = c.player.getEyePosition();
         var rayEnd = eye.add(c.player.getLookAngle().scale(3.5));

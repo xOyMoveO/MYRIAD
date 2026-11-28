@@ -67,7 +67,29 @@ final class BattlefieldMonsterChecks {
         runFights(helper, List.of(new Encounter("crab_trio", MonsterType.CHERRY_RIFT_CRAB, 4, 2, 3, 4800)));
     }
 
-    private record Encounter(String id, MonsterType type, int level, int strength, int party, long firstSpawn) {}
+    static void rosterCamps(GameTestHelper helper) {
+        var encounters = new ArrayList<Encounter>();
+        for (var role : List.of(CharacterType.YIKE, CharacterType.SHUO, CharacterType.RIVET, CharacterType.CHIXIAO)) {
+            encounters.add(new Encounter(role.getId() + "_scout", MonsterType.CHERRY_SCOUT_BOT, 1, 1, 1, 400, role));
+            encounters.add(new Encounter(role.getId() + "_walker", MonsterType.CHERRY_HEAVY_WALKER, 1, 1, 1, 800, role));
+        }
+        runFights(helper, encounters);
+    }
+
+    private record Encounter(String id, MonsterType type, int level, int strength, int party, long firstSpawn,
+                             CharacterType soloRosterRole) {
+        Encounter(String id, MonsterType type, int level, int strength, int party, long firstSpawn) {
+            this(id, type, level, strength, party, firstSpawn, null);
+        }
+
+        CharacterType role(int seat) {
+            return soloRosterRole != null ? soloRosterRole : ROLES[seat];
+        }
+
+        String openingSkill() {
+            return soloRosterRole != null ? FirstGroupSkills.node(soloRosterRole.getId(), 2).getId() : CLEAVE;
+        }
+    }
     private record Hit(long tick, String source, String target, String action, float healthLost) {}
     private record Reward(String role, int gold, int experience, long obsidianBuffTicks) {}
 
@@ -82,7 +104,8 @@ final class BattlefieldMonsterChecks {
                 combats.add(new Combat(fixture, encounter, center));
             }
             MonsterManager.activateSpawns(points);
-            fixture.begin(encounters.getFirst().firstSpawn() - WARMUP);
+            fixture.begin(encounters.getFirst().firstSpawn() - WARMUP,
+                    encounters.getFirst().soloRosterRole() != null ? "CHERRY_V2" : null);
             for (var combat : combats) combat.learnOpeningSkill();
             fixture.listen(() -> {
                 long elapsed = fixture.elapsed();
@@ -130,7 +153,7 @@ final class BattlefieldMonsterChecks {
                     case 1 -> new Vec3(radius, 0, 0);
                     default -> new Vec3(-radius, 0, 0);
                 });
-                var player = fixture.player(ROLES[i], encounter.level(), encounter.strength(), Faction.GUARDIAN, stand);
+                var player = fixture.player(encounter.role(i), encounter.level(), encounter.strength(), Faction.GUARDIAN, stand);
                 fighters.add(player);
                 stands.add(stand);
                 startingHealth[i] = player.getHealth();
@@ -143,8 +166,9 @@ final class BattlefieldMonsterChecks {
             var hero = fighters.getFirst();
             var data = PlayerDataProvider.get(hero);
             data.setSkillPoints(encounter.level());
-            PlayerDataProvider.upgradeSkill(hero, CLEAVE);
-            fixture.helper.assertTrue(data.skillLevel(CLEAVE) == 1, "Rank-one Q is learned through the live skill path");
+            PlayerDataProvider.upgradeSkill(hero, encounter.openingSkill());
+            fixture.helper.assertTrue(data.skillLevel(encounter.openingSkill()) == 1,
+                    "Rank-one Q is learned through the live skill path");
         }
 
         void tick(long elapsed) {
@@ -170,18 +194,27 @@ final class BattlefieldMonsterChecks {
                 }
             }
             long fight = elapsed - spawnedAt;
+            List<Reward> beforeActionTick = target != null && encounter.soloRosterRole() != null ? rewards() : List.of();
+            float beforeDeferred = target != null ? MonsterManager.modHealth(target) : 0;
             for (int i = 0; i < fighters.size(); i++) {
                 var player = fighters.get(i);
                 float drop = priorHealth[i] - player.getHealth();
                 if (drop > .01F) {
                     grossHealthLoss[i] += drop;
-                    hits.add(new Hit(fight, encounter.type().getId(), ROLES[i].getId(), "npc_attack", drop));
+                    hits.add(new Hit(fight, encounter.type().getId(), encounter.role(i).getId(), "npc_attack", drop));
                 }
                 priorHealth[i] = player.getHealth();
                 fixture.tickPlayer(player, stands.get(i));
                 priorHealth[i] = player.getHealth();
             }
             if (target == null) return;
+            if (encounter.soloRosterRole() != null) {
+                trackDamage(fight, 0, "deferred_after_inputs", beforeDeferred);
+                if (!target.isAlive()) {
+                    resolveKill(fight, 0, beforeActionTick);
+                    return;
+                }
+            }
             if (fighters.stream().allMatch(BattlefieldMonsterChecks::defeated)) {
                 finish(fight, "party_defeated", List.of());
                 return;
@@ -200,39 +233,54 @@ final class BattlefieldMonsterChecks {
                 var facing = target.position().subtract(player.position());
                 player.setYRot((float) Math.toDegrees(Math.atan2(-facing.x, facing.z)));
                 player.setXRot(0);
-                if (i == 0 && data.getCooldown(CLEAVE) == 0 && data.getMana() >= 70) {
+                String q = encounter.openingSkill();
+                double minimumMana = encounter.soloRosterRole() != null
+                        ? FirstGroupSkills.node(encounter.role(0).getId(), 2).manaCost(1) : 70;
+                if (i == 0 && data.getCooldown(q) == 0 && data.getMana() >= minimumMana) {
                     SkillSystem.cast(player, CharacterType.SLOT_Q);
                     action = "rank_one_q";
+                } else if (encounter.role(i) == CharacterType.YIKE) {
+                    player.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES,
+                            target.getBoundingBox().getCenter());
+                    BasicAttackSystem.tryAttack(player, 0);
+                    action = "cannon_input";
                 } else if (player.getAttackStrengthScale(.5F) >= 1) {
                     player.getRandom().setSeed(689L + i * 37L + fight);
                     player.attack(target);
                     action = "basic";
                 } else continue;
-                float lost = target.isAlive() ? health - MonsterManager.modHealth(target) : health;
-                if (lost > 0.01F) hits.add(new Hit(fight, ROLES[i].getId(), encounter.type().getId(), action, lost));
+                trackDamage(fight, i, action, health);
                 lastInput[i] = fight;
                 if (!target.isAlive()) {
-                    respawnAt = fixture.respawnAt(encounter.id());
-                    var after = rewards();
-                    var delta = new ArrayList<Reward>();
-                    for (int j = 0; j < fighters.size(); j++) {
-                        var old = before.get(j);
-                        var earned = after.get(j);
-                        delta.add(new Reward(earned.role(), earned.gold() - old.gold(),
-                                earned.experience() - old.experience(), earned.obsidianBuffTicks()));
-                        fixture.helper.assertTrue(j == i ? delta.getLast().gold() > 0 && delta.getLast().experience() > 0
-                                : delta.getLast().gold() == 0 && delta.getLast().experience() == 0,
-                                "Gold and XP settle exclusively on the final hit");
-                    }
-                    fixture.helper.assertTrue(respawnAt - fixture.level.getGameTime()
-                            == GameManager.combatTempo().respawnSeconds(encounter.type()) * 20L,
-                            "Death schedules the configured respawn delay");
-                    finish(fight, "killed", delta);
+                    resolveKill(fight, i, before);
                     return;
                 }
             }
         }
 
+        private void trackDamage(long fight, int actor, String action, float before) {
+            float lost = target.isAlive() ? before - MonsterManager.modHealth(target) : before;
+            if (lost > .01F) hits.add(new Hit(fight, encounter.role(actor).getId(), encounter.type().getId(), action, lost));
+        }
+
+        private void resolveKill(long fight, int actor, List<Reward> before) {
+            respawnAt = fixture.respawnAt(encounter.id());
+            var after = rewards();
+            var delta = new ArrayList<Reward>();
+            for (int i = 0; i < fighters.size(); i++) {
+                var old = before.get(i);
+                var earned = after.get(i);
+                delta.add(new Reward(earned.role(), earned.gold() - old.gold(),
+                        earned.experience() - old.experience(), earned.obsidianBuffTicks()));
+                fixture.helper.assertTrue(i == actor ? delta.getLast().gold() > 0 && delta.getLast().experience() > 0
+                                : delta.getLast().gold() == 0 && delta.getLast().experience() == 0,
+                        "Gold and XP settle exclusively on the final hit");
+            }
+            fixture.helper.assertTrue(respawnAt - fixture.level.getGameTime()
+                    == GameManager.combatTempo().respawnSeconds(encounter.type()) * 20L,
+                    "Death schedules the configured respawn delay");
+            finish(fight, "killed", delta);
+        }
         private List<Reward> rewards() {
             return fighters.stream().map(player -> {
                 var data = PlayerDataProvider.get(player);
@@ -493,12 +541,17 @@ final class BattlefieldMonsterChecks {
         }
 
         void begin(long elapsed) {
+            begin(elapsed, null);
+        }
+
+        void begin(long elapsed, String profile) {
             clock.setGameTime(startGameTime + 12000);
             matchStart = level.getGameTime() - elapsed;
             var match = MatchProgress.JSON.toJsonTree(new GameManager()).getAsJsonObject();
             match.addProperty("phase", "PLAYING");
             match.addProperty("matchStartTime", matchStart);
-            match.addProperty("tempo", System.getenv().getOrDefault("MYRIAD_MONSTER_FIXTURE_TEMPO", "CHERRY_V1"));
+            match.addProperty("tempo", profile != null ? profile
+                    : System.getenv().getOrDefault("MYRIAD_MONSTER_FIXTURE_TEMPO", "CHERRY_V1"));
             for (var player : players) {
                 match.getAsJsonObject("factions").addProperty(player.getUUID().toString(),
                         PlayerDataProvider.get(player).getFaction().getName());

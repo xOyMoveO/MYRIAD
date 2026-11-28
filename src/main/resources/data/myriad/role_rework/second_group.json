@@ -390,7 +390,7 @@
       "cooldowns": [
         300
       ],
-      "description": "水平突进7格，沿途敌人受物理伤害并减速30%持续1.5秒。3秒内可再次释放，沿无障碍直线路径以motion返回起点；二段不扣蓝、不刷新CD。",
+      "description": "水平突进最多 {dash_range_blocks} 格，遇实心障碍提前停止。沿途敌人受物理伤害并减速 {slow_percent}%，持续 {slow_seconds} 秒。{return_window_seconds} 秒内可沿无障碍直线路径再次施放返回起点，回程无伤、免蓝耗，冷却照常推进。",
       "iconAlias": "zhuihunta"
     },
     {

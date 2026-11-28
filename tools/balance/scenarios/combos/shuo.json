@@ -1,0 +1,499 @@
+{
+  "scenarioId": "shuo.zero_preparation",
+  "scenarioVersion": 1,
+  "schemaVersion": 1,
+  "baselineCommit": "fee6c1ca91d181ce34c3d7f3aab47be7d719ec1c",
+  "role": "shuo",
+  "applicableBuilds": "all_terminal_combinations",
+  "category": "zero_preparation",
+  "status": "candidate_l3_partial",
+  "startState": {
+    "distance": 2.4,
+    "purchases": {
+      "strength": 5,
+      "cooldown": 3,
+      "speed": 1
+    }
+  },
+  "opponentCondition": [
+    "solo",
+    "ally_cc"
+  ],
+  "windows": [
+    "burst",
+    "sustained"
+  ],
+  "delayProfile": [
+    "human_default",
+    "zero_extra_delay"
+  ],
+  "basicAttack": {
+    "range": 3,
+    "source": "src/main/java/com/myriad/combat/VanillaMeleeAttack.java"
+  },
+  "skills": {
+    "shuo_nadao": {
+      "source": "src/main/java/com/myriad/character/skills/shuo/NaDaoSkill.java",
+      "events": [
+        {
+          "kind": "position",
+          "at": "retreat_duration",
+          "distance": -2.7,
+          "clock": "action_tick"
+        }
+      ],
+      "motion": "action_lock",
+      "drawn": {
+        "events": [
+          {
+            "effect": "opening_slash",
+            "kind": "damage",
+            "at": 0,
+            "radius": "cut_range"
+          },
+          {
+            "kind": "position",
+            "at": "retreat_duration",
+            "distance": -2.7,
+            "clock": "action_tick"
+          },
+          {
+            "effect": "return_slash",
+            "kind": "damage",
+            "at": "return_delay",
+            "radius": "cut_range",
+            "castOrigin": true,
+            "clock": "action_tick",
+            "movementSlow": [
+              "return_movement_rate",
+              "return_slow_duration"
+            ]
+          }
+        ],
+        "range": "cut_range",
+        "motion": "drawn_action_lock",
+        "sheatheAfter": "drawn_action_lock"
+      }
+    },
+    "shuo_qiaofan": {
+      "source": "src/main/java/com/myriad/character/skills/shuo/QiaoFanSkill.java",
+      "events": [],
+      "drawn": {
+        "range": "drawn_range",
+        "events": [
+          {
+            "effect": "flowing_cut",
+            "kind": "damage",
+            "at": 0,
+            "movementSlow": [
+              "drawn_movement_rate",
+              "drawn_slow_duration"
+            ]
+          }
+        ]
+      }
+    },
+    "shuo_yishan": {
+      "source": "src/main/java/com/myriad/character/skills/shuo/YiShanSkill.java",
+      "events": [
+        {
+          "effect": "dash_hit",
+          "kind": "damage",
+          "at": 0,
+          "radius": "sheathed_range",
+          "speed": "sheathed_dash_speed"
+        },
+        {
+          "kind": "position",
+          "at": "sheathed_dash_duration",
+          "distance": "sheathed_range",
+          "clock": "action_tick"
+        },
+        {
+          "effect": "wound",
+          "kind": "damage",
+          "at": "wound_from_release",
+          "needsPriorHit": true,
+          "movementSlow": [
+            "wound_movement_rate",
+            "slow_duration"
+          ]
+        }
+      ],
+      "range": "sheathed_range",
+      "paidWindup": "windup",
+      "motion": "sheathed_dash_duration",
+      "drawWeapon": true,
+      "drawn": {
+        "range": "drawn_range",
+        "motion": "drawn_dash_duration",
+        "events": [
+          {
+            "effect": "tailwind",
+            "kind": "damage",
+            "at": 0,
+            "radius": "drawn_range",
+            "speed": "drawn_dash_speed",
+            "movementSlow": [
+              "drawn_movement_rate",
+              "slow_duration"
+            ]
+          },
+          {
+            "kind": "position",
+            "at": "drawn_dash_duration",
+            "distance": "drawn_range",
+            "clock": "action_tick"
+          }
+        ]
+      }
+    },
+    "shuo_duanliu": {
+      "source": "src/main/java/com/myriad/character/skills/shuo/DuanLiuSkill.java",
+      "events": [
+        {
+          "effect": "first_cut",
+          "kind": "damage",
+          "at": 0,
+          "radius": "sheathed_range",
+          "movementSlow": [
+            "movement_rate",
+            "slow_duration"
+          ]
+        },
+        {
+          "effect": "second_cut",
+          "kind": "damage",
+          "at": "sheathed_follow",
+          "radius": "sheathed_range",
+          "clock": "action_tick",
+          "castOrigin": true,
+          "root": "sheathed_root",
+          "controlRequiresPriorHit": true
+        }
+      ],
+      "range": "sheathed_range",
+      "paidWindup": "windup",
+      "motion": "sheathed_follow",
+      "drawWeapon": true,
+      "drawn": {
+        "range": "drawn_range",
+        "motion": "drawn_follow",
+        "events": [
+          {
+            "effect": "double_slash",
+            "kind": "damage",
+            "at": 0,
+            "radius": "drawn_range"
+          },
+          {
+            "effect": "double_slash",
+            "kind": "damage",
+            "at": "drawn_follow",
+            "radius": "drawn_range",
+            "clock": "action_tick",
+            "root": "drawn_root",
+            "controlRequiresPriorHit": true
+          }
+        ]
+      }
+    },
+    "shuo_wusheng": {
+      "source": "src/main/java/com/myriad/character/skills/shuo/WuShengSkill.java",
+      "events": [
+        {
+          "kind": "position",
+          "at": "mark_dash_duration",
+          "distance": "mark_range",
+          "clock": "action_tick"
+        },
+        {
+          "effect": "delayed_cut",
+          "kind": "damage",
+          "at": "mark_cut_time",
+          "radius": "mark_range",
+          "clock": "action_tick",
+          "castOrigin": true
+        }
+      ],
+      "range": "mark_range",
+      "paidWindup": "windup",
+      "motion": "mark_cut_time",
+      "drawWeapon": true,
+      "sheatheAfter": "mark_cut_time",
+      "drawn": {
+        "range": "drawn_follow_range",
+        "motion": "drawn_dash_duration",
+        "events": [
+          {
+            "kind": "position",
+            "at": "drawn_dash_duration",
+            "distance": "drawn_dash_range",
+            "clock": "action_tick"
+          },
+          {
+            "effect": "empty_break",
+            "kind": "damage",
+            "at": "drawn_dash_duration",
+            "clock": "action_tick",
+            "radius": "drawn_cut_range",
+            "stun": "drawn_stun",
+            "forward": true
+          }
+        ]
+      }
+    },
+    "shuo_canyue": {
+      "source": "src/main/java/com/myriad/character/skills/shuo/CanYueSkill.java",
+      "events": [],
+      "range": "opening_range",
+      "paidWindup": "windup",
+      "drawn": {
+        "range": "drawn_range",
+        "paidWindup": "drawn_windup",
+        "motion": "follow_and_sheathe",
+        "events": [
+          {
+            "effect": "moon_final",
+            "kind": "damage",
+            "at": 0,
+            "radius": "drawn_range"
+          }
+        ],
+        "sheatheAfter": "follow_and_sheathe"
+      }
+    }
+  },
+  "execution": {
+    "type": "apl",
+    "steps": [
+      {
+        "action": "recast",
+        "skill": "r",
+        "judgment": true
+      },
+      {
+        "action": "recast",
+        "skill": "w",
+        "judgment": true
+      },
+      {
+        "action": "cast",
+        "skill": "r"
+      },
+      {
+        "action": "cast",
+        "skill": "e"
+      },
+      {
+        "action": "cast",
+        "skill": "w"
+      },
+      {
+        "action": "basic_attack"
+      },
+      {
+        "action": "cast",
+        "skill": "q"
+      }
+    ]
+  },
+  "coverageGaps": {
+    "shuo_cangfeng": {
+      "axes": [
+        "damage"
+      ],
+      "reason": "只计算未受扰动的真实刻锋意增长与首次出鞘，未重放停步、受控、攻击浮动及重新回鞘的精确帧。"
+    },
+    "shuo_jianqie": {
+      "axes": [
+        "damage"
+      ],
+      "reason": "零预置对照的撤步目标不提供正面反击输入。独立条件剧本使用固定来伤；空间迎角、技能免疫与临场误判由引擎另查。"
+    },
+    "shuo_nadao": {
+      "axes": [
+        "damage",
+        "control"
+      ],
+      "reason": "侧退简化为前后轴投影，未复算侧向各实体碰撞。"
+    },
+    "shuo_qiaofan": {
+      "axes": [
+        "damage",
+        "control",
+        "support"
+      ],
+      "reason": "零预置只有拔刀斩与固定来伤，合成正面格挡单列。格挡后的有效盾量随实际后续来伤变化。"
+    },
+    "shuo_yishan": {
+      "axes": [
+        "damage",
+        "control"
+      ],
+      "reason": "空间扫掠简化为直线到达时刻。刀痕需首段命中，局部缓时／受击改变实际碰撞时点未与本剧本逐刻配对。"
+    },
+    "shuo_duanliu": {
+      "axes": [
+        "damage",
+        "control"
+      ],
+      "reason": "分段按同一前后轴复算，动态朝向、墙体截断和被控制取消由引擎另查。"
+    },
+    "shuo_wusheng": {
+      "axes": [
+        "damage",
+        "control"
+      ],
+      "reason": "收鞘标记用初始方向和距离模型；实际开始扫掠、侧面退出和碰撞导致漏挂标记由引擎另查。"
+    },
+    "shuo_canyue": {
+      "axes": [
+        "damage",
+        "control"
+      ],
+      "reason": "残月续段仅模拟直接斩击，按键长短判定引出的四格贴近不在该场景内。"
+    }
+  },
+  "scripted": [
+    {
+      "scenarioId": "shuo.guard_contact",
+      "scenarioVersion": 1,
+      "category": "condition_probe",
+      "status": "l3_synthetic",
+      "applicableBuilds": [
+        "shuo_cangfeng",
+        "shuo_qiaofan",
+        "shuo_duanliu",
+        "shuo_canyue"
+      ],
+      "opponentCondition": "solo",
+      "startState": {
+        "distance": 2,
+        "casterIncoming": [
+          [
+            4,
+            "physical",
+            65
+          ],
+          [
+            30,
+            "physical",
+            65
+          ]
+        ],
+        "frontalGuardContact": true
+      },
+      "execution": {
+        "type": "apl",
+        "steps": [
+          {
+            "action": "recast",
+            "skill": "w",
+            "judgment": true
+          },
+          {
+            "action": "cast",
+            "skill": "w"
+          }
+        ]
+      },
+      "notes": [
+        "固定第 4 刻正面非真伤，第 30 刻独立后续来伤，观察反击命中和有效盾。"
+      ]
+    },
+    {
+      "scenarioId": "shuo.guard_whiff",
+      "scenarioVersion": 1,
+      "category": "condition_probe",
+      "status": "l3_synthetic",
+      "applicableBuilds": [
+        "shuo_cangfeng",
+        "shuo_qiaofan",
+        "shuo_duanliu",
+        "shuo_canyue"
+      ],
+      "opponentCondition": "solo",
+      "startState": {
+        "distance": 2,
+        "casterIncoming": [
+          [
+            4,
+            "physical",
+            65
+          ],
+          [
+            30,
+            "physical",
+            65
+          ]
+        ],
+        "frontalGuardContact": true,
+        "counterContact": false
+      },
+      "execution": {
+        "type": "apl",
+        "steps": [
+          {
+            "action": "recast",
+            "skill": "w",
+            "judgment": true
+          },
+          {
+            "action": "cast",
+            "skill": "w"
+          }
+        ]
+      },
+      "notes": [
+        "固定来伤成功格挡，反刀时目标脱离扇区；不追加伤害、控制或盾。"
+      ]
+    },
+    {
+      "scenarioId": "shuo.guard_from_rear",
+      "scenarioVersion": 1,
+      "category": "condition_probe",
+      "status": "l3_synthetic",
+      "applicableBuilds": [
+        "shuo_cangfeng",
+        "shuo_qiaofan",
+        "shuo_duanliu",
+        "shuo_canyue"
+      ],
+      "opponentCondition": "solo",
+      "startState": {
+        "distance": 2,
+        "casterIncoming": [
+          [
+            4,
+            "physical",
+            65
+          ],
+          [
+            30,
+            "physical",
+            65
+          ]
+        ],
+        "frontalGuardContact": false
+      },
+      "execution": {
+        "type": "apl",
+        "steps": [
+          {
+            "action": "recast",
+            "skill": "w",
+            "judgment": true
+          },
+          {
+            "action": "cast",
+            "skill": "w"
+          }
+        ]
+      },
+      "notes": [
+        "固定第 4 刻从后方受到非真伤，不能开续段。"
+      ]
+    }
+  ]
+}

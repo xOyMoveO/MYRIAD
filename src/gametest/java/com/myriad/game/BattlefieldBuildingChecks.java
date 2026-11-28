@@ -40,6 +40,8 @@ final class BattlefieldBuildingChecks {
     private static final int HELD_GOLD = 500;
     private static final List<CharacterType> PUSHERS = List.of(CharacterType.LUOXIA, CharacterType.SHUO, CharacterType.QINGLUO);
     private static final List<CharacterType> OPPONENTS = List.of(CharacterType.RIVET, CharacterType.YINGXIAO, CharacterType.XUANCHEN);
+    private static final List<CharacterType> ROSTER_PUSHERS = List.of(CharacterType.YIKE, CharacterType.SHUO, CharacterType.RIVET);
+    private static final List<CharacterType> ROSTER_OPPONENTS = List.of(CharacterType.CHIXIAO, CharacterType.LUOXIA, CharacterType.QINGLUO);
     private static final Vec3 HOLDING = new Vec3(336.5, 64, 115.5);
 
     private record Build(int level, int strength, int wisdom, int speed) {
@@ -68,6 +70,14 @@ final class BattlefieldBuildingChecks {
     private static final Build LATE = new Build(18, 5, 3, 4);
 
     static void run(GameTestHelper helper) {
+        run(helper, false);
+    }
+
+    static void roster(GameTestHelper helper) {
+        run(helper, true);
+    }
+
+    private static void run(GameTestHelper helper, boolean rosterOnly) {
         var suite = new ArenaFixtureChecks.Suite(helper.getLevel().getServer());
         try {
             suite.install();
@@ -80,14 +90,22 @@ final class BattlefieldBuildingChecks {
             for (int seat = 0; seat < 6; seat++) suite.player(seat);
             for (var profile : MatchTempo.values()) {
                 if (!profile.name().startsWith("CHERRY_")) continue;
+                if (rosterOnly && profile != MatchTempo.CHERRY_V2) continue;
                 try {
-                    var replay = new Replay(suite, profile);
-                    replay.towerRules();
-                    replay.pureBasics();
-                    replay.wholeWaves();
-                    replay.fountains();
-                    replay.crystal();
-                    replay.progression();
+                    var replay = new Replay(suite, profile, rosterOnly ? ROSTER_PUSHERS : PUSHERS,
+                            rosterOnly ? ROSTER_OPPONENTS : OPPONENTS);
+                    if (rosterOnly) {
+                        for (var role : List.of(CharacterType.YIKE, CharacterType.SHUO, CharacterType.RIVET, CharacterType.CHIXIAO)) {
+                            replay.wholeWaves(role);
+                        }
+                    } else {
+                        replay.towerRules();
+                        replay.pureBasics();
+                        replay.wholeWaves(CharacterType.LUOXIA);
+                        replay.fountains();
+                        replay.crystal();
+                        replay.progression();
+                    }
                 } finally {
                     GameManager.get().resetToLobby(suite.server, false);
                 }
@@ -109,7 +127,8 @@ final class BattlefieldBuildingChecks {
         private final JsonObject freshLane;
         private final Map<CharacterType, ServerPlayer> heroes = new EnumMap<>(CharacterType.class);
 
-        Replay(ArenaFixtureChecks.Suite suite, MatchTempo profile) throws Exception {
+        Replay(ArenaFixtureChecks.Suite suite, MatchTempo profile, List<CharacterType> pushers,
+                List<CharacterType> opponents) throws Exception {
             this.suite = suite;
             this.level = suite.server.overworld();
             this.profile = profile;
@@ -122,7 +141,7 @@ final class BattlefieldBuildingChecks {
             while (match.queueCurrentPicker() != null) {
                 var player = suite.server.getPlayerList().getPlayer(match.queueCurrentPicker());
                 Faction side = match.factionOf(player);
-                CharacterType role = (side == Faction.GUARDIAN ? PUSHERS : OPPONENTS).get(next.merge(side, 1, Integer::sum) - 1);
+                CharacterType role = (side == Faction.GUARDIAN ? pushers : opponents).get(next.merge(side, 1, Integer::sum) - 1);
                 suite.check(match.onPick(player, role), "Synthetic draft chooses " + role);
                 heroes.put(role, player);
             }
@@ -328,21 +347,25 @@ final class BattlefieldBuildingChecks {
             }
         }
 
-        private void wholeWaves() throws Exception {
+        private void wholeWaves(CharacterType role) throws Exception {
             for (var sample : List.of(Map.entry(EARLY, OPENING), Map.entry(12000L, MIDGAME), Map.entry(ENDGAME, LATE))) {
                 int tier = sample.getKey() == EARLY ? 1 : sample.getKey() == 12000 ? 2 : 3;
-                var role = CharacterType.LUOXIA;
                 var actor = heroes.get(role);
-                stage(sample.getKey(), Faction.GUARDIAN, tier - 1, true);
-                var tower = tower(Faction.DESTRUCTION, tier);
-                var minions = advanceWave(Faction.GUARDIAN, tower);
+                var side = match.factionOf(actor);
+                stage(sample.getKey(), side, tier - 1, true);
+                var tower = tower(enemy(side), tier);
+                var minions = advanceWave(side, tower);
                 suite.check(minions.size() == 4, "The test feeds a single ordinary wave");
                 sample.getValue().apply(actor);
-                var totals = push(tower, minions, List.of(new BasicInputs(actor, role)), sample.getKey());
-                suite.check(totals.hero > 0 && totals.minions > 0 && totals.ticks > 0, "Whole-wave source accounting has real damage from both sides");
+                var inputs = new BasicInputs(actor, role);
+                var totals = push(tower, minions, List.of(inputs), sample.getKey());
+                suite.check(totals.minions > 0 && totals.ticks > 0 && inputs.attackRequests > 0
+                                && (role == CharacterType.YIKE ? totals.hero == 0 : totals.hero > 0),
+                        "Whole-wave source accounting preserves actual attack and tower eligibility for " + role);
                 var row = row("whole_wave", sample.getKey());
                 addBuild(row, sample.getValue());
                 row.addProperty("hero", role.getId());
+                row.addProperty("heroAttackRequests", inputs.attackRequests);
                 row.addProperty("tier", tier);
                 row.addProperty("waveEndTick", totals.ticks);
                 row.addProperty("hpAtWaveEntry", totals.initialHealth);
@@ -352,7 +375,7 @@ final class BattlefieldBuildingChecks {
                 row.addProperty("percent", (totals.initialHealth - LaneSystem.health(tower)) * 100 / totals.initialHealth);
                 row.addProperty("towerDestroyed", !tower.isAlive());
                 row.addProperty("allEscortsGone", minions.stream().noneMatch(Mob::isAlive));
-                if (tier == 1) row.addProperty("plannerReferencePercent", 15);
+                if (tier == 1 && role == CharacterType.LUOXIA) row.addProperty("plannerReferencePercent", 15);
                 emit(row);
             }
         }
@@ -654,6 +677,7 @@ final class BattlefieldBuildingChecks {
         private final ServerPlayer actor;
         private final CharacterType role;
         private int next;
+        private int attackRequests;
         private boolean drawing;
 
         BasicInputs(ServerPlayer actor, CharacterType role) {
@@ -673,6 +697,7 @@ final class BattlefieldBuildingChecks {
             AbilityRuntime.tick(actor);
             MagicBullet.tickBullets(actor, PlayerDataProvider.get(actor));
             if (tick < next || !target.isAlive()) return;
+            attackRequests++;
             if (role == CharacterType.LUOXIA) {
                 BasicAttackSystem.tryAttack(actor, drawing ? LuoxiaBow.RELEASE : LuoxiaBow.PRESS);
                 if (drawing) {
@@ -683,6 +708,9 @@ final class BattlefieldBuildingChecks {
                     next = tick + (int) Math.ceil(LuoxiaBow.NORMAL_WORK /
                             LuoxiaBow.drawRate(actor.getAttributeValue(ModAttributes.ATTACK_SPEED), 1));
                 }
+            } else if (role == CharacterType.YIKE) {
+                BasicAttackSystem.tryAttack(actor, 0);
+                next = tick + BasicAttackSystem.cooldownTotal(actor);
             } else if (MagicBullet.isMage(actor)) {
                 MagicBullet.tryFire(actor, actor.getMainHandItem());
                 next = tick + BasicAttackSystem.cooldownTotal(actor);

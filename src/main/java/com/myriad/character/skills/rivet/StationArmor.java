@@ -8,6 +8,9 @@ import java.util.*;
 
 /** Grounded time is cumulative inside the station; damage exhaustion owns the ten-second lock. */
 public final class StationArmor extends RivetSkill {
+    public static final double ANCHOR_RADIUS = 4;
+    public static final int GROUNDED_TICKS = 40, LEAVE_TICKS = 40, BREAK_RECOVERY_TICKS = 200;
+    public static final float RETURN_SHIELD_FRACTION = .2f;
     private static final SupportAmount SHIELD = new SupportAmount(SupportEffect.SHIELD, SupportScaling.TOTAL_SPELL, 68, 21.6f, .4f);
 
     @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(SHIELD); }
@@ -26,10 +29,10 @@ public final class StationArmor extends RivetSkill {
         if (state.last == c.now()) return;
         state.last = c.now();
         var anchor = TacticalAnchor.anchor(c.player);
-        boolean inside = anchor != null && c.player.position().distanceToSqr(anchor.point()) <= 16.0001;
+        boolean inside = anchor != null && c.player.position().distanceToSqr(anchor.point()) <= ANCHOR_RADIUS * ANCHOR_RADIUS + .0001;
         if (!inside) {
             if (state.outside < 0) state.outside = c.now();
-            if (c.now() - state.outside >= 40) {
+            if (c.now() - state.outside >= LEAVE_TICKS) {
                 ModShieldSystem.removeSource(c.player, source(c.player));
                 state.effectiveLeave = true;
                 state.fullRecovery = false;
@@ -39,7 +42,7 @@ public final class StationArmor extends RivetSkill {
         }
         state.outside = -1;
         if (c.player.onGround()) state.grounded++;
-        if (state.grounded < 40 || c.now() < state.brokenUntil) return;
+        if (state.grounded < GROUNDED_TICKS || c.now() < state.brokenUntil) return;
         float full = SHIELD.value(c);
         if (!state.initialized || state.fullRecovery) {
             ModShieldSystem.grant(c.player, source(c.player), full, Integer.MAX_VALUE);
@@ -48,7 +51,7 @@ public final class StationArmor extends RivetSkill {
             state.effectiveLeave = false;
             RivetVfx.shield(c, c.player, .7);
         } else if (state.effectiveLeave) {
-            ModShieldSystem.grantMaxSource(c.player, source(c.player), full * .2f, Integer.MAX_VALUE);
+            ModShieldSystem.grantMaxSource(c.player, source(c.player), full * RETURN_SHIELD_FRACTION, Integer.MAX_VALUE);
             state.effectiveLeave = false;
             RivetVfx.shield(c, c.player, .5);
         }
@@ -58,7 +61,7 @@ public final class StationArmor extends RivetSkill {
         if (!(target instanceof ServerPlayer player) || !source.equals(source(player))) return;
         var state = STATES.get(player.getUUID());
         if (state == null) return;
-        state.brokenUntil = player.level().getGameTime() + 200;
+        state.brokenUntil = player.level().getGameTime() + BREAK_RECOVERY_TICKS;
         state.grounded = 0;
         state.fullRecovery = !state.effectiveLeave;
     }

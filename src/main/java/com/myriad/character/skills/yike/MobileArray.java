@@ -8,7 +8,7 @@ import java.util.Map;
 public final class MobileArray extends AbilitySkill {
     public MobileArray(Definition definition) { super(definition); }
     @Override public Map<String, Number> descriptionFields(int rank) {
-        return YikeStance.ShotForm.MOBILE.artilleryDescriptionFields();
+        return YikeStance.ShotForm.MOBILE.artilleryDescriptionFields(this, rank);
     }
     @Override public int commitWindupTicks() { return 7; }
     @Override public void preparing(Cast c){YikeVfx.event(c,"deploy",c.player.getEyePosition(),c.player.getEyePosition().add(c.player.getLookAngle()),.35f,commitWindupTicks());}

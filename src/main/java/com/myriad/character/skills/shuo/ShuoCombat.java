@@ -23,6 +23,9 @@ import static com.myriad.network.ShuoViewPayload.*;
 public final class ShuoCombat {
     private static final WeakHashMap<ServerPlayer,State> STATES=new WeakHashMap<>();
     private static final AtomicInteger SEQUENCE=new AtomicInteger();
+    public static final int GUARD_TICKS = 7, COUNTER_WINDOW_TICKS = 40, RIPOSTE_READY_TICKS = 80;
+    public static final int GAUGE_MAX = 100, GAUGE_PER_TICK = 2, SHEATHE_TICKS = 8;
+    public static final double GUARD_HALF_ANGLE_DEGREES = 65;
     private static final class State {final ShuoBasicCombo combo=new ShuoBasicCombo();boolean drawn,charging;ActionTime.Progress sheath,busy;int busyTicks;long guardUntil,riposteUntil,lastTick=-1,bonusTick=-1;int gauge,chargeSkill=-1;float basicBonus;Object level;}
     private ShuoCombat(){}
     private static State state(ServerPlayer p){var s=STATES.computeIfAbsent(p,k->new State());if(s.level!=p.level()){s=new State();s.level=p.level();STATES.put(p,s);}return s;}
@@ -53,13 +56,13 @@ public final class ShuoCombat {
         if(s.guardUntil>now)ShuoVisuals.guard(p);
         var d=PlayerDataProvider.get(p);d.setBuff("g1_shuo_drawn",s.drawn?2:0);d.setBuff("g1_shuo_gauge",s.gauge);
         ShuoWeaponState.sync(p,s.drawn);
-        d.setBuff("g1_shuo_sheathing",s.sheath==null?0:Math.max(1,(int)Math.ceil((8-s.sheath.completed())/ActionTime.multiplier(p.getUUID(),now))));d.setBuff("g1_shuo_ready",s.riposteUntil>now?2:0);
+        d.setBuff("g1_shuo_sheathing",s.sheath==null?0:Math.max(1,(int)Math.ceil((SHEATHE_TICKS-s.sheath.completed())/ActionTime.multiplier(p.getUUID(),now))));d.setBuff("g1_shuo_ready",s.riposteUntil>now?2:0);
     }
     private static void advance(ServerPlayer p,State s){long now=p.level().getGameTime();double rate=ActionTime.multiplier(p.getUUID(),now);
         if(s.busy!=null&&s.busy.advance(now,rate,s.busyTicks))s.busy=null;
-        if(s.sheath!=null&&s.sheath.advance(now,rate,8)){s.sheath=null;s.drawn=false;s.gauge=0;ShuoAudio.play(p,"sheathe");}}
+        if(s.sheath!=null&&s.sheath.advance(now,rate,SHEATHE_TICKS)){s.sheath=null;s.drawn=false;s.gauge=0;ShuoAudio.play(p,"sheathe");}}
     public static void chargeEdge(ServerPlayer p){var s=state(p);long now=p.level().getGameTime();if(s.lastTick==now)return;s.lastTick=now;
-        if(!s.drawn&&!blocked(p)){int old=s.gauge;s.gauge=Math.min(100,s.gauge+2);if(old<100&&s.gauge==100)ShuoVisuals.body(p,0,ShuoSkillVfx.READY,12);}
+        if(!s.drawn&&!blocked(p)){int old=s.gauge;s.gauge=Math.min(GAUGE_MAX,s.gauge+GAUGE_PER_TICK);if(old<GAUGE_MAX&&s.gauge==GAUGE_MAX)ShuoVisuals.body(p,0,ShuoSkillVfx.READY,12);}
         PlayerDataProvider.get(p).setBuff("g1_shuo_gauge",s.gauge);
     }
     public static void windup(AbilityRuntime.Cast c,int ticks,Runnable fire){
@@ -75,7 +78,7 @@ public final class ShuoCombat {
                 passiveIndex=passive.index();
                 double attack=p.getAttributeValue(ModAttributes.PHYSICAL_ATTACK);
                 double bonusAttack=FirstGroupGrowth.bonusPhysicalAttack(CharacterType.SHUO,attack);
-                if(passive instanceof CangFengSkill)bonus=CangFengSkill.BONUS.value(r,attack,0,bonusAttack,0)*s.gauge/100;
+                if(passive instanceof CangFengSkill)bonus=CangFengSkill.BONUS.value(r,attack,0,bonusAttack,0)*s.gauge/GAUGE_MAX;
                 else if(s.riposteUntil>now)bonus=JianQieSkill.BONUS.value(r,attack,0,bonusAttack,0);
             }}
         s.drawn=true;s.charging=false;s.sheath=null;s.gauge=0;s.riposteUntil=0;
@@ -102,9 +105,9 @@ public final class ShuoCombat {
     public static void sheathe(ServerPlayer p){if(!AbilityRuntime.valid(p)||!isShuo(p))return;var s=state(p);s.charging=false;s.sheath=new ActionTime.Progress(p.level().getGameTime());s.busy=null;
         ShuoVisuals.body(p,2,ShuoSkillVfx.SHEATHING,8);
         s.combo.reset();
-        cue(p,SHEATHE,8);PlayerDataProvider.get(p).setBuff("g1_shuo_sheathing",8);}
+        cue(p,SHEATHE,8);PlayerDataProvider.get(p).setBuff("g1_shuo_sheathing",SHEATHE_TICKS);}
     public static void motion(ServerPlayer p,int ticks){var s=state(p);s.busy=new ActionTime.Progress(p.level().getGameTime());s.busyTicks=ticks;cue(p,RETREAT,ticks);ShuoAudio.play(p,"draw");}
-    public static void guard(AbilityRuntime.Cast c){state(c.player).guardUntil=c.now()+7;c.memory().until=0;c.buff("shuo_qiaofan_recast",0);ShuoVisuals.guard(c.player);cue(c.player,GUARD,7);}
+    public static void guard(AbilityRuntime.Cast c){state(c.player).guardUntil=c.now()+GUARD_TICKS;c.memory().until=0;c.buff("shuo_qiaofan_recast",0);ShuoVisuals.guard(c.player);cue(c.player,GUARD,GUARD_TICKS);}
     /** Short exposed-blade cut, not a new draw: no gauge/passive bonus is created. */
     public static void cut(AbilityRuntime.Cast c,int action,int ticks){state(c.player).combo.reset();cue(c.player,action,ticks);}
     /** Follow-ups latch even a brief control interruption; they never fire after a cancelled sequence. */
@@ -122,11 +125,11 @@ public final class ShuoCombat {
         var s=state(p);long now=p.level().getGameTime();
         if(s.guardUntil<=now||PlayerDataProvider.get(p).getBuff("g1_stun")>0||!(source.getEntity() instanceof LivingEntity enemy)||enemy instanceof DefenseTowerEntity||!SkillTargets.enemy(p,enemy))return false;
         Vec3 toward=enemy.position().subtract(p.position()).multiply(1,0,1).normalize();
-        Vec3 facing=p.getLookAngle().multiply(1,0,1).normalize();if(toward.dot(facing)<Math.cos(Math.toRadians(65)))return false;
-        s.guardUntil=0;s.riposteUntil=now+80;
+        Vec3 facing=p.getLookAngle().multiply(1,0,1).normalize();if(toward.dot(facing)<Math.cos(Math.toRadians(GUARD_HALF_ANGLE_DEGREES)))return false;
+        s.guardUntil=0;s.riposteUntil=now+RIPOSTE_READY_TICKS;
         ShuoVisuals.cancel(p,3);ShuoVisuals.body(p,3,ShuoSkillVfx.PARRY,8);
-        var skill=FirstGroupSkills.byId("shuo_qiaofan");AbilityRuntime.context(p,skill).memory().until=now+40;
-        PlayerDataProvider.get(p).setBuff("shuo_qiaofan_recast",40);ShuoAudio.play(p,"parry");cue(p,COUNTER,6);return true;
+        var skill=FirstGroupSkills.byId("shuo_qiaofan");AbilityRuntime.context(p,skill).memory().until=now+COUNTER_WINDOW_TICKS;
+        PlayerDataProvider.get(p).setBuff("shuo_qiaofan_recast",COUNTER_WINDOW_TICKS);ShuoAudio.play(p,"parry");cue(p,COUNTER,6);return true;
     }
     public static void cone(AbilityRuntime.Cast c,double range,double degrees,float amount,int stun){
         cone(c,range,degrees,amount,stun,0,0);

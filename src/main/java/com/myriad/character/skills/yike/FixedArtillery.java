@@ -8,7 +8,7 @@ import java.util.Map;
 public final class FixedArtillery extends AbilitySkill {
     public FixedArtillery(Definition definition) { super(definition); }
     @Override public Map<String, Number> descriptionFields(int rank) {
-        return YikeStance.ShotForm.FIXED.artilleryDescriptionFields();
+        return YikeStance.ShotForm.FIXED.artilleryDescriptionFields(this, rank);
     }
     @Override public int commitWindupTicks() { return 9; }
     @Override public void preparing(Cast c){YikeVfx.event(c,"deploy",c.player.getEyePosition(),c.player.getEyePosition().add(c.player.getLookAngle()),.35f,commitWindupTicks());}

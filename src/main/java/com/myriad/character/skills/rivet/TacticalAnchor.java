@@ -18,6 +18,8 @@ import java.util.UUID;
 /** A side-face attachment, never a block entity and never a chunk ticket. */
 public final class TacticalAnchor extends RivetSkill {
     public record Anchor(ServerLevel level, BlockPos block, BlockState attached, Vec3 point, Direction normal, long until) { }
+    public static final double PLACEMENT_RANGE = 8, STRIKE_RADIUS = 1.5;
+    public static final int LIFETIME_TICKS = 360, STRIKE_RECOVERY_TICKS = 100;
     private static final Map<UUID, Anchor> ANCHORS = new HashMap<>();
     private static final Map<UUID, Long> RECOVERY = new HashMap<>();
     public TacticalAnchor(Definition definition) { super(definition); }
@@ -53,10 +55,10 @@ public final class TacticalAnchor extends RivetSkill {
     private static Anchor aimed(ServerPlayer player) {
         Vec3 eye = player.getEyePosition();
         var blocks = loadedBlocks(player.level());
-        var hit = blocks.clip(new ClipContext(eye, eye.add(player.getLookAngle().scale(8)),
+        var hit = blocks.clip(new ClipContext(eye, eye.add(player.getLookAngle().scale(PLACEMENT_RANGE)),
                 ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
         if (hit.getType() != HitResult.Type.BLOCK || hit.getDirection().getAxis() == Direction.Axis.Y
-                || eye.distanceToSqr(hit.getLocation()) > 64.0001
+                || eye.distanceToSqr(hit.getLocation()) > PLACEMENT_RANGE * PLACEMENT_RANGE + .0001
                 || !player.level().getWorldBorder().isWithinBounds(hit.getBlockPos())) return null;
         var chunk = player.level().getChunkSource().getChunkNow(hit.getBlockPos().getX() >> 4, hit.getBlockPos().getZ() >> 4);
         if (chunk == null) return null;
@@ -64,7 +66,7 @@ public final class TacticalAnchor extends RivetSkill {
         if (block.getCollisionShape(blocks, hit.getBlockPos()).isEmpty()) return null;
         Vec3 outward = Vec3.atLowerCornerOf(hit.getDirection().getUnitVec3i()).scale(.035);
         return new Anchor(player.level(), hit.getBlockPos().immutable(), block,
-                hit.getLocation().add(outward), hit.getDirection(), player.level().getGameTime() + 360);
+                hit.getLocation().add(outward), hit.getDirection(), player.level().getGameTime() + LIFETIME_TICKS);
     }
     @Override public boolean canRelease(AbilityRuntime.Cast c) { return aimed(c.player) != null; }
     @Override public void release(AbilityRuntime.Cast c) {
@@ -102,8 +104,8 @@ public final class TacticalAnchor extends RivetSkill {
     }
     public static boolean consumeStrike(ServerPlayer player, Vec3 wallContact) {
         var anchor = anchor(player);
-        if (anchor == null || !anchorReady(player) || anchor.point().distanceToSqr(wallContact) > 2.250001) return false;
-        RECOVERY.put(player.getUUID(), player.level().getGameTime() + 100);
+        if (anchor == null || !anchorReady(player) || anchor.point().distanceToSqr(wallContact) > STRIKE_RADIUS * STRIKE_RADIUS + .000001) return false;
+        RECOVERY.put(player.getUUID(), player.level().getGameTime() + STRIKE_RECOVERY_TICKS);
         return true;
     }
     public static void tick(ServerPlayer player) {

@@ -10,6 +10,8 @@ import java.util.*;
 
 /** The fixed region survives anchor replacement and terrain destruction, but belongs to its caster's lifecycle. */
 public final class HoldProtocol extends RivetSkill {
+    public static final double ANCHOR_RANGE = 10, ZONE_RADIUS = 4, INCOMING_DAMAGE_FACTOR = .85;
+    public static final int ZONE_TICKS = 120;
     private static final SupportAmount SHIELD = new SupportAmount(SupportEffect.SHIELD, SupportScaling.TOTAL_SPELL, 142, 62.5f, .6f);
 
     @Override public java.util.List<SupportAmount> supportAmounts() { return java.util.List.of(SHIELD); }
@@ -19,13 +21,13 @@ public final class HoldProtocol extends RivetSkill {
         final Vec3 center;
         final long until;
         boolean shieldGranted;
-        Zone(AbilityRuntime.Cast c, Vec3 point) { cast = c; center = point; until = c.now() + 120; }
+        Zone(AbilityRuntime.Cast c, Vec3 point) { cast = c; center = point; until = c.now() + ZONE_TICKS; }
     }
     private static final Map<UUID, Zone> ZONES = new HashMap<>();
     public HoldProtocol(Definition definition) { super(definition); }
     @Override public boolean canRelease(AbilityRuntime.Cast c) {
         var anchor = TacticalAnchor.anchor(c.player);
-        return anchor != null && c.player.position().distanceToSqr(anchor.point()) <= 100.0001;
+        return anchor != null && c.player.position().distanceToSqr(anchor.point()) <= ANCHOR_RANGE * ANCHOR_RANGE + .0001;
     }
     @Override public void release(AbilityRuntime.Cast c) {
         var anchor = TacticalAnchor.anchor(c.player);
@@ -33,16 +35,16 @@ public final class HoldProtocol extends RivetSkill {
         clear(c.player);
         var zone = new Zone(c, anchor.point());
         ZONES.put(c.player.getUUID(), zone);
-        RivetVfx.field(c, zone.center, 120);
+        RivetVfx.field(c, zone.center, ZONE_TICKS);
         tick(c.player);
     }
     private static boolean contains(Zone zone, LivingEntity target) {
-        return target.level() == zone.cast.player.level() && target.position().distanceToSqr(zone.center) <= 16.0001;
+        return target.level() == zone.cast.player.level() && target.position().distanceToSqr(zone.center) <= ZONE_RADIUS * ZONE_RADIUS + .0001;
     }
     public static double incoming(LivingEntity target) {
         long now = target.level().getGameTime();
         for (var zone : ZONES.values()) if (now < zone.until && contains(zone, target)
-                && SkillTargets.ally(zone.cast.player, target)) return .85;
+                && SkillTargets.ally(zone.cast.player, target)) return INCOMING_DAMAGE_FACTOR;
         return 1;
     }
     public static boolean extendsHammer(ServerPlayer owner, LivingEntity enemy) {

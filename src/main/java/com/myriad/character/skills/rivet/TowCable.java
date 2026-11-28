@@ -8,6 +8,7 @@ import net.minecraft.world.phys.Vec3;
 /** Self-only pull; the destination is shortened to the nearest body-safe point in front of the wall. */
 public final class TowCable extends RivetSkill {
     public static final double RANGE = 15;
+    public static final int MOTION_TICKS = 10;
     public TowCable(Definition definition) { super(definition); }
     @Override public boolean recastWhileMoving() { return true; }
     @Override public boolean recastWhileRooted() { return true; }
@@ -50,7 +51,7 @@ public final class TowCable extends RivetSkill {
         var anchor = TacticalAnchor.anchor(c.player);
         c.memory().until = Long.MAX_VALUE;
         RivetVfx.cable(c, c.player.getEyePosition(), anchor.point());
-        c.actionDash(to.subtract(c.player.position()), 10, .05, (target, first) -> { },
+        c.actionDash(to.subtract(c.player.position()), MOTION_TICKS, .05, (target, first) -> { },
                 () -> {
                     c.memory().until = 0;
                     c.data.setBuff("rivet_tow_cable_recast", 0);

@@ -1,0 +1,52 @@
+{
+  "baseAttributes": {
+    "decision": "retain",
+    "reason": "保留零购生命 550、每级 +75 至 1975，法力 700、每级 +32 至 1308。物攻 65、法强 30、双抗各 45、攻速 0.70、移速 0.10、回体 2/秒、回蓝 4/秒和暴伤 150% 在 1–20 级同值。炮台以较长射程换取定身、逐发付蓝与撤炮后的冷却，专项均复现这些约束。实图承压与资源周转沿用现值继续观察。",
+    "scenario": ["yike.zero_preparation", "myriad:yike"]
+  },
+  "basicAttack": {
+    "decision": "retain",
+    "reason": "持虹裂、普通姿态且未引导时发射无蓝耗的物理普攻，零购 65、弹道 10 格、29 行动刻恢复、标称每行动刻 1.69 格。引擎左键单发恰扣 65，半速恢复拒绝过早再按，炮台普攻零伤。炮弹当前跳过防御塔，塔读数归 #111 战场对照继续复查。",
+    "scenario": ["myriad:yike", "yike.zero_preparation", "myriad:balance_roster_towers"]
+  },
+  "yike_rainbow_mark": {
+    "decision": "retain",
+    "reason": "同一英雄受不同次付费技能有效直接命中叠虹标，同次最多一层；三层触发 40＋12×(阶−1)＋20%法强魔伤，每次有效叠层刷新 120 真实刻。定轨实测五炮加重轰触发两次，贯虹六跳只提供一次付费标记，全吸盾仍可触发，不为高频单一技能提前爆发。",
+    "scenario": ["myriad:yike", "yike.zero_preparation"]
+  },
+  "yike_steady_barrier": {
+    "decision": "retain",
+    "reason": "保留 24 真实刻水平累计不超过 0.3 格、主动成功提交、持续 50 真实刻及固定 240 真实刻内置冷却。盾量 65＋18×(阶−1)＋25%法强。引擎区分折返、未付费取消和已提交授盾；英文说明改由正式盾量生成。效果受成功施放时点与实际来伤约束。",
+    "scenario": ["myriad:yike", "yike.zero_preparation", "yike.barrier_after_pacing"]
+  },
+  "yike_rainbow_shell": {
+    "decision": "retain",
+    "reason": "保留 5 行动刻起手、出膛缴费及 95＋22.5×(阶−1)＋55%法强基础魔伤。普通射程 16 格、弹速 39 格/秒、爆炸半径 1.5 格与冷却 120／115／110／105／100 真实刻。两套炮台当发冷却为零，下一发由弹仓、真实刻间隔、蓝量和 W 共同约束，支持不同急速读数。",
+    "scenario": ["myriad:balance_vertical", "myriad:balance_haste", "myriad:yike", "yike.normal_then_stance_no_shot"]
+  },
+  "yike_refraction_denial": {
+    "decision": "retain",
+    "reason": "保留 14 格合法选点及半径 2.5 格的预警，提交 11 真实刻后独立结算 70＋22.5×(阶−1)＋35%法强魔伤，并降低移速 30% 持续基础 25 真实刻。提交前请求可取消待发 Q，提交后暂停炮台发射 11 刻。引擎区分已落地预警受后续控制、中心遮挡和隔层目标。",
+    "scenario": ["myriad:yike", "yike.w_cancels_unpaid_q", "yike.zero_preparation"]
+  },
+  "yike_fixed_artillery": {
+    "decision": "retain",
+    "reason": "保留 9 行动刻延迟后缴费，定身、限制疾跑和普攻，最多 120 真实刻、5 弹、每炮最短 22 真实刻。Q 射程 26 格、弹速 44.2 格/秒、爆炸半径 1.5 格、伤害倍率从 65% 每阶 +2.5 个百分点至 80%。实际出膛五发及撤炮恢复急速后的普通冷却符合阵地高上限与撤退成本。",
+    "scenario": ["myriad:balance_vertical", "myriad:balance_haste", "myriad:yike", "yike.fixed_then_two_shells_manual_exit"]
+  },
+  "yike_mobile_array": {
+    "decision": "retain",
+    "reason": "保留 7 行动刻延迟后缴费，最多 120 真实刻，移动 70% 且禁疾跑与普攻；4 弹、每炮最短 27 真实刻、射程 20 格、弹速 39 格/秒、爆炸半径 1 格与 55% 至 70% 的阶梯倍率。实测弹仓耗尽退出。合成直线读数支持两姿态存在火力代价，转向、追击和地形收益待人观察。",
+    "scenario": ["myriad:balance_vertical", "myriad:balance_haste", "myriad:yike", "yike.mobile_exhaustion"]
+  },
+  "yike_distant_bombardment": {
+    "decision": "retain",
+    "reason": "保留 26 格可见合法地面、确认缴费并退出炮台、12 行动刻蓄势与 4 格落地爆炸。每目标一段 250＋106.25×(阶−1)＋115%法强魔伤。短距无遮挡实测 7 真实刻飞行，地形拦截无伤。技能卡采用现行全局弹速后的最短时间，保留近距爆发和远距可规避条件。",
+    "scenario": ["myriad:yike", "yike.heavy_intercepted", "yike.zero_preparation"]
+  },
+  "yike_prismatic_beam": {
+    "decision": "retain",
+    "reason": "保留即缴费、退出炮台、12 行动刻蓄势，随后每 10 真实刻一跳，最多 6 跳。射程 22 格、宽 1.25 格、每秒最多转 45 度；每跳 70＋23×(阶−1)＋25%法强。引擎无遮挡六跳 465、主动取消后两跳 155、隔墙零。其持续收益依赖留在光束中并维持引导。",
+    "scenario": ["myriad:yike", "yike.zero_preparation", "yike.beam_reach_retreat", "yike.beam_reach_ally_cc"]
+  }
+}

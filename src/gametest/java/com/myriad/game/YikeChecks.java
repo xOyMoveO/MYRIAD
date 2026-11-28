@@ -25,6 +25,7 @@ final class YikeChecks {
     private static final class Fixture {
         ServerPlayer p;Villager target;Vec3 origin;ServerLevel level;int index;
         final Map<BlockPos,BlockState> blocks=new HashMap<>();float paid;int shots;long lastShot=-1000;Vec3 aim;
+        final List<Integer> muzzleTicks = new ArrayList<>();
         final List<com.myriad.network.AbilityVfxPayload> visuals=new ArrayList<>();
     }
     static void run(GameTestHelper h){
@@ -33,7 +34,7 @@ final class YikeChecks {
         var fixtures=new ArrayList<Fixture>();boolean[] done={false};
         try{
             for(int i=0;i<CASES;i++){var f=fixture(h,i);fixtures.add(f);var d=PlayerDataProvider.get(f.p);
-                if(i==24||i==25||i==50||i==51){d.setSkillLevel(node(0).getId(),0);d.setSkillLevel(node(1).getId(),1);}
+                if(i==24||i==25||i==50||i==51){d.setSkillLevel(node(0).getId(),0);d.setSkillLevel(node(1).getId(),i==51?5:1);}
                 if(i==26){d.setSkillLevel(node(0).getId(),3);d.setSkillLevel(node(2).getId(),5);d.setSkillLevel(node(4).getId(),7);d.setSkillLevel(node(6).getId(),3);f.p.getAttribute(ModAttributes.SPELL_POWER).setBaseValue(230);JiarenManager.setDefenses(f.target,50,50);}
                 if(i==27)ModShieldSystem.grant(f.target,"test",10000,160);
                 if(i==28)f.target.setPermanentlyInvulnerable(true);
@@ -137,7 +138,7 @@ final class YikeChecks {
                     }
                     if(i==4||i==5){
                         int spent=Math.round(700-d.getMana()-(i==4?70:65));int committed=spent/35;
-                        if(committed>f.shots){h.assertTrue(committed==f.shots+1,"One input commits one shell");if(f.shots>0)h.assertTrue(tick-f.lastShot==(i==4?22:27),"Exact real muzzle interval");f.lastShot=tick;f.shots=committed;}
+                        if(committed>f.shots){h.assertTrue(committed==f.shots+1,"One input commits one shell");if(f.shots>0)h.assertTrue(tick-f.lastShot==(i==4?22:27),"Exact real muzzle interval");f.lastShot=tick;f.shots=committed;f.muzzleTicks.add(tick);}
                     }
                     if(tick==4&&i==30)h.assertTrue(d.getMana()==700,"Slowed Q cannot commit early");
                     if(tick==4&&i==0)h.assertTrue(visualCount(f,YikeVfx.MUZZLE)==0&&visualCount(f,YikeVfx.MUZZLE_CHARGE)>0,"Actual unpaid Q preparation emits charge frames and zero muzzle/recoil events");
@@ -166,6 +167,16 @@ final class YikeChecks {
                     if(tick==15&&i==39)h.assertTrue(d.getMana()==700&&d.getCooldown(node(4).getId())==0,"Interrupted deployment never pays the major cost");
                     if(tick==37&&i==50)h.assertTrue(ModShieldSystem.value(p)==0,"Back-and-forth horizontal path cannot fake standing steady");
                     if(tick==34&&i==24)h.assertTrue(Math.abs(ModShieldSystem.value(p)-72.5)<.1,"Standing steady uses actual successful deployment, not request");
+                    if(tick==30&&i==51){
+                        h.assertTrue(Math.abs(ModShieldSystem.value(p)-144.5)<.1,"A fifth-rank steady barrier gains 18 per rank and 25 percent of current spell power");
+                        trace("steady_barrier", tick, "rankOneShield", ModShieldSystem.value(fixtures.get(25).p),
+                                "rankFiveShield", ModShieldSystem.value(p), "internalCooldown", SteadyBarrier.cooldown(p));
+                    }
+                    if(i==17&&(tick==18||tick==19)){
+                        h.assertTrue(Math.abs(loss(f)-(tick==18?0:284.5))<.1,
+                                "Short-range heavy impact follows a 12-action-tick charge and 7 real flight ticks");
+                        trace("short_heavy_flight", tick, "damage", loss(f), "mana", d.getMana());
+                    }
                     if(tick==28&&i==25)h.assertTrue(ModShieldSystem.value(p)==0,"Cancelled unpaid action never grants steady shield");
                     if(tick==31&&i==25)h.assertTrue(ModShieldSystem.value(p)>0,"Next successful W consumes the ready barrier");
                     if(tick==50&&(i==14||i==15))h.assertTrue(!PrismaticBeam.active(p)&&Math.abs(loss(f)-155)<.1,"Cancel/control stops the beam after two real jumps: case="+i+", loss="+loss(f)+", active="+PrismaticBeam.active(p)+", target="+f.target.isAlive()+"/"+f.target.isRemoved());
@@ -174,6 +185,12 @@ final class YikeChecks {
                         h.assertTrue(Math.abs(loss(f)-(i==58?465:0))<.1,"Beam keeps .625 half-width at an unobstructed .60 edge, but never damages through thin or full cover: "+i+" loss="+loss(f));
                     }
                     if(tick==74&&(i==13||i==16))h.assertTrue(!PrismaticBeam.active(p)&&Math.abs(loss(f)-465)<.1,"Exactly six real jumps, including rooted channel");
+                    if(tick==74&&i==13){
+                        int marks = RainbowCalibration.count(p,f.target.getUUID());
+                        h.assertTrue(marks==1,"Six damage pulses from the same paid beam grant only one rainbow mark");
+                        trace("beam_paid_cast", tick, "damage", loss(f), "marks", marks,
+                                "cancelledDamage", loss(fixtures.get(14)));
+                    }
                     if(tick==110&&i==4)h.assertTrue(f.shots==5&&!YikeStance.active(p)&&d.getMana()==455,"Fixed stance delivers five manually requested paid shells");
                     if(tick==100&&i==5)h.assertTrue(f.shots==4&&!YikeStance.active(p)&&d.getMana()==495,"Mobile stance delivers four distinct paid shells");
                     if(tick==130&&i==11)h.assertTrue(!YikeStance.active(p)&&YikeStance.exitReason(p).equals("expired"),"Stance deadline remains 120 real ticks");
@@ -208,12 +225,25 @@ final class YikeChecks {
                     h.assertTrue(loss(fixtures.get(34))>0,"Committed ground warning survives stun");
                     h.assertTrue(loss(fixtures.get(53))>0,"Placed W uses centre visibility, not the caster's later obstructed sightline");
                     h.assertTrue(loss(fixtures.get(54))==0&&loss(fixtures.get(55))==0,"W cannot cross a floor or flatten its 2.5-block sphere into a vertical cylinder");
+                    trace("normal_and_stances", tick, "normalDamage", loss(fixtures.get(0)),
+                            "basicDamage", loss(fixtures.get(22)), "fixedMuzzles", fixtures.get(4).muzzleTicks,
+                            "fixedDamage", loss(fixtures.get(4)), "mobileMuzzles", fixtures.get(5).muzzleTicks,
+                            "mobileDamage", loss(fixtures.get(5)), "fixedHeavyMarksDamage", loss(fixtures.get(26)),
+                            "wGroundDamage", loss(fixtures.get(53)), "wBehindFloorDamage", loss(fixtures.get(54)));
                     System.out.println("[MYRIAD-YIKE] PASS: 60 real-input cases, unpaid commit/recheck, W cancellation, fixed five/mobile four, real muzzle deadlines, exit CD, root/stun, six-jump cancel, heavy collision, physical basic, rolling barrier, shields/marks, S230 actual chain, beam turn, 3D centre visibility and cleanup");
                     done[0]=true;fixtures.forEach(YikeChecks::cleanup);restore(enabled,training,nc,nm);h.succeed();
                 }
             }catch(Throwable fail){done[0]=true;fixtures.forEach(YikeChecks::cleanup);restore(enabled,training,nc,nm);throw fail;}
         });}
     }
+    private static void trace(String scenario, int tick, Object... values) {
+        var event = new LinkedHashMap<String, Object>();
+        event.put("scenarioId", scenario);
+        event.put("tick", tick);
+        for (int i = 0; i < values.length; i += 2) event.put((String) values[i], values[i + 1]);
+        System.out.println("BALANCE_YIKE " + new com.google.gson.Gson().toJson(event));
+    }
+
     private static AbilitySkill node(int i){return FirstGroupSkills.node("yike",i);}
     private static Fixture fixture(GameTestHelper h,int i){
         // 26.3 anchors GameTests near Y=4. Translate the whole stack down so all

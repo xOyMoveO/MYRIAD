@@ -11,6 +11,7 @@ import java.util.List;
 
 /** Its reward is consumed only by a real basic-attack damage event, after the ordinary critical. */
 public final class BreachRhythm extends RivetSkill {
+    public static final int WINDOW_TICKS = 80, RECOVERY_TICKS = 100, MAJOR_REFUND_TICKS = 40;
     private static final AbilityDamageFormula BONUS = AbilityDamageFormula.physicalFromSpell(22.5f, 9.6f, .25f, .25f);
 
     @Override public List<AbilityDamageFormula> damageFormulas() {
@@ -25,9 +26,9 @@ public final class BreachRhythm extends RivetSkill {
         if (skill == null || data.skillLevel(skill.getId()) <= 0) return;
         var c = AbilityRuntime.context(player, skill);
         if (c.now() < c.memory().cooldown) return;
-        c.memory().cooldown = c.now() + 100;
-        c.memory().until = c.now() + 80;
-        c.buff("g1_rivet_rhythm", 80);
+        c.memory().cooldown = c.now() + RECOVERY_TICKS;
+        c.memory().until = c.now() + WINDOW_TICKS;
+        c.buff("g1_rivet_rhythm", WINDOW_TICKS);
         PlayerDataProvider.syncToClient(player);
     }
     @Override public void onHit(AbilityRuntime.Hit hit) {
@@ -40,7 +41,7 @@ public final class BreachRhythm extends RivetSkill {
         c.damage(hit.target(), BONUS.value(c), DamageCalc.Kind.PHYSICAL, false);
         RivetVfx.rhythmHit(c, hit.target());
         var major = FirstGroupSkills.resolve(CharacterType.byId(c.data.getCharacterId()), 2, c.data.getSkillLevels());
-        if (major != null) c.data.setCooldown(major.getId(), Math.max(0, c.data.getCooldown(major.getId()) - 40));
+        if (major != null) c.data.setCooldown(major.getId(), Math.max(0, c.data.getCooldown(major.getId()) - MAJOR_REFUND_TICKS));
         PlayerDataProvider.syncToClient(c.player);
     }
 }

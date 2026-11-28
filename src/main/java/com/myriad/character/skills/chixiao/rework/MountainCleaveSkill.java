@@ -11,6 +11,7 @@ import java.util.List;
 
 /** Independent reusable branch. */
 public final class MountainCleaveSkill extends AbilitySkill {
+    public static final double RANGE = 6;
     private static final AbilityDamageFormula DAMAGE =
             AbilityDamageFormula.bonusPhysical(98, 28.0125f, .5f);
 
@@ -35,7 +36,7 @@ public final class MountainCleaveSkill extends AbilitySkill {
     @Override
     public void release(Cast cast) {
         WarSpiritHandCues.cast(cast);
-        cast.cone(6, 100, DAMAGE.value(cast), DAMAGE.kind());
+        cast.cone(RANGE, 100, DAMAGE.value(cast), DAMAGE.kind());
     }
 }
 
