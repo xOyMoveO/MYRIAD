@@ -3,7 +3,7 @@
   "roles": {
     "luoxia": {
       "attributesReason": "保留配对快照的零购固有曲线。Lv1–20 生命从 575 每级 +75 至 2000，法力从 700 每级 +24 至 1156，固有物攻 100、法强 30、双抗各 45、攻速 0.7、移速 0.10、每秒回体 2、回蓝 4、暴伤 150% 各级同值。把落霞作为 #96 的参考脆皮及夜影的满血目标，隔离拆塔偏差到箭与建筑的结算，避免改变英雄承伤、打英雄伤害和全等级 TTK。全等级实战承伤及缺蓝缺口仍待真人采样。",
-      "basicReason": "保留对英雄的普通弓零购 100 原始物伤、11 行动刻普拉和 18 格射程，快弓与满弓沿现有被动；打塔正式值暂留。3:00 Lv2/1105 金（一力一速一防）同一无守塔整波，现行 46.115%，塔箭候选 ×0.187 后 15.006%（英雄 601.06、兵线 659.42），Lv1/500 金零购历史输入对照由 41.124% 降至 14.072%。两档均为 Fabric 合成整波，候选也影响有兵和无兵的中后期塔箭；适用时间、后期射手纯普攻拆塔定位及真人塔下节拍仍需选值。证据见 anchors-damage/tower-arrow-scale-candidate.log。",
+      "basicReason": "保留对英雄的普通弓零购 100 原始物伤、11 行动刻普拉和 18 格射程，快弓与满弓沿现有被动；策划决定保留现行塔伤，待实图复测。3:00 Lv2/1105 金（一力一速一防）同一无守塔整波，现行 46.115%，塔箭候选 ×0.187 后 15.006%（英雄 601.06、兵线 659.42），Lv1/500 金零购历史输入对照由 41.124% 降至 14.072%。两档均为 Fabric 合成整波，候选也影响有兵和无兵的中后期塔箭；后期塔伤与真人塔下节拍留作实图观察。证据见 anchors-damage/tower-arrow-scale-final.log。",
       "skills": {
         "luoxia_chase_dusk": {
           "decision": "retain-current",
@@ -63,7 +63,7 @@
           "decision": "retain-current",
           "reason": "保留暗影猎手按阶 10%–30% 的条件增伤。Lv20 历史预算实跑中 Q 和两次补 A 记录背击，影袭后姿态变化为正面再由 R 落到背后。背击档位承担前置走位收益，保持该乘区能把首套候选的作用定位到单个技能，正背与失败切入的分支差异仍需实图读数。",
           "mode": "L1 + L4 historical input",
-          "source": ["src/main/java/com/myriad/character/skills/yingxiao/rework/NightBackstabSkill.java", "anchors-damage/baseline-attempt-1.log", "https://github.com/xOyMoveO/MYRIAD/issues/96#issuecomment-7233469433"]
+          "source": ["src/main/java/com/myriad/character/skills/yingxiao/rework/NightBackstabSkill.java", "anchors-damage/baseline-final.log", "https://github.com/xOyMoveO/MYRIAD/issues/96#issuecomment-7233469433"]
         },
         "g1_yingxiao_pb": {
           "decision": "retain-current",
@@ -75,19 +75,19 @@
           "decision": "retain-current",
           "reason": "保留 15 格首敌飞匕与原有减速、基础 61.5+20.25×(r−1) 和 0.5 额外物攻系数。历史同预算实跑的背击伤害 150.97，且是两套 E/R 都能使用的远距开手。调它会同步改变正面消耗和其他分支，首轮隔离末段收尾；不同朝向下的拦截和减速收益待采。",
           "mode": "L1 + L4 historical input",
-          "source": ["src/main/java/com/myriad/character/skills/yingxiao/rework/ShadowDaggerSkill.java", "anchors-damage/baseline-attempt-1.log"]
+          "source": ["src/main/java/com/myriad/character/skills/yingxiao/rework/ShadowDaggerSkill.java", "anchors-damage/baseline-final.log"]
         },
         "g1_yingxiao_n2": {
           "decision": "retain-current",
           "reason": "保留化影 40–60 刻隐身与 +15% 移速，用于按已确认 21A34 起手制造背击。历史引擎按键 2 合法，消耗 72 法力后接 1 生效；该次起点已在背后。主动绕背消耗多少时间以及侦查、发光和被追击时的净规避需另外取样。",
           "mode": "L1 + L4 input, reposition evidence pending",
-          "source": ["src/main/java/com/myriad/character/skills/yingxiao/rework/ShadowVanishSkill.java", "anchors-damage/baseline-attempt-1.log", "https://github.com/xOyMoveO/MYRIAD/issues/96#issuecomment-7233469433"]
+          "source": ["src/main/java/com/myriad/character/skills/yingxiao/rework/ShadowVanishSkill.java", "anchors-damage/baseline-final.log", "https://github.com/xOyMoveO/MYRIAD/issues/96#issuecomment-7233469433"]
         },
         "g1_yingxiao_ma": {
           "decision": "retain-current",
           "reason": "保留影袭的 9 格路径命中及首目标背击减速，历史 L4 的第 3 键折后实扣 236.10 HP 并改变双方相对位置，为第 4 键创造后续落点。稳定这段位移可保持目标朝向和追击脚本的比较条件。实图穿越、两目标和减速的实际收益待采。",
           "mode": "L1 + L4 historical input",
-          "source": ["src/main/java/com/myriad/character/skills/yingxiao/rework/ShadowAssaultSkill.java", "anchors-damage/baseline-attempt-1.log", "tools/balance/scenarios/combos/yingxiao.json"]
+          "source": ["src/main/java/com/myriad/character/skills/yingxiao/rework/ShadowAssaultSkill.java", "anchors-damage/baseline-final.log", "tools/balance/scenarios/combos/yingxiao.json"]
         },
         "g1_yingxiao_mb": {
           "decision": "retain-current",
@@ -96,10 +96,10 @@
           "source": ["src/main/java/com/myriad/character/skills/yingxiao/rework/ShadowReturnSkill.java", "tools/balance/scenarios/combos/yingxiao.json"]
         },
         "g1_yingxiao_ua": {
-          "decision": "pending",
-          "reason": "绝影追击暂留首阶 219、每阶成长 87.5、额外物攻系数 0.8。二/三阶每阶成长单改 670 后，同输入 Fabric Lv10/4770 金由 631.51→541.07→454.63 HP 变为 161.75→71.32→0，Lv20/4885 金历史输入由 1116.45→997.74→882.03 变为 139.35→20.65→0。两档均第一补后活、第二补击杀。该候选同时抬高非标杆构筑：正面开手的零预置离线 Lv20 中，R A 对 2000 HP 落霞单技能可扣约 1052–1368，四套含 R A 的 1.5 秒爆发升至约 1173–1619。需与常规和其他分支的收尾窗口一起选定。",
-          "mode": "L1 + L3 + L4 candidate, selection pending",
-          "source": ["src/main/java/com/myriad/character/skills/yingxiao/rework/ShadowExecutionSkill.java", "anchors-damage/baseline-attempt-3.log", "https://github.com/xOyMoveO/MYRIAD/issues/96#issuecomment-7233469433", "anchors-damage/night-rank-growth-candidate.log", "anchors-damage/night-rank-growth-candidate.xml", "tools/balance/scenarios/combos/yingxiao.json"]
+          "decision": "retain-current",
+          "reason": "策划决定保留绝影追击首阶 219、每阶成长 87.5、额外物攻系数 0.8，继续在隔离试验中限定绕背或完整连招。二/三阶每阶成长单改 670 后，同输入 Fabric Lv10/4770 金由 631.51→541.07→454.63 HP 变为 161.75→71.32→0，Lv20/4885 金历史输入由 1116.45→997.74→882.03 变为 139.35→20.65→0。两档均第一补后活、第二补击杀。该候选同时抬高非标杆构筑：正面开手的零预置离线 Lv20 中，R A 对 2000 HP 落霞单技能可扣约 1052–1368，四套含 R A 的 1.5 秒爆发升至约 1173–1619。通用成长 670 归档为高影响对照。限定条件候选需要记录开手及受击的负例。",
+          "mode": "L1 + L3 + L4, design decision recorded",
+          "source": ["src/main/java/com/myriad/character/skills/yingxiao/rework/ShadowExecutionSkill.java", "anchors-damage/baseline-final.log", "https://github.com/xOyMoveO/MYRIAD/issues/96#issuecomment-7233469433", "anchors-damage/night-rank-growth-final.log", "anchors-damage/night-rank-growth-final.xml", "tools/balance/scenarios/combos/yingxiao.json"]
         },
         "g1_yingxiao_ub": {
           "decision": "retain-current",
