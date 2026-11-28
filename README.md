@@ -118,7 +118,7 @@
 
 樱隙前线的[野怪试玩指引](maps/cherry-rift-frontline/README.md#野怪试玩)提供三成平地版的 13 个营地点位。六种可战斗野怪各有移动和攻击动作，服务器在攻击动作的命中标记处判定伤害。需要预览营地时，管理员可在主世界对局空闲期间执行 `/myriad train on`，再用 `/myriad mob preview` 提前刷新营地。
 
-如果已有樱隙前线三成平地版存档，可用下方的配置和打包步骤制作对局副本。地图设一条中路、13 个野怪刷新点，每方各有一处泉水、两座防御塔和一座水晶。新版配置从正式开战计时，首波 0:35 在基地生成，裂隙蟹 4:00 首刷。小兵随时间成长，第 16 分钟起加快，20:00 前后连续。已有副本可以单独补入节奏配置，进行中的专服对局沿用开战时的版本。[3v3 设施配置和打包步骤](maps/cherry-rift-frontline/3v3-flat/README.md)
+如果已有樱隙前线三成平地版存档，可用下方的配置和打包步骤制作对局副本。地图设一条中路、13 个野怪刷新点，每方各有一处泉水、两座防御塔和一座水晶。`cherry_v3` 从正式开战计时，首波 0:35 在基地生成，裂隙蟹 4:00 首刷。小兵随时间成长，第 16 分钟起加快，20:00 前后连续。新版提高兵线与野区经验。已有副本可以单独更新节奏配置，进行中的专服对局沿用开战时的版本。[3v3 设施配置和打包步骤](maps/cherry-rift-frontline/3v3-flat/README.md)
 
 地图由地形和点位配置共同组成，需要服主单独准备。管理员可在主世界、对局尚未开始时，用 `/myriad settings` 打开设置，再进入地图设施编辑器，在实际位置设置设施和边界。
 
@@ -160,6 +160,8 @@ java -version
 
 构建同时输出 `build/balance/balance-snapshot.json` 与覆盖报告。可单独运行 `./gradlew exportBalanceSnapshot` 生成同一快照。使用 `python tools/fabric/prepare-ci-release.py` 生成包含 JAR、快照及双文件 SHA-256 的 `build/ci-release/`。复跑基线样本见[平衡快照说明](docs/balance/snapshot.md)。
 
+樱隙前线 3v3 是角色平衡基准。5v5 共用全部角色、购点价格和商店资格，开战锁定独立的兵线、野区、灵脉、塔赏和工资供给版本。旧对局的检查点续用原版本。全员构筑、战场、模式与少人规则的复跑入口见[全阵容与模式验证](docs/balance/roster-modes.md)。
+
 开发运行入口：
 
 | 用途 | macOS / Linux | Windows PowerShell |
@@ -182,7 +184,7 @@ java -version
 | [src/main/java/com/myriad](src/main/java/com/myriad/) | 角色、战斗、对局、地图、网络与客户端代码 |
 | [src/main/resources](src/main/resources/) | 模组声明、语言、模型、纹理、音效与技能定义 |
 | [GLOSSARY.md](GLOSSARY.md) | 技能分支、缓时、战术锚点等领域术语 |
-| [数值平衡实施规格](docs/balance/implementation-handoff.md) | 角色与战场的后续实施批次、验收算例和四角色原型证据 |
+| [数值平衡实施规格](docs/balance/implementation-handoff.md) | 角色与战场的实施批次、验收算例和四角色原型证据 |
 
 ## 许可
 

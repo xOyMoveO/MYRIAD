@@ -1,0 +1,23 @@
+{
+  "scenarioId": "cherry-114.farming-route-and-supply",
+  "scenarioVersion": 1,
+  "route": {
+    "runBlocksPerSecond": 4.2,
+    "pathLengthMultiplier": 1.15,
+    "laneMeetingXZ": [0, 0],
+    "raidStarts": {"2": 25, "3": 65},
+    "raidIntervalSeconds": 105,
+    "raidDurationSeconds": 84,
+    "reservedEventMarginSeconds": 16,
+    "recallMarginSeconds": 18
+  },
+  "supplyTrials": [
+    {"id": "official", "laneGold": 1.0, "laneXp": 1.0, "campGold": 1.0, "campXp": 1.0},
+    {"id": "experience-only", "laneGold": 1.0, "laneXp": 2.2, "campGold": 1.0, "campXp": 2.2},
+    {"id": "lane-led", "laneGold": 3.1, "laneXp": 2.2, "campGold": 1.0, "campXp": 2.2},
+    {"id": "balanced-increase", "laneGold": 2.5, "laneXp": 2.2, "campGold": 1.8, "campXp": 2.2},
+    {"id": "target-xp-only", "laneGold": 1.0, "laneXp": 3.6, "campGold": 1.0, "campXp": 3.2},
+    {"id": "target-pressure", "laneGold": 5.2, "laneXp": 3.6, "campGold": 1.8, "campXp": 3.2}
+  ],
+  "checkpointsSeconds": [180, 300, 480, 720, 960, 1080, 1200]
+}

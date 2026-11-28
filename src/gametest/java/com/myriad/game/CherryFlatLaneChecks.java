@@ -71,7 +71,7 @@ final class CherryFlatLaneChecks {
                     "Pedestal reach is horizontally and vertically bounded");
             Files.writeString(selection, "{\"mode\":\"5v5\"}");
             MatchArena.initialize(server);
-            h.assertTrue(MatchArena.active() == MatchArena.Mode.RIFT && MatchArena.selectedTempo() == MatchTempo.STANDARD
+            h.assertTrue(MatchArena.active() == MatchArena.Mode.RIFT && MatchArena.selectedTempo() == MatchTempo.RIFT_V1
                     && MatchArena.selectedTempo().firstWaveTicks() == 1400,
                     "Selecting 5v5 ignores the other map's cherry profile");
         } catch(Exception e) {throw new IllegalStateException("Synthetic Cherry Rift lane fixture failed",e);}

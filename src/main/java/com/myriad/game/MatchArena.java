@@ -33,7 +33,8 @@ public final class MatchArena {
     private static final String[] CONFIGS = {"myriad_lane_layout.json", "myriad_brush_zones.json",
             "myriad_monster_spawns.json", "myriad_vein_spawns.json", "myriad_minimap.json", "myriad_match_tempo.json"};
     private static MatchTempo selectedTempo = MatchTempo.STANDARD;
-    static MatchTempo selectedTempo() { return active == Mode.DUEL ? selectedTempo : MatchTempo.STANDARD; }
+    static MatchTempo selectedTempo() { return active == Mode.DUEL ? selectedTempo : riftTempo(); }
+    static MatchTempo riftTempo() { return MatchTempo.RIFT_V1; }
     private static Mode active = Mode.RIFT;
     public static Mode active() { return active; }
     public static void shutdown() { active = Mode.RIFT; }
@@ -77,7 +78,7 @@ public final class MatchArena {
                     ArenaConfigFile.read(configuration(world, mode, CONFIGS[3]), required, GameManager::decodeVeins),
                     ArenaConfigFile.read(configuration(world, mode, CONFIGS[4]), required, root -> MapSystem.decodeCorners(root, required)),
                     required ? ArenaConfigFile.read(configuration(world, mode, CONFIGS[5]), false, MatchTempo::decode)
-                            : MatchTempo.STANDARD);
+                            : riftTempo());
         }
 
         void activate(GameManager manager) {

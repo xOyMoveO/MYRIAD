@@ -135,7 +135,7 @@ public enum MonsterType {
     }
 
     double healthFor(MatchTempo tempo) {
-        if (tempo != MatchTempo.CHERRY_V2) return health;
+        if (!tempo.usesCherryV2CombatStats()) return health;
         return switch (this) {
             case CHERRY_FROST_HARE, CHERRY_DUSK_FOX -> 400;
             case CHERRY_SCOUT_BOT -> 395;
@@ -146,7 +146,7 @@ public enum MonsterType {
     }
 
     double attackFor(MatchTempo tempo) {
-        return tempo == MatchTempo.CHERRY_V2 && this == CHERRY_RIFT_CRAB ? 60 : attack;
+        return tempo.usesCherryV2CombatStats() && this == CHERRY_RIFT_CRAB ? 60 : attack;
     }
 
     public int getXp() {

@@ -193,7 +193,7 @@ public final class LaneSystem {
             state.maxHealth = maximum;
         }
         // Managed health grows each tick. Refresh the capped vanilla proxy at the display cadence.
-        if ((tempo != MatchTempo.CHERRY_V2 || now % 20 == 0) && mob.getMaxHealth() != Math.min(1024F, maximum)) {
+        if ((!tempo.usesCherryV2CombatStats() || now % 20 == 0) && mob.getMaxHealth() != Math.min(1024F, maximum)) {
             configureProxyHealth(mob, maximum);
         }
         state.attackDamage = scaledMinionAttack(state.kind, waveNumber, elapsed, tempo);
@@ -201,7 +201,7 @@ public final class LaneSystem {
 
     static float scaledMinionHealth(Kind kind, int wave, long elapsed, MatchTempo tempo) {
         float base = baseHealth(kind);
-        if (tempo != MatchTempo.CHERRY_V2) {
+        if (!tempo.usesCherryV2CombatStats()) {
             return scaledMinionHealth(base, growthStage(wave), elapsed >= LATE_MINION_GROWTH_TICKS);
         }
         return (float) (base * (1 + MINION_HEALTH_PER_GROWTH_STAGE * elapsedGrowthStages(elapsed, tempo)
@@ -209,7 +209,7 @@ public final class LaneSystem {
     }
 
     static float scaledMinionAttack(Kind kind, int wave, long elapsed, MatchTempo tempo) {
-        if (tempo != MatchTempo.CHERRY_V2) {
+        if (!tempo.usesCherryV2CombatStats()) {
             return scaledMinionAttack(kind, growthStage(wave), elapsed >= LATE_MINION_GROWTH_TICKS);
         }
         return (float) (baseAttack(kind) * (1 + MINION_ATTACK_PER_GROWTH_STAGE * elapsedGrowthStages(elapsed, tempo)
@@ -337,7 +337,7 @@ public final class LaneSystem {
         if (layoutActive && now >= nextWaveAt) {
             waveNumber++;
             spawnWave(level);
-            nextWaveAt += WAVE_INTERVAL;
+            nextWaveAt += GameManager.combatTempo().waveIntervalTicks();
         }
         for (Map.Entry<UUID, UnitState> entry : new HashMap<>(UNITS).entrySet()) {
             Entity entity = level.getEntity(entry.getKey());
@@ -1226,7 +1226,7 @@ public final class LaneSystem {
                 }
             }
             if (killerFaction != null && killerFaction != state.faction) {
-                int reward = GlobalBalance.goldIncome(towerBaseGold(state.towerTier));
+                int reward = GlobalBalance.goldIncome(GameManager.combatTempo().supply().towerGold(towerBaseGold(state.towerTier)));
                 grantTeamGold(killerFaction, reward, entity);
                 broadcast(MatchMessages.Tone.OBJECTIVE,
                         Component.translatable("message.myriad.tower_destroyed",
@@ -1283,9 +1283,10 @@ public final class LaneSystem {
     }
 
     static int minionBaseGold(Kind kind, MatchTempo tempo) {
+        boolean cherryCurve = tempo.laneRewardBaseline() == MatchTempo.CHERRY_V2;
         return switch (kind) {
-            case MAGIC -> tempo == MatchTempo.CHERRY_V2 ? 40 : 65;
-            case SIEGE -> tempo == MatchTempo.CHERRY_V2 ? 65 : 40;
+            case MAGIC -> cherryCurve ? 40 : 65;
+            case SIEGE -> cherryCurve ? 65 : 40;
             default -> kind.ranged() ? 18 : 12;
         };
     }
@@ -1306,11 +1307,16 @@ public final class LaneSystem {
     }
 
     static int minionReward(int base, boolean playerKill, boolean experience, long elapsed, MatchTempo tempo) {
+        if (tempo == MatchTempo.CHERRY_V3 && experience) {
+            int sharedXp = minionReward(base, playerKill, true, elapsed, tempo.laneRewardBaseline());
+            return tempo.supply().laneXp(sharedXp);
+        }
         long sharePercent = playerKill ? 100L : experience ? 80L : 25L;
-        if (tempo == MatchTempo.CHERRY_V2) {
+        if (tempo.laneRewardBaseline() == MatchTempo.CHERRY_V2) {
             long bonus = Math.clamp(elapsed, 0L, LATE_MINION_GROWTH_TICKS);
             return (int) Math.min(Integer.MAX_VALUE,
-                    base * (LATE_MINION_GROWTH_TICKS + bonus) * sharePercent / (100L * LATE_MINION_GROWTH_TICKS));
+                    base * (LATE_MINION_GROWTH_TICKS + bonus) * sharePercent * tempo.supply().lanePercent(experience)
+                            / (10000L * LATE_MINION_GROWTH_TICKS));
         }
         // 旧节奏每两分钟提高 10%，最多翻倍。
         long tenths = 10L + Math.min(10L, elapsed / (2L * 60L * 20L));

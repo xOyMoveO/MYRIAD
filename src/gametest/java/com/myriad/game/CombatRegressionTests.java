@@ -36,7 +36,13 @@ public final class CombatRegressionTests {
         register("balance_roster_camps", BattlefieldMonsterChecks::rosterCamps);
         registerBattlefieldRoster("balance_roster_112", BALANCE_ROSTER_112);
         registerBattlefieldRoster("balance_roster_113", BALANCE_ROSTER_113);
+        register("balance_roster_114_lane", BattlefieldLaneChecks::fullRoster);
+        register("balance_roster_114_camps", BattlefieldMonsterChecks::fullRosterCamps);
+        register("balance_roster_114_towers", BattlefieldBuildingChecks::fullRoster);
         register("match_economy", MatchEconomyChecks::run);
+        register("balance_small_modes", SmallModeBalanceChecks::run);
+        register("mode_supply_rift", ModeSupplyChecks::rift);
+        register("mode_supply_cherry", ModeSupplyChecks::cherry);
         register("match_assists", MatchAssistChecks::run);
         register("cherry_rift_camps", CherryRiftCampChecks::run);
         register("battlefield_small_medium_camps", BattlefieldMonsterChecks::camps);

@@ -45,7 +45,8 @@ public final class MatchBalance {
     }
 
     static int passiveGoldReward(ServerPlayer player) {
-        return GlobalBalance.goldIncome(farmReward(player, GameManager.PASSIVE_GOLD_BASE,
+        int base = GameManager.combatTempo().supply().wage(GameManager.PASSIVE_GOLD_BASE);
+        return GlobalBalance.goldIncome(farmReward(player, base,
                 false, PASSIVE_GOLD_CATCH_UP_WEIGHT));
     }
 

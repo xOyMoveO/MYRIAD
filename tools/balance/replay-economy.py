@@ -148,6 +148,12 @@ class Rules:
     def __init__(self, snapshot, track, tempo="CHERRY_V1", *, current=False):
         self.track = track
         self.tempo = tempo
+        self.cherry_curve = tempo in ("CHERRY_V2", "CHERRY_V3")
+        if tempo == "CHERRY_V3":
+            profile = snapshot["rules"]["modeProfiles"]["cherry_3v3"]
+            self.farm_xp_percent = {kind: value(profile, kind + "ExperiencePercent") for kind in ("lane", "camp")}
+        else:
+            self.farm_xp_percent = {"lane": 100, "camp": 100}
         self.battlefield = snapshot["rules"]["battlefield"]
         self.economy = self.battlefield["economy"]
         self.farm_seats = value(self.economy, "farmReward")
@@ -184,12 +190,12 @@ class Rules:
         self.pricing = value(snapshot["rules"]["attributePurchases"], "pricing")
         self.lane_rewards = {}
         for unit, definition in self.catalog["types"].items():
-            if tempo == "CHERRY_V2":
+            if self.cherry_curve:
                 definition = definition["byTempo"][tempo]
             self.lane_rewards[unit] = (value(definition, "baseGold"), value(definition, "baseExperience"))
-        if tempo == "CHERRY_V2":
+        if self.cherry_curve:
             if value(self.map, "tempoProfile") != tempo:
-                raise ValueError(f"{track} is not a CHERRY_V2 map release")
+                raise ValueError(f"{track} is not a {tempo} map release")
             self.permanent = value(snapshot["rules"]["attributePurchases"], "permanentGain")
             self.roles = {role["id"]: role for role in snapshot["rules"]["roles"]}
         self.check_samples()
@@ -198,10 +204,13 @@ class Rules:
         return round_java(base * self.gold_scale)
 
     def lane_reward(self, base, tick, share):
-        if self.tempo == "CHERRY_V2":
+        if self.cherry_curve:
             cap = value(self.catalog, "lateGrowthBegins")
             return base * (cap + min(tick, cap)) * share // (100 * cap)
         return base * (10 + min(10, tick // 2400)) * share // 1000
+
+    def farm_experience(self, base, kind):
+        return (base * self.farm_xp_percent[kind] + 50) // 100
 
     @lru_cache(maxsize=None)
     def price(self, rank):
@@ -226,15 +235,15 @@ class Rules:
                     or kill_reward(True, *args)[1] != value(sample, "experience")):
                 raise ValueError("Kill formula differs from a snapshot sample")
         for unit, definition in self.catalog["types"].items():
-            if self.tempo == "CHERRY_V2":
+            if self.cherry_curve:
                 samples = definition["byTempo"][self.tempo]["timelineBeforeCatchUpAndGlobalGold"]
             else:
                 samples = definition["rewardSamplesBeforeCatchUpAndGlobalGold"]
             for sample in samples:
                 tick = sample["elapsedTicks"]
                 gold, xp = self.lane_rewards[unit]
-                actual = (self.lane_reward(gold, tick, 100), self.lane_reward(xp, tick, 100),
-                          self.lane_reward(gold, tick, 25), self.lane_reward(xp, tick, 80))
+                actual = (self.lane_reward(gold, tick, 100), self.farm_experience(self.lane_reward(xp, tick, 100), "lane"),
+                          self.lane_reward(gold, tick, 25), self.farm_experience(self.lane_reward(xp, tick, 80), "lane"))
                 expected = tuple(value(sample, key) for key in (
                     "lastHitGold", "lastHitExperience", "nonPlayerKillNearbyGold", "nearbyExperience"))
                 if actual != expected:
@@ -350,7 +359,7 @@ def make_timeline(scenario, rules, case, events, end, active, tower_weight):
     scheduled = defaultdict(list)
     trips = defaultdict(list)
     relevant_towers = tower_projection(events, scenario, rules, tower_weight)
-    v2 = rules.tempo == "CHERRY_V2"
+    v2 = rules.cherry_curve
     for action in events:
         event = dict(action)
         tower = relevant_towers.get(event.get("requiresTower"))
@@ -443,6 +452,8 @@ def make_timeline(scenario, rules, case, events, end, active, tower_weight):
 
 
 class Replay:
+    make_timeline = staticmethod(make_timeline)
+
     def __init__(self, scenario, rules, case, events, grade=None, *, trace=True, wage_weight=1,
                  active=1, farm_weight=1, kill_weight=1, tower_weight=1,
                  wage_rate=None, assist_gold=None, assist_xp=None):
@@ -469,7 +480,7 @@ class Replay:
         self.objectives = []
         self.start = scenario["cutSeconds"] * TICKS if grade else 0
         self.end = (scenario["cutEndSeconds"] if grade else scenario["closingSeconds"]) * TICKS
-        self.scheduled, self.trips, self.projection = make_timeline(
+        self.scheduled, self.trips, self.projection = self.make_timeline(
             scenario, rules, case, events, self.end // TICKS, active, tower_weight)
         self.tick = self.start
 
@@ -542,6 +553,9 @@ class Replay:
     def alive(self, seat):
         return seat.online and self.tick >= seat.waiting_until
 
+    def before_wage(self, actions):
+        pass
+
     def wage(self):
         # Snapshot all awards before committing any money so team iteration cannot alter the pulse.
         base = self.rules.gold(self.rules.wage)
@@ -551,11 +565,15 @@ class Replay:
             self.award(seat, base, actual - base, source="wage", cause="scheduled wage")
 
     def earn_farm(self, seat, gold, xp, kind, cause):
+        gold, xp = self.farm_base(gold, xp, kind)
         gb, xb = self.farm_bonus(seat)
         base_gold = self.rules.gold(gold)
         final_gold = self.rules.gold(round_java(gold * (1 + gb * self.farm_weight)))
         final_xp = round_java(xp * (1 + xb * self.farm_weight))
         self.award(seat, base_gold, final_gold - base_gold, xp, final_xp - xp, source=kind, cause=cause)
+
+    def farm_base(self, gold, xp, kind):
+        return gold, self.rules.farm_experience(xp, kind)
 
     def lane(self, event):
         team = self.teams[event["team"]]
@@ -588,7 +606,7 @@ class Replay:
             return
         unit = value(self.camps[event["camp"]], "type")
         definition = self.rules.monsters[unit]
-        timing = definition["fixedCampTiming"][self.scenario["map"]]
+        timing = definition["fixedCampTiming"][self.rules.tempo]
         available = self.camp_available.get(event["camp"], value(timing, "firstSpawn"))
         if event.get("startTick", self.tick) < available:
             self.record("camp", **event, unit=unit, skip="not spawned", availableTick=available)
@@ -597,7 +615,7 @@ class Replay:
             raise ValueError(f"Team gold camp {unit} is outside the fixed event inputs")
         self.camp_available[event["camp"]] = self.tick + value(timing, "respawnDelay")
         # Fixed V2 replays treat world tick zero as aligned to the polling clock.
-        if self.rules.tempo == "CHERRY_V2":
+        if self.rules.cherry_curve:
             self.camp_available[event["camp"]] = (self.camp_available[event["camp"]] + TICKS - 1) // TICKS * TICKS
         self.record("camp", **event, unit=unit, nextSpawnTick=self.camp_available[event["camp"]])
         self.earn_farm(player, value(definition, "baseGold"), value(definition, "baseExperience"), "camp", event["id"])
@@ -748,7 +766,7 @@ class Replay:
                               "ultimateRanksUnlocked": sum(seat.level >= lv for lv in (4, 8, 12)),
                               "passiveRanksUnlocked": sum(seat.level >= lv for lv in (1, 4, 7, 10, 13)),
                               "frontierBudget": seat.wallet + seat.attribute_spend})
-            if self.rules.tempo == "CHERRY_V2":
+            if self.rules.cherry_curve:
                 state["normalRespawnTicksAtLevel"] = self.rules.wait[seat.level]
                 state["activeShare"] = active_share(state["sources"], seat.earned)
             states[id_] = state
@@ -756,7 +774,8 @@ class Replay:
 
     def run(self):
         self.seed()
-        wanted = {second * TICKS for second in self.scenario["seconds"] if self.start <= second * TICKS <= self.end}
+        wanted = {round_java(second * TICKS) for second in self.scenario["seconds"]
+                  if self.start <= round_java(second * TICKS) <= self.end}
         moments = wanted | set(self.scheduled) | {self.start, self.end}
         wage = self.rules.wage_ticks
         moments.update(range((self.start // wage + 1) * wage, self.end + 1, wage))
@@ -777,6 +796,7 @@ class Replay:
                     self.connection(event)
                 if event["type"] == "respawn":
                     self.record("respawn", player=event["player"], cause=event["id"])
+            self.before_wage(actions)
             if self.tick > self.start and self.tick % self.rules.wage_ticks == 0:
                 self.wage()
             before = len(self.objectives)
@@ -798,7 +818,8 @@ class Replay:
                 for task in self.scenario["supplyPlan"]:
                     if self.tick // TICKS in task["occasions"]:
                         for team in TEAMS:
-                            seat = self.teams[team][POSITIONS[task["player"]] - 1]
+                            index = task["seatIndex"] if "seatIndex" in task else POSITIONS[task["player"]] - 1
+                            seat = self.teams[team][index]
                             self.buy_supply(seat, task["item"], "recall plan")
             for seat in self.seats.values():
                 if self.permitted(seat, self.rules.attribute_access):

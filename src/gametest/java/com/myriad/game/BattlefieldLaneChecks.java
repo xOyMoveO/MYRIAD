@@ -1,14 +1,19 @@
 package com.myriad.game;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.myriad.character.CharacterType;
 import com.myriad.character.SkillSystem;
 import com.myriad.character.ability.AbilityRuntime;
+import com.myriad.character.ability.AbilitySkill;
 import com.myriad.character.rework.FirstGroupGrowth;
 import com.myriad.character.rework.FirstGroupSkills;
+import com.myriad.character.skills.luoxia.LuoxiaBow;
+import com.myriad.character.skills.yike.YikeStance;
 import com.myriad.combat.BasicAttackSystem;
 import com.myriad.combat.DamageCalc;
 import com.myriad.combat.MagicBullet;
+import com.myriad.combat.VanillaMeleeAttack;
 import com.myriad.player.LevelSystem;
 import com.myriad.player.PlayerData;
 import com.myriad.player.PlayerDataProvider;
@@ -20,9 +25,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.EnumMap;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.phys.Vec3;
 
 /** Two matched synthetic 3v3 rounds with actual wave entities, skills and reward settlement. */
@@ -33,15 +38,24 @@ final class BattlefieldLaneChecks {
         roster(helper, List.of(CharacterType.YIKE, CharacterType.SHUO, CharacterType.RIVET, CharacterType.CHIXIAO));
     }
 
+    static void fullRoster(GameTestHelper helper) {
+        roster(helper, List.of(CharacterType.playableValues()), true);
+    }
+
     static void roster(GameTestHelper helper, List<CharacterType> roles) {
+        roster(helper, roles, false);
+    }
+
+    private static void roster(GameTestHelper helper, List<CharacterType> roles, boolean fullRoster) {
         var suite = new ArenaFixtureChecks.Suite(helper.getLevel().getServer());
         var config = MatchArena.configuration(suite.world, MatchArena.Mode.DUEL, "myriad_match_tempo.json");
+        var profile = fullRoster ? MatchTempo.CHERRY_V3 : MatchTempo.CHERRY_V2;
         try {
             suite.install();
-            Files.writeString(config, "{\"profile\":\"cherry_v2\"}");
+            Files.writeString(config, "{\"profile\":\"" + profile.name().toLowerCase(java.util.Locale.ROOT) + "\"}");
             suite.begin("3v3");
             var match = GameManager.get();
-            suite.check(GameManager.combatTempo() == MatchTempo.CHERRY_V2, "Roster replay uses the formal 3v3 profile");
+            suite.check(GameManager.combatTempo() == profile, "Roster replay uses the selected 3v3 profile");
             var actor = suite.players.stream().filter(player -> "yike".equals(PlayerDataProvider.get(player).getCharacterId()))
                     .findFirst().orElseThrow();
             var initialLane = LaneSystem.snapshot();
@@ -49,12 +63,30 @@ final class BattlefieldLaneChecks {
             for (var role : roles) {
                 suite.clock(start);
                 LaneSystem.restore(suite.server.overworld(), initialLane.deepCopy());
-                if (role == CharacterType.YIKE) {
-                    clearWave(suite, actor, MatchTempo.CHERRY_V2, start, 3600, 4, 1, 500);
-                    clearWave(suite, actor, MatchTempo.CHERRY_V2, start, 9600, 10, 4, 2400);
+                if (!fullRoster && role == CharacterType.YIKE) {
+                    clearWave(suite, actor, profile, start, 3600, 4, 1, 500);
+                    clearWave(suite, actor, profile, start, 9600, 10, 4, 2400);
                 } else {
-                    rosterWave(suite, actor, role, 3600, 4, 1, 500);
-                    rosterWave(suite, actor, role, 9600, 10, 4, 2400);
+                    rosterWave(suite, actor, role, 3600, 4, 1, 500, null, false);
+                    rosterWave(suite, actor, role, 9600, 10, 4, 2400, null, false);
+                }
+            }
+            if (fullRoster) {
+                suite.clock(start);
+                LaneSystem.restore(suite.server.overworld(), initialLane.deepCopy());
+                actor.setPos(Vec3.atBottomCenterOf(LaneSystem.fountainPoint(match.factionOf(actor))));
+                PlayerDataProvider.get(actor).setCharacterId(CharacterType.YIKE.getId());
+                PlayerDataProvider.get(actor).setFirstGroupAttribute("strength", 0);
+                PlayerDataProvider.get(actor).refundAllSkillPointsForTraining();
+                clearWave(suite, actor, profile, start, 3600, 4, 1, 500);
+                clearWave(suite, actor, profile, start, 9600, 10, 4, 2400);
+                for (var probe : MAIN_LANE_PROBES) {
+                    for (boolean escorted : new boolean[]{false, true}) {
+                        suite.clock(start);
+                        LaneSystem.restore(suite.server.overworld(), initialLane.deepCopy());
+                        rosterWave(suite, actor, probe.role(), 3600, 4, 1, 500, probe, escorted);
+                        rosterWave(suite, actor, probe.role(), 9600, 10, 4, 2400, probe, escorted);
+                    }
                 }
             }
             helper.succeed();
@@ -71,9 +103,24 @@ final class BattlefieldLaneChecks {
         }
     }
 
+    private record LaneProbe(CharacterType role, String attribute, int passive, int e, int r, List<Integer> midRanks) {
+        List<Integer> skillIndices() { return List.of(2, 3, e, r); }
+    }
+
+    private static final List<LaneProbe> MAIN_LANE_PROBES = List.of(
+            new LaneProbe(CharacterType.YIKE, "wisdom", 0, 4, 6, List.of(4, 3, 1, 2)),
+            new LaneProbe(CharacterType.FENJUE, "strength", 0, 4, 6, List.of(3, 1, 4, 2)),
+            new LaneProbe(CharacterType.HANZE, "wisdom", 0, 4, 6, List.of(3, 1, 4, 2)),
+            new LaneProbe(CharacterType.LINGYUAN, "wisdom", 1, 5, 6, List.of(3, 1, 4, 2)),
+            new LaneProbe(CharacterType.KEHENG, "wisdom", 0, 4, 7, List.of(3, 1, 4, 2)),
+            new LaneProbe(CharacterType.LUOXIA, "strength", 1, 4, 7, List.of(4, 1, 3, 2)),
+            new LaneProbe(CharacterType.CHIXIAO, "strength", 0, 5, 6, List.of(3, 1, 4, 2)),
+            new LaneProbe(CharacterType.XUANCHEN, "wisdom", 0, 5, 7, List.of(4, 1, 3, 2)));
+
     private static void rosterWave(ArenaFixtureChecks.Suite suite, ServerPlayer hero, CharacterType role, long elapsed,
-            int heroLevel, int strength, int budget) throws Exception {
+            int heroLevel, int points, int budget, LaneProbe probe, boolean escorted) throws Exception {
         var level = suite.server.overworld();
+        HeroRespawnSystem.reset(suite.server, List.of(hero.getUUID()));
         var match = GameManager.get();
         long start = match.getMatchStartTime();
         stageWave(suite, start, elapsed);
@@ -81,7 +128,7 @@ final class BattlefieldLaneChecks {
         var defender = match.factionOf(suite.opponent(hero));
         var data = PlayerDataProvider.get(hero);
         AbilityRuntime.clear(hero);
-        MagicBullet.clearFor(hero.getUUID());
+        BasicAttackSystem.clearFor(hero.getUUID());
         data.clearSkillCooldowns();
         data.setCharacterId(role.getId());
         data.refundAllSkillPointsForTraining();
@@ -92,88 +139,230 @@ final class BattlefieldLaneChecks {
         data.setFirstGroupAttribute("strength", 0);
         data.setFirstGroupAttribute("wisdom", 0);
         hero.setPos(Vec3.atBottomCenterOf(LaneSystem.fountainPoint(side)));
-        for (int i = 0; i < strength; i++) {
-            suite.check(FirstGroupGrowth.buy(hero, data, "strength"), "Fixed Strength purchase uses the paid path");
+        String attribute = probe == null ? "strength" : probe.attribute();
+        for (int i = 0; i < points; i++) {
+            suite.check(FirstGroupGrowth.buy(hero, data, attribute), "Fixed attribute purchase uses the paid path");
         }
         var opener = FirstGroupSkills.node(role.getId(), 2);
-        int qRank = heroLevel >= 10 ? 5 : 1;
-        for (int i = 0; i < qRank; i++) PlayerDataProvider.upgradeSkill(hero, opener.getId());
-        suite.check(data.skillLevel(opener.getId()) == qRank, "Legal Q ranks for " + role);
+        if (probe == null) {
+            learn(suite, hero, opener, heroLevel >= 10 ? 5 : 1);
+        } else {
+            learn(suite, hero, FirstGroupSkills.node(role.getId(), probe.passive()), 1);
+            var indices = probe.skillIndices();
+            for (int i = 0; i < indices.size(); i++) {
+                learn(suite, hero, FirstGroupSkills.node(role.getId(), indices.get(i)),
+                        heroLevel >= 10 ? probe.midRanks().get(i) : 1);
+            }
+        }
+        int qRank = data.skillLevel(opener.getId());
         PlayerDataProvider.applyChosenCharacter(hero, data);
         PlayerHealthSystem.fill(hero);
         data.setMana((float) hero.getAttributeValue(ModAttributes.MAX_MANA));
         hero.getAttribute(ModAttributes.CRIT_CHANCE).setBaseValue(0);
         hero.getInventory().setSelectedSlot(0);
-        var origin = new Vec3(320.5, 64, 80.5);
-        var center = origin.add(0, 0, 1.8);
+        boolean melee = VanillaMeleeAttack.usesVanilla(role);
+        double range = probe == null ? 1.8 : melee ? 2.1 : 5.75;
+        double direction = side == Faction.GUARDIAN ? 1 : -1;
+        var approach = probe == null ? new Vec3(0, 0, range) : new Vec3(direction * range, 0, 0);
+        var center = probe == null ? new Vec3(320.5, 64, 80.5 + range) : new Vec3(336.5, 64, 64.5);
+        var origin = center.subtract(approach);
         hero.setPos(origin);
         hero.setOnGround(true);
-        var enemies = new ArrayList<Mob>();
-        for (String kind : List.of("MELEE", "RANGED", "MAGIC")) enemies.addAll(suite.units(kind, defender));
-        suite.check(enemies.size() == 4, "Roster replay starts with a real four-unit wave");
-        for (int i = 0; i < enemies.size(); i++) {
-            enemies.get(i).setPos(center.add(i % 2 == 0 ? -.4 : .4, 0, i < 2 ? -.30 : .30));
-        }
+        hero.setDeltaMovement(Vec3.ZERO);
+        var enemies = wave(suite, defender, center);
+        var allies = escorted ? wave(suite, side, center.add(-direction * 1.7, 0, 0)) : List.<Mob>of();
         for (var player : suite.players) {
             if (player != hero) player.setPos(new Vec3(290.5, 64, 101.5));
         }
         int startGold = data.getGold();
         int startXp = totalExperience(data);
         float startHp = enemies.stream().map(LaneSystem::health).reduce(0F, Float::sum);
-        var strikes = new com.google.gson.JsonArray();
-        int basicReady = 1;
+        var strikes = new JsonArray();
+        var casts = new JsonArray();
+        var initialRanks = new JsonObject();
+        data.getSkillLevels().forEach(initialRanks::addProperty);
+        var basic = new LaneBasics(hero, role);
+        var actionNodes = probe == null ? List.of(opener) : List.of(
+                FirstGroupSkills.node(role.getId(), probe.r()), FirstGroupSkills.node(role.getId(), probe.e()),
+                opener, FirstGroupSkills.node(role.getId(), 3));
         int finish = 0;
-        boolean magicBasic = MagicBullet.isMage(hero);
-        for (int tick = 1; tick <= 1500; tick++) {
+        int observedTicks = 0;
+        int horizon = probe == null ? 1500 : (int) Math.min(1500,
+                LaneSystem.snapshot().get("nextWave").getAsLong() - start - elapsed - 1);
+        for (int tick = 1; tick <= horizon; tick++) {
+            observedTicks = tick;
+            if (HeroRespawnSystem.isWaiting(hero)) break;
             suite.clock(start + elapsed + tick);
             var target = enemies.stream().filter(Mob::isAlive).findFirst().orElse(null);
             if (target == null) {
                 finish = tick - 1;
                 break;
             }
-            float before = enemies.stream().map(LaneSystem::health).reduce(0F, Float::sum);
-            if (!AbilityRuntime.moving(hero) && hero.distanceToSqr(target) > 2.5 * 2.5) {
-                hero.setPos(target.position().add(0, 0, -1.8));
+            float before = waveHealth(enemies);
+            if (!AbilityRuntime.moving(hero) && !AbilityRuntime.channeling(hero) && !YikeStance.active(hero)
+                    && hero.distanceToSqr(target) > (range + .7) * (range + .7)) {
+                hero.setPos(target.position().subtract(approach));
                 hero.setDeltaMovement(Vec3.ZERO);
                 hero.setOnGround(true);
             }
             aim(hero, target.getBoundingBox().getCenter());
-            if (tick >= basicReady && BasicAttackSystem.canAttackNow(hero, data)) {
-                if (magicBasic) MagicBullet.tryFire(hero, hero.getMainHandItem());
-                else DamageGrowthChecks.swing(hero, target);
-                basicReady = tick + BasicAttackSystem.cooldownTotal(hero);
-            } else if (tick % 2 == 0 && data.getCooldown(opener.getId()) == 0 && data.getMana() >= opener.manaCost(qRank)) {
-                SkillSystem.cast(hero, 0);
+            var aimPoint = escorted ? target.position().add(0, -.02, 0) : center.add(0, -.02, 0);
+            boolean cast = probe != null && tick % 2 == 0
+                    && tryLaneCast(hero, data, actionNodes, aimPoint, target, tick, casts);
+            if (!cast) {
+                aim(hero, target.getBoundingBox().getCenter());
+                if (!basic.tick(tick, target) && probe == null && tick % 2 == 0) {
+                    tryLaneCast(hero, data, actionNodes, aimPoint, target, tick, casts);
+                }
             }
             AbilityRuntime.tick(hero);
-            if (magicBasic) MagicBullet.tickBullets(hero, data);
+            if (MagicBullet.isMage(hero)) MagicBullet.tickBullets(hero, data);
             data.tickCooldowns();
-            for (var enemy : enemies) enemy.damageCooldownTime = Math.max(0, enemy.damageCooldownTime - 1);
-            float after = enemies.stream().map(LaneSystem::health).reduce(0F, Float::sum);
-            if (before > after) {
-                var strike = new JsonObject();
-                strike.addProperty("tick", tick);
-                strike.addProperty("effectiveDamage", before - after);
-                strike.addProperty("waveHealthLeft", after);
-                strikes.add(strike);
+            if (probe != null && tick % 20 == 0) {
+                data.setMana((float) Math.min(hero.getAttributeValue(ModAttributes.MAX_MANA),
+                        data.getMana() + hero.getAttributeValue(ModAttributes.MANA_REGEN)));
+            }
+            float afterHero = waveHealth(enemies);
+            waveDamage(strikes, tick, "hero_inputs", before, afterHero);
+            if (escorted) {
+                LaneSystem.tick(level);
+                waveDamage(strikes, tick, "lane_tick", afterHero, waveHealth(enemies));
+                for (var ally : allies) advanceMinion(ally);
+            }
+            for (var enemy : enemies) {
+                if (escorted) advanceMinion(enemy);
+                else enemy.damageCooldownTime = Math.max(0, enemy.damageCooldownTime - 1);
             }
         }
-        var row = sample("clear_wave", MatchTempo.CHERRY_V2, elapsed);
-        row.addProperty("variant", magicBasic ? "clustered_magic_q_basic_fixed_reengage" : "clustered_melee_q_basic_fixed_reengage");
+        var row = sample("clear_wave", GameManager.combatTempo(), elapsed);
+        row.addProperty("variant", probe == null ? "clustered_q_basic_fixed_reengage" : "legal_rotation");
+        row.addProperty("escorted", escorted);
         row.addProperty("hero", role.getId());
         row.addProperty("heroLevel", heroLevel);
-        row.addProperty("strength", strength);
+        row.addProperty("heroLevelAtEnd", data.getLevel());
+        row.addProperty("strength", data.firstGroupAttribute("strength"));
+        row.addProperty("wisdom", data.firstGroupAttribute("wisdom"));
         row.addProperty("qRank", qRank);
         row.addProperty("budget", budget);
         row.addProperty("wave", LaneSystem.snapshot().get("wave").getAsInt());
         row.addProperty("startWaveHealth", startHp);
         row.addProperty("finishTicks", finish);
-        row.addProperty("endWaveHealth", enemies.stream().filter(Mob::isAlive).map(LaneSystem::health).reduce(0F, Float::sum));
+        row.addProperty("observedTicks", observedTicks);
+        row.addProperty("heroDefeated", HeroRespawnSystem.isWaiting(hero));
+        row.addProperty("endWaveHealth", waveHealth(enemies));
         row.addProperty("earnedGold", data.getGold() - startGold);
         row.addProperty("earnedExperience", totalExperience(data) - startXp);
+        row.addProperty("startingBasicType", role == CharacterType.LUOXIA ? "bow" : role == CharacterType.YIKE ? "cannon"
+                : melee ? "melee" : "magic");
+        row.addProperty("endMana", data.getMana());
+        row.add("allocatedSkillRanks", initialRanks);
+        row.add("castEvents", casts);
         row.add("healthLossEvents", strikes);
         log(row);
-        suite.check(!strikes.isEmpty(), "Actual role inputs damage the wave for " + role);
+        suite.check(strikes.asList().stream().anyMatch(event ->
+                        event.getAsJsonObject().get("source").getAsString().equals("hero_inputs")),
+                "Actual role inputs damage the wave for " + role);
+    }
+
+    private static void learn(ArenaFixtureChecks.Suite suite, ServerPlayer hero, AbilitySkill skill, int rank) {
+        for (int i = 0; i < rank; i++) PlayerDataProvider.upgradeSkill(hero, skill.getId());
+        int expected = skill.isPassive() ? FirstGroupSkills.passiveRank(PlayerDataProvider.get(hero).getLevel()) : rank;
+        suite.check(PlayerDataProvider.get(hero).skillLevel(skill.getId()) == expected, "Legal ranks for " + skill.getId());
+    }
+
+    private static List<Mob> wave(ArenaFixtureChecks.Suite suite, Faction faction, Vec3 center) throws Exception {
+        var units = new ArrayList<Mob>();
+        for (String kind : List.of("MELEE", "RANGED", "MAGIC")) units.addAll(suite.units(kind, faction));
+        suite.check(units.size() == 4, "Roster replay starts with a real four-unit wave");
+        for (int i = 0; i < units.size(); i++) {
+            var unit = units.get(i);
+            unit.setPos(center.add(i % 2 == 0 ? -.4 : .4, 0, i < 2 ? -.30 : .30));
+            unit.setOnGround(true);
+            unit.setDeltaMovement(Vec3.ZERO);
+        }
+        return units;
+    }
+
+    private static boolean tryLaneCast(ServerPlayer hero, PlayerData data, List<AbilitySkill> candidates,
+            Vec3 point, Mob target, int tick, JsonArray casts) {
+        if (AbilityRuntime.moving(hero) || AbilityRuntime.channeling(hero) || AbilityRuntime.winding(hero) != null) return false;
+        for (var skill : candidates) {
+            int cooldown = data.getCooldown(skill.getId());
+            float mana = data.getMana();
+            var cast = AbilityRuntime.context(hero, skill);
+            // Keep committed channels and stance effects running. Rainbow Shell's readiness honors its stance.
+            if (skill.recastAvailable(cast) || !skill.cooldownReady(cast) || mana < skill.manaCost(cast.rank)) continue;
+            aim(hero, skill.needsPoint() ? point : target.getBoundingBox().getCenter());
+            SkillSystem.cast(hero, skill.slot());
+            if (data.getPlacementType() != 0) {
+                AbilityRuntime.confirm(hero);
+                if (data.getPlacementType() != 0) AbilityRuntime.cancel(hero);
+            }
+            boolean preparing = !AbilityRuntime.preparingSkill(hero).isEmpty() || AbilityRuntime.winding(hero) != null;
+            if (mana != data.getMana() || cooldown != data.getCooldown(skill.getId()) || preparing) {
+                var event = new JsonObject();
+                event.addProperty("tick", tick);
+                event.addProperty("skill", skill.getId());
+                event.addProperty("manaSpentAtInput", mana - data.getMana());
+                event.addProperty("cooldownAtInput", data.getCooldown(skill.getId()));
+                event.addProperty("preparingAfterInput", preparing);
+                if (YikeStance.active(hero)) event.addProperty("artilleryShotsRemainingAtInput", YikeStance.shots(hero));
+                casts.add(event);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static float waveHealth(List<Mob> units) {
+        return units.stream().filter(Mob::isAlive).map(LaneSystem::health).reduce(0F, Float::sum);
+    }
+
+    private static void waveDamage(JsonArray strikes, int tick, String source, float before, float after) {
+        if (before <= after) return;
+        var strike = new JsonObject();
+        strike.addProperty("tick", tick);
+        strike.addProperty("source", source);
+        strike.addProperty("effectiveDamage", before - after);
+        strike.addProperty("waveHealthLeft", after);
+        strikes.add(strike);
+    }
+
+    private static void advanceMinion(Mob minion) {
+        minion.damageCooldownTime = Math.max(0, minion.damageCooldownTime - 1);
+        if (minion.isAlive()) minion.move(MoverType.SELF, minion.getDeltaMovement());
+    }
+
+    private static final class LaneBasics {
+        private final ServerPlayer hero;
+        private final CharacterType role;
+        private int next = 1;
+
+        LaneBasics(ServerPlayer hero, CharacterType role) {
+            this.hero = hero;
+            this.role = role;
+        }
+
+        boolean tick(int tick, Mob target) {
+            if (tick < next || !BasicAttackSystem.canAttackNow(hero, PlayerDataProvider.get(hero))
+                    || AbilityRuntime.channeling(hero)) return false;
+            if (role == CharacterType.LUOXIA) {
+                if (LuoxiaBow.drawing(hero)) {
+                    BasicAttackSystem.tryAttack(hero, LuoxiaBow.RELEASE);
+                    next = tick + 1;
+                } else {
+                    BasicAttackSystem.tryAttack(hero, LuoxiaBow.PRESS);
+                    next = tick + (LuoxiaBow.drawing(hero) ? (int) Math.ceil(LuoxiaBow.NORMAL_WORK /
+                            LuoxiaBow.drawRate(hero.getAttributeValue(ModAttributes.ATTACK_SPEED), 1)) : 1);
+                }
+            } else {
+                if (role == CharacterType.YIKE) BasicAttackSystem.tryAttack(hero, 0);
+                else if (MagicBullet.isMage(hero)) MagicBullet.tryFire(hero, hero.getMainHandItem());
+                else DamageGrowthChecks.swing(hero, target);
+                next = tick + BasicAttackSystem.cooldownTotal(hero);
+            }
+            return true;
+        }
     }
 
     static void run(GameTestHelper helper) {

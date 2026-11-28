@@ -19,17 +19,7 @@ public final class MatchProgress {
     public static void save(MinecraftServer server) {
         if (server != writableServer || GameManager.get()==null || Boolean.getBoolean("myriad.combatTests")) return;
         try {
-            JsonObject root=new JsonObject();
-            root.addProperty("version",1); root.addProperty("enabled",ModState.isEnabled());
-            if (ModState.isEnabled()) root.addProperty("session", ModState.session());
-            root.addProperty("arena", MatchArena.active().id);
-            root.addProperty("training",TrainingMode.isEnabled());
-            root.addProperty("noCooldown",TrainingMode.isNoCooldown());
-            root.addProperty("noGoldCost",TrainingMode.isNoGoldCost());
-            root.addProperty("noMana",TrainingMode.isNoMana());
-            root.add("match",GameManager.snapshot());
-            root.add("lanes",LaneSystem.snapshot()); root.add("monsters",MonsterManager.snapshot());
-            root.add("respawns",HeroRespawnSystem.snapshot());
+            JsonObject root = checkpoint();
             Path target=path(server), temp=Files.createTempFile(target.getParent(),"myriad-match-",".tmp");
             try {
                 Files.writeString(temp,JSON.toJson(root));
@@ -38,8 +28,28 @@ public final class MatchProgress {
             } finally { Files.deleteIfExists(temp); }
         } catch(Exception e) { com.myriad.Myriad.LOGGER.error("Unable to save match checkpoint",e); }
     }
+
+    static JsonObject checkpoint() {
+        var root = new JsonObject();
+        root.addProperty("version", 1);
+        root.addProperty("enabled", ModState.isEnabled());
+        if (ModState.isEnabled()) root.addProperty("session", ModState.session());
+        root.addProperty("arena", MatchArena.active().id);
+        root.addProperty("training", TrainingMode.isEnabled());
+        root.addProperty("noCooldown", TrainingMode.isNoCooldown());
+        root.addProperty("noGoldCost", TrainingMode.isNoGoldCost());
+        root.addProperty("noMana", TrainingMode.isNoMana());
+        root.add("match", GameManager.snapshot());
+        root.add("lanes", LaneSystem.snapshot());
+        root.add("monsters", MonsterManager.snapshot());
+        root.add("respawns", HeroRespawnSystem.snapshot());
+        return root;
+    }
+
     public static void load(MinecraftServer server) {
         writableServer = null;
+        // A local/LAN match belongs to the host's current world session.
+        // Never resume it when the host opens the world again.
         if (!server.isDedicatedServer()) {
             openHostSession(server);
             writableServer = server;
@@ -51,25 +61,25 @@ public final class MatchProgress {
             return;
         }
         try {
-            JsonObject root=JSON.fromJson(Files.readString(path(server)),JsonObject.class);
-            if (root.has("arena") && !root.get("arena").getAsString().equals(MatchArena.active().id))
-                throw new IllegalStateException("Checkpoint arena does not match available map configuration");
-            // A local/LAN match belongs to the host's current world session.
-            // Never resume it when the host opens the world again, including
-            // checkpoints written by older versions or before an abrupt exit.
-            if (server.isDedicatedServer()) GameManager.restore(root.get("match"),server);
-            ModState.resume(root.get("enabled").getAsBoolean(), root.has("session") ? root.get("session").getAsString() : "");
-            TrainingMode.setEnabled(root.has("training") && root.get("training").getAsBoolean());
-            TrainingMode.setNoCooldown(root.has("noCooldown") && root.get("noCooldown").getAsBoolean());
-            TrainingMode.setNoGoldCost(root.has("noGoldCost") && root.get("noGoldCost").getAsBoolean());
-            TrainingMode.setNoMana(root.has("noMana") && root.get("noMana").getAsBoolean());
-            if(server.isDedicatedServer() && ModState.isEnabled() && GameManager.get().getPhase()==GameManager.Phase.PLAYING){
-                LaneSystem.restore(server.overworld(),root.getAsJsonObject("lanes"));
-                MonsterManager.restore(server.overworld(),root.getAsJsonObject("monsters"));
-                HeroRespawnSystem.restore(root.get("respawns"));
-            }
+            restoreCheckpoint(server, JSON.fromJson(Files.readString(path(server)), JsonObject.class));
             writableServer = server;
         } catch(Exception e) { throw new IllegalStateException("Failed to restore myriad_fabric_match.json; preserve the checkpoint before retrying",e); }
+    }
+
+    static void restoreCheckpoint(MinecraftServer server, JsonObject root) {
+        if (root.has("arena") && !root.get("arena").getAsString().equals(MatchArena.active().id))
+            throw new IllegalStateException("Checkpoint arena does not match available map configuration");
+        GameManager.restore(root.get("match"), server);
+        ModState.resume(root.get("enabled").getAsBoolean(), root.has("session") ? root.get("session").getAsString() : "");
+        TrainingMode.setEnabled(root.has("training") && root.get("training").getAsBoolean());
+        TrainingMode.setNoCooldown(root.has("noCooldown") && root.get("noCooldown").getAsBoolean());
+        TrainingMode.setNoGoldCost(root.has("noGoldCost") && root.get("noGoldCost").getAsBoolean());
+        TrainingMode.setNoMana(root.has("noMana") && root.get("noMana").getAsBoolean());
+        if (ModState.isEnabled() && GameManager.get().getPhase() == GameManager.Phase.PLAYING) {
+            LaneSystem.restore(server.overworld(), root.getAsJsonObject("lanes"));
+            MonsterManager.restore(server.overworld(), root.getAsJsonObject("monsters"));
+            HeroRespawnSystem.restore(root.get("respawns"));
+        }
     }
 
     /** Host leaving a local/LAN world ends the session before the final checkpoint. */

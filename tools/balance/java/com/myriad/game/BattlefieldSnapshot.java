@@ -48,14 +48,81 @@ final class BattlefieldSnapshot {
         return rules;
     }
 
+    static JsonObject modeProfiles() {
+        MatchTempo tempo = MatchArena.riftTempo();
+        MatchTempo.Supply supply = tempo.supply();
+        var rift = new JsonObject();
+        rift.add("profile", modeValue(tempo.name(), "profile_id", MatchArena.class, "riftTempo"));
+        rift.add("baseline", modeValue(tempo.laneRewardBaseline().name(), "profile_id", MatchTempo.class, "laneRewardBaseline"));
+        rift.add("legacyCheckpointProfile", modeValue(MatchTempo.STANDARD.name(), "profile_id", GameManager.class, "restore"));
+
+        var lane = new JsonObject();
+        lane.add("firstWaveTicks", modeValue(tempo.firstWaveTicks(), "ticks", MatchTempo.class, "firstWaveTicks"));
+        lane.add("waveIntervalTicks", modeValue(tempo.waveIntervalTicks(), "ticks", MatchTempo.class, "waveIntervalTicks"));
+        lane.add("goldMultiplier", supplyValue(supply.laneGoldPercent() / 100.0, "ratio"));
+        lane.add("xpMultiplier", supplyValue(supply.laneXpPercent() / 100.0, "ratio"));
+        rift.add("lane", lane);
+
+        var camp = new JsonObject();
+        camp.add("goldMultiplier", supplyValue(supply.campGoldPercent() / 100.0, "ratio"));
+        camp.add("xpMultiplier", supplyValue(supply.campXpPercent() / 100.0, "ratio"));
+        camp.add("goldPigTeamGoldCap", supplyValue(supply.goldPigTeamGoldCap(), "actual_team_gold"));
+        camp.add("goldPigPayoutSeats", modeValue(MatchArena.Mode.RIFT.teamSize, "hero_slots", MonsterManager.class, "onKill"));
+        rift.add("camp", camp);
+
+        var vein = new JsonObject();
+        vein.add("opensAfterTicks", modeValue(tempo.veinOpensAfterTicks(), "ticks", MatchTempo.class, "veinOpensAfterTicks"));
+        vein.add("pulseIntervalTicks", modeValue(tempo.veinPulseIntervalTicks(), "ticks", MatchTempo.class, "veinPulseIntervalTicks"));
+        vein.add("pulseClock", modeValue("world_tick", "clock_id", GameManager.class, "tickSpiritVein"));
+        vein.add("attributeCaptureTicks", modeValue(GameManager.SMALL_VEIN_CAPTURE_TICKS, "ticks", GameManager.class, "SMALL_VEIN_CAPTURE_TICKS"));
+        vein.add("attributeGoldBase", supplyValue(supply.attributeVeinGold(), "gold_per_seat_before_global"));
+        vein.add("attributeXp", supplyValue(supply.attributeVeinXp(), "xp_per_seat"));
+        vein.add("attributeBonus", modeValue(tempo.attributeVeinBonus(), "ratio", MatchTempo.class, "attributeVeinBonus"));
+        vein.add("largeEnabled", modeValue(false, "boolean", GameManager.class, "rollSpiritVeins"));
+        rift.add("vein", vein);
+
+        var tower = new JsonObject();
+        tower.add("goldMultiplier", supplyValue(supply.towerGoldPercent() / 100.0, "ratio"));
+        rift.add("tower", tower);
+
+        var wage = new JsonObject();
+        wage.add("baseMultiplier", supplyValue(supply.wagePercent() / 100.0, "ratio"));
+        wage.add("baseGold", supplyValue(supply.wage(GameManager.PASSIVE_GOLD_BASE), "gold_per_seat_before_global"));
+        rift.add("wage", wage);
+
+        MatchTempo cherry = MatchTempo.CHERRY_V3;
+        var cherryProfile = new JsonObject();
+        cherryProfile.add("profile", cherryModeValue(cherry.name(), "profile_id"));
+        cherryProfile.add("baseline", cherryModeValue(cherry.laneRewardBaseline().name(), "profile_id"));
+        cherryProfile.add("laneExperiencePercent", cherryModeValue(cherry.supply().laneXpPercent(), "percent"));
+        cherryProfile.add("campExperiencePercent", cherryModeValue(cherry.supply().campXpPercent(), "percent"));
+
+        var profiles = new JsonObject();
+        profiles.add("rift_5v5", rift);
+        profiles.add("cherry_3v3", cherryProfile);
+        return profiles;
+    }
+
+    private static JsonObject cherryModeValue(Object value, String unit) {
+        return at(value, unit, MatchTempo.class, "CHERRY_V3", "樱隙前线选定 CHERRY_V3", "match_start", NONE);
+    }
+
+    private static JsonObject supplyValue(Object value, String unit) {
+        return modeValue(value, unit, MatchTempo.class, "RIFT_V1");
+    }
+
+    private static JsonObject modeValue(Object value, String unit, Class<?> owner, String member) {
+        return at(value, unit, owner, member, "开战锁定 RIFT_V1", "match_start", NONE);
+    }
+
     private static JsonObject maps(Path root) {
         var maps = new JsonObject();
         for (MatchArena.Mode mode : MatchArena.Mode.values()) {
             var arena = new JsonObject();
             arena.add("teamSize", constant(mode.teamSize, "hero_slots", MatchArena.class, "Mode"));
             if (mode == MatchArena.Mode.RIFT) {
-                arena.add("tempoProfile", constant(MatchTempo.STANDARD.name(), "profile_id", MatchArena.class, "selectedTempo"));
-                arena.add("firstWave", at(MatchTempo.STANDARD.firstWaveTicks(), "ticks", MatchTempo.class,
+                arena.add("tempoProfile", constant(MatchArena.riftTempo().name(), "profile_id", MatchArena.class, "selectedTempo"));
+                arena.add("firstWave", at(MatchArena.riftTempo().firstWaveTicks(), "ticks", MatchTempo.class,
                         "firstWaveTicks", "配置了可用兵线的 5v5 地图", "match_start", REAL));
                 for (String key : List.of("enabledLanes", "towerTiers", "towers", "fountains", "crystals", "camps", "veins")) {
                     arena.add(key, gap("missing_input", "map_definition", source(MatchArena.class, "configuration"),
@@ -227,7 +294,7 @@ final class BattlefieldSnapshot {
         rule.add("baseExperience", constant(baseXp, "xp", LaneSystem.class, "minionBaseXp"));
         var samples = new JsonArray();
         for (long elapsed : new long[]{700, 3600, 9600, 19180, 19200, 19220, 23980, 24000, 24020, 26400}) {
-            int wave = elapsed < tempo.firstWaveTicks() ? 0 : (int) ((elapsed - tempo.firstWaveTicks()) / LaneSystem.WAVE_INTERVAL) + 1;
+            int wave = elapsed < tempo.firstWaveTicks() ? 0 : (int) ((elapsed - tempo.firstWaveTicks()) / tempo.waveIntervalTicks()) + 1;
             var sample = new JsonObject();
             sample.addProperty("elapsedTicks", elapsed);
             sample.addProperty("wave", wave);

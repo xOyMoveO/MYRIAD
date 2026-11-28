@@ -91,7 +91,7 @@ public class GameManager {
     private final Map<UUID, Integer> matchKills = new HashMap<>();
     private final Map<UUID, Integer> matchDeaths = new HashMap<>();
     private MatchAssists assists = new MatchAssists();
-    private static final int SMALL_VEIN_CAPTURE_TICKS = 120;
+    static final int SMALL_VEIN_CAPTURE_TICKS = 120;
     private static final int LARGE_VEIN_CAPTURE_TICKS = 200;
     private static final int SMALL_VEIN_RADIUS = 8;
     private static final int LARGE_VEIN_RADIUS = 12;
@@ -233,7 +233,10 @@ public class GameManager {
             if (value.getAsJsonObject().has("tempo")) throw new IllegalArgumentException("Unknown checkpoint match tempo");
             restored.tempo = MatchTempo.STANDARD;
         }
-        restored.setServer(server);
+        // Active objectives and their opening deadline already belong to the saved round.
+        // In particular, an edited vein layout must not clear occupied veins on restart.
+        if (restored.phase == Phase.PLAYING) restored.server = server;
+        else restored.setServer(server);
         instance = restored;
         if (restored.phase == Phase.PLAYING) restored.economyRoster();
     }
@@ -836,8 +839,8 @@ public class GameManager {
             broadcast(Component.translatable("message.myriad.vein_config_incomplete",
                     attributeVeinSpawns.size(), largeVeinSpawns.size()));
         } else if (!spiritVeins.isEmpty()) {
-            spiritVeinAvailableAt = matchStartTime + 60L * 20L;
-            broadcast(Component.translatable("message.myriad.vein_will_open", 60));
+            spiritVeinAvailableAt = matchStartTime + tempo.veinOpensAfterTicks();
+            broadcast(Component.translatable("message.myriad.vein_will_open", tempo.veinOpensAfterTicks() / 20));
         }
         List<ServerPlayer> players = matchPlayers();
         // 正常选角已在准备期开始时传送，开战保留这十秒内的站位和锚点。
@@ -1173,11 +1176,11 @@ public class GameManager {
                 Component veinName = vein.displayName();
                 broadcast(MatchMessages.Tone.OBJECTIVE,
                         Component.translatable("message.myriad.vein_captured", veinName,
-                        newOwner.displayName(), vein.large ? 30 : 10, vein.large ? 20 : 5));
+                        newOwner.displayName(), spiritVeinPulseGold(vein), spiritVeinPulseXp(vein)));
             }
             int enemyPlayers = vein.owner == Faction.GUARDIAN ? destruction : guardian;
             if (vein.owner != null && Math.abs(vein.progress) == vein.captureTicks()
-                    && enemyPlayers == 0 && gameTime % GameRules.VEIN_INCOME_PULSE_TICKS == 0) {
+                    && enemyPlayers == 0 && gameTime % tempo.veinPulseIntervalTicks() == 0) {
                 rewardSpiritVeinPulse(vein.owner, vein);
             }
         }
@@ -1253,16 +1256,26 @@ public class GameManager {
 
     /** 持续控制收益：每 5 秒发给全队，死亡成员同样获得团队目标收益。 */
     private void rewardSpiritVeinPulse(Faction faction, SpiritVein vein) {
+        int gold = spiritVeinPulseGold(vein);
+        int xp = spiritVeinPulseXp(vein);
         for (ServerPlayer player : matchPlayers()) {
             if (factionOf(player) == faction) {
                 com.myriad.player.PlayerData data = PlayerDataProvider.get(player);
                 if (data != null) {
-                    data.addGold(GlobalBalance.goldIncome(vein.large ? 30 : 10));
-                    com.myriad.player.LevelSystem.addXp(player, data, vein.large ? 20 : 5);
+                    data.addGold(gold);
+                    com.myriad.player.LevelSystem.addXp(player, data, xp);
                     PlayerDataProvider.syncToClient(player);
                 }
             }
         }
+    }
+
+    private int spiritVeinPulseGold(SpiritVein vein) {
+        return GlobalBalance.goldIncome(vein.large ? 30 : tempo.supply().attributeVeinGold());
+    }
+
+    private int spiritVeinPulseXp(SpiritVein vein) {
+        return vein.large ? 20 : tempo.supply().attributeVeinXp();
     }
 
     /** 月=法强、火=物攻、木=物防与法防；控制权转移时移除旧阵营并赋予新阵营。 */
@@ -1276,14 +1289,14 @@ public class GameManager {
                 if (vein.owner != faction || vein.affinity == null) continue;
                 switch (vein.affinity) {
                     case MOON -> addVeinBonus(player, com.myriad.registry.ModAttributes.SPELL_POWER,
-                            MOON_VEIN_BONUS);
+                            MOON_VEIN_BONUS, tempo.attributeVeinBonus());
                     case FIRE -> addVeinBonus(player, com.myriad.registry.ModAttributes.PHYSICAL_ATTACK,
-                            FIRE_VEIN_BONUS);
+                            FIRE_VEIN_BONUS, tempo.attributeVeinBonus());
                     case WOOD -> {
                         addVeinBonus(player, com.myriad.registry.ModAttributes.PHYSICAL_DEFENSE,
-                                WOOD_VEIN_PHYSICAL_BONUS);
+                                WOOD_VEIN_PHYSICAL_BONUS, tempo.attributeVeinBonus());
                         addVeinBonus(player, com.myriad.registry.ModAttributes.MAGIC_RESISTANCE,
-                                WOOD_VEIN_MAGIC_BONUS);
+                                WOOD_VEIN_MAGIC_BONUS, tempo.attributeVeinBonus());
                     }
                 }
             }
@@ -1304,10 +1317,10 @@ public class GameManager {
 
     private static void addVeinBonus(ServerPlayer player,
             net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute,
-            net.minecraft.resources.Identifier id) {
+            net.minecraft.resources.Identifier id, double bonus) {
         AttributeInstance instance = player.getAttribute(attribute);
         if (instance != null) instance.addTransientModifier(new AttributeModifier(
-                id, 0.05, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+                id, bonus, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
     }
 
     private static void removeVeinBonus(ServerPlayer player,
@@ -1433,6 +1446,7 @@ public class GameManager {
         pendingResults = null;
         resetMatchObjectives();
         phase = Phase.WAITING;
+        loadSpiritVeinSpawns();
         winner = null;
         for (ServerPlayer player : participants) {
             PlayerDataProvider.clearMatchPlayerState(player);

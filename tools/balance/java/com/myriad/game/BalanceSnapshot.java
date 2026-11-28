@@ -44,6 +44,7 @@ public final class BalanceSnapshot {
         rules.add("skillRules", RosterSnapshot.commonSkillRules());
         rules.add("attributePurchases", RosterSnapshot.attributePurchases());
         rules.add("battlefield", BattlefieldSnapshot.export(root));
+        rules.add("modeProfiles", BattlefieldSnapshot.modeProfiles());
 
         JsonElement dirty = args[3].equals("unknown") ? JsonNull.INSTANCE : SnapshotJson.json(Boolean.parseBoolean(args[3]));
         var snapshot = new JsonObject();

@@ -70,7 +70,7 @@ final class BattlefieldBuildingChecks {
     private static final Build LATE = new Build(18, 5, 3, 4);
 
     static void run(GameTestHelper helper) {
-        run(helper, List.of(), PUSHERS, OPPONENTS);
+        run(helper, List.of(), PUSHERS, OPPONENTS, false);
     }
 
     static void roster(GameTestHelper helper) {
@@ -83,11 +83,15 @@ final class BattlefieldBuildingChecks {
         for (var alternate : List.of(CharacterType.LUOXIA, CharacterType.QINGLUO, CharacterType.YINGXIAO)) {
             if (opponents.size() < 3 && !roles.contains(alternate)) opponents.add(alternate);
         }
-        run(helper, roles, pushers, opponents);
+        run(helper, roles, pushers, opponents, false);
+    }
+
+    static void fullRoster(GameTestHelper helper) {
+        run(helper, List.of(CharacterType.playableValues()), PUSHERS, OPPONENTS, true);
     }
 
     private static void run(GameTestHelper helper, List<CharacterType> roles,
-            List<CharacterType> pushers, List<CharacterType> opponents) {
+            List<CharacterType> pushers, List<CharacterType> opponents, boolean fullRoster) {
         var suite = new ArenaFixtureChecks.Suite(helper.getLevel().getServer());
         try {
             suite.install();
@@ -98,19 +102,28 @@ final class BattlefieldBuildingChecks {
             }
             suite.command("myriad mod on");
             for (int seat = 0; seat < 6; seat++) suite.player(seat);
-            for (var profile : MatchTempo.values()) {
-                if (!profile.name().startsWith("CHERRY_")) continue;
-                if (!roles.isEmpty() && profile != MatchTempo.CHERRY_V2) continue;
+            var profiles = fullRoster ? List.of(MatchTempo.CHERRY_V3)
+                    : roles.isEmpty() ? List.of(MatchTempo.CHERRY_V1, MatchTempo.CHERRY_V2) : List.of(MatchTempo.CHERRY_V2);
+            for (var profile : profiles) {
                 try {
                     var replay = new Replay(suite, profile, pushers, opponents);
-                    if (!roles.isEmpty()) {
+                    if (fullRoster) {
+                        var actor = replay.heroes.get(CharacterType.LUOXIA);
+                        var data = PlayerDataProvider.get(actor);
                         for (var role : roles) {
-                            replay.wholeWaves(role);
+                            data.setCharacterId(role.getId());
+                            data.refundAllSkillPointsForTraining();
+                            replay.wholeWaves(role, actor, true);
                         }
+                        data.setCharacterId(CharacterType.LUOXIA.getId());
+                        data.refundAllSkillPointsForTraining();
+                        replay.progression();
+                    } else if (!roles.isEmpty()) {
+                        for (var role : roles) replay.wholeWaves(role, replay.heroes.get(role), false);
                     } else {
                         replay.towerRules();
                         replay.pureBasics();
-                        replay.wholeWaves(CharacterType.LUOXIA);
+                        replay.wholeWaves(CharacterType.LUOXIA, replay.heroes.get(CharacterType.LUOXIA), false);
                         replay.fountains();
                         replay.crystal();
                         replay.progression();
@@ -356,11 +369,36 @@ final class BattlefieldBuildingChecks {
             }
         }
 
-        private void wholeWaves(CharacterType role) throws Exception {
+        private void wholeWaves(CharacterType role, ServerPlayer actor, boolean paired) throws Exception {
             for (var sample : List.of(Map.entry(EARLY, OPENING), Map.entry(12000L, MIDGAME), Map.entry(ENDGAME, LATE))) {
                 int tier = sample.getKey() == EARLY ? 1 : sample.getKey() == 12000 ? 2 : 3;
-                var actor = heroes.get(role);
                 var side = match.factionOf(actor);
+                if (paired) {
+                    for (boolean escorted : new boolean[]{false, true}) {
+                        stage(sample.getKey(), side, tier - 1, escorted);
+                        var target = tower(enemy(side), tier);
+                        if (escorted) advanceWave(side, target);
+                        sample.getValue().apply(actor);
+                        var inputs = new BasicInputs(actor, role);
+                        float initial = LaneSystem.health(target);
+                        for (int tick = 1; tick <= BASIC_WINDOW; tick++) {
+                            suite.clock(start + sample.getKey() + tick);
+                            inputs.tick(target, tick, 1);
+                        }
+                        float damage = initial - LaneSystem.health(target);
+                        suite.check(inputs.attackRequests > 0 && (role == CharacterType.YIKE ? damage == 0 : damage > 0),
+                                "The fixed window preserves actual tower targeting for " + role);
+                        var row = row("paired_tower_basics", sample.getKey());
+                        addBuild(row, sample.getValue());
+                        row.addProperty("hero", role.getId());
+                        row.addProperty("tier", tier);
+                        row.addProperty("escorted", escorted);
+                        row.addProperty("basicWindowTicks", BASIC_WINDOW);
+                        row.addProperty("attackRequests", inputs.attackRequests);
+                        row.addProperty("heroDamage", damage);
+                        emit(row);
+                    }
+                }
                 stage(sample.getKey(), side, tier - 1, true);
                 var tower = tower(enemy(side), tier);
                 var minions = advanceWave(side, tower);

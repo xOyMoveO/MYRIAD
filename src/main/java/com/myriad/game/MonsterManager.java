@@ -857,10 +857,15 @@ public final class MonsterManager {
         if (data == null) {
             return;
         }
-        int gold=type==MonsterType.GOLD_PIG?MatchBalance.pigGold(MatchBalance.elapsed(killer)):type.getGold();
+        MatchTempo.Supply supply = GameManager.combatTempo().supply();
+        int gold = supply.campGold(type == MonsterType.GOLD_PIG ? MatchBalance.pigGold(MatchBalance.elapsed(killer)) : type.getGold());
         if(!type.isTeamGold())gold=MatchBalance.farmReward(killer,gold,false);
         gold=GlobalBalance.goldIncome(gold);
-        int xp=MatchBalance.farmReward(killer,type.getXp(),true);
+        if (type == MonsterType.GOLD_PIG && supply.goldPigTeamGoldCap() != Integer.MAX_VALUE) {
+            // Cap the whole five-seat team's actual gold. Disconnected seats do not redistribute their shares.
+            gold = Math.min(gold, supply.goldPigTeamGoldCap() / MatchArena.Mode.RIFT.teamSize);
+        }
+        int xp=MatchBalance.farmReward(killer,supply.campXp(type.getXp()),true);
         if (type.isTeamGold()) {
             GameManager manager = GameManager.get();
             Faction killerFaction = manager == null ? null : manager.factionOf(killer);

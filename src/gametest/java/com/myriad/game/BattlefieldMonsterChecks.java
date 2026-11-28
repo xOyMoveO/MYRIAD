@@ -5,6 +5,7 @@ import com.myriad.character.SkillSystem;
 import com.myriad.character.ability.AbilityRuntime;
 import com.myriad.character.rework.FirstGroupGrowth;
 import com.myriad.character.rework.FirstGroupSkills;
+import com.myriad.character.skills.luoxia.LuoxiaBow;
 import com.myriad.combat.BasicAttackSystem;
 import com.myriad.combat.DamageCalc;
 import com.myriad.combat.MagicBullet;
@@ -71,13 +72,21 @@ final class BattlefieldMonsterChecks {
         rosterCamps(helper, List.of(CharacterType.YIKE, CharacterType.SHUO, CharacterType.RIVET, CharacterType.CHIXIAO));
     }
 
+    static void fullRosterCamps(GameTestHelper helper) {
+        rosterCamps(helper, List.of(CharacterType.playableValues()), MatchTempo.CHERRY_V3);
+    }
+
     static void rosterCamps(GameTestHelper helper, List<CharacterType> roles) {
+        rosterCamps(helper, roles, MatchTempo.CHERRY_V2);
+    }
+
+    private static void rosterCamps(GameTestHelper helper, List<CharacterType> roles, MatchTempo profile) {
         var encounters = new ArrayList<Encounter>();
         for (var role : roles) {
             encounters.add(new Encounter(role.getId() + "_scout", MonsterType.CHERRY_SCOUT_BOT, 1, 1, 1, 400, role));
             encounters.add(new Encounter(role.getId() + "_walker", MonsterType.CHERRY_HEAVY_WALKER, 1, 1, 1, 800, role));
         }
-        runFights(helper, encounters);
+        runFights(helper, encounters, profile.name());
     }
 
     private record Encounter(String id, MonsterType type, int level, int strength, int party, long firstSpawn,
@@ -98,6 +107,10 @@ final class BattlefieldMonsterChecks {
     private record Reward(String role, int gold, int experience, long obsidianBuffTicks) {}
 
     private static void runFights(GameTestHelper helper, List<Encounter> encounters) {
+        runFights(helper, encounters, null);
+    }
+
+    private static void runFights(GameTestHelper helper, List<Encounter> encounters, String profile) {
         var fixture = new Fixture(helper);
         try {
             var combats = new ArrayList<Combat>();
@@ -108,8 +121,9 @@ final class BattlefieldMonsterChecks {
                 combats.add(new Combat(fixture, encounter, center));
             }
             MonsterManager.activateSpawns(points);
-            fixture.begin(encounters.getFirst().firstSpawn() - WARMUP,
-                    encounters.getFirst().soloRosterRole() != null ? "CHERRY_V2" : null);
+            fixture.begin(encounters.getFirst().firstSpawn() - WARMUP, profile);
+            if (profile != null) helper.assertTrue(GameManager.combatTempo().name().equals(profile),
+                    "Roster fights use the selected 3v3 profile");
             for (var combat : combats) combat.learnOpeningSkill();
             fixture.listen(() -> {
                 long elapsed = fixture.elapsed();
@@ -136,6 +150,7 @@ final class BattlefieldMonsterChecks {
         private final float[] startingHealth;
         private final float[] grossHealthLoss;
         private final long[] lastInput;
+        private long arrowReleaseTick = -1;
         private Mob target;
         private long spawnedAt;
         private long respawnAt = -1;
@@ -240,7 +255,13 @@ final class BattlefieldMonsterChecks {
                 String q = encounter.openingSkill();
                 double minimumMana = encounter.soloRosterRole() != null
                         ? FirstGroupSkills.node(encounter.role(0).getId(), 2).manaCost(1) : 70;
-                if (i == 0 && data.getCooldown(q) == 0 && data.getMana() >= minimumMana) {
+                if (encounter.role(i) == CharacterType.LUOXIA && LuoxiaBow.drawing(player)) {
+                    if (fight < arrowReleaseTick) continue;
+                    player.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES,
+                            target.getBoundingBox().getCenter());
+                    BasicAttackSystem.tryAttack(player, LuoxiaBow.RELEASE);
+                    action = "bow_release";
+                } else if (i == 0 && data.getCooldown(q) == 0 && data.getMana() >= minimumMana) {
                     SkillSystem.cast(player, CharacterType.SLOT_Q);
                     action = "rank_one_q";
                 } else if (encounter.role(i) == CharacterType.YIKE) {
@@ -248,6 +269,13 @@ final class BattlefieldMonsterChecks {
                             target.getBoundingBox().getCenter());
                     BasicAttackSystem.tryAttack(player, 0);
                     action = "cannon_input";
+                } else if (encounter.role(i) == CharacterType.LUOXIA) {
+                    player.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES,
+                            target.getBoundingBox().getCenter());
+                    BasicAttackSystem.tryAttack(player, LuoxiaBow.PRESS);
+                    arrowReleaseTick = fight + (int) Math.ceil(LuoxiaBow.NORMAL_WORK /
+                            LuoxiaBow.drawRate(player.getAttributeValue(ModAttributes.ATTACK_SPEED), 1));
+                    action = "bow_press";
                 } else if (MagicBullet.isMage(player)) {
                     if (MagicBullet.remaining(player) > 0) continue;
                     player.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES,
@@ -512,7 +540,7 @@ final class BattlefieldMonsterChecks {
         }
 
         BlockPos floor(int index) {
-            var center = helper.absolutePos(new BlockPos(7, 220 + index * 10, 7));
+            var center = helper.absolutePos(new BlockPos(7 + index / 10 * 24, 220 + index % 10 * 10, 7));
             CombatChunks.prepare(level, center);
             for (int x = -5; x <= 5; x++) for (int z = -5; z <= 5; z++) {
                 var at = center.offset(x, -1, z);
